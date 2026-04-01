@@ -8,4 +8,6 @@ deployment:
     - /bin/mkdir -p $DEPLOYPATH_PUBLIC
     
     - /bin/cp -R backend/* $DEPLOYPATH_CORE
-    - /bin/cp -R backend/public/* $DEPLOYPATH_PUBLIC
+    
+    # Explicitly copy all files including hidden ones from public
+    - /bin/cp -R backend/public/. $DEPLOYPATH_PUBLIC
