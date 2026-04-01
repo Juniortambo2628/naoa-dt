@@ -2,8 +2,10 @@
 deployment:
   tasks:
     - export DEPLOYPATH_CORE=/home/zhpebukm/naoa-core/
-    - export DEPLOYPATH_PUBLIC=/home/zhpebukm/public_html/dnt-wed.okjtech.co.ke/api/public/
+    - export DEPLOYPATH_PUBLIC=/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/
+    
     - /bin/mkdir -p $DEPLOYPATH_CORE
     - /bin/mkdir -p $DEPLOYPATH_PUBLIC
+    
     - /bin/cp -R backend/* $DEPLOYPATH_CORE
     - /bin/cp -R backend/public/* $DEPLOYPATH_PUBLIC
