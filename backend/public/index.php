@@ -14,7 +14,7 @@ define('LARAVEL_START', microtime(true));
 | are located in /home/zhpebukm/naoa-core.
 */
 
-$productionPath = __DIR__ . '/../../../naoa-core'; // Path from subdomain/api/public to /home/zhpebukm/naoa-core
+$productionPath = __DIR__ . '/../../../naoa-core'; // Path from /api/public root up to /home/zhpebukm/naoa-core
 $localPath = __DIR__ . '/..';
 
 if (file_exists($productionPath . '/vendor/autoload.php')) {

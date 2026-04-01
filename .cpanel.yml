@@ -9,5 +9,5 @@ deployment:
     
     - /bin/cp -R backend/* $DEPLOYPATH_CORE
     
-    # Explicitly copy all files including hidden ones from public
+    # Deploy public files specifically to the api/public subfolder
     - /bin/cp -R backend/public/. $DEPLOYPATH_PUBLIC
