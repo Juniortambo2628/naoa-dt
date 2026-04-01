@@ -1,0 +1,17 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH_CORE=/home/zhpebukm/naoa-core/
+    - export DEPLOYPATH_PUBLIC=/home/zhpebukm/public_html/dnt-wed.okjtech.co.ke/api/public/
+    
+    # 1. Ensure directories exist
+    - /bin/mkdir -p $DEPLOYPATH_CORE
+    - /bin/mkdir -p $DEPLOYPATH_PUBLIC
+    
+    # 2. Deploy Core Files to /naoa-core
+    # We copy the entire backend folder contents to the core directory
+    - /bin/cp -R backend/* $DEPLOYPATH_CORE
+    
+    # 3. Deploy Public Files to API web root
+    # We copy the public assets to the specific subdomain path
+    - /bin/cp -R backend/public/* $DEPLOYPATH_PUBLIC
