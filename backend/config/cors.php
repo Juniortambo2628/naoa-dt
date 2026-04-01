@@ -21,7 +21,8 @@ return [
 
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:5174'),
-        'https://naoa-dt.vercel.app', // Placeholder Vercel domain
+        'https://dntwed.okjtech.co.ke',
+        'https://www.dntwed.okjtech.co.ke',
     ],
 
     'allowed_origins_patterns' => [],
