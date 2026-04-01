@@ -1,0 +1,63 @@
+--- GUESTS ---
+Array
+(
+    [id] => 8
+    [parent_guest_id] => 7
+    [name] => Ann Wanja Kairu
+    [email] => kairuannw@gmail.com
+    [phone] => 
+    [group] => family
+    [plus_ones_allowed] => 0
+    [unique_code] => 4EZNTRGK
+    [rsvp_status] => confirmed
+    [plus_ones] => 0
+    [song_request] => 
+    [qr_code] => 
+    [checked_in_at] => 
+    [created_at] => 2026-03-11T20:40:12.000000Z
+    [updated_at] => 2026-03-24T21:11:15.000000Z
+    [table_id] => 
+)
+Array
+(
+    [id] => 7
+    [parent_guest_id] => 
+    [name] => Kevin Tambo
+    [email] => juniortambo2628@gmail.com
+    [phone] => 0705883227
+    [group] => family
+    [plus_ones_allowed] => 1
+    [unique_code] => LO2J85UX
+    [rsvp_status] => confirmed
+    [plus_ones] => 0
+    [song_request] => 
+    [qr_code] => 
+    [checked_in_at] => 
+    [created_at] => 2026-03-11T20:40:12.000000Z
+    [updated_at] => 2026-03-24T21:11:15.000000Z
+    [table_id] => 1
+)
+
+--- RSVP RESPONSES ---
+Array
+(
+    [id] => 1
+    [guest_id] => 8
+    [attending] => 1
+    [plus_ones_count] => 0
+    [dietary_notes] => None
+    [message] => Testing RSVP from AI
+    [created_at] => 2026-03-12T07:12:08.000000Z
+    [updated_at] => 2026-03-12T07:53:33.000000Z
+)
+Array
+(
+    [id] => 2
+    [guest_id] => 7
+    [attending] => 1
+    [plus_ones_count] => 0
+    [dietary_notes] => 
+    [message] => 
+    [created_at] => 2026-03-12T18:24:44.000000Z
+    [updated_at] => 2026-03-12T18:24:44.000000Z
+)

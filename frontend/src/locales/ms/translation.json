@@ -1,0 +1,135 @@
+{
+  "nav": {
+    "home": "Utama",
+    "story": "Kisah Kami",
+    "events": "Acara",
+    "gallery": "Galeri",
+    "gifts": "Hadiah",
+    "programme": "Program",
+    "rsvp": "RSVP",
+    "login": "Log Masuk Admin",
+    "songs": "Our Jamz",
+    "guestbook": "Tulis Mesej"
+  },
+  "home": {
+    "gift_registry": "Daftar Hadiah"
+  },
+  "common": {
+    "back": "Kembali"
+  },
+  "hero": {
+    "getting_married": "Kami Akan Berkahwin",
+    "date": "Sabtu, 15 Jun 2025",
+    "location": "Rosewood Manor, Nairobi",
+    "rsvp_cta": "RSVP Sekarang",
+    "programme_cta": "Lihat Program"
+  },
+  "countdown": {
+    "title": "Detik Perkahwinan",
+    "subtitle": "Menghitung setiap saat sehingga hari bahagia",
+    "days": "Hari",
+    "hours": "Jam",
+    "minutes": "Minit",
+    "seconds": "Saat"
+  },
+  "story": {
+    "title": "Kisah Cinta Kami",
+    "bride": "Pengantin Perempuan",
+    "groom": "Pengantin Lelaki",
+    "part1": "It all began on a rainy afternoon in a small coffee shop in the heart of the city. Dinah was waiting for a friend who never showed up, and Tze Ren happened to be at the next table, pretending to read a book he'd already finished.",
+    "part2": "A spilled latte, a shared umbrella, and countless conversations later, we knew we had found something special. What started as a chance encounter blossomed into a love story we're excited to celebrate with you.",
+    "quote": "\"Every love story is beautiful, but ours is our favorite.\""
+  },
+  "events": {
+    "title": "Jadual Hari Perkahwinan",
+    "ceremony": "Majlis Perkahwinan",
+    "ceremony_desc": "Exchange of vows in the beautiful garden pavilion.",
+    "cocktail": "Jamuan Koktel",
+    "cocktail_desc": "Signature drinks and canapés while we capture memories.",
+    "reception": "Majlis Makan Malam",
+    "reception_desc": "A three-course dinner featuring local delicacies."
+  },
+  "gallery": {
+    "title": "Galeri Kami"
+  },
+  "programme": {
+    "title": "Program Perkahwinan",
+    "timeline": {
+      "arrival_title": "Ketibaan Tetamu",
+      "arrival_desc": "Welcome drinks and light refreshments as guests arrive.",
+      "ceremony_title": "Majlis Perkahwinan",
+      "ceremony_desc": "Join us as we exchange our vows in the garden pavilion.",
+      "photos_title": "Sesi Fotografi",
+      "photos_desc": "Family and wedding party photos. Enjoy cocktails!",
+      "cocktail_title": "Jamuan Koktel",
+      "cocktail_desc": "Signature cocktails and hors d'oeuvres.",
+      "dinner_title": "Makan Malam",
+      "dinner_desc": "A three-course dinner featuring local cuisine.",
+      "dance_title": "Tarian Pertama & Ucapan",
+      "dance_desc": "Watch the newlyweds share their first dance.",
+      "party_title": "Masa Berparti!",
+      "party_desc": "Dance the night away with live music!"
+    },
+    "happening_now": "Sedang Berlangsung",
+    "live_updates": "Kemas Kini Langsung",
+    "real_time": "Masa Nyata",
+    "no_updates": "Updates will appear here during the event",
+    "notes_title": "Nota Penting",
+    "note1": "The ceremony starts at 2:00 PM sharp",
+    "note2": "Photography is welcome during the reception",
+    "note3": "Dress code: Semi-formal / Garden Party"
+  },
+  "rsvp": {
+    "page_title": "RSVP",
+    "page_subtitle": "We can't wait to celebrate with you!",
+    "find_invitation": "Cari Jemputan Anda",
+    "enter_code_desc": "Enter your unique invitation code",
+    "code_label": "Kod Jemputan",
+    "find_button": "Cari Jemputan Saya",
+    "welcome_user": "Selamat Datang, {{name}}!",
+    "love_to_hear": "Kami ingin mendengar daripada anda",
+    "attending_label": "Adakah anda akan hadir?",
+    "attending_yes": "Ya, Saya Hadir",
+    "attending_no": "Maaf, Tidak Dapat Hadir",
+    "guests_label": "Tetamu Tambahan (sehingga {{count}})",
+    "dietary_label": "Keperluan Diet",
+    "dietary_placeholder": "Vegetarian, allergies, etc.",
+    "message_label": "Mesej kepada Pasangan",
+    "message_placeholder": "Share your wishes...",
+    "submit_button": "Hantar RSVP",
+    "thank_you": "Terima Kasih!",
+    "success_message": "Your response has been recorded. We're so excited to celebrate with you!",
+    "title": "Will You Join Us?",
+    "subtitle": "We would be honored to have you celebrate this special day with us. Please let us know if you can make it.",
+    "respond": "Respond Now"
+  },
+  "gifts": {
+    "page_title": "Daftar Hadiah",
+    "page_subtitle": "Your presence is our greatest gift. However, if you wish to honor us with a token of love, here are some ideas we'd cherish.",
+    "search_placeholder": "Cari hadiah...",
+    "cat_all": "Semua",
+    "contribute_title": "Sumbang",
+    "reserve_title": "Tempah Hadiah",
+    "your_name": "Nama Anda",
+    "name_required": "Name is required",
+    "name_placeholder": "Jane Doe",
+    "email_optional": "Emel (pilihan)",
+    "amount_label": "Jumlah (KES)",
+    "amount_required": "Amount is required",
+    "amount_min": "Minimum is KES 100",
+    "message_optional": "Mesej Peribadi (pilihan)",
+    "message_placeholder": "Congratulations on your wedding!",
+    "contribute_action": "Sumbang",
+    "reserve_action": "Tempah",
+    "thank_you": "Terima Kasih!",
+    "contribution_recorded": "Your contribution has been recorded.",
+    "reservation_recorded": "Your reservation has been recorded.",
+    "reserved_badge": "Ditempah",
+    "cash_fund_badge": "Dana Tunai",
+    "raised": "dikumpul",
+    "btn_reserved": "Ditempah",
+    "btn_contribute": "Sumbang",
+    "btn_reserve": "Tempah",
+    "no_results": "Tiada hadiah dijumpai"
+  }
+}

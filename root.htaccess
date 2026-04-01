@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Allow access to backend folder directly if needed (e.g. for assets)
+    RewriteRule ^backend/ - [L]
+
+    # API and Sanctum requests go to Laravel
+    RewriteRule ^api/(.*)$ backend/public/index.php [L,QSA]
+    RewriteRule ^sanctum/(.*)$ backend/public/index.php [L,QSA]
+    
+    # Storage link
+    RewriteRule ^storage/(.*)$ backend/public/storage/$1 [L,QSA]
+
+    # Everything else goes to public_html (Frontend)
+    RewriteCond %{REQUEST_URI} !^/public_html/
+    RewriteRule ^(.*)$ public_html/$1 [L]
+</IfModule>

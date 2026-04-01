@@ -1,0 +1,135 @@
+{
+  "nav": {
+    "home": "首页",
+    "story": "我们的故事",
+    "events": "婚礼流程",
+    "gallery": "相册",
+    "gifts": "礼物登记",
+    "programme": "节目表",
+    "rsvp": "RSVP",
+    "login": "管理员登录",
+    "songs": "Our Jamz",
+    "guestbook": "留言板"
+  },
+  "home": {
+    "gift_registry": "礼物登记"
+  },
+  "common": {
+    "back": "返回"
+  },
+  "hero": {
+    "getting_married": "我们要结婚了",
+    "date": "2025年6月15日 (星期六)",
+    "location": "Rosewood Manor, Nairobi",
+    "rsvp_cta": "立即RSVP",
+    "programme_cta": "查看节目表"
+  },
+  "countdown": {
+    "title": "婚礼倒计时",
+    "subtitle": "期待那一刻的到来",
+    "days": "天",
+    "hours": "时",
+    "minutes": "分",
+    "seconds": "秒"
+  },
+  "story": {
+    "title": "我们的爱情故事",
+    "bride": "新娘",
+    "groom": "新郎",
+    "part1": "It all began on a rainy afternoon in a small coffee shop in the heart of the city. Dinah was waiting for a friend who never showed up, and Tze Ren happened to be at the next table, pretending to read a book he'd already finished.",
+    "part2": "A spilled latte, a shared umbrella, and countless conversations later, we knew we had found something special. What started as a chance encounter blossomed into a love story we're excited to celebrate with you.",
+    "quote": "\"Every love story is beautiful, but ours is our favorite.\""
+  },
+  "events": {
+    "title": "婚礼当天流程",
+    "ceremony": "婚礼仪式",
+    "ceremony_desc": "Exchange of vows in the beautiful garden pavilion.",
+    "cocktail": "鸡尾酒会",
+    "cocktail_desc": "Signature drinks and canapés while we capture memories.",
+    "reception": "晚宴",
+    "reception_desc": "A three-course dinner featuring local delicacies."
+  },
+  "gallery": {
+    "title": "我们的相册"
+  },
+  "programme": {
+    "title": "婚礼节目表",
+    "timeline": {
+      "arrival_title": "宾客签到",
+      "arrival_desc": "Welcome drinks and light refreshments as guests arrive.",
+      "ceremony_title": "婚礼仪式",
+      "ceremony_desc": "Join us as we exchange our vows in the garden pavilion.",
+      "photos_title": "合影留念",
+      "photos_desc": "Family and wedding party photos. Enjoy cocktails!",
+      "cocktail_title": "鸡尾酒会",
+      "cocktail_desc": "Signature cocktails and hors d'oeuvres.",
+      "dinner_title": "晚宴开始",
+      "dinner_desc": "A three-course dinner featuring local cuisine.",
+      "dance_title": "第一支舞 & 致辞",
+      "dance_desc": "Watch the newlyweds share their first dance.",
+      "party_title": "派对时间!",
+      "party_desc": "Dance the night away with live music!"
+    },
+    "happening_now": "正在进行",
+    "live_updates": "现场动态",
+    "real_time": "实时",
+    "no_updates": "Updates will appear here during the event",
+    "notes_title": "注意事项",
+    "note1": "The ceremony starts at 2:00 PM sharp",
+    "note2": "Photography is welcome during the reception",
+    "note3": "Dress code: Semi-formal / Garden Party"
+  },
+  "rsvp": {
+    "page_title": "RSVP",
+    "page_subtitle": "We can't wait to celebrate with you!",
+    "find_invitation": "查找您的邀请函",
+    "enter_code_desc": "Enter your unique invitation code",
+    "code_label": "邀请码",
+    "find_button": "查找邀请函",
+    "welcome_user": "欢迎, {{name}}!",
+    "love_to_hear": "我们期待您的回复",
+    "attending_label": "您是否出席？",
+    "attending_yes": "欣然接受",
+    "attending_no": "遗憾缺席",
+    "guests_label": "携带宾客 (最多 {{count}} 人)",
+    "dietary_label": "饮食要求",
+    "dietary_placeholder": "Vegetarian, allergies, etc.",
+    "message_label": "给新人的留言",
+    "message_placeholder": "Share your wishes...",
+    "submit_button": "提交 RSVP",
+    "thank_you": "谢谢!",
+    "success_message": "Your response has been recorded. We're so excited to celebrate with you!",
+    "title": "Will You Join Us?",
+    "subtitle": "We would be honored to have you celebrate this special day with us. Please let us know if you can make it.",
+    "respond": "Respond Now"
+  },
+  "gifts": {
+    "page_title": "礼物登记",
+    "page_subtitle": "Your presence is our greatest gift. However, if you wish to honor us with a token of love, here are some ideas we'd cherish.",
+    "search_placeholder": "搜索礼物...",
+    "cat_all": "全部",
+    "contribute_title": "随礼",
+    "reserve_title": "预留礼物",
+    "your_name": "您的姓名",
+    "name_required": "Name is required",
+    "name_placeholder": "Jane Doe",
+    "email_optional": "邮箱 (可选)",
+    "amount_label": "金额 (KES)",
+    "amount_required": "Amount is required",
+    "amount_min": "Minimum is KES 100",
+    "message_optional": "留言 (可选)",
+    "message_placeholder": "Congratulations on your wedding!",
+    "contribute_action": "随礼",
+    "reserve_action": "预留",
+    "thank_you": "谢谢!",
+    "contribution_recorded": "Your contribution has been recorded.",
+    "reservation_recorded": "Your reservation has been recorded.",
+    "reserved_badge": "已预留",
+    "cash_fund_badge": "礼金",
+    "raised": "已筹集",
+    "btn_reserved": "已预留",
+    "btn_contribute": "随礼",
+    "btn_reserve": "预留",
+    "no_results": "没有找到相关礼物"
+  }
+}
