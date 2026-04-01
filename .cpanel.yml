@@ -9,5 +9,6 @@ deployment:
     
     - /bin/cp -R backend/* $DEPLOYPATH_CORE
     
-    # Deploy public files specifically to the api/public subfolder
+    # Explicitly copy hidden files and .htaccess to the public folder
     - /bin/cp -R backend/public/. $DEPLOYPATH_PUBLIC
+    - /bin/cp backend/public/.htaccess $DEPLOYPATH_PUBLIC
