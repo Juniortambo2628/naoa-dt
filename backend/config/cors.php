@@ -21,6 +21,8 @@ return [
 
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:5174'),
+        'https://dntwed.okjtech.co.ke',
+        'https://www.dntwed.okjtech.co.ke',
         'https://dnt-wed.okjtech.co.ke',
         'https://www.dnt-wed.okjtech.co.ke',
     ],
