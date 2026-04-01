@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+let baseURL = import.meta.env.VITE_API_URL || '/api';
+
+// Safety check: Ensure the URL is absolute in production
+if (baseURL && !baseURL.startsWith('http') && baseURL.includes('.')) {
+  baseURL = `https://${baseURL}`;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
