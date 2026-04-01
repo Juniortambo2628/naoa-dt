@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SpotifyController extends Controller
 {
@@ -85,6 +86,7 @@ class SpotifyController extends Controller
             ], 500);
 
         } catch (\Exception $e) {
+            Log::error('Spotify Search Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Spotify service unavailable'
@@ -121,6 +123,7 @@ class SpotifyController extends Controller
             return response()->json(['success' => false], 404);
 
         } catch (\Exception $e) {
+            Log::error('Spotify GetTrack Error: ' . $e->getMessage());
             return response()->json(['success' => false], 503);
         }
     }
