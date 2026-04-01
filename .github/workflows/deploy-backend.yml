@@ -1,0 +1,47 @@
+name: Deploy Backend to cPanel
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    name: Deploy Laravel Backend
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # Step 1: Deploy Core Files
+    - name: Deploy Core to /naoa-core
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      with:
+        username: ${{ secrets.SFTP_USERNAME }}
+        server: ${{ secrets.SFTP_HOST }}
+        ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
+        local_path: './backend/*'
+        remote_path: '/home/zhpebukm/naoa-core'
+        args: '-o ConnectTimeout=5'
+        delete_remote_files: false
+        exclude: |
+          .env
+          public/
+          storage/framework/cache/*
+          storage/framework/sessions/*
+          storage/framework/views/*
+          storage/logs/*
+
+    # Step 2: Deploy Public Files
+    - name: Deploy Public assets to Web Root
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      with:
+        username: ${{ secrets.SFTP_USERNAME }}
+        server: ${{ secrets.SFTP_HOST }}
+        ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
+        local_path: './backend/public/*'
+        remote_path: '/home/zhpebukm/public_html/dnt-wed.okjtech.co.ke/api/public'
+        args: '-o ConnectTimeout=5'
+        delete_remote_files: false
