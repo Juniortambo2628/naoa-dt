@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { galleryService } from '../../services/api';
+import { galleryService, getAssetUrl } from '../../services/api';
 import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import ImageUpload from '../../components/admin/ImageUpload';
@@ -144,7 +144,7 @@ export default function GalleryManager() {
                    <h3 className="text-lg font-medium text-[#4A3F35] mb-4">Edit Photo</h3>
                    <div className="mb-4 rounded-lg overflow-hidden h-48 bg-stone-100">
                        <img 
-                           src={editingItem.image_url} 
+                           src={getAssetUrl(editingItem.image_url)} 
                            alt="Preview" 
                            className="w-full h-full object-cover transition-all"
                            style={{ objectPosition: editingItem.object_position || 'center' }}
@@ -192,7 +192,7 @@ export default function GalleryManager() {
            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                {items.map(item => (
                    <div key={item.id} className="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden shadow-sm">
-                       <img src={item.image_url} alt={item.caption} className={`w-full h-full object-cover transition-opacity ${item.is_visible ? 'opacity-100' : 'opacity-50 grayscale'}`} />
+                       <img src={getAssetUrl(item.image_url)} alt={item.caption} className={`w-full h-full object-cover transition-opacity ${item.is_visible ? 'opacity-100' : 'opacity-50 grayscale'}`} />
                        
                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                            <div className="mb-2">

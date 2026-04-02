@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles } from 'lucide-react';
-import { contentService } from '../services/api';
+import { contentService, getAssetUrl } from '../services/api';
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
@@ -471,7 +471,7 @@ function StorySection({ content }) {
                 <div className="w-56 h-56 md:w-64 md:h-64 rounded-full overflow-hidden relative">
                   {getTxt('bride_image') ? (
                     <img
-                      src={getTxt('bride_image')}
+                      src={getAssetUrl(getTxt('bride_image'))}
                       alt={getTxt('bride_name', 'Bride')}
                       className="w-full h-full object-cover"
                     />
@@ -530,7 +530,7 @@ function StorySection({ content }) {
                 <div className="w-56 h-56 md:w-64 md:h-64 rounded-full overflow-hidden relative">
                   {getTxt('groom_image') ? (
                     <img
-                      src={getTxt('groom_image')}
+                      src={getAssetUrl(getTxt('groom_image'))}
                       alt={getTxt('groom_name', 'Groom')}
                       className="w-full h-full object-cover"
                     />
@@ -654,7 +654,7 @@ function EventDetails({ content }) {
              const p = getPolaroid(6, 'events_top_left');
              return p ? (
              <PolaroidFloatingImage 
-                src={p.image_path} 
+                src={getAssetUrl(p.image_path)} 
                 size={160} 
                 duration={10} 
                 rotate={8}
@@ -674,7 +674,7 @@ function EventDetails({ content }) {
              const p = getPolaroid(7, 'events_bottom_right');
              return p ? (
              <PolaroidFloatingImage 
-                src={p.image_path} 
+                src={getAssetUrl(p.image_path)} 
                 size={160} 
                 duration={12} 
                 delay={1} 

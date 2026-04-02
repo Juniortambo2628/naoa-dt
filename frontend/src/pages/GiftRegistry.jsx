@@ -7,7 +7,7 @@ import {
   DollarSign, ShoppingBag, Sparkles, ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { giftService, contentService } from '../services/api';
+import { giftService, contentService, getAssetUrl } from '../services/api';
 import { 
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
@@ -444,7 +444,7 @@ export default function GiftRegistry() {
                   {/* Image */}
                   <div className="relative h-56 overflow-hidden">
                     <img
-                      src={gift.image_url}
+                      src={getAssetUrl(gift.image_url)}
                       alt={gift.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />

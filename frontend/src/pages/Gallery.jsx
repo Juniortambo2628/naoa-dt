@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Loader2, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { galleryService, contentService } from '../services/api';
+import { galleryService, contentService, getAssetUrl } from '../services/api';
 import api from '../services/api';
 import { 
   MainFlowerTopLeft, 
@@ -258,8 +258,8 @@ export default function Gallery() {
                   className="relative aspect-square overflow-hidden rounded-2xl cursor-pointer group"
                   onClick={() => setSelectedImage(image)}
                 >
-                  <img
-                    src={image.image_url}
+                    <img
+                    src={getAssetUrl(image.image_url)}
                     alt={image.caption || 'Gallery image'}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     style={{ objectPosition: image.object_position || 'center' }}
@@ -299,7 +299,7 @@ export default function Gallery() {
               <X className="w-8 h-8" />
             </button>
             <img
-              src={selectedImage.image_url}
+              src={getAssetUrl(selectedImage.image_url)}
               alt={selectedImage.caption || 'Gallery image'}
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
@@ -353,7 +353,7 @@ export default function Gallery() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.5 }}
-                src={images[currentSlide]?.image_url}
+                src={getAssetUrl(images[currentSlide]?.image_url)}
                 alt="Slideshow"
                 className="max-w-full max-h-full object-contain"
               />

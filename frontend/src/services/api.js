@@ -42,6 +42,17 @@ api.interceptors.response.use(
   }
 );
 
+export const getAssetUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  
+  // Ensure the baseURL doesn't have a trailing slash and the path has a leading slash
+  const cleanBaseURL = baseURL.replace(/\/api$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  
+  return `${cleanBaseURL}${cleanPath}`;
+};
+
 export default api;
 
 // Guest services

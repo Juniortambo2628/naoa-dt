@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Gift, Plus, Trash2, Edit, Save, X, Loader2, DollarSign, ExternalLink } from 'lucide-react';
-import { giftService } from '../../services/api';
+import { giftService, getAssetUrl } from '../../services/api';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 
@@ -84,7 +84,7 @@ export default function AdminGifts() {
             >
               <div className="h-48 overflow-hidden relative">
                 <img 
-                  src={gift.image_url || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80'} 
+                  src={getAssetUrl(gift.image_url || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80')} 
                   alt={gift.name} 
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />

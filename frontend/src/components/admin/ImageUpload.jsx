@@ -4,7 +4,7 @@ import 'filepond/dist/filepond.min.css';
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
-import { contentService } from '../../services/api';
+import { contentService, getAssetUrl } from '../../services/api';
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginFileValidateType);
 
@@ -33,7 +33,7 @@ export default function ImageUpload({ currentImage, onUpload, allowMultiple = fa
         <div className="space-y-3">
             {currentImage && !allowMultiple && (
                 <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-stone-200">
-                    <img src={currentImage} alt="Current" className="w-full h-full object-cover" />
+                    <img src={getAssetUrl(currentImage)} alt="Current" className="w-full h-full object-cover" />
                 </div>
             )}
             <FilePond
