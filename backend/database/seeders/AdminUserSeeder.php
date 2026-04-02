@@ -19,7 +19,6 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Tze Ren Tang',
                 'password' => Hash::make('password'),
-                'role' => 'admin',
             ]
         );
     }
