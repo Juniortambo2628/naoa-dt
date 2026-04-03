@@ -6,6 +6,7 @@ import { guestService, invitationService, settingService } from '../../services/
 import GuestModal from '../../components/admin/GuestModal';
 import ImportConflictModal from '../../components/admin/ImportConflictModal';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
+import InvitationActionModal from '../../components/admin/InvitationActionModal';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminToolbar from '../../components/admin/AdminToolbar';
 import { useGuests, useSettings } from '../../hooks/useApiHooks';
@@ -30,6 +31,8 @@ export default function AdminGuests() {
   
   // Spreadsheet View States
   const [viewMode, setViewMode] = useState('list');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteGuest, setInviteGuest] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importData, setImportData] = useState(null); // { conflicts: [], valid: [], skipped_count: 0 }
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
@@ -158,28 +161,6 @@ export default function AdminGuests() {
       }
   };
 
-  const handleWhatsAppInvite = async (guest) => {
-    if (!guest.phone) {
-      alert("This guest has no phone number.");
-      return;
-    }
-
-    const cleanPhone = guest.phone.replace(/[^0-9]/g, '');
-    const message = `Hi ${guest.name}! We'd love for you to join us at our wedding. View your invitation and RSVP here: ${window.location.origin}/rsvp?code=${guest.unique_code}`;
-    const whatsappUrl = `https://wa.me/${cleanPhone}/?text=${encodeURIComponent(message)}`;
-
-    // Open WhatsApp in a new tab
-    window.open(whatsappUrl, '_blank');
-
-    // Mark as sent in the background
-    try {
-      await guestService.markWhatsappInvite(guest.id);
-      // Refresh guest to show new status
-      refetchGuests();
-    } catch (err) {
-      console.error("Failed to mark WhatsApp invite as sent", err);
-    }
-  };
 
   const handleAdd = () => {
     setSelectedGuest(null);
@@ -352,23 +333,49 @@ export default function AdminGuests() {
       }
   };
 
-  const handleSendInvite = async (guest) => {
-    if (!guest.email) {
-        alert('Guest has no email address.');
-        return;
-    }
-    if (!window.confirm(`Send invitation to ${guest.name}?`)) return;
+  const handleInviteRequest = (guest) => {
+    setInviteGuest(guest);
+    setIsInviteModalOpen(true);
+  };
 
+  const handleSendInvite = async (guest) => {
     setSendingId(guest.id);
     try {
         await invitationService.send(guest.id);
-        alert('Invitation sent successfully!');
-        refetchGuests(); // Refresh to show status if we tracked it
+        toast.success(`Invitation sent to ${guest.name}`);
+        refetchGuests();
     } catch (e) {
         console.error(e);
-        alert('Failed to send invitation.');
+        toast.error('Failed to send email invitation');
     }
     setSendingId(null);
+  };
+
+  const handleWhatsAppInvite = async (guest) => {
+    const inviteUrl = `${window.location.origin}/invitation/${guest.unique_code}`;
+    const message = `Hi *${guest.name}*! 💌\n\nWe are so excited to invite you to our wedding!\n\nYou can view your personalized digital invitation and RSVP here:\n${inviteUrl}\n\nWe can't wait to celebrate with you!\n— Dinah & Tze Ren`;
+    
+    const whatsappUrl = `https://wa.me/${guest.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
+    
+    // Mark as sent in backend
+    try {
+        await guestService.markWhatsappInvite(guest.id);
+        refetchGuests();
+    } catch (e) {
+        console.error("Failed to mark WhatsApp as sent", e);
+    }
+  };
+
+  const handleUpdateGuest = async (id, data) => {
+    try {
+      await guestService.update(id, data);
+      refetchGuests();
+      toast.success("Guest details updated");
+    } catch (err) {
+      toast.error("Failed to update guest details");
+    }
   };
 
   // Filter and Search logic
@@ -593,12 +600,13 @@ export default function AdminGuests() {
                               <th className="px-2 py-3 text-center font-mono text-stone-500 w-12 border-r border-stone-200 bg-stone-100">#</th>
                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">A - Name</th>
                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">B - Email</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">C - Group</th>
-                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">D - Invitation Via</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">E - Extra Plus Ones Allowed</th>
-                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">F - RSVP Code</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100 text-center">G - WhatsApp</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider bg-stone-100">H - RSVP Status</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">C - Phone</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">D - Group</th>
+                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">E - Invitation Via</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">F - Extra Plus Ones Allowed</th>
+                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">G - RSVP Code</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100 text-center">H - Invite</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider bg-stone-100">I - RSVP Status</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-200">
@@ -643,6 +651,15 @@ export default function AdminGuests() {
                                   <td className="p-0 border-r border-stone-200 relative">
                                       <input 
                                         type="text" 
+                                        defaultValue={guest.phone || ''} 
+                                        onBlur={(e) => handleInlineSave(guest, 'phone', e.target.value)}
+                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600"
+                                        placeholder="Phone"
+                                      />
+                                  </td>
+                                  <td className="p-0 border-r border-stone-200 relative">
+                                      <input 
+                                        type="text" 
                                         defaultValue={guest.group || ''} 
                                         onBlur={(e) => handleInlineSave(guest, 'group', e.target.value)}
                                         className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 capitalize"
@@ -673,11 +690,11 @@ export default function AdminGuests() {
                                   </td>
                                   <td className="px-3 py-2 border-r border-stone-200 text-center">
                                       <button 
-                                        onClick={() => handleWhatsAppInvite(guest)}
-                                        className={`p-1 rounded-md transition-colors ${guest.invitation?.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400 hover:bg-green-50 hover:text-green-600'}`}
-                                        title="Send WhatsApp Invite"
+                                        onClick={() => handleInviteRequest(guest)}
+                                        className={`p-1 rounded-md transition-all ${guest.invitation?.status === 'sent' || guest.invitation?.status === 'responded' ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400 hover:bg-[#A67B5B]/10 hover:text-[#A67B5B]'}`}
+                                        title="Invite guest"
                                       >
-                                          <MessageCircle className="w-4 h-4" />
+                                          <Send className="w-4 h-4" />
                                       </button>
                                   </td>
                                   <td className="px-3 py-2 text-xs">
@@ -726,9 +743,23 @@ export default function AdminGuests() {
                                         placeholder="Email..."
                                       />
                                   </td>
+                                  <td className="p-0 border-r border-stone-200 relative">
+                                      <input 
+                                        type="text" 
+                                        onBlur={(e) => {
+                                            if (e.target.value.trim()) {
+                                                handleInlineCreate(index, 'phone', e.target.value);
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 placeholder-stone-300"
+                                        placeholder="Phone..."
+                                      />
+                                  </td>
                                   <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
                                   <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
                                   <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
+                                  <td className="px-3 py-2 text-stone-400 border-r border-stone-200 font-mono text-xs bg-stone-50/50"></td>
                                   <td className="px-3 py-2 text-stone-400 border-r border-stone-200 font-mono text-xs bg-stone-50/50"></td>
                                   <td className="px-3 py-2 text-xs bg-stone-50/50"></td>
                               </tr>
@@ -750,12 +781,11 @@ export default function AdminGuests() {
                                 />
                               </th>
                                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Name</th>
-                              <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">RSVP Code</th>
-                              <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Group</th>
-                              <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Invite via</th>
-                              <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Plus Ones</th>
-                              <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">RSVP Status</th>
-                              <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Actions</th>
+                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Contact</th>
+                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Group</th>
+                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Plus Ones</th>
+                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">RSVP Status</th>
+                               <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Actions</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-100">
@@ -770,32 +800,39 @@ export default function AdminGuests() {
                                       />
                                   </td>
                                   <td className="px-6 py-4">
-                                      <div className="flex items-center gap-2">
-                                          <div className="font-medium text-stone-800">{guest.name}</div>
-                                          {guest.parent_guest_id && (
-                                              <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] uppercase font-bold rounded">Plus One</span>
-                                          )}
-                                      </div>
-                                      {guest.email && <div className="text-xs text-stone-500">{guest.email}</div>}
-                                      {guest.parent_guest_id && guest.parent_guest && (
-                                          <div className="text-[10px] text-stone-400 italic">Guest of: {guest.parent_guest.name}</div>
-                                      )}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                      <code className="px-2 py-1 rounded bg-stone-100 text-stone-700 text-xs font-mono">
-                                          {guest.unique_code || '—'}
-                                      </code>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600 capitalize">
-                                          {guest.group}
-                                      </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                      <span className="text-xs text-stone-500 capitalize px-2 py-0.5 bg-stone-100 rounded">
-                                          {guest.invitation_via || 'whatsapp'}
-                                      </span>
-                                  </td>
+                                       <div className="flex items-center gap-2">
+                                           <div className="font-medium text-stone-800">{guest.name}</div>
+                                           {guest.parent_guest_id && (
+                                               <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] uppercase font-bold rounded">Plus One</span>
+                                           )}
+                                       </div>
+                                       <div className="text-[10px] font-mono text-stone-400 mt-0.5 uppercase tracking-wider">Code: {guest.unique_code || '—'}</div>
+                                       {guest.parent_guest_id && guest.parent_guest && (
+                                           <div className="text-[10px] text-stone-400 italic">Guest of: {guest.parent_guest.name}</div>
+                                       )}
+                                   </td>
+                                   <td className="px-6 py-4">
+                                       <div className="space-y-1">
+                                           {guest.email && (
+                                               <div className="flex items-center gap-1.5 text-xs text-stone-500">
+                                                   <Mail className="w-3 h-3 text-stone-400" />
+                                                   {guest.email}
+                                               </div>
+                                           )}
+                                           {guest.phone && (
+                                               <div className="flex items-center gap-1.5 text-xs text-stone-600 font-medium">
+                                                   <MessageCircle className="w-3 h-3 text-green-500" />
+                                                   {guest.phone}
+                                               </div>
+                                           )}
+                                           {!guest.email && !guest.phone && <span className="text-[10px] text-stone-300 italic">No contact info</span>}
+                                       </div>
+                                   </td>
+                                   <td className="px-6 py-4">
+                                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600 capitalize">
+                                           {guest.group}
+                                       </span>
+                                   </td>
                                   <td className="px-6 py-4">
                                       {guest.plus_ones && guest.plus_ones.length > 0 ? (
                                           <div>
@@ -820,71 +857,15 @@ export default function AdminGuests() {
                                           {guest.rsvp_status === 'confirmed' ? 'Confirmed' : 
                                            guest.rsvp_status === 'declined' ? 'Declined' : 'Pending RSVP'}
                                       </span>
-                                       {guest.invitation?.status === 'sent' && (
-                                           <div className="text-[10px] text-stone-400 mt-1 flex flex-col gap-0.5">
-                                               <div className="flex items-center gap-1">
-                                                   <Mail className="w-3 h-3" /> Email Sent
-                                               </div>
-                                               <div className="flex items-center gap-1 text-green-600">
-                                                   <MessageCircle className="w-3 h-3" /> WhatsApp Sent
-                                               </div>
-                                           </div>
-                                       )}
                                   </td>
                                   <td className="px-6 py-4 text-right">
                                       <div className="flex justify-end gap-2">
-                                          <div 
-                                            className="relative"
-                                            onMouseEnter={() => handleMouseEnterGuest(guest.id)}
-                                            onMouseLeave={handleMouseLeaveGuest}
-                                          >
-                                              <button 
-                                                className="p-1 text-stone-400 hover:text-green-600"
-                                                title="Send WhatsApp Invite"
-                                                onClick={() => handleWhatsAppInvite(guest)}
-                                              >
-                                                <MessageCircle className="w-4 h-4" />
-                                              </button>
-                                              
-                                              <button 
-                                                className="p-1 text-stone-400 hover:text-[#A67B5B]"
-                                                title="Download Invite"
-                                              >
-                                                <Download className="w-4 h-4" />
-                                              </button>
-                                              
-                                              <AnimatePresence>
-                                                  {hoveredGuestId === guest.id && (
-                                                      <motion.div 
-                                                        initial={{ opacity: 0, y: -10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, scale: 0.95 }}
-                                                        className="absolute right-0 bottom-full mb-1 bg-white shadow-xl border border-stone-100 rounded-lg py-1 w-32 z-50"
-                                                      >
-                                                          <div className="absolute -bottom-2 left-0 right-0 h-4 bg-transparent" /> {/* Invisible bridge */}
-                                                          <button 
-                                                            onClick={() => { exportSingle(guest, 'png'); setHoveredGuestId(null); }}
-                                                            className="w-full text-left px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-50 flex items-center gap-2"
-                                                          >
-                                                              <FileImage className="w-3 h-3" /> PNG
-                                                          </button>
-                                                          <button 
-                                                            onClick={() => { exportSingle(guest, 'pdf'); setHoveredGuestId(null); }}
-                                                            className="w-full text-left px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-50 flex items-center gap-2"
-                                                          >
-                                                              <FileText className="w-3 h-3" /> PDF
-                                                          </button>
-                                                      </motion.div>
-                                                  )}
-                                              </AnimatePresence>
-                                          </div>
                                           <button 
-                                            onClick={() => handleSendInvite(guest)}
-                                            disabled={!guest.email || sendingId === guest.id}
-                                            className={`p-1 hover:text-[#A67B5B] ${guest.email ? 'text-stone-400' : 'text-stone-200 cursor-not-allowed'}`}
-                                            title="Send Invite"
+                                            onClick={() => { setInviteGuest(guest); setIsInviteModalOpen(true); }}
+                                            className="p-1 text-stone-400 hover:text-[#A67B5B]"
+                                            title="Manage Invitation"
                                           >
-                                            {sendingId === guest.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                            <Send className="w-4 h-4" />
                                           </button>
                                           <button onClick={() => handleEdit(guest)} className="p-1 text-stone-400 hover:text-[#A67B5B]"><Edit className="w-4 h-4" /></button>
                                           <button onClick={() => handleDelete(guest.id)} className="p-1 text-stone-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
@@ -898,7 +879,21 @@ export default function AdminGuests() {
           )}
       </div>
 
-      <GuestModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSave} guest={selectedGuest} allGuests={guests} />
+      <InvitationActionModal 
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        guest={inviteGuest}
+        onSendEmail={handleSendInvite}
+        onSendWhatsApp={handleWhatsAppInvite}
+        onUpdateGuest={handleUpdateGuest}
+      />
+
+      <GuestModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        guest={selectedGuest}
+        onSave={handleSave}
+      />
       
       {design && (
           <InvitationExportContainer 

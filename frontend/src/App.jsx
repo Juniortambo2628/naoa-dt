@@ -17,6 +17,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Faq = lazy(() => import('./pages/Faq'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const DigitalInvitation = lazy(() => import('./pages/DigitalInvitation'));
 
 import Loader from './components/Loader';
 import CookieConsent from './components/CookieConsent';
@@ -70,6 +71,7 @@ function App() {
                 <Route path="/guestbook" element={<Guestbook />} />
                 <Route path="/faq" element={<Faq />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/invitation/:code" element={<DigitalInvitation />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLogin />} />

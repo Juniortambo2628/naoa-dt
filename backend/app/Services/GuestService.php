@@ -6,7 +6,9 @@ use App\Models\Guest;
 use App\Models\RsvpResponse;
 use App\Models\SongRequest;
 use App\Models\Notification;
+use App\Models\Setting;
 use App\Mail\RSVPConfirmation;
+use App\Mail\AdminRSVPNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -93,16 +95,32 @@ class GuestService
             return ['success' => false, 'message' => 'Internal Server Error', 'error' => $e->getMessage()];
         }
 
-        // Send confirmation email (non-blocking)
+        // Send confirmation email to guest (non-blocking)
         try {
             if ($guest->email) {
                 Mail::to($guest->email)->send(new RSVPConfirmation($guest, $data['attending']));
             }
         } catch (\Exception $e) {
-            Log::warning('RSVP email failed for guest ' . $guest->name . ': ' . $e->getMessage());
+            Log::warning('RSVP confirmation email failed for guest ' . $guest->name . ': ' . $e->getMessage());
         }
 
-        // Record notification for admin
+        // Send notification email to admin if enabled
+        try {
+            $adminNotify = Setting::getValue('admin_email_notifications', 'false');
+            if ($adminNotify === 'true' || $adminNotify === true) {
+                $adminEmail = Setting::getValue('admin_email', config('mail.from.address'));
+                Mail::to($adminEmail)->send(new AdminRSVPNotification(
+                    $guest, 
+                    $data['attending'], 
+                    $plusOnes, 
+                    $data['message'] ?? null
+                ));
+            }
+        } catch (\Exception $e) {
+            Log::warning('RSVP admin notification email failed: ' . $e->getMessage());
+        }
+
+        // Record notification for admin in database
         try {
             Notification::create([
                 'title' => 'New RSVP: ' . $guest->name,
@@ -115,7 +133,7 @@ class GuestService
                 ]
             ]);
         } catch (\Exception $e) {
-            Log::warning('Failed to create RSVP notification: ' . $e->getMessage());
+            Log::warning('Failed to create RSVP notification record: ' . $e->getMessage());
         }
 
         return ['success' => true, 'message' => 'RSVP submitted successfully'];

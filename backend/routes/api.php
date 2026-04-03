@@ -26,7 +26,6 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::group(['prefix' => 'guests'], function () {
         Route::get('/code/{code}', [GuestController::class, 'getByCode']);
         Route::post('/code/{code}/rsvp', [GuestController::class, 'submitRsvp']);
-        Route::post('/{guest}/whatsapp-invite', [GuestController::class, 'markWhatsappSent']);
     });
 });
 
@@ -108,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [GuestController::class, 'store']);
         Route::put('/{guest}', [GuestController::class, 'update']);
         Route::delete('/{guest}', [GuestController::class, 'destroy']);
+        Route::post('/{guest}/whatsapp-invite', [GuestController::class, 'markWhatsappSent']);
     });
 
     // Invitation Management (admin)

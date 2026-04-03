@@ -12,6 +12,17 @@ export const useGuests = (params = {}) => {
   });
 };
 
+export const useGuestByCode = (code) => {
+  return useQuery({
+    queryKey: ['guest', code],
+    queryFn: async () => {
+      const { data } = await guestService.getByCode(code);
+      return data;
+    },
+    enabled: !!code,
+  });
+};
+
 export const useCreateGuest = () => {
   const queryClient = useQueryClient();
   return useMutation({
