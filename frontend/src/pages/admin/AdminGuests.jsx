@@ -404,7 +404,6 @@ export default function AdminGuests() {
         setSendingId(null);
     }
   };
- kitchen
 
   const handleWhatsAppInvite = async (guest) => {
     const inviteUrl = `${window.location.origin}/invitation/${guest.unique_code}`;
