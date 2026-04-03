@@ -127,6 +127,16 @@ class SettingController extends Controller
             }
         }
 
-        return response()->json(['message' => 'Settings updated successfully']);
+        // Refresh all settings to ensure frontend is in sync
+        $allSettings = Setting::all()->pluck('value', 'key')->map(function ($value) {
+            $decoded = json_decode($value, true);
+            $val = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $value;
+            return $this->normalizeUrls($val);
+        });
+
+        return response()->json([
+            'message' => 'Settings updated successfully',
+            'settings' => $allSettings
+        ]);
     }
 }

@@ -68,7 +68,11 @@ export const useUpdateSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (settingsData) => settingService.update(settingsData),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // If the backend returns the updated settings, sync the cache immediately
+      if (response.data && response.data.settings) {
+          queryClient.setQueryData(['settings'], response.data.settings);
+      }
       queryClient.invalidateQueries({ queryKey: ['settings'] });
     },
   });

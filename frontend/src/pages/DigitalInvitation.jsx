@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Calendar, MapPin, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useGuestByCode, useSettings, useContent } from '../hooks/useApiHooks';
 import InvitationCanvas from '../components/admin/InvitationCanvas';
 import Loader from '../components/Loader';
@@ -8,7 +9,7 @@ import Loader from '../components/Loader';
 export default function DigitalInvitation() {
     const { code } = useParams();
     const navigate = useNavigate();
-    
+    const [scale, setScale] = useState(1);
     const { data: guest, isLoading: isGuestLoading, isError: isGuestError } = useGuestByCode(code);
     const { data: settings, isLoading: isSettingsLoading } = useSettings();
 
@@ -53,6 +54,23 @@ export default function DigitalInvitation() {
         day: 'numeric'
     });
 
+    useEffect(() => {
+        const handleResize = () => {
+            const containerWidth = window.innerWidth > 1024 ? 540 : (window.innerWidth - 32);
+            const canvasWidth = design.orientation === 'landscape' ? 625 : 500;
+            
+            if (containerWidth < canvasWidth) {
+                setScale(containerWidth / canvasWidth);
+            } else {
+                setScale(1);
+            }
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [design.orientation]);
+
     return (
         <div className="min-h-screen bg-[#fcfaf8] selection:bg-[#A67B5B]/10">
             {/* Background elements */}
@@ -68,20 +86,27 @@ export default function DigitalInvitation() {
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="w-full max-w-[540px] flex justify-center"
+                    className="w-full max-w-[540px] flex flex-col items-center"
                 >
-                    <div className="sticky top-10">
+                    <div 
+                        className="relative origin-top transition-transform duration-300"
+                        style={{ 
+                            transform: `scale(${scale})`,
+                            height: (design.orientation === 'landscape' ? 500 : 625) * scale,
+                            width: (design.orientation === 'landscape' ? 625 : 500) * scale,
+                        }}
+                    >
                         <InvitationCanvas 
                             design={design}
                             mode="preview"
                             guest={guest}
                             weddingSettings={{ wedding_date: weddingDate, venue_name: venueName }}
                         />
-                        
-                        <p className="text-center text-stone-400 text-xs mt-6 font-medium uppercase tracking-[0.2em] animate-pulse">
-                            Interactive Invitation
-                        </p>
                     </div>
+                    
+                    <p className="text-center text-stone-400 text-xs mt-6 font-medium uppercase tracking-[0.2em] animate-pulse">
+                        Interactive Invitation
+                    </p>
                 </motion.div>
 
                 {/* Right Side: Welcome & Actions */}

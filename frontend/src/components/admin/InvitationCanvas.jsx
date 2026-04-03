@@ -178,8 +178,8 @@ export default function InvitationCanvas({
 
   return (
     <div 
-        className={isExport ? `w-[${CANVAS_WIDTH}px] h-[${CANVAS_HEIGHT}px]` : 'w-full h-full flex items-center justify-center overflow-hidden'} 
-        style={{ padding: isExport ? '0' : '16px', display: isExport ? 'block' : 'flex' }}
+        className={isExport ? `w-[${CANVAS_WIDTH}px] h-[${CANVAS_HEIGHT}px]` : 'w-full h-full flex items-center justify-center'} 
+        style={{ padding: '0', display: isExport ? 'block' : 'flex' }}
     >
         <div 
             ref={containerRef}
