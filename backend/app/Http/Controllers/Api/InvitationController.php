@@ -21,6 +21,17 @@ class InvitationController extends Controller
             return response()->json(['message' => 'Guest has no email address'], 422);
         }
 
+        $imageData = $request->input('image_data');
+        $attachmentPath = null;
+        
+        if ($imageData && str_contains($imageData, 'base64')) {
+            try {
+                $attachmentPath = $this->saveTempImage($imageData, $guest);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to save invitation image: " . $e->getMessage());
+            }
+        }
+
         $sentCount = 0;
         $guestsToInvite = collect([$guest])->merge($guest->plusOnes()->whereNotNull('email')->get());
 
@@ -36,7 +47,7 @@ class InvitationController extends Controller
             ]);
 
             try {
-                Mail::to($invitee->email)->send(new InvitationEmail($invitee));
+                Mail::to($invitee->email)->send(new InvitationEmail($invitee, $attachmentPath));
 
                 $invitation->update([
                     'status' => 'sent',
@@ -44,7 +55,7 @@ class InvitationController extends Controller
                 ]);
                 $sentCount++;
             } catch (\Exception $e) {
-                // Continue with other guests if one fails
+                \Illuminate\Support\Facades\Log::error("Mail fail for guest {$invitee->id}: " . $e->getMessage());
             }
         }
 
@@ -52,6 +63,19 @@ class InvitationController extends Controller
             'message' => "Sent {$sentCount} invitation(s) successfully",
             'sent_count' => $sentCount,
         ]);
+    }
+
+    private function saveTempImage($base64String, $guest)
+    {
+        $data = explode(',', $base64String);
+        if (count($data) < 2) return null;
+        
+        $decodedData = base64_decode($data[1]);
+        $fileName = 'invitations/invitation_' . $guest->id . '_' . time() . '.png';
+        
+        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $decodedData);
+        
+        return \Illuminate\Support\Facades\Storage::disk('public')->path($fileName);
     }
 
     /**

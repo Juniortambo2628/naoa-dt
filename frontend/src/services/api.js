@@ -204,7 +204,7 @@ export const settingService = {
 // Invitation services
 export const invitationService = {
   // Send invitation email
-  send: (guestId) => api.post(`/invitations/${guestId}/send`),
+  send: (guestId, data) => api.post(`/invitations/${guestId}/send`, data),
   
   // Send bulk invitations
   sendBulk: (guestIds) => api.post('/invitations/send-bulk', { guest_ids: guestIds }),

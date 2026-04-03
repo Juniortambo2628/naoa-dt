@@ -18,15 +18,18 @@ class InvitationEmail extends Mailable
     public $rsvpUrl;
     public $subjectText;
     public $messageText;
+    public $attachmentPath;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Guest $guest)
+    public function __construct(Guest $guest, $attachmentPath = null)
     {
         $this->guest = $guest;
-        // Point to the frontend RSVP page with the unique code
-        $this->rsvpUrl = config('app.frontend_url', 'http://localhost:5173') . '/rsvp/' . $guest->unique_code;
+        $this->attachmentPath = $attachmentPath;
+        
+        // Point to the formal invitation landing page
+        $this->rsvpUrl = config('app.frontend_url', 'http://localhost:5173') . '/invitation/' . $guest->unique_code;
         
         $this->subjectText = \App\Models\Setting::getValue('email_invitation_subject', 'You are invited! Dinah & Tze Ren\'s Wedding');
         $this->messageText = \App\Models\Setting::getValue('email_invitation_message', 'We are delighted to invite you to celebrate our wedding day.');
@@ -52,6 +55,7 @@ class InvitationEmail extends Mailable
             with: [
                 'subject' => $this->subjectText,
                 'messageText' => $this->messageText,
+                'rsvpCode' => $this->guest->unique_code,
             ]
         );
     }
@@ -63,6 +67,13 @@ class InvitationEmail extends Mailable
      */
     public function attachments(): array
     {
+        if ($this->attachmentPath && file_exists($this->attachmentPath)) {
+            return [
+                \Illuminate\Mail\Mailables\Attachment::fromPath($this->attachmentPath)
+                    ->as('Wedding_Invitation.png')
+                    ->withMime('image/png'),
+            ];
+        }
         return [];
     }
 }

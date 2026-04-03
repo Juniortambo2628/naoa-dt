@@ -230,6 +230,48 @@ export default function AdminGuests() {
     setSelectedIds([]);
   };
 
+  const handleBulkSendInvite = async () => {
+    const targets = guests.filter(g => selectedIds.includes(g.id) && g.email);
+    if (targets.length === 0) {
+        toast.error("No selected guests with email addresses.");
+        return;
+    }
+    
+    if (!window.confirm(`Send email invitations with custom cards to ${targets.length} guests?`)) return;
+    
+    setIsBulkExporting(true); // Re-use the bulk progress UI
+    setBulkProgress({ current: 0, total: targets.length });
+    
+    try {
+        for (let i = 0; i < targets.length; i++) {
+            const guest = targets[i];
+            setBulkProgress({ current: i + 1, total: targets.length });
+            
+            // Set the guest for the exporter to render
+            setExportingGuest(guest);
+            // Wait for render
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            let imageData = null;
+            if (exporterRef.current) {
+                imageData = await exporterRef.current.generateImage();
+            }
+            
+            await invitationService.send(guest.id, { image_data: imageData });
+        }
+        toast.success(`Sent ${targets.length} invitations successfully!`);
+        refetchGuests();
+        setSelectedIds([]);
+    } catch (err) {
+        console.error("Bulk invite failed", err);
+        toast.error("Bulk invitation process failed partially.");
+    } finally {
+        setIsBulkExporting(false);
+        setExportingGuest(null);
+        setBulkProgress({ current: 0, total: 0 });
+    }
+  };
+
   const handleBulkUpdate = async (data) => {
     try {
       setLoading(true);
@@ -341,15 +383,28 @@ export default function AdminGuests() {
   const handleSendInvite = async (guest) => {
     setSendingId(guest.id);
     try {
-        await invitationService.send(guest.id);
-        toast.success(`Invitation sent to ${guest.name}`);
+        // Generate invitation image before sending
+        setExportingGuest(guest);
+        // Wait for render so the exporter component can pick up the guest data
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        let imageData = null;
+        if (exporterRef.current) {
+            imageData = await exporterRef.current.generateImage();
+        }
+        
+        await invitationService.send(guest.id, { image_data: imageData });
+        toast.success(`Invitation sent to ${guest.name} with card attached!`);
         refetchGuests();
     } catch (e) {
         console.error(e);
         toast.error('Failed to send email invitation');
+    } finally {
+        setExportingGuest(null);
+        setSendingId(null);
     }
-    setSendingId(null);
   };
+ kitchen
 
   const handleWhatsAppInvite = async (guest) => {
     const inviteUrl = `${window.location.origin}/invitation/${guest.unique_code}`;
@@ -389,10 +444,7 @@ export default function AdminGuests() {
         if (allIds.length === 0) return;
         
         toast.loading("Resetting statuses...", { id: 'reset-rsvp' });
-        await guestService.bulkUpdate({
-            ids: allIds,
-            data: { rsvp_status: 'pending' }
-        });
+        await guestService.bulkUpdate(allIds, { rsvp_status: 'pending' });
         refetchGuests();
         toast.success("All RSVP statuses reset successfully", { id: 'reset-rsvp' });
     } catch (err) {
@@ -579,6 +631,13 @@ export default function AdminGuests() {
                 className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-sm"
               >
                 <MessageCircle className="w-4 h-4" /> Invite WhatsApp
+              </button>
+              <button 
+                onClick={handleBulkSendInvite}
+                className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-sm"
+                disabled={isBulkExporting}
+              >
+                <Mail className="w-4 h-4" /> Invite Email
               </button>
               <button 
                 onClick={handleBulkDelete}
