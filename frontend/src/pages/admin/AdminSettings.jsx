@@ -3,6 +3,7 @@ import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
 import { Loader2, Save, Shield, ShieldCheck, X, Settings } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 
 export default function AdminSettings() {
