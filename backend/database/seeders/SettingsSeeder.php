@@ -13,7 +13,7 @@ class SettingsSeeder extends Seeder
             ['key' => 'wedding_date', 'value' => '2025-06-15', 'group' => 'general'],
             ['key' => 'rsvp_enabled', 'value' => 'true', 'group' => 'general'],
             ['key' => 'admin_email_notifications', 'value' => 'true', 'group' => 'notifications'],
-            ['key' => 'notification_email', 'value' => 'admin@wedding.com', 'group' => 'notifications'],
+            ['key' => 'admin_email', 'value' => 'admin@wedding.com', 'group' => 'notifications'],
             ['key' => 'venue_name', 'value' => 'Rosewood Manor', 'group' => 'general'],
             ['key' => 'venue_address', 'value' => 'Karen, Nairobi', 'group' => 'general'],
             ['key' => 'public_url', 'value' => 'http://localhost/wed-dt/backend/public', 'group' => 'general'],

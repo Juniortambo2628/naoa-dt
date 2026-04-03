@@ -11,6 +11,7 @@ export default function AdminSettings() {
     rsvp_enabled: false,
     venue_name: '',
     admin_email_notifications: false,
+    admin_email: '',
     public_url: '',
     song_request_limit_enabled: true,
   });
@@ -38,6 +39,7 @@ export default function AdminSettings() {
           rsvp_enabled: settingsData.rsvp_enabled === 'true',
           venue_name: settingsData.venue_name || '',
           admin_email_notifications: settingsData.admin_email_notifications === 'true',
+          admin_email: settingsData.admin_email || '',
           public_url: settingsData.public_url || '',
           song_request_limit_enabled: settingsData.song_request_limit_enabled !== 'false',
         });
@@ -214,6 +216,20 @@ export default function AdminSettings() {
               />
               <label htmlFor="emailNotif" className="text-sm font-medium text-stone-700">Email me when a guest RSVPs</label>
           </div>
+
+          {settings.admin_email_notifications && (
+              <div className="ml-8 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-500">Notification Email Recipient</label>
+                  <input 
+                    type="email" 
+                    placeholder="your-email@example.com"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] outline-none text-sm"
+                    value={settings.admin_email}
+                    onChange={(e) => setSettings({...settings, admin_email: e.target.value})}
+                  />
+                  <p className="text-[10px] text-stone-400 italic">This is the email address that will receive RSVP alerts.</p>
+              </div>
+          )}
 
           <div className="flex items-center gap-3 pt-4 border-t border-stone-50">
              <input 
