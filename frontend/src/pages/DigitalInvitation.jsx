@@ -10,33 +10,12 @@ export default function DigitalInvitation() {
     const { code } = useParams();
     const navigate = useNavigate();
     const [scale, setScale] = useState(1);
+    
     const { data: guest, isLoading: isGuestLoading, isError: isGuestError } = useGuestByCode(code);
     const { data: settings, isLoading: isSettingsLoading } = useSettings();
 
     const isLoading = isGuestLoading || isSettingsLoading;
-
-    if (isLoading) return <Loader />;
-
-    if (isGuestError || !guest) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-stone-50 p-6 text-center">
-                <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-stone-100">
-                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Mail className="w-8 h-8" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-stone-800 mb-2">Invitation Not Found</h1>
-                    <p className="text-stone-500 mb-8">We couldn't find an invitation matching that code. Please check your link and try again.</p>
-                    <button 
-                        onClick={() => navigate('/')}
-                        className="w-full bg-[#A67B5B] text-white py-4 rounded-xl font-bold hover:bg-[#8C6A4D] transition-colors"
-                    >
-                        Go to Homepage
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
+    
     const design = settings?.invitation_theme || {
         backgroundColor: '#ffffff',
         accentColor: '#A67B5B',
@@ -70,6 +49,28 @@ export default function DigitalInvitation() {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, [design.orientation]);
+
+    if (isLoading) return <Loader />;
+
+    if (isGuestError || !guest) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-stone-50 p-6 text-center">
+                <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-stone-100">
+                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Mail className="w-8 h-8" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-stone-800 mb-2">Invitation Not Found</h1>
+                    <p className="text-stone-500 mb-8">We couldn't find an invitation matching that code. Please check your link and try again.</p>
+                    <button 
+                        onClick={() => navigate('/')}
+                        className="w-full bg-[#A67B5B] text-white py-4 rounded-xl font-bold hover:bg-[#8C6A4D] transition-colors"
+                    >
+                        Go to Homepage
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#fcfaf8] selection:bg-[#A67B5B]/10">
