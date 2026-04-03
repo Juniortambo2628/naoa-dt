@@ -57,14 +57,18 @@ class SettingController extends Controller
             'settings.*' => 'nullable', // Allow strings, arrays, etc.
         ]);
 
+        \Illuminate\Support\Facades\Log::info("Updating settings", ['data' => $data['settings']]);
+
         foreach ($data['settings'] as $key => $value) {
             // Convert arrays to JSON strings
             $storedValue = is_array($value) ? json_encode($value) : $value;
 
-            Setting::updateOrCreate(
+            $setting = Setting::updateOrCreate(
                 ['key' => $key],
                 ['value' => $storedValue]
             );
+            
+            \Illuminate\Support\Facades\Log::info("Saved setting: {$key}", ['value' => $storedValue, 'id' => $setting->id]);
 
             // Sync with PageContent
             if ($key === 'wedding_date') {
