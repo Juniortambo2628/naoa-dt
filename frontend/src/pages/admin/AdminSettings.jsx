@@ -36,12 +36,12 @@ export default function AdminSettings() {
     if (settingsData) {
         setSettings({
           wedding_date: settingsData.wedding_date || '',
-          rsvp_enabled: settingsData.rsvp_enabled === 'true',
+          rsvp_enabled: String(settingsData.rsvp_enabled) === 'true',
           venue_name: settingsData.venue_name || '',
-          admin_email_notifications: settingsData.admin_email_notifications === 'true',
+          admin_email_notifications: String(settingsData.admin_email_notifications) === 'true',
           admin_email: settingsData.admin_email || '',
           public_url: settingsData.public_url || '',
-          song_request_limit_enabled: settingsData.song_request_limit_enabled !== 'false',
+          song_request_limit_enabled: String(settingsData.song_request_limit_enabled) !== 'false',
         });
     }
   }, [settingsData]);
@@ -55,10 +55,14 @@ export default function AdminSettings() {
             admin_email_notifications: String(settings.admin_email_notifications),
             song_request_limit_enabled: String(settings.song_request_limit_enabled),
         };
+        
+        console.log('Saving settings payload:', payload);
+        
         await updateSettingsMutation.mutateAsync({ settings: payload });
-        alert('Settings saved!');
+        toast.success('System settings saved successfully');
     } catch (err) {
-        alert('Failed to save settings: ' + (err.response?.data?.message || err.message));
+        console.error('Settings save error:', err);
+        toast.error('Failed to save settings: ' + (err.response?.data?.message || err.message));
     }
   };
 

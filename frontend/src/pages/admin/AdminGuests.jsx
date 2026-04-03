@@ -368,13 +368,36 @@ export default function AdminGuests() {
     }
   };
 
-  const handleUpdateGuest = async (id, data) => {
+  const handleUpdateGuest = async (guest, data) => {
     try {
-      await guestService.update(id, data);
+      // Merge with existing guest data to ensure validation (like 'name') passes
+      const payload = { ...guest, ...data };
+      await guestService.update(guest.id, payload);
       refetchGuests();
       toast.success("Guest details updated");
     } catch (err) {
+      console.error(err);
       toast.error("Failed to update guest details");
+    }
+  };
+
+  const handleResetAllRSVPs = async () => {
+    if (!window.confirm("Are you sure you want to reset RSVP status for ALL guests to 'pending'? This will allow you to send fresh invitations.")) return;
+    
+    try {
+        const allIds = guests.map(g => g.id);
+        if (allIds.length === 0) return;
+        
+        toast.loading("Resetting statuses...", { id: 'reset-rsvp' });
+        await guestService.bulkUpdate({
+            ids: allIds,
+            data: { rsvp_status: 'pending' }
+        });
+        refetchGuests();
+        toast.success("All RSVP statuses reset successfully", { id: 'reset-rsvp' });
+    } catch (err) {
+        console.error(err);
+        toast.error("Failed to reset RSVP statuses", { id: 'reset-rsvp' });
     }
   };
 
@@ -468,6 +491,13 @@ export default function AdminGuests() {
                     )}
                 </AnimatePresence>
             </div>
+            <button 
+                onClick={handleResetAllRSVPs} 
+                className="btn-secondary text-red-600 hover:bg-red-50 hover:border-red-100 flex items-center gap-2"
+                title="Reset everyone to pending"
+            >
+                <Trash2 className="w-4 h-4" /> Reset RSVPs
+            </button>
             <button onClick={handleAdd} className="btn-primary flex items-center gap-2">
                 <Plus className="w-4 h-4" /> Add Guest
             </button>

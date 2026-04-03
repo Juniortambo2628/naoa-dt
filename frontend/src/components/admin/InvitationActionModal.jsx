@@ -5,10 +5,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function InvitationActionModal({ isOpen, onClose, guest, onSendEmail, onSendWhatsApp, onUpdateGuest }) {
     const [isSending, setIsSending] = useState(false);
     const [editData, setEditData] = useState({
-        email: guest?.email || '',
-        phone: guest?.phone || ''
+        email: '',
+        phone: ''
     });
     const [isEditing, setIsEditing] = useState(false);
+
+    // Sync state when guest changes
+    useEffect(() => {
+        if (guest) {
+            setEditData({
+                email: guest.email || '',
+                phone: guest.phone || ''
+            });
+            setIsEditing(false);
+        }
+    }, [guest]);
 
     if (!guest) return null;
 
@@ -35,7 +46,7 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
     };
 
     const handleSaveEdit = async () => {
-        await onUpdateGuest(guest.id, editData);
+        await onUpdateGuest(guest, editData);
         setIsEditing(false);
     };
 
@@ -109,13 +120,13 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
                             <div className="grid grid-cols-2 gap-4">
                                 <button 
                                     onClick={handleSendEmail}
-                                    disabled={!guest.email || isSending}
+                                    disabled={!editData.email || isSending}
                                     className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all group
-                                        ${!guest.email ? 'opacity-50 grayscale bg-stone-50 border-transparent cursor-not-allowed' : 
+                                        ${!editData.email ? 'opacity-50 grayscale bg-stone-50 border-transparent cursor-not-allowed' : 
                                         'bg-white border-stone-100 hover:border-[#A67B5B]/30 hover:bg-[#A67B5B]/5'}
                                     `}
                                 >
-                                    <div className={`p-4 rounded-full transition-colors ${guest.email ? 'bg-stone-50 group-hover:bg-[#A67B5B] text-stone-400 group-hover:text-white' : 'bg-stone-200 text-white'}`}>
+                                    <div className={`p-4 rounded-full transition-colors ${editData.email ? 'bg-stone-50 group-hover:bg-[#A67B5B] text-stone-400 group-hover:text-white' : 'bg-stone-200 text-white'}`}>
                                         <Mail className="w-8 h-8" />
                                     </div>
                                     <div className="text-center">
@@ -126,13 +137,13 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
 
                                 <button 
                                     onClick={handleSendWhatsApp}
-                                    disabled={!guest.phone || isSending}
+                                    disabled={!editData.phone || isSending}
                                     className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all group
-                                        ${!guest.phone ? 'opacity-50 grayscale bg-stone-50 border-transparent cursor-not-allowed' : 
+                                        ${!editData.phone ? 'opacity-50 grayscale bg-stone-50 border-transparent cursor-not-allowed' : 
                                         'bg-white border-stone-100 hover:border-green-100 hover:bg-green-50'}
                                     `}
                                 >
-                                    <div className={`p-4 rounded-full transition-colors ${guest.phone ? 'bg-stone-50 group-hover:bg-green-500 text-stone-400 group-hover:text-white' : 'bg-stone-200 text-white'}`}>
+                                    <div className={`p-4 rounded-full transition-colors ${editData.phone ? 'bg-stone-50 group-hover:bg-green-500 text-stone-400 group-hover:text-white' : 'bg-stone-200 text-white'}`}>
                                         <MessageCircle className="w-8 h-8" />
                                     </div>
                                     <div className="text-center">
