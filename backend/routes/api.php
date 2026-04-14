@@ -14,7 +14,6 @@ use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\SpotifyController;
 use App\Http\Controllers\Api\SongRequestController;
 use App\Http\Controllers\Api\GuestbookController;
-use App\Http\Controllers\Api\ScheduleController as ApiScheduleController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\SettingController;
@@ -33,24 +32,53 @@ use App\Http\Controllers\Api\CalendarController;
 |--------------------------------------------------------------------------
 */
 
-// Temporary Storage Link Route
+// Robust Storage Link Route for cPanel/Production
 Route::get('/create-storage-link', function () {
     try {
-        if (file_exists(public_path('storage'))) {
-            return response()->json(['message' => 'The "public/storage" directory already exists.']);
-        }
-        
-        // Manual symlink creation
         $target = storage_path('app/public');
-        $shortcut = public_path('storage');
         
-        if (symlink($target, $shortcut)) {
-            return response()->json(['message' => 'Storage link created successfully.']);
+        // Path Strategy 1: Standard Laravel public_path
+        $link1 = public_path('storage');
+        
+        // Path Strategy 2: Absolute Web Root Detective (most reliable on cPanel)
+        // This finds where index.php is actually running
+        $currentWebRoot = dirname($_SERVER['SCRIPT_FILENAME']);
+        $link2 = $currentWebRoot . '/storage';
+        
+        $results = [];
+        $linksToTry = array_unique([$link1, $link2]);
+        
+        foreach ($linksToTry as $link) {
+            $label = ($link === $link1) ? "Standard Laravel Path" : "Detected Web Root Path";
+            
+            if (file_exists($link)) {
+                // Check if it's a real folder or a link
+                $type = is_link($link) ? "Link" : "Real Folder";
+                $results[] = "$label: Already exists as a $type at $link";
+                continue;
+            }
+            
+            try {
+                if (symlink($target, $link)) {
+                    $results[] = "$label: Created successfully! 🚀";
+                } else {
+                    $results[] = "$label: Manual creation failed (symlink() returned false).";
+                }
+            } catch (\Exception $e) {
+                $results[] = "$label: Error creating link - " . $e->getMessage();
+            }
         }
         
-        return response()->json(['message' => 'Failed to create storage link using symlink().'], 500);
+        return response()->json([
+            'status' => 'Process Finished',
+            'storage_target' => $target,
+            'server_detected_root' => $currentWebRoot,
+            'summary' => $results,
+            'pro_tip' => 'If you see "Already exists as a Real Folder", please delete that "storage" folder in File Manager and run this again!'
+        ]);
+        
     } catch (\Exception $e) {
-        return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
 });
 
