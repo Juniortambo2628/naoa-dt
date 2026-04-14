@@ -148,7 +148,7 @@ Route::middleware('throttle:30,1')->group(function () {
 });
 
 // Full Schedule for Public Programme (Events + Items)
-Route::get('/schedule/full', [ApiScheduleController::class, 'index']);
+Route::get('/schedule/full', [ScheduleController::class, 'index']);
 
 // Public Polaroid Images
 Route::get('/polaroid-images', [PolaroidImageController::class, 'index']);
