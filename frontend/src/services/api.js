@@ -69,11 +69,29 @@ export const getAssetUrl = (path) => {
 
   if (cleanPath.startsWith('http')) return cleanPath;
   
-  // Ensure the baseURL doesn't have a trailing slash and the path has a leading slash
-  const cleanBaseURL = baseURL.replace(/\/api$/, '');
-  const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+  // Ensure the baseURL doesn't have a trailing slash and handle /api stripping correctly
+  // We want to point to the root of the domain for storage access
+  let baseDomain = baseURL;
+  if (baseURL.startsWith('http')) {
+      baseDomain = new URL(baseURL).origin;
+  } else if (import.meta.env.PROD) {
+      // In production, if baseURL is relative, it points to the current origin.
+      // We should ideally ensure VITE_API_URL is set, but let's try to be smart.
+      baseDomain = 'https://api-dntwed.okjtech.co.ke';
+  }
+
+  // Ensure path starts with /storage/ if it's an upload
+  let finalPath = cleanPath;
+  if (!finalPath.startsWith('/')) finalPath = `/${finalPath}`;
   
-  return `${cleanBaseURL}${finalPath}`;
+  // If it's an uploaded asset (in uploads/ or illustrations/), it needs /storage/
+  if (finalPath.startsWith('/uploads/') || finalPath.startsWith('/illustrations/')) {
+      if (!finalPath.startsWith('/storage/')) {
+          finalPath = `/storage${finalPath}`;
+      }
+  }
+  
+  return `${baseDomain}${finalPath}`;
 };
 
 export default api;
