@@ -32,55 +32,6 @@ use App\Http\Controllers\Api\CalendarController;
 |--------------------------------------------------------------------------
 */
 
-// Robust Storage Link Route for cPanel/Production
-Route::get('/create-storage-link', function () {
-    try {
-        $target = storage_path('app/public');
-        
-        // Path Strategy 1: Standard Laravel public_path
-        $link1 = public_path('storage');
-        
-        // Path Strategy 2: Absolute Web Root Detective (most reliable on cPanel)
-        // This finds where index.php is actually running
-        $currentWebRoot = dirname($_SERVER['SCRIPT_FILENAME']);
-        $link2 = $currentWebRoot . '/storage';
-        
-        $results = [];
-        $linksToTry = array_unique([$link1, $link2]);
-        
-        foreach ($linksToTry as $link) {
-            $label = ($link === $link1) ? "Standard Laravel Path" : "Detected Web Root Path";
-            
-            if (file_exists($link)) {
-                // Check if it's a real folder or a link
-                $type = is_link($link) ? "Link" : "Real Folder";
-                $results[] = "$label: Already exists as a $type at $link";
-                continue;
-            }
-            
-            try {
-                if (symlink($target, $link)) {
-                    $results[] = "$label: Created successfully! 🚀";
-                } else {
-                    $results[] = "$label: Manual creation failed (symlink() returned false).";
-                }
-            } catch (\Exception $e) {
-                $results[] = "$label: Error creating link - " . $e->getMessage();
-            }
-        }
-        
-        return response()->json([
-            'status' => 'Process Finished',
-            'storage_target' => $target,
-            'server_detected_root' => $currentWebRoot,
-            'summary' => $results,
-            'pro_tip' => 'If you see "Already exists as a Real Folder", please delete that "storage" folder in File Manager and run this again!'
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-});
 
 // Public Authentication Routes (Throttled)
 Route::middleware('throttle:15,1')->group(function () {

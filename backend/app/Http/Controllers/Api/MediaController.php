@@ -19,13 +19,10 @@ class MediaController extends Controller
             $file = $request->file('image');
             $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
             
-            // Store in 'public/uploads'
-            // Ensure functionality: php artisan storage:link must be run or we store directly in public
-            // For simplicity in WAMP, we can move directly to public_path('uploads') or use Storage::disk('public')
-            
-            $file->move(public_path('uploads'), $filename);
+            // Store in storage/app/public/uploads/ (served via storage symlink)
+            Storage::disk('public')->putFileAs('uploads', $file, $filename);
 
-            // Use relative path for internal proxying
+            // Return the relative path — frontend prepends /storage/ via getAssetUrl
             $url = '/uploads/' . $filename;
 
             return response()->json([
