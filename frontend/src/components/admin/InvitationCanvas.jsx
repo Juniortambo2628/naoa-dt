@@ -1,26 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Moveable from 'react-moveable';
-
-// Helper to ensure local URLs are treated as relative to trigger Vite proxy
-const normalizeUrl = (url) => {
-    if (!url) return url;
-    if (url.includes('localhost') || url.includes('127.0.0.1')) {
-        try {
-            if (url.startsWith('http')) {
-                const parsed = new URL(url);
-                let path = parsed.pathname;
-                const prefix = '/wed-dt/backend/public';
-                if (path.startsWith(prefix)) {
-                    path = path.substring(prefix.length);
-                }
-                return path;
-            }
-        } catch (e) {
-            console.warn("Failed to parse URL for normalization:", url, e);
-        }
-    }
-    return url;
-};
+import { getAssetUrl } from '../../services/api';
 
 export default function InvitationCanvas({ 
   design, 
@@ -95,7 +75,7 @@ export default function InvitationCanvas({
       if (item.type === 'image') {
         return (
           <img 
-              src={normalizeUrl(item.src)} 
+              src={getAssetUrl(item.src)} 
               alt="" 
               className="w-full h-full object-cover pointer-events-none" 
               crossOrigin="anonymous" 
@@ -202,7 +182,7 @@ export default function InvitationCanvas({
             {/* Background Image Layer */}
             {design.bgImage && (
                 <img 
-                    src={normalizeUrl(design.bgImage)} 
+                    src={getAssetUrl(design.bgImage)} 
                     alt="" 
                     className="absolute inset-0 w-full h-full object-cover pointer-events-none absolute-bg" 
                     crossOrigin="anonymous"
@@ -249,7 +229,15 @@ export default function InvitationCanvas({
                             if (mode === 'edit') onSelectExclusively(item.id);
                         }}
                     >
-                        {renderItemContent(item)}
+                        {item.type === 'image' ? (
+                          <img 
+                              src={getAssetUrl(item.src)} 
+                              alt="" 
+                              className="w-full h-full object-cover pointer-events-none" 
+                              crossOrigin="anonymous" 
+                              onError={(e) => { e.target.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; }}
+                          />
+                        ) : renderItemContent(item)}
                     </div>
                 ))}
             </div>
@@ -319,8 +307,8 @@ export default function InvitationCanvas({
             <div className="absolute inset-0 z-40 pointer-events-none">
                 {design.showIllustrations && (
                         <div className="absolute flex justify-center gap-6 py-2 opacity-80 z-20" style={{ top: isLandscape ? '210px' : '272px', left: '50%', transform: 'translateX(-50%)' }}>
-                            <img src={normalizeUrl("/illustrations/male-icon.png")} className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
-                            <img src={normalizeUrl("/illustrations/female-icon.png")} className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
+                            <img src={getAssetUrl("/illustrations/male-icon.png")} className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
+                            <img src={getAssetUrl("/illustrations/female-icon.png")} className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
                         </div>
                 )}
                 

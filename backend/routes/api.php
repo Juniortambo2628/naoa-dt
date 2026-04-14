@@ -15,6 +15,27 @@ use App\Http\Controllers\Api\GalleryController;
 |--------------------------------------------------------------------------
 */
 
+// Temporary Storage Link Route
+Route::get('/create-storage-link', function () {
+    try {
+        if (file_exists(public_path('storage'))) {
+            return response()->json(['message' => 'The "public/storage" directory already exists.']);
+        }
+        
+        // Manual symlink creation
+        $target = storage_path('app/public');
+        $shortcut = public_path('storage');
+        
+        if (symlink($target, $shortcut)) {
+            return response()->json(['message' => 'Storage link created successfully.']);
+        }
+        
+        return response()->json(['message' => 'Failed to create storage link using symlink().'], 500);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+    }
+});
+
 // Public Authentication Routes (Throttled)
 Route::middleware('throttle:15,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);

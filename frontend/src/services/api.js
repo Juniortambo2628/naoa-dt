@@ -44,13 +44,36 @@ api.interceptors.response.use(
 
 export const getAssetUrl = (path) => {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
+  
+  // Normalize the path if it's an absolute local URL from development
+  let cleanPath = path;
+  if (path.includes('localhost') || path.includes('127.0.0.1') || path.includes('wed-dt/backend/public')) {
+    try {
+      if (path.startsWith('http')) {
+        const urlObj = new URL(path);
+        cleanPath = urlObj.pathname;
+      }
+      
+      // Remove any known local development prefixes
+      const prefixes = ['/wed-dt/backend/public', '/backend/public'];
+      for (const prefix of prefixes) {
+        if (cleanPath.startsWith(prefix)) {
+          cleanPath = cleanPath.substring(prefix.length);
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse local URL for asset resolution:", path, e);
+    }
+  }
+
+  if (cleanPath.startsWith('http')) return cleanPath;
   
   // Ensure the baseURL doesn't have a trailing slash and the path has a leading slash
   const cleanBaseURL = baseURL.replace(/\/api$/, '');
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
   
-  return `${cleanBaseURL}${cleanPath}`;
+  return `${cleanBaseURL}${finalPath}`;
 };
 
 export default api;
