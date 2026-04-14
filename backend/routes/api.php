@@ -152,8 +152,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Invitation Management (admin)
     Route::group(['prefix' => 'invitations'], function () {
         Route::post('/{guest}/send', [InvitationController::class, 'send']);
-        Route::post('/send-bulk', [\App\Http\Controllers\Api\InvitationController::class, 'sendBulk']);
-        Route::post('/{guest}/resend', [\App\Http\Controllers\Api\InvitationController::class, 'resend']);
+        Route::post('/send-bulk', [InvitationController::class, 'sendBulk']);
+        Route::post('/{guest}/resend', [InvitationController::class, 'resend']);
     });
 
     // Schedule Management (admin)
