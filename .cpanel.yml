@@ -3,12 +3,20 @@ deployment:
   tasks:
     - export DEPLOYPATH_CORE=/home/zhpebukm/naoa-core/
     - export DEPLOYPATH_PUBLIC=/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/
-    
+    - export DEPLOYPATH_STORAGE=/home/zhpebukm/naoa-core/storage/app/public/
+
     - /bin/mkdir -p $DEPLOYPATH_CORE
     - /bin/mkdir -p $DEPLOYPATH_PUBLIC
-    
+    - /bin/mkdir -p $DEPLOYPATH_STORAGE/uploads
+    - /bin/mkdir -p $DEPLOYPATH_STORAGE/illustrations
+
+    # Deploy backend code to naoa-core
     - /bin/cp -R backend/* $DEPLOYPATH_CORE
-    
-    # Explicitly copy hidden files and .htaccess to the public folder
+
+    # Copy public assets (index.php, .htaccess, etc.) to web root
     - /bin/cp -R backend/public/. $DEPLOYPATH_PUBLIC
     - /bin/cp backend/public/.htaccess $DEPLOYPATH_PUBLIC
+
+    # NOTE: The storage symlink must exist on the server:
+    # ln -s /home/zhpebukm/naoa-core/storage/app/public /home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/storage
+    # This allows https://api-dntwed.okjtech.co.ke/storage/uploads/... to resolve correctly.

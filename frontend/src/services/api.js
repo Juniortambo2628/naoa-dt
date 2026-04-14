@@ -81,6 +81,12 @@ export const getAssetUrl = (path) => {
   let finalPath = cleanPath;
   if (!finalPath.startsWith('/')) finalPath = `/${finalPath}`;
   
+  // Uploaded assets are served through the storage symlink
+  // Server symlink: api/public/storage -> naoa-core/storage/app/public/
+  if (finalPath.startsWith('/uploads/') || finalPath.startsWith('/illustrations/')) {
+      finalPath = `/storage${finalPath}`;
+  }
+  
   return `${baseDomain}${finalPath}`;
 };
 
