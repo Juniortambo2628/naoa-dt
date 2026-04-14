@@ -45,7 +45,6 @@ api.interceptors.response.use(
 export const getAssetUrl = (path) => {
   if (!path) return '';
   
-  // Normalize the path if it's an absolute local URL from development
   let cleanPath = path;
   if (path.includes('localhost') || path.includes('127.0.0.1') || path.includes('wed-dt/backend/public')) {
     try {
@@ -53,8 +52,6 @@ export const getAssetUrl = (path) => {
         const urlObj = new URL(path);
         cleanPath = urlObj.pathname;
       }
-      
-      // Remove any known local development prefixes
       const prefixes = ['/wed-dt/backend/public', '/backend/public'];
       for (const prefix of prefixes) {
         if (cleanPath.startsWith(prefix)) {
@@ -63,13 +60,12 @@ export const getAssetUrl = (path) => {
         }
       }
     } catch (e) {
-      console.warn("Failed to parse local URL for asset resolution:", path, e);
+      console.warn("getAssetUrl parse error:", path, e);
     }
   }
 
   if (cleanPath.startsWith('http')) return cleanPath;
   
-  // Resolve the API domain for serving assets
   let baseDomain = baseURL;
   if (baseURL.startsWith('http')) {
       baseDomain = new URL(baseURL).origin;
@@ -77,17 +73,9 @@ export const getAssetUrl = (path) => {
       baseDomain = 'https://api-dntwed.okjtech.co.ke';
   }
 
-  // Ensure path has a leading slash
-  let finalPath = cleanPath;
-  if (!finalPath.startsWith('/')) finalPath = `/${finalPath}`;
+  if (!cleanPath.startsWith('/')) cleanPath = `/${cleanPath}`;
   
-  // Uploaded assets are served through the storage symlink
-  // Server symlink: api/public/storage -> naoa-core/storage/app/public/
-  if (finalPath.startsWith('/uploads/') || finalPath.startsWith('/illustrations/')) {
-      finalPath = `/storage${finalPath}`;
-  }
-  
-  return `${baseDomain}${finalPath}`;
+  return `${baseDomain}${cleanPath}`;
 };
 
 export default api;

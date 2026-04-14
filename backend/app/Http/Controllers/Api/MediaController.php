@@ -19,10 +19,8 @@ class MediaController extends Controller
             $file = $request->file('image');
             $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
             
-            // Store in storage/app/public/uploads/ (served via storage symlink)
-            Storage::disk('public')->putFileAs('uploads', $file, $filename);
+            $file->move(public_path('uploads'), $filename);
 
-            // Return the relative path — frontend prepends /storage/ via getAssetUrl
             $url = '/uploads/' . $filename;
 
             return response()->json([
