@@ -37,7 +37,7 @@ $app = require_once $basePath . '/bootstrap/app.php';
 
 // Override public_path() to always point to the ACTUAL document root.
 // On production, Laravel's default would resolve to naoa-core/public/,
-// but the web server serves from dnt-wed.okjtech.co.ke/api/public/.
+// but the web server serves from dntwed.okjtech.co.ke/api/public/.
 // Using __DIR__ ensures uploads go to the same place the web server reads from.
 $app->usePublicPath(__DIR__);
 

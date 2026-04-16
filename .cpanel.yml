@@ -2,7 +2,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH_CORE=/home/zhpebukm/naoa-core/
-    - export DEPLOYPATH_PUBLIC=/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/
+    - export DEPLOYPATH_PUBLIC=/home/zhpebukm/dntwed.okjtech.co.ke/api/public/
     - export DEPLOYPATH_STORAGE=/home/zhpebukm/naoa-core/storage/app/public/
 
     - /bin/mkdir -p $DEPLOYPATH_CORE
@@ -18,5 +18,5 @@ deployment:
     - /bin/cp backend/public/.htaccess $DEPLOYPATH_PUBLIC
 
     # NOTE: The storage symlink must exist on the server:
-    # ln -s /home/zhpebukm/naoa-core/storage/app/public /home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/storage
+    # ln -s /home/zhpebukm/naoa-core/storage/app/public /home/zhpebukm/dntwed.okjtech.co.ke/api/public/storage
     # This allows https://api-dntwed.okjtech.co.ke/storage/uploads/... to resolve correctly.
