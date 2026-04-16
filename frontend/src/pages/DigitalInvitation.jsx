@@ -13,8 +13,9 @@ export default function DigitalInvitation() {
     
     const { data: guest, isLoading: isGuestLoading, isError: isGuestError } = useGuestByCode(code);
     const { data: settings, isLoading: isSettingsLoading } = useSettings();
+    const { data: content, isLoading: isContentLoading } = useContent();
 
-    const isLoading = isGuestLoading || isSettingsLoading;
+    const isLoading = isGuestLoading || isSettingsLoading || isContentLoading;
     
     const design = settings?.invitation_theme || {
         backgroundColor: '#ffffff',
@@ -23,8 +24,8 @@ export default function DigitalInvitation() {
         items: []
     };
 
-    const weddingDate = settings?.wedding_date || '2026-11-14';
-    const venueName = settings?.venue_name || 'The Grand Estate';
+    const weddingDate = content?.countdown?.content?.wedding_date || '2026-11-14';
+    const venueName = content?.home_hero?.content?.venue?.en || content?.home_hero?.content?.venue || 'The Grand Estate';
     
     const formattedDate = new Date(weddingDate).toLocaleDateString('en-US', {
         weekday: 'long',
@@ -90,17 +91,18 @@ export default function DigitalInvitation() {
                     className="w-full max-w-[540px] flex flex-col items-center"
                 >
                     <div 
-                        className="relative origin-top transition-transform duration-300"
+                        className="relative origin-top transition-transform duration-300 rounded-sm shadow-2xl overflow-hidden"
                         style={{ 
                             transform: `scale(${scale})`,
-                            height: (design.orientation === 'landscape' ? 500 : 625) * scale,
-                            width: (design.orientation === 'landscape' ? 625 : 500) * scale,
+                            height: design.orientation === 'landscape' ? 500 : 625,
+                            width: design.orientation === 'landscape' ? 625 : 500,
+                            marginBottom: `-${(1 - scale) * (design.orientation === 'landscape' ? 500 : 625)}px`,
                         }}
                     >
                         <InvitationCanvas 
-                            design={design}
-                            mode="preview"
-                            guest={guest}
+                            design={design} 
+                            mode="view" 
+                            guest={guest} 
                             weddingSettings={{ wedding_date: weddingDate, venue_name: venueName }}
                         />
                     </div>

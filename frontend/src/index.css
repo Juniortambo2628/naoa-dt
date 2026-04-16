@@ -41,7 +41,7 @@
   --color-blush-dark: #E8C4B8;
   --color-rose: #D4A59A;
   --color-rose-gold: #C8A68E;
-  --color-warm-brown: #A67B5B;
+  --color-warm-brown: #C09578;
   --color-copper: #B87333;
   --color-cream: #FFF9F5;
   --color-ivory: #FFFEF8;
@@ -672,4 +672,77 @@ p {
     width: 180px;
     height: 180px;
   }
+}
+
+/* FilePond Integration */
+.hide-filepond-list .filepond--list-scroller {
+  display: none !important;
+}
+
+/* Upload Placeholder for Gallery Grid */
+.upload-placeholder {
+  position: relative;
+  background: #f8f5f2;
+}
+
+.upload-placeholder-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(2px);
+  padding: 1.5rem;
+  z-index: 10;
+}
+
+.upload-progress-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(166, 123, 91, 0.2);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: #A67B5B;
+  transition: width 0.3s ease-out;
+}
+
+.upload-placeholder img {
+  filter: blur(4px) grayscale(20%);
+  opacity: 0.6;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, #f0edea 25%, #f8f5f2 50%, #f0edea 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+
+/* Active Element Highlight in Designer */
+.element-active-ring {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid #A67B5B; /* Will be overridden by inline style for multi-color support */
+  border-radius: 4px;
+  pointer-events: none;
+  animation: selection-pulse 2s infinite ease-in-out;
+  z-index: 100;
+  box-shadow: 0 0 10px rgba(166, 123, 91, 0.3);
+}
+
+@keyframes selection-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.02); }
 }

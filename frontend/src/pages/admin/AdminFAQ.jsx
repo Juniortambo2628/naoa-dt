@@ -10,6 +10,7 @@ import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import { faqService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import { useSearch } from '../../context/SearchContext';
 
 registerPlugin(FilePondPluginImagePreview);
 
@@ -20,6 +21,7 @@ export default function AdminFAQ() {
     const [selectedFaq, setSelectedFaq] = useState(null);
     const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
     const [tableModalOpen, setTableModalOpen] = useState(false);
+    const { searchQuery } = useSearch();
     const quillRef = useRef(null);
 
     // Form state
@@ -85,6 +87,7 @@ export default function AdminFAQ() {
     };
 
     const handleReorder = async (newOrder) => {
+        if (searchQuery) return; // Prevent reorder while search is active
         setFaqs(newOrder);
         // Map to expected format
         const updatedFaqs = newOrder.map((item, index) => ({ id: item.id, order: index }));
@@ -94,6 +97,13 @@ export default function AdminFAQ() {
             console.error("Failed to update order", error);
         }
     };
+
+    const filteredFaqs = faqs.filter(faq => {
+        const activeSearch = searchQuery || '';
+        const searchLower = activeSearch.toLowerCase();
+        return faq.question.toLowerCase().includes(searchLower) || 
+               faq.answer.toLowerCase().includes(searchLower);
+    });
 
     const insertImageToQuill = () => {
         if (!uploadedFileUrl || !quillRef.current) return;
@@ -128,7 +138,7 @@ export default function AdminFAQ() {
         <div className="space-y-6">
             <AdminPageHero
                 title="FAQ Management"
-                description="Manage public Frequently Asked Questions and their order."
+                description={`${faqs.length} questions in database`}
                 breadcrumb={[
                     { label: 'Dashboard', path: '/admin/dashboard' },
                     { label: 'FAQs' },
@@ -144,17 +154,20 @@ export default function AdminFAQ() {
             <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
                 {loading ? (
                     <div className="p-12 text-center text-[#A67B5B]">Loading FAQs...</div>
-                ) : faqs.length === 0 ? (
-                    <div className="p-12 text-center text-stone-500 italic">No FAQs added yet.</div>
+                ) : filteredFaqs.length === 0 ? (
+                    <div className="p-12 text-center text-stone-500 bg-white rounded-2xl border border-stone-100">
+                        <HelpCircle className="w-12 h-12 mx-auto mb-4 opacity-20 text-stone-400" />
+                        <p>{searchQuery ? 'No matching FAQs found.' : 'No FAQs added yet.'}</p>
+                    </div>
                 ) : (
-                    <Reorder.Group axis="y" values={faqs} onReorder={handleReorder} className="divide-y divide-stone-100">
-                        {faqs.map((faq) => (
+                    <Reorder.Group axis="y" values={filteredFaqs} onReorder={handleReorder} className="divide-y divide-stone-100">
+                        {filteredFaqs.map((faq) => (
                             <Reorder.Item 
                                 key={faq.id} 
                                 value={faq} 
                                 className="p-4 flex gap-4 bg-white items-start hover:bg-stone-50 transition-colors shadow-sm relative group cursor-pointer"
                             >
-                                <div className="mt-1 cursor-grab active:cursor-grabbing text-stone-300 hover:text-stone-500">
+                                <div className={`mt-1 text-stone-300 hover:text-stone-500 ${searchQuery ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}>
                                     <GripVertical className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1">

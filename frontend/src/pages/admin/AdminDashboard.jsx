@@ -10,8 +10,11 @@ import {
 } from 'lucide-react';
 
 import AdminTutorial from '../../components/admin/AdminTutorial';
+import AdminPageHero from '../../components/admin/AdminPageHero';
+/* Force refresh: 2026-04-15 07:02 - Syntax fix complete. Component should now reload. */
 
 import { useAuth } from '../../context/AuthContext';
+import { SearchProvider, useSearch } from '../../context/SearchContext';
 import { guestService, giftService, scheduleService, settingService, notificationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
 import SeatingChart from './SeatingChart';
@@ -168,6 +171,7 @@ function Header({ onMenuClick, onRestartTutorial }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { searchQuery, setSearchQuery } = useSearch();
 
   const fetchNotifications = async () => {
     try {
@@ -219,8 +223,10 @@ function Header({ onMenuClick, onRestartTutorial }) {
           />
           <input
             type="text"
-            placeholder="Search guests, gifts..."
-            className="w-64 pl-10 pr-4 py-2 rounded-xl border-2 bg-white focus:outline-none"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search globally..."
+            className="w-64 pl-10 pr-4 py-2 rounded-xl border-2 bg-white focus:outline-none transition-all focus:ring-2 focus:ring-[#A67B5B]/50"
             style={{ borderColor: '#E8D4C8' }}
           />
         </div>
@@ -334,21 +340,12 @@ function DashboardOverview() {
 
   return (
     <div className="space-y-8">
-      {/* Welcome */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 
-          className="text-3xl font-semibold mb-2"
-          style={{ fontFamily: "'Cormorant Garamond', serif", color: '#4A3F35' }}
-        >
-          Welcome Back!
-        </h1>
-        <p className="text-[#6B5D52]">
-          Here's what's happening with your wedding plans.
-        </p>
-      </motion.div>
+      <AdminPageHero
+        title="Welcome Back!"
+        description="Here's what's happening with your wedding plans today."
+        breadcrumb={[{ label: 'Dashboard' }]}
+        icon={<LayoutDashboard className="w-5 h-5 text-[#A67B5B]" />}
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -574,13 +571,14 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div 
-      className="min-h-screen"
-      style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}
-    >
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="lg:ml-[280px]">
+    <SearchProvider>
+      <div 
+        className="min-h-screen"
+        style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}
+      >
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        <div className="lg:ml-[280px]">
         <Header 
           onMenuClick={() => setSidebarOpen(true)} 
           onRestartTutorial={() => setRestartTutorial(prev => !prev)}
@@ -604,5 +602,6 @@ export default function AdminDashboard() {
         </main>
       </div>
     </div>
+    </SearchProvider>
   );
 }

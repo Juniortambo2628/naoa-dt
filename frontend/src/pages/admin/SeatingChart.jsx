@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { guestService, tableService } from '../../services/api';
 import { Plus, Users, MoreVertical, Trash2, Check, X, Search, Eye, Armchair } from 'lucide-react';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import { useSearch } from '../../context/SearchContext';
 
 // Portal for Dropdowns/Modals
 const Portal = ({ children }) => {
@@ -262,7 +263,7 @@ export default function SeatingChart() {
   const [guests, setGuests] = useState([]);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchQuery } = useSearch();
   
   // New Table Form
   const [newTable, setNewTable] = useState({ name: '', capacity: 10, type: 'round' });
@@ -341,7 +342,7 @@ export default function SeatingChart() {
 
   const unassignedGuests = guests
     .filter(g => !g.table_id)
-    .filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    .filter(g => g.name.toLowerCase().includes((searchQuery || '').toLowerCase()));
 
   // Derive active selected table from state to get updates
   const activeSelectedTable = selectedTable ? tables.find(t => t.id === selectedTable.id) : null;
@@ -350,7 +351,7 @@ export default function SeatingChart() {
     <div className="h-[calc(100vh-100px)] flex flex-col gap-4">
        <AdminPageHero
           title="Seating Chart"
-          description="Drag and drop guests to assign them to tables"
+          description="Organize your guests into tables and manage seating arrangements."
           breadcrumb={[
             { label: 'Dashboard', path: '/admin/dashboard' },
             { label: 'Seating Chart' },
@@ -361,23 +362,10 @@ export default function SeatingChart() {
        <div className="flex-1 flex gap-6 overflow-hidden">
            {/* Sidebar: Unassigned Guests */}
            <div className="w-80 flex flex-col bg-white rounded-2xl shadow-sm border border-stone-100 h-full relative z-20">
-              <div className="p-4 border-b border-stone-100 space-y-3">
-              <div>
-                <h2 className="font-semibold text-lg text-stone-800">Guests ({unassignedGuests.length})</h2>
-                <p className="text-xs text-stone-500">Unassigned guests</p>
+              <div className="p-4 border-b border-stone-100">
+                <h2 className="font-semibold text-lg text-stone-800">Unassigned Guests</h2>
+                <p className="text-xs text-stone-500">{unassignedGuests.length} guests remaining</p>
               </div>
-              
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                <input 
-                    type="text" 
-                    placeholder="Search guests..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-[#A67B5B]"
-                />
-              </div>
-          </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {unassignedGuests.map(guest => (
                   <GuestItem 

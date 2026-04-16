@@ -69,62 +69,6 @@ class SettingController extends Controller
             );
             
             \Illuminate\Support\Facades\Log::info("Saved setting: {$key}", ['value' => $storedValue, 'id' => $setting->id]);
-
-            // Sync with PageContent
-            if ($key === 'wedding_date') {
-                // 1. Update Countdown
-                $content = PageContent::firstOrNew(['section_key' => 'countdown']);
-                $currentContent = $content->content ?? [];
-                $currentContent['wedding_date'] = $value;
-                if (!isset($currentContent['title'])) $currentContent['title'] = ['en' => 'Counting Down'];
-                if (!isset($currentContent['subtitle'])) $currentContent['subtitle'] = ['en' => 'Until We Say "I Do"'];
-                $content->content = $currentContent;
-                $content->is_visible = true; // Ensure visible
-                $content->save();
-
-                // 2. Update Hero, Programme, and RSVP Date Text (Formatted)
-                try {
-                    $date = \Carbon\Carbon::parse($value);
-                    $formattedDate = $date->format('F jS, Y'); // e.g., "June 15th, 2025"
-                    
-                    // Home Hero
-                    $hero = PageContent::firstOrNew(['section_key' => 'home_hero']);
-                    $heroContent = $hero->content ?? [];
-                    $heroContent['date_text'] = $formattedDate;
-                    $hero->content = $heroContent;
-                    $hero->is_visible = true;
-                    $hero->save();
-
-                    // Programme Page
-                    $prog = PageContent::firstOrNew(['section_key' => 'programme_page']);
-                    $progContent = $prog->content ?? [];
-                    $progContent['date'] = $formattedDate;
-                    $prog->content = $progContent;
-                    $prog->is_visible = true;
-                    $prog->save();
-
-                    // RSVP Page
-                    $rsvp = PageContent::firstOrNew(['section_key' => 'rsvp_page']);
-                    $rsvpContent = $rsvp->content ?? [];
-                    $rsvpContent['date'] = $formattedDate;
-                    $rsvp->content = $rsvpContent;
-                    $rsvp->is_visible = true;
-                    $rsvp->save();
-
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error("Date parse error: " . $e->getMessage());
-                }
-            }
-
-            if ($key === 'venue_name') {
-                // Update Hero Location
-                $hero = PageContent::firstOrNew(['section_key' => 'home_hero']);
-                $heroContent = $hero->content ?? [];
-                $heroContent['location'] = $value;
-                $hero->content = $heroContent;
-                $hero->is_visible = true;
-                $hero->save();
-            }
         }
 
         // Refresh all settings to ensure frontend is in sync

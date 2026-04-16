@@ -4,33 +4,70 @@ import 'filepond/dist/filepond.min.css';
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import imageCompression from 'browser-image-compression';
 import { contentService, getAssetUrl } from '../../services/api';
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginFileValidateType);
 
-export default function ImageUpload({ currentImage, onUpload, allowMultiple = false, maxFiles = 1 }) {
+export default function ImageUpload({ 
+    currentImage, 
+    onUpload, 
+    allowMultiple = false, 
+    maxFiles = 1, 
+    className = "", 
+    showList = true,
+    onFileAdded = () => {},
+    onFileRemoved = () => {},
+    onFileProgress = () => {}
+}) {
     const [files, setFiles] = useState([]);
 
     const handleProcessFile = async (fieldName, file, metadata, load, error, progress, abort, transfer, options) => {
-        console.log('Starting upload for file:', file.name);
-        const formData = new FormData();
-        formData.append('image', file);
+        // We need to find the FilePond item id. 
+        // FilePond doesn't passing it directly to process, but we can match by file name and size
+        const item = files.find(f => f.file.name === file.name && f.file.size === file.size);
+        const fileId = item ? item.id : (file.name + '-' + file.size);
+        
+        console.log('Starting upload for file:', file.name, 'with ID:', fileId);
+        
+        // Compression options
+        const compressionOptions = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+            onProgress: (val) => {
+                // Compression progress (0-50%)
+                onFileProgress(fileId, val * 0.5);
+            }
+        };
 
         try {
-            console.log('Sending request to /api/upload...');
-            const res = await contentService.uploadMedia(formData);
-            console.log('Upload success:', res.data);
-            const url = res.data.url;
-            load(url);
-            onUpload(url);
+            const compressedFile = await imageCompression(file, compressionOptions);
+            
+            const formData = new FormData();
+            formData.append('image', compressedFile, file.name);
+
+            // Start server upload phase (base 50%)
+            onFileProgress(fileId, 0.5);
+
+            const res = await contentService.uploadMedia(formData, (percent) => {
+                // Map 0-100% of upload to 50-100% of total progress
+                const totalProgress = 0.5 + (percent / 100) * 0.5;
+                onFileProgress(fileId, totalProgress);
+            });
+            
+            // Success (100%)
+            onFileProgress(fileId, 1);
+            load(res.data.url);
+            onUpload(res.data.url, fileId);
         } catch (err) {
-            console.error('Upload failed error object:', err);
+            console.error('Upload or compression failed:', err);
             error('Upload failed');
         }
     };
 
     return (
-        <div className="space-y-3">
+        <div className={`space-y-3 ${!showList ? 'hide-filepond-list' : ''}`}>
             {currentImage && !allowMultiple && (
                 <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-stone-200">
                     <img src={getAssetUrl(currentImage)} alt="Current" className="w-full h-full object-cover" />
@@ -38,7 +75,15 @@ export default function ImageUpload({ currentImage, onUpload, allowMultiple = fa
             )}
             <FilePond
                 files={files}
-                onupdatefiles={setFiles}
+                onupdatefiles={(fileItems) => {
+                    setFiles(fileItems);
+                }}
+                onaddfile={(err, item) => {
+                    if (!err) onFileAdded(item);
+                }}
+                onremovefile={(err, item) => {
+                    if (!err) onFileRemoved(item.id);
+                }}
                 allowMultiple={allowMultiple}
                 maxFiles={maxFiles}
                 name="image"
@@ -48,7 +93,7 @@ export default function ImageUpload({ currentImage, onUpload, allowMultiple = fa
                     process: handleProcessFile
                 }}
                 credits={false}
-                className="filepond-custom"
+                className={className}
             />
         </div>
     );

@@ -4,12 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Trash2, Clock, Loader2, RefreshCw, CheckCircle } from 'lucide-react';
 import { guestbookService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import { useSearch } from '../../context/SearchContext';
 
 export default function AdminGuestbook() {
   const { t } = useTranslation();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
+  const { searchQuery } = useSearch();
 
   const fetchEntries = async () => {
     try {
@@ -38,11 +40,18 @@ export default function AdminGuestbook() {
     setProcessing(null);
   };
 
+  const filteredEntries = entries.filter(entry => {
+    const activeSearch = searchQuery || '';
+    const searchLower = activeSearch.toLowerCase();
+    return (entry.guest_name || '').toLowerCase().includes(searchLower) || 
+           (entry.message || '').toLowerCase().includes(searchLower);
+  });
+
   return (
     <div className="space-y-6">
       <AdminPageHero
         title="Guestbook Messages"
-        description="View and manage messages from your guests"
+        description={`${entries.length} messages received`}
         breadcrumb={[
           { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'Guestbook' },
@@ -63,14 +72,14 @@ export default function AdminGuestbook() {
           <div className="text-center py-12">
             <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#A67B5B]" />
           </div>
-        ) : entries.length === 0 ? (
+        ) : filteredEntries.length === 0 ? (
           <div className="text-center py-12 text-stone-500 bg-white rounded-2xl border border-stone-100">
             <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-20" />
-            <p>No messages yet</p>
+            <p>{searchQuery ? 'No matching messages found' : 'No messages yet'}</p>
           </div>
         ) : (
           <AnimatePresence>
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <motion.div
                 key={entry.id}
                 layout

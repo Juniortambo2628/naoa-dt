@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Search, Filter, Plus, Edit, Trash2, Check, Download, Loader2, Mail, Send, FileImage, FileText, Package, List, Grid, Upload, MessageCircle, X } from 'lucide-react';
+import { Users, Search, Filter, Plus, Edit, Trash2, Check, Download, Loader2, Mail, Send, FileImage, FileText, Package, List, Grid, Upload, MessageCircle, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService, settingService } from '../../services/api';
@@ -9,19 +9,23 @@ import InvitationExportContainer from '../../components/admin/InvitationExportCo
 import InvitationActionModal from '../../components/admin/InvitationActionModal';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminToolbar from '../../components/admin/AdminToolbar';
-import { useGuests, useSettings } from '../../hooks/useApiHooks';
+import { useGuests, useSettings, useContent } from '../../hooks/useApiHooks';
+import { useSearch } from '../../context/SearchContext';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
 export default function AdminGuests() {
   const { data: guestsData, isLoading: guestsLoading, refetch: refetchGuests } = useGuests();
   const { data: settingsData, isLoading: settingsLoading } = useSettings();
+  const { data: contentData } = useContent();
 
   const [guests, setGuests] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState(null);
-  const [search, setSearch] = useState('');
+  const { searchQuery } = useSearch();
   const [filter, setFilter] = useState('all'); // all, confirmed, pending, declined
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
   const [sendingId, setSendingId] = useState(null);
   const [design, setDesign] = useState(null);
   const [exportingGuest, setExportingGuest] = useState(null);
@@ -454,11 +458,23 @@ export default function AdminGuests() {
 
   // Filter and Search logic
   const filteredGuests = guests.filter(guest => {
-      const matchesSearch = guest.name.toLowerCase().includes(search.toLowerCase()) || 
-                            (guest.email && guest.email.toLowerCase().includes(search.toLowerCase()));
+      const activeSearch = searchQuery || '';
+      const searchLower = activeSearch.toLowerCase();
+      const matchesSearch = guest.name.toLowerCase().includes(searchLower) || 
+                            (guest.email && guest.email.toLowerCase().includes(searchLower));
       const matchesFilter = filter === 'all' ? true : guest.rsvp_status === filter;
       return matchesSearch && matchesFilter;
   });
+
+  const totalPages = Math.ceil(filteredGuests.length / itemsPerPage);
+  
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredGuests.length, totalPages, currentPage]);
+
+  const pagedGuests = filteredGuests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6">
@@ -471,104 +487,88 @@ export default function AdminGuests() {
         ]}
         icon={<Users className="w-5 h-5 text-[#A67B5B]" />}
         actions={
-          <>
+          <div className="flex items-center gap-3">
             <div className="bg-white rounded-lg border border-stone-200 p-1 flex">
                 <button 
-                    onClick={() => setViewMode('list')}
-                    className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-stone-100 text-stone-800' : 'text-stone-400 hover:text-stone-600'}`}
-                    title="List View"
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-stone-100 text-stone-800' : 'text-stone-400 hover:text-stone-600'}`}
+                  title="List View"
                 >
-                    <List className="w-4 h-4" />
+                  <List className="w-4 h-4" />
                 </button>
                 <button 
-                    onClick={() => setViewMode('spreadsheet')}
-                    className={`p-1.5 rounded-md transition-colors ${viewMode === 'spreadsheet' ? 'bg-stone-100 text-stone-800' : 'text-stone-400 hover:text-stone-600'}`}
-                    title="Spreadsheet View"
+                  onClick={() => setViewMode('spreadsheet')}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'spreadsheet' ? 'bg-stone-100 text-stone-800' : 'text-stone-400 hover:text-stone-600'}`}
+                  title="Spreadsheet View"
                 >
-                    <Grid className="w-4 h-4" />
+                  <Grid className="w-4 h-4" />
                 </button>
             </div>
 
             <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept=".xlsx, .xls, .csv" 
-                onChange={handleImport} 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept=".xlsx, .xls, .csv" 
+              onChange={handleImport} 
             />
-            <button 
-                onClick={() => fileInputRef.current?.click()} 
-                disabled={isImporting}
-                className="btn-secondary flex items-center gap-2"
-            >
-                {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                Import Excel
-            </button>
 
-            <div 
-                className="relative"
-                onMouseEnter={handleMouseEnterBulk}
-                onMouseLeave={handleMouseLeaveBulk}
-            >
+            <div className="relative group">
                 <button className="btn-secondary flex items-center gap-2">
-                    <Download className="w-4 h-4" /> Bulk Export
+                    Actions <ChevronDown className="w-4 h-4" />
                 </button>
-                
-                <AnimatePresence>
-                    {showBulkMenu && (
-                        <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute right-0 top-full mt-1 bg-white shadow-xl border border-stone-100 rounded-xl py-2 w-48 z-50"
-                        >
-                            <div className="absolute -top-2 left-0 right-0 h-4 bg-transparent" />
-                            <button 
-                                onClick={() => { exportBulk('png'); setShowBulkMenu(false); }}
-                                className="w-full text-left px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 flex items-center gap-2"
-                                disabled={isBulkExporting}
-                            >
-                                <FileImage className="w-4 h-4" /> PNG Images (.zip)
-                            </button>
-                            <button 
-                                onClick={() => { exportBulk('pdf'); setShowBulkMenu(false); }}
-                                className="w-full text-left px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 flex items-center gap-2"
-                                disabled={isBulkExporting}
-                            >
-                                <FileText className="w-4 h-4" /> PDF Documents (.zip)
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-stone-100 rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <button 
+                        onClick={handleAdd}
+                        className="w-full text-left px-4 py-2 hover:bg-[#A67B5B]/10 text-sm flex items-center gap-2 text-[#A67B5B] font-semibold border-b border-stone-50"
+                    >
+                        <Plus className="w-4 h-4" /> Add Guest
+                    </button>
+                    <button 
+                        onClick={() => fileInputRef.current?.click()} 
+                        disabled={isImporting}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
+                    >
+                        {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Import Excel
+                    </button>
+                    <button 
+                        onClick={() => exportBulk('png')} 
+                        disabled={isBulkExporting}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
+                    >
+                        <FileImage className="w-4 h-4" /> Export Images
+                    </button>
+                    <button 
+                        onClick={() => exportBulk('pdf')} 
+                        disabled={isBulkExporting}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
+                    >
+                        <FileText className="w-4 h-4" /> Export PDFs
+                    </button>
+                    <button 
+                        onClick={handleResetAllRSVPs} 
+                        className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm flex items-center gap-2 text-red-600"
+                    >
+                        <Trash2 className="w-4 h-4" /> Reset RSVPs
+                    </button>
+                </div>
             </div>
-            <button 
-                onClick={handleResetAllRSVPs} 
-                className="btn-secondary text-red-600 hover:bg-red-50 hover:border-red-100 flex items-center gap-2"
-                title="Reset everyone to pending"
-            >
-                <Trash2 className="w-4 h-4" /> Reset RSVPs
-            </button>
-            <button onClick={handleAdd} className="btn-primary flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Add Guest
-            </button>
-          </>
+
+          </div>
         }
       />
 
-      <AdminToolbar
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search guests..."
-        filters={[
-          { id: 'all', label: 'All Guests' },
-          { id: 'confirmed', label: 'Confirmed' },
-          { id: 'pending', label: 'Pending' },
-          { id: 'declined', label: 'Declined' },
-        ]}
-        activeFilter={filter}
-        onFilterChange={(id) => { setFilter(id); setSelectedIds([]); }}
-      />
+      <div className="flex gap-2">
+        {['all', 'confirmed', 'pending', 'declined'].map(f => (
+           <button 
+             key={f}
+             onClick={() => { setFilter(f); setCurrentPage(1); setSelectedIds([]); }}
+             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-white border text-stone-600 hover:bg-stone-50'}`}
+           >
+             {f.charAt(0).toUpperCase() + f.slice(1)}
+           </button>
+        ))}
+      </div>
 
       {/* Bulk Actions Bar */}
       <AnimatePresence>
@@ -685,6 +685,9 @@ export default function AdminGuests() {
                   <table className="w-full text-sm border-collapse border-stone-200">
                       <thead className="sticky top-0 bg-stone-50 z-10 shadow-sm border-b border-stone-200">
                           <tr>
+                              <th className="px-2 py-3 w-10 text-center border-r border-stone-200 bg-stone-100">
+                                  {/* Empty header for the select checkbox */}
+                              </th>
                               <th className="px-2 py-3 text-center font-mono text-stone-500 w-12 border-r border-stone-200 bg-stone-100">#</th>
                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">A - Name</th>
                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">B - Email</th>
@@ -698,7 +701,7 @@ export default function AdminGuests() {
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-200">
-                          {filteredGuests.map((guest, index) => (
+                          {pagedGuests.map((guest, index) => (
                               <tr key={guest.id} className={`hover:bg-blue-50/30 group ${selectedIds.includes(guest.id) ? 'bg-blue-50/50' : ''}`}>
                                   <td className="px-2 py-2 text-center border-r border-stone-200">
                                       <input 
@@ -877,7 +880,7 @@ export default function AdminGuests() {
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-100">
-                          {filteredGuests.map(guest => (
+                          {pagedGuests.map(guest => (
                               <tr key={guest.id} className={`hover:bg-stone-50/50 ${selectedIds.includes(guest.id) ? 'bg-stone-50' : ''}`}>
                                   <td className="px-6 py-4">
                                       <input 
@@ -965,6 +968,33 @@ export default function AdminGuests() {
                   </table>
               </div>
           )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-stone-100 bg-white px-4 py-3 sm:px-6 rounded-b-2xl">
+              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-stone-700">
+                    Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredGuests.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredGuests.length)}</span> of <span className="font-medium">{filteredGuests.length}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="relative inline-flex items-center rounded-l-md px-2 py-2 text-stone-400 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                      <span className="sr-only">Previous</span>
+                      &larr;
+                    </button>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === i + 1 ? 'z-10 bg-[#A67B5B] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A67B5B]' : 'text-stone-900 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0'}`}> {i + 1} </button>
+                    ))}
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="relative inline-flex items-center rounded-r-md px-2 py-2 text-stone-400 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                      <span className="sr-only">Next</span>
+                      &rarr;
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
 
       <InvitationActionModal 
@@ -987,6 +1017,10 @@ export default function AdminGuests() {
           <InvitationExportContainer 
               design={design} 
               guest={exportingGuest} 
+              weddingSettings={{
+                  wedding_date: contentData?.countdown?.content?.wedding_date || '2026-11-14',
+                  venue_name: contentData?.home_hero?.content?.venue?.en || contentData?.home_hero?.content?.venue || 'The Grand Estate'
+              }}
               onReady={(methods) => {
                   exporterRef.current = methods;
               }}

@@ -13,7 +13,9 @@ import {
 import ImageUpload from '../../components/admin/ImageUpload';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
+import AdminPageHero from '../../components/admin/AdminPageHero';
 import { saveAs } from 'file-saver';
+/* Force refresh: 2026-04-15 07:02 - Syntax fix complete. Component should now reload. */
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);
@@ -436,62 +438,71 @@ export default function InvitationDesigner() {
   const presetBackgrounds = [
     'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1550005814-49658ec2d825?auto=format&fit=crop&w=800&q=80'
+    'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80'
   ];
 
   const presetColors = ['#A67B5B', '#8B9A7D', '#D4A59A', '#4A3F35', '#2C3E50', '#E74C3C'];
 
   return (
-    <div className="h-[calc(100vh-100px)] flex gap-6">
+    <div className="flex flex-col gap-6 h-[calc(100vh-8rem)]">
+        <AdminPageHero
+          title="Invitation Designer"
+          description="Design your digital wedding invitations and Save the Date cards."
+          breadcrumb={[
+            { label: 'Dashboard', path: '/admin/dashboard' },
+            { label: 'Designer' },
+          ]}
+          icon={<Palette className="w-5 h-5 text-[#A67B5B]" />}
+          actions={
+              <div className="flex items-center gap-3">
+                  <div className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 ${
+                      saveStatus === 'saving' ? 'bg-amber-50 text-amber-700' : 
+                      saveStatus === 'error' ? 'bg-red-50 text-red-700' : 
+                      'bg-green-50 text-green-700'
+                  }`}>
+                      {saveStatus === 'saving' ? <Loader2 className="w-3 h-3 animate-spin" /> : 
+                       saveStatus === 'error' ? <AlertCircle className="w-3 h-3" /> : 
+                       <CloudCheck className="w-3 h-3" />}
+                      {saveStatus === 'saving' ? 'Saving Changes...' : 
+                       saveStatus === 'error' ? 'Save Error' : 
+                       'Changes Saved'}
+                  </div>
+                  
+                  {/* Actions Dropdown */}
+                  <div className="relative group">
+                      <button className="btn-primary flex items-center gap-2 px-4 py-2">
+                          Actions <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
+                      </button>
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-stone-100 rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                          <button 
+                              onClick={() => handleTestExport('png')}
+                              disabled={isExporting}
+                              className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
+                          >
+                              <FileImage className="w-4 h-4" /> Test PNG
+                          </button>
+                          <button 
+                              onClick={() => handleTestExport('pdf')}
+                              disabled={isExporting}
+                              className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
+                          >
+                              <FileText className="w-4 h-4" /> Test PDF
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          }
+       />
+
+       <div className="flex-1 flex gap-6 overflow-hidden">
         {/* Controls Sidebar */}
         <div className="w-96 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-stone-100 bg-stone-50/50">
-                <h2 className="font-sans font-bold text-lg text-stone-800 flex items-center gap-2">
-                    <Palette className="w-5 h-5 text-[#A67B5B]" />
-                    Invitation Designer
-                </h2>
-                
-                <div className="flex bg-stone-100 p-1 rounded-lg my-3">
-                    <button 
-                        onClick={() => setDesignType('invitation')}
-                        className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${designType === 'invitation' ? 'bg-white shadow-sm text-[#A67B5B]' : 'text-stone-500 hover:text-stone-700'}`}
-                    >
-                        Invitation
-                    </button>
-                    <button 
-                        onClick={() => setDesignType('save_the_date')}
-                        className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${designType === 'save_the_date' ? 'bg-white shadow-sm text-[#A67B5B]' : 'text-stone-500 hover:text-stone-700'}`}
-                    >
-                        Save Date
-                    </button>
-                </div>
-
-                <div className="flex items-center gap-1">
-                    <button 
-                        onClick={handleUndo} 
-                        disabled={historyIndex <= 0}
-                        className={`p-1.5 rounded-lg transition-colors ${historyIndex > 0 ? 'text-stone-600 hover:bg-stone-200' : 'text-stone-300'}`}
-                        title="Undo"
-                    >
-                        <Undo2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                        onClick={handleRedo} 
-                        disabled={historyIndex >= history.length - 1}
-                        className={`p-1.5 rounded-lg transition-colors ${historyIndex < history.length - 1 ? 'text-stone-600 hover:bg-stone-200' : 'text-stone-300'}`}
-                        title="Redo"
-                    >
-                        <Redo2 className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
             
             <div className="flex-1 overflow-y-auto font-sans">
                 <div className="p-6 space-y-8">
                     {/* Tabs Navigation */}
                     <div className="flex p-1 bg-stone-100/50 rounded-xl mb-6">
-                        {(['style', 'text', 'layout', 'items']).map(tab => (
+                        {(['style', 'text', 'layout', 'items', 'layers']).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -566,78 +577,83 @@ export default function InvitationDesigner() {
                                 </div>
                              </div>
 
-                             <div className="space-y-4">
-                                <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-[0.2em]" style={{ fontFamily: 'Lato, sans-serif' }}>Layers</h3>
-                                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
-                                     {design.items.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0)).map((item, index) => {
-                                         return (
-                                             <div 
-                                             key={item.id}
-                                             className={`group flex items-center gap-3 p-3 bg-white border rounded-xl transition-all cursor-pointer ${selectedItemId === item.id ? 'border-[#A67B5B] ring-1 ring-[#A67B5B] shadow-sm' : 'border-stone-100 hover:border-stone-200'}`}
-                                             onClick={() => setSelectedItemId(item.id)}
-                                         >
-                                             <div className="p-2 bg-stone-50 rounded-lg text-stone-400 group-hover:text-[#A67B5B] transition-colors">
-                                                 {item.type === 'text' ? <FileText className="w-4 h-4" /> : 
-                                                  item.type === 'image' ? <FileImage className="w-4 h-4" /> : 
-                                                  item.type === 'frame' ? <SquareDashedMousePointer className="w-4 h-4" /> :
-                                                  <Move className="w-4 h-4" />}
-                                             </div>
-                                             <div className="flex-1 min-w-0">
-                                                 <p className="text-xs font-bold text-stone-700 truncate font-sans">
-                                                     {item.type === 'text' ? (item.textKey === 'title' ? 'Main Title' : item.textKey === 'message' ? 'Message Text' : 'Custom Text') : 
-                                                      item.type === 'rsvp_code' ? 'RSVP Code' : 
-                                                      item.type === 'frame' ? 'Interactive Frame' :
-                                                      item.type === 'calendar_link' ? 'Save the Date' : 'Image ' + item.id.split('_')[1]}
-                                                 </p>
-                                             </div>
-                                             <button 
-                                                 onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
-                                                 className="p-1.5 opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all"
-                                             >
-                                                 <X className="w-3.5 h-3.5" />
-                                             </button>
-                                         </div>
-                                         );
-                                     })}
-                                 </div>
-                             </div>
-
-                             {selectedItemId && (
-                                <div className="mt-6 space-y-4 p-4 bg-stone-50 rounded-xl border border-stone-200 animate-in fade-in slide-in-from-top-4">
-                                    <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider font-sans">Layering Control</h3>
-                                    <div className="grid grid-cols-4 gap-1">
-                                        <button 
-                                            onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'to_front' })}
-                                            title="Bring to Front"
-                                            className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
-                                        >
-                                            <ChevronUp className="w-4 h-4" /> <span className="text-[8px] font-sans">Front</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'forward' })}
-                                            title="Bring Forward"
-                                            className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
-                                        >
-                                            <ArrowUp className="w-4 h-4" /> <span className="text-[8px] font-sans">Up</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'backward' })}
-                                            title="Send Backward"
-                                            className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
-                                        >
-                                            <ArrowDown className="w-4 h-4" /> <span className="text-[8px] font-sans">Down</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'to_back' })}
-                                            title="Send to Back"
-                                            className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
-                                        >
-                                            <ChevronDown className="w-4 h-4" /> <span className="text-[8px] font-sans">Back</span>
-                                        </button>
-                                    </div>
-                                </div>
-                             )}
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'layers' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-[0.2em]" style={{ fontFamily: 'Lato, sans-serif' }}>Layers</h3>
+                            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 scrollbar-hide">
+                                 {design.items.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0)).map((item, index) => {
+                                     return (
+                                         <div 
+                                         key={item.id}
+                                         className={`group flex items-center gap-3 p-3 bg-white border rounded-xl transition-all cursor-pointer ${selectedItemId === item.id ? 'border-[#A67B5B] ring-1 ring-[#A67B5B] shadow-sm' : 'border-stone-100 hover:border-stone-200'}`}
+                                         onClick={() => setSelectedItemId(item.id)}
+                                     >
+                                         <div className="p-2 bg-stone-50 rounded-lg text-stone-400 group-hover:text-[#A67B5B] transition-colors">
+                                             {item.type === 'text' ? <FileText className="w-4 h-4" /> : 
+                                              item.type === 'image' ? <FileImage className="w-4 h-4" /> : 
+                                              item.type === 'frame' ? <SquareDashedMousePointer className="w-4 h-4" /> :
+                                              <Move className="w-4 h-4" />}
+                                         </div>
+                                         <div className="flex-1 min-w-0">
+                                             <p className="text-xs font-bold text-stone-700 truncate font-sans">
+                                                 {item.type === 'text' ? (item.textKey === 'title' ? 'Main Title' : item.textKey === 'message' ? 'Message Text' : 'Custom Text') : 
+                                                  item.type === 'rsvp_code' ? 'RSVP Code' : 
+                                                  item.type === 'frame' ? 'Interactive Frame' :
+                                                  item.type === 'calendar_link' ? 'Save the Date' : 'Image ' + item.id.split('_')[1]}
+                                             </p>
+                                         </div>
+                                         <button 
+                                             onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
+                                             className="p-1.5 opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all"
+                                         >
+                                             <X className="w-3.5 h-3.5" />
+                                         </button>
+                                     </div>
+                                     );
+                                 })}
+                             </div>
+                        </div>
+
+                        {selectedItemId && (
+                            <div className="space-y-4 p-4 bg-stone-50 rounded-xl border border-stone-200 animate-in fade-in slide-in-from-top-4">
+                                <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider font-sans">Layering Control</h3>
+                                <div className="grid grid-cols-4 gap-1">
+                                    <button 
+                                        onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'to_front' })}
+                                        title="Bring to Front"
+                                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                                    >
+                                        <ChevronUp className="w-4 h-4" /> <span className="text-[8px] font-sans">Front</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'forward' })}
+                                        title="Bring Forward"
+                                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                                    >
+                                        <ArrowUp className="w-4 h-4" /> <span className="text-[8px] font-sans">Up</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'backward' })}
+                                        title="Send Backward"
+                                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                                    >
+                                        <ArrowDown className="w-4 h-4" /> <span className="text-[8px] font-sans">Down</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'to_back' })}
+                                        title="Send to Back"
+                                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                                    >
+                                        <ChevronDown className="w-4 h-4" /> <span className="text-[8px] font-sans">Back</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                 
@@ -661,6 +677,15 @@ export default function InvitationDesigner() {
                                         <img src={bg} alt="preset" className="w-full h-full object-cover" />
                                     </button>
                                 ))}
+                                <div className="col-span-4 mt-1">
+                                    <div className="p-3 border-2 border-dashed border-[#A67B5B]/20 rounded-xl bg-[#A67B5B]/5 hover:border-[#A67B5B]/40 transition-all text-center">
+                                        <p className="text-[10px] font-bold text-[#A67B5B] uppercase tracking-wider mb-2">Upload Background</p>
+                                        <ImageUpload 
+                                            onUpload={(url) => updateDesign('bgImage', url)}
+                                            allowMultiple={false}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -864,11 +889,31 @@ export default function InvitationDesigner() {
                                         </button>
                                     </div>
                                 </div>
+                                {!design.items.some(i => i.textKey === 'title') && (
+                                    <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg animate-in fade-in slide-in-from-top-2">
+                                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                                        <span className="text-[11px] text-amber-700 font-medium flex-1">Layer missing from canvas</span>
+                                        <button
+                                            onClick={() => {
+                                                addItem('text', {
+                                                    id: 'title_1',
+                                                    textKey: 'title',
+                                                    x: 25, y: 180, width: 450, height: 120,
+                                                    fontStyle: 'cursive', fontSize: 52, zIndex: 50
+                                                });
+                                            }}
+                                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-md transition-colors flex items-center gap-1 whitespace-nowrap"
+                                        >
+                                            <Plus className="w-3 h-3" /> Add to Design
+                                        </button>
+                                    </div>
+                                )}
                                 <input 
                                     ref={titleRef}
                                     className="w-full p-3 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-[#A67B5B]/20 outline-none font-sans"
                                     value={design.content?.[editorLang]?.title || ''}
                                     onChange={(e) => updateContent(editorLang, 'title', e.target.value)}
+                                    onFocus={() => setSelectedItemId(design.items.find(i => i.textKey === 'title')?.id)}
                                     placeholder="Main Title (e.g. Names)"
                                 />
                             </div>
@@ -889,6 +934,7 @@ export default function InvitationDesigner() {
                                         className="w-full p-2 border border-stone-200 rounded text-sm focus:ring-2 focus:ring-[#A67B5B]/20 outline-none font-sans"
                                         value={design.content?.[editorLang]?.[item.textKey] || ''}
                                         onChange={(e) => updateContent(editorLang, item.textKey, e.target.value)}
+                                        onFocus={() => setSelectedItemId(item.id)}
                                         placeholder="Enter custom text..."
                                     />
                                 </div>
@@ -909,11 +955,31 @@ export default function InvitationDesigner() {
                                         </button>
                                     </div>
                                 </div>
+                                {!design.items.some(i => i.textKey === 'message') && (
+                                    <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg animate-in fade-in slide-in-from-top-2">
+                                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                                        <span className="text-[11px] text-amber-700 font-medium flex-1">Layer missing from canvas</span>
+                                        <button
+                                            onClick={() => {
+                                                addItem('text', {
+                                                    id: 'message_1',
+                                                    textKey: 'message',
+                                                    x: 25, y: 320, width: 450, height: 160,
+                                                    fontStyle: 'serif', fontSize: 17, letterSpacing: 0, zIndex: 25
+                                                });
+                                            }}
+                                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-md transition-colors flex items-center gap-1 whitespace-nowrap"
+                                        >
+                                            <Plus className="w-3 h-3" /> Add to Design
+                                        </button>
+                                    </div>
+                                )}
                                 <textarea 
                                     ref={messageRef}
                                     className="w-full p-3 border border-stone-200 rounded-lg text-sm h-32 resize-none focus:ring-2 focus:ring-[#A67B5B]/20 outline-none font-sans"
                                     value={design.content?.[editorLang]?.message || ''}
                                     onChange={(e) => updateContent(editorLang, 'message', e.target.value)}
+                                    onFocus={() => setSelectedItemId(design.items.find(i => i.textKey === 'message')?.id)}
                                     placeholder="Invitation message/details..."
                                 />
                             </div>
@@ -1055,67 +1121,54 @@ export default function InvitationDesigner() {
             </div>
             </div>
 
-            <div className="p-4 border-t border-stone-100 bg-white">
-                <div className="flex items-center justify-center gap-2 mb-4 px-2 py-1.5 rounded-lg bg-stone-50 border border-stone-100">
-                    {saveStatus === 'saving' && (
-                        <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-stone-500" />
-                            <span className="text-[10px] uppercase tracking-wider font-bold text-stone-500">Saving changes...</span>
-                        </>
-                    )}
-                    {saveStatus === 'saved' && (
-                        <>
-                            <CloudCheck className="w-3.5 h-3.5 text-emerald-500" />
-                            <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-600">All changes saved</span>
-                        </>
-                    )}
-                    {saveStatus === 'error' && (
-                        <>
-                            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-                            <span className="text-[10px] uppercase tracking-wider font-bold text-stone-600">Save failed - retrying</span>
-                        </>
-                    )}
-                </div>
-
-                <button 
-                    onClick={handleSave}
-                    className="w-full btn-primary flex items-center justify-center gap-2 py-3 mb-2"
-                >
-                    <Save className="w-4 h-4" /> Save Design
-                </button>
-                <div className="grid grid-cols-2 gap-2">
-                    <button 
-                        onClick={() => handleTestExport('png')}
-                        disabled={isExporting}
-                        className="btn-secondary text-xs flex items-center justify-center gap-1 py-2"
-                    >
-                        <FileImage className="w-3 h-3" /> Test PNG
-                    </button>
-                    <button 
-                        onClick={() => handleTestExport('pdf')}
-                        disabled={isExporting}
-                        className="btn-secondary text-xs flex items-center justify-center gap-1 py-2"
-                    >
-                        <FileText className="w-3 h-3" /> Test PDF
-                    </button>
-                </div>
             </div>
-        </div>
 
         {/* Live Preview Area */}
-        <div className="flex-1 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 flex items-center justify-center p-8 overflow-hidden relative">
+        <div className="flex-1 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 flex items-center justify-center p-3 overflow-hidden relative">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
-                        <InvitationCanvas 
-                    design={design} 
-                    onUpdateDesign={handleDesignUpdate} 
-                    selectedId={selectedItemId}
-                    onSelectExclusively={setSelectedItemId}
-                    mode="edit" // RESTORED
-                    guest={dummyGuest}
-                    showGrid={design.showGrid}
-                    snapToGrid={design.snapToGrid}
-                    weddingSettings={settings}
-                />
+            
+            <InvitationCanvas 
+                design={design} 
+                onUpdateDesign={handleDesignUpdate} 
+                selectedId={selectedItemId}
+                onSelectExclusively={setSelectedItemId}
+                mode="edit" 
+                guest={dummyGuest}
+                showGrid={design.showGrid}
+                snapToGrid={design.snapToGrid}
+                weddingSettings={settings}
+            />
+
+            {/* Floating Workspace Controls (Undo/Redo & Design Type) */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-stone-200 p-1.5 z-50">
+                <button 
+                    onClick={handleUndo} 
+                    disabled={historyIndex <= 0}
+                    className={`p-3 rounded-xl transition-all ${historyIndex > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+                    title="Undo (Ctrl+Z)"
+                >
+                    <Undo2 className="w-5 h-5" />
+                </button>
+                <div className="w-px h-6 bg-stone-200 mx-1" />
+                <button 
+                    onClick={handleRedo} 
+                    disabled={historyIndex >= history.length - 1}
+                    className={`p-3 rounded-xl transition-all ${historyIndex < history.length - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+                    title="Redo (Ctrl+Y)"
+                >
+                    <Redo2 className="w-5 h-5" />
+                </button>
+                <div className="w-px h-6 bg-stone-200 mx-1" />
+                <select
+                    value={designType}
+                    onChange={(e) => setDesignType(e.target.value)}
+                    className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-transparent text-[#A67B5B] cursor-pointer hover:bg-stone-100 transition-all border-none outline-none appearance-none"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A67B5B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', paddingRight: '20px' }}
+                >
+                    <option value="invitation">Invitation</option>
+                    <option value="save_the_date">Save the Date</option>
+                </select>
+            </div>
 
             {/* Hidden Exporter */}
             <InvitationExportContainer 
@@ -1128,6 +1181,7 @@ export default function InvitationDesigner() {
                 }}
             />
         </div>
+      </div>
     </div>
   );
 }

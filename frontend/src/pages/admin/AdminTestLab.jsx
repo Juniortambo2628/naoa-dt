@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, QrCode, Send, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, QrCode, Send, RefreshCw, CheckCircle, AlertCircle, FlaskConical } from 'lucide-react';
 import api from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 
@@ -43,6 +43,7 @@ export default function AdminTestLab() {
       <AdminPageHero
         title="Test Lab"
         description="Development and testing utilities"
+        icon={<FlaskConical className="w-5 h-5 text-[#A67B5B]" />}
         breadcrumb={[
           { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'Test Lab' },

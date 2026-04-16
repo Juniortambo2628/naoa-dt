@@ -82,21 +82,7 @@ function HeroSection({ content }) {
       <MainFlowerTopLeft size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
       <MainFlowerBottomRight size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
       
-      {/* Floating Flowers */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-32 right-32 md:right-48">
-            <FloatingFlower type="centered" size={120} duration={12} distance={15} rotate={5} />
-        </div>
-        <div className="absolute bottom-32 left-32 md:left-48">
-            <FloatingFlower type="secondary-top-left" size={100} duration={10} distance={12} delay={1} rotate={-3} />
-        </div>
-        <div className="absolute top-1/4 left-[30%]">
-            <FloatingFlower type="centered" size={80} duration={14} distance={10} delay={2} rotate={8} />
-        </div>
-        <div className="absolute bottom-1/4 right-[30%]">
-            <FloatingFlower type="secondary-bottom-right" size={90} duration={11} distance={18} delay={0.5} rotate={-6} />
-        </div>
-      </div>
+      {/* Floating Flowers Removed as requested */}
       
       {/* Hero Content */}
       <motion.div 
@@ -324,14 +310,6 @@ function CountdownSection({ content }) {
 
   return (
     <section className="section relative" style={{ background: '#FDF5F2', zIndex: 40 }}>
-      {/* Custom Flower Decorations */}
-      <div className="absolute top-0 left-0 pointer-events-none">
-        <FlowerColorCircles size={200} className="opacity-60" />
-      </div>
-      <div className="absolute bottom-0 right-0 pointer-events-none" style={{ transform: 'rotate(180deg)' }}>
-        <FlowerColorCircles size={180} className="opacity-50" />
-      </div>
-      
       <div className="container-wedding relative z-10">
         <motion.div
           initial="hidden"
@@ -366,37 +344,21 @@ function CountdownSection({ content }) {
               <motion.div 
                 key={item.label}
                 variants={scaleIn}
-                className="text-center"
+                className="text-center w-24 md:w-32 flex flex-col items-center"
               >
-                <motion.div 
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center mb-4 relative overflow-hidden"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,232,224,0.9) 100%)',
-                    border: '3px solid #D4A59A',
-                    boxShadow: '0 10px 40px rgba(212, 165, 154, 0.25)',
-                  }}
-                  whileHover={{ scale: 1.05, rotate: 5 }}
+                <motion.span 
+                  className="text-5xl md:text-6xl font-light opacity-90"
+                  style={{ color: '#4A3F35', fontFamily: "'Cormorant Garamond', serif" }}
+                  key={item.value}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  {/* Animated background */}
-                  <motion.div
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(135deg, #A67B5B20, transparent)' }}
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                  />
-                  <motion.span 
-                    className="text-4xl md:text-5xl font-light relative z-10"
-                    style={{ color: '#A67B5B', fontFamily: "'Cormorant Garamond', serif" }}
-                    key={item.value}
-                    initial={{ scale: 1.2, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {String(item.value).padStart(2, '0')}
-                  </motion.span>
-                </motion.div>
+                  {String(item.value).padStart(2, '0')}
+                </motion.span>
+                <div className="w-8 h-[1px] bg-[#D4A59A]/50 my-4"></div>
                 <span 
-                  className="text-sm md:text-base uppercase tracking-[0.2em]"
+                  className="text-xs md:text-sm uppercase tracking-[0.25em]"
                   style={{ color: '#8B7B6B' }}
                 >
                   {item.label}
@@ -423,13 +385,7 @@ function StorySection({ content }) {
 
   return (
     <section ref={ref} className="section relative" style={{ background: '#FFFEF8', zIndex: 30 }}>
-      {/* Custom Flower Decorations */}
-      <div className="absolute top-12 left-24 pointer-events-none">
-          <FloatingFlower type="secondary-top-left" size={100} duration={12} />
-      </div>
-      <div className="absolute bottom-12 right-24 pointer-events-none">
-          <FloatingFlower type="secondary-bottom-right" size={100} duration={10} delay={1} />
-      </div>
+      {/* Floating Flowers Removed as requested */}
       
       <div className="container-wedding relative z-10">
         <motion.div
@@ -495,9 +451,11 @@ function StorySection({ content }) {
               >
                 {getTxt('bride_name', 'Dinah')}
               </h3>
-              <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
-                {t('story.bride_role')} {/* Using translation key for 'The Bride' label if needed, or just let fetching name be sufficient */}
-              </p>
+              {content?.our_story?.content?.bride_role && (
+                <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
+                  {getTxt('bride_role', 'story.bride_role')}
+                </p>
+              )}
             </RevealOnScroll>
             
             {/* Animated Heart */}
@@ -553,9 +511,11 @@ function StorySection({ content }) {
               >
                 {getTxt('groom_name', 'Tze Ren')}
               </h3>
-              <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
-               {t('story.groom_role')}
-              </p>
+              {content?.our_story?.content?.groom_role && (
+                <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
+                  {getTxt('groom_role', 'story.groom_role')}
+                </p>
+              )}
             </RevealOnScroll>
           </motion.div>
           
@@ -648,7 +608,7 @@ function EventDetails({ content }) {
       className="section relative"
       style={{ background: 'linear-gradient(180deg, #FDF5F2 0%, #F8E8E0 100%)', zIndex: 20 }}
     >
-      {/* Custom flower decorations / Polaroids */}
+      {/* Custom polaroids (no floating flowers) */}
       <div className="absolute top-8 left-24 pointer-events-none">
          {(() => {
              const p = getPolaroid(6, 'events_top_left');
@@ -664,9 +624,7 @@ function EventDetails({ content }) {
                 offsetY={p.offset_y}
                 customRotation={p.rotation} 
              />
-          ) : (
-             <FloatingFlower type="secondary-top-left" size={120} duration={10} />
-          );
+          ) : null;
          })()}
       </div>
       <div className="absolute bottom-8 right-24 pointer-events-none">
@@ -685,9 +643,7 @@ function EventDetails({ content }) {
                 offsetY={p.offset_y}
                 customRotation={p.rotation} 
              />
-          ) : (
-             <FloatingFlower type="secondary-bottom-right" size={120} duration={12} delay={1} />
-          );
+          ) : null;
          })()}
       </div>
       
@@ -911,13 +867,7 @@ function CTASection({ content }) {
       className="section relative"
       style={{ background: 'linear-gradient(135deg, #F8E8E0 0%, #FDF5F2 50%, #F8E8E0 100%)', zIndex: 0 }}
     >
-      {/* Custom flower decorations */}
-      <div className="absolute bottom-0 left-0 pointer-events-none">
-        <FloatingFlower type="secondary-top-left" size={150} duration={10} />
-      </div>
-      <div className="absolute bottom-0 right-0 pointer-events-none">
-        <FloatingFlower type="secondary-bottom-right" size={150} duration={12} delay={1} />
-      </div>
+      {/* Floating Flowers Removed as requested */}
       
       <div className="container-wedding relative z-10">
         <motion.div

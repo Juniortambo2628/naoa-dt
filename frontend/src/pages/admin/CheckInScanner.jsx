@@ -80,7 +80,7 @@ export default function CheckInScanner() {
         <div className="space-y-6">
             <AdminPageHero
                 title="Guest Check-In"
-                description="Scan QR codes to check in guests"
+                description={`Total checked in: ${stats.checked_in} / ${stats.total_expected}`}
                 breadcrumb={[
                     { label: 'Dashboard', path: '/admin/dashboard' },
                     { label: 'Check-In' },

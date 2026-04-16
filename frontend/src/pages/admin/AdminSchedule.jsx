@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save, X, Loader2 } from 'lucide-react';
 import { scheduleService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import { useSearch } from '../../context/SearchContext';
 
+/* Force refresh: 2026-04-15 06:36 - Critical fix for ReferenceError */
 export default function AdminSchedule() {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
@@ -13,6 +15,7 @@ export default function AdminSchedule() {
   const [selectedItem, setSelectedItem] = useState(null); // If editing a schedule item
   const [selectedEvent, setSelectedEvent] = useState(null); // If editing a main event
   const [targetEventId, setTargetEventId] = useState(null); // Which event to add item to
+  const { searchQuery } = useSearch();
 
   const fetchSchedule = async () => {
     try {
@@ -101,10 +104,31 @@ export default function AdminSchedule() {
       }
   };
 
+  const filteredEvents = events.map(event => {
+      const activeSearch = searchQuery || '';
+      const searchLower = activeSearch.toLowerCase();
+      
+      const filteredItems = (event.schedule_items || []).filter(item => 
+          item.status !== 'deleted' && (
+              item.title.toLowerCase().includes(searchLower) || 
+              (item.location && item.location.toLowerCase().includes(searchLower))
+          )
+      );
+
+      const matchesEvent = event.name.toLowerCase().includes(searchLower) || 
+                           (event.venue && event.venue.toLowerCase().includes(searchLower));
+
+      if (matchesEvent || filteredItems.length > 0) {
+          return { ...event, display_items: filteredItems, visible: true };
+      }
+      return { ...event, visible: false };
+  }).filter(e => e.visible);
+
   return (
     <div className="space-y-6">
       <AdminPageHero
         title="Schedule Management"
+        description={`${events.length} major events scheduled`}
         breadcrumb={[
           { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'Schedule' },
@@ -112,23 +136,28 @@ export default function AdminSchedule() {
         icon={<Calendar className="w-5 h-5 text-[#A67B5B]" />}
         actions={
           <button onClick={handleCreateEvent} className="btn-primary flex items-center gap-2">
-              <Calendar className="w-5 h-5" /> Add Event Data
+              <Calendar className="w-5 h-5" /> Add Major Event
           </button>
         }
       />
 
       {loading ? (
         <p>Loading...</p>
-      ) : events.length === 0 ? (
-        <div className="text-center py-12 bg-stone-50 rounded-2xl border border-stone-100">
-            <p className="text-stone-500 mb-4">No events found. Create an event to start building the schedule.</p>
-            <button onClick={handleCreateEvent} className="btn-primary inline-flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Create First Event
-            </button>
+      ) : filteredEvents.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-2xl border border-stone-100 shadow-sm">
+            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20 text-stone-400" />
+            <p className="text-stone-500 mb-4">
+                {searchQuery ? 'No matching schedule items found.' : 'No events found. Create an event to start building the schedule.'}
+            </p>
+            {!searchQuery && (
+                <button onClick={handleCreateEvent} className="btn-primary inline-flex items-center gap-2">
+                    <Plus className="w-4 h-4" /> Create First Event
+                </button>
+            )}
         </div>
       ) : (
         <div className="space-y-8">
-            {events.map(event => (
+            {filteredEvents.map(event => (
                 <div key={event.id} className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
@@ -162,7 +191,7 @@ export default function AdminSchedule() {
                     </div>
 
                     <div className="space-y-3">
-                        {event.schedule_items && event.schedule_items.filter(i => i.status !== 'deleted').map(item => (
+                        {event.display_items.map(item => (
                             <div key={item.id} className="flex items-center gap-4 p-4 rounded-xl bg-stone-50 hover:bg-stone-100 transition-colors">
                                 <div className="w-16 text-center">
                                     <p className="font-bold text-[#A67B5B]">{item.start_time.slice(0,5)}</p>
@@ -190,8 +219,8 @@ export default function AdminSchedule() {
                                 </div>
                             </div>
                         ))}
-                        {(!event.schedule_items || event.schedule_items.filter(i => i.status !== 'deleted').length === 0) && (
-                            <p className="text-center text-stone-400 py-4">No items scheduled yet.</p>
+                        {event.display_items.length === 0 && (
+                            <p className="text-center text-stone-400 py-4">No matching items in this group.</p>
                         )}
                     </div>
                 </div>
@@ -230,13 +259,13 @@ function EventModal({ isOpen, onClose, onSave, event }) {
         if (event) {
             setFormData({
                 name: event.name || '',
-                event_date: event.event_date || '',
+                event_date: event.event_date ? event.event_date.split('T')[0] : '',
                 event_time: event.event_time?.slice(0,5) || '14:00',
                 venue: event.venue || '',
                 description: event.description || ''
             });
         } else {
-            setFormData({ name: '', event_date: '', event_time: '14:00', venue: '', description: '' });
+            setFormData({ name: '', event_date: new Date().toISOString().split('T')[0], event_time: '14:00', venue: '', description: '' });
         }
     }, [event, isOpen]);
 

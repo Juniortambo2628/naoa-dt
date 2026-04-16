@@ -19,6 +19,8 @@ class InvitationEmail extends Mailable
     public $subjectText;
     public $messageText;
     public $attachmentPath;
+    public $weddingDateFormatted;
+    public $rsvpDeadline;
 
     /**
      * Create a new message instance.
@@ -33,6 +35,19 @@ class InvitationEmail extends Mailable
         
         $this->subjectText = \App\Models\Setting::getValue('email_invitation_subject', 'You are invited! Dinah & Tze Ren\'s Wedding');
         $this->messageText = \App\Models\Setting::getValue('email_invitation_message', 'We are delighted to invite you to celebrate our wedding day.');
+        
+        $countdown = \App\Models\PageContent::where('section_key', 'countdown')->first();
+        $weddingDateRaw = $countdown->content['wedding_date'] ?? '2026-11-14';
+        try {
+            $date = \Carbon\Carbon::parse($weddingDateRaw);
+            $this->weddingDateFormatted = $date->format('F jS, Y');
+            // Suggest an RSVP deadline of 1 month prior
+            // Since `subMonth` modifies the instance, we create a copy
+            $this->rsvpDeadline = \Carbon\Carbon::parse($weddingDateRaw)->subMonth()->format('F jS, Y');
+        } catch (\Exception $e) {
+            $this->weddingDateFormatted = 'your upcoming wedding date';
+            $this->rsvpDeadline = 'one month before the event';
+        }
     }
 
     /**
@@ -56,6 +71,8 @@ class InvitationEmail extends Mailable
                 'subject' => $this->subjectText,
                 'messageText' => $this->messageText,
                 'rsvpCode' => $this->guest->unique_code,
+                'weddingDate' => $this->weddingDateFormatted,
+                'rsvpDeadline' => $this->rsvpDeadline,
             ]
         );
     }

@@ -156,8 +156,28 @@ export default function InvitationCanvas({
 
   const frame = design.frame || { visible: design.showBorder, color: design.accentColor, thickness: 1, padding: 20 };
 
+  const [scale, setScale] = useState(1);
+  const outerRef = useRef(null);
+
+  // Auto-scale canvas to fit available space
+  useEffect(() => {
+    if (isExport || !outerRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        const scaleX = width / CANVAS_WIDTH;
+        const scaleY = height / CANVAS_HEIGHT;
+        const newScale = Math.min(scaleX, scaleY, 1.2); // Cap at 1.2x to avoid over-scaling
+        setScale(Math.max(newScale, 0.3));
+      }
+    });
+    resizeObserver.observe(outerRef.current);
+    return () => resizeObserver.disconnect();
+  }, [isExport, CANVAS_WIDTH, CANVAS_HEIGHT]);
+
   return (
     <div 
+        ref={outerRef}
         className={isExport ? `w-[${CANVAS_WIDTH}px] h-[${CANVAS_HEIGHT}px]` : 'w-full h-full flex items-center justify-center'} 
         style={{ padding: '0', display: isExport ? 'block' : 'flex' }}
     >
@@ -169,7 +189,8 @@ export default function InvitationCanvas({
                 width: `${CANVAS_WIDTH}px`,
                 height: `${CANVAS_HEIGHT}px`,
                 flexShrink: 0, 
-                transform: 'none', 
+                transform: isExport ? 'none' : `scale(${scale})`, 
+                transformOrigin: 'center center',
                 margin: 0,
                 padding: 0
             }}
@@ -229,15 +250,10 @@ export default function InvitationCanvas({
                             if (mode === 'edit') onSelectExclusively(item.id);
                         }}
                     >
-                        {item.type === 'image' ? (
-                          <img 
-                              src={getAssetUrl(item.src)} 
-                              alt="" 
-                              className="w-full h-full object-cover pointer-events-none" 
-                              crossOrigin="anonymous" 
-                              onError={(e) => { e.target.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; }}
-                          />
-                        ) : renderItemContent(item)}
+                        {mode === 'edit' && selectedId === item.id && (
+                            <div className="element-active-ring" style={{ '--accent-color': design.accentColor || '#A67B5B' }} />
+                        )}
+                        {renderItemContent(item)}
                     </div>
                 ))}
             </div>
@@ -307,8 +323,8 @@ export default function InvitationCanvas({
             <div className="absolute inset-0 z-40 pointer-events-none">
                 {design.showIllustrations && (
                         <div className="absolute flex justify-center gap-6 py-2 opacity-80 z-20" style={{ top: isLandscape ? '210px' : '272px', left: '50%', transform: 'translateX(-50%)' }}>
-                            <img src={getAssetUrl("/illustrations/male-icon.png")} className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
-                            <img src={getAssetUrl("/illustrations/female-icon.png")} className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
+                            <img src="/illustrations/male-icon.png" className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
+                            <img src="/illustrations/female-icon.png" className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
                         </div>
                 )}
                 

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
@@ -75,6 +75,7 @@ function App() {
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLogin />} />
+                <Route path="//admin" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
               </Routes>
             </Suspense>

@@ -3,12 +3,14 @@ import { Gift, Plus, Trash2, Edit, Save, X, Loader2, DollarSign, ExternalLink } 
 import { giftService, getAssetUrl } from '../../services/api';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import { useSearch } from '../../context/SearchContext';
 
 export default function AdminGifts() {
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedGift, setSelectedGift] = useState(null);
+  const { searchQuery } = useSearch();
 
   const fetchGifts = async () => {
     try {
@@ -55,10 +57,17 @@ export default function AdminGifts() {
     fetchGifts();
   };
 
+  const filteredGifts = gifts.filter(gift => {
+    const activeSearch = searchQuery || '';
+    return gift.name.toLowerCase().includes(activeSearch.toLowerCase()) || 
+           (gift.description && gift.description.toLowerCase().includes(activeSearch.toLowerCase()));
+  });
+
   return (
     <div className="space-y-6">
       <AdminPageHero
         title="Gift Registry"
+        description={`${gifts.length} total gifts`}
         breadcrumb={[
           { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'Gifts' },
@@ -73,11 +82,14 @@ export default function AdminGifts() {
 
       {loading ? (
         <p>Loading...</p>
-      ) : gifts.length === 0 ? (
-        <p className="text-center py-12 text-stone-500">No gifts in the registry yet.</p>
+      ) : filteredGifts.length === 0 ? (
+        <div className="bg-white rounded-2xl p-12 text-center border border-stone-100">
+            <Gift className="w-12 h-12 mx-auto mb-3 opacity-20 text-stone-400" />
+            <p className="text-stone-500">No matching gifts found.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           {gifts.map((gift) => (
+           {filteredGifts.map((gift) => (
             <div 
               key={gift.id}
               className="rounded-2xl overflow-hidden bg-white shadow-sm border border-stone-100 group"

@@ -8,6 +8,7 @@ import { songRequestService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import StatCard from '../../components/admin/StatCard';
 import AdminToolbar from '../../components/admin/AdminToolbar';
+import { useSearch } from '../../context/SearchContext';
 
 export default function AdminSongRequests() {
   const { t } = useTranslation();
@@ -15,7 +16,7 @@ export default function AdminSongRequests() {
   const [stats, setStats] = useState({ total: 0, played: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
-  const [search, setSearch] = useState('');
+  const { searchQuery } = useSearch();
   const [filter, setFilter] = useState('all');
 
   const fetchSongs = async () => {
@@ -64,7 +65,7 @@ export default function AdminSongRequests() {
     <div className="space-y-6">
       <AdminPageHero
         title="Song Requests"
-        description="Manage song requests from your guests"
+        description={`${songs.length} total requests from guests`}
         breadcrumb={[
           { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'Songs' },
@@ -104,8 +105,7 @@ export default function AdminSongRequests() {
       </div>
 
       <AdminToolbar
-        search={search}
-        onSearchChange={setSearch}
+        onSearchChange={() => {}} // dummy to signal that we are using global search if component still checks it
         searchPlaceholder="Search songs or artists..."
         filters={[
           { id: 'all', label: 'All Requests' },
@@ -131,9 +131,11 @@ export default function AdminSongRequests() {
           <div className="divide-y divide-stone-100">
             <AnimatePresence>
               {songs.filter(song => {
-                const matchesSearch = (song.song_title && song.song_title.toLowerCase().includes(search.toLowerCase())) ||
-                                      (song.artist && song.artist.toLowerCase().includes(search.toLowerCase())) ||
-                                      (song.guest_name && song.guest_name.toLowerCase().includes(search.toLowerCase()));
+                const activeSearch = searchQuery || '';
+                const searchLower = activeSearch.toLowerCase();
+                const matchesSearch = (song.song_title && song.song_title.toLowerCase().includes(searchLower)) ||
+                                      (song.artist && song.artist.toLowerCase().includes(searchLower)) ||
+                                      (song.guest_name && song.guest_name.toLowerCase().includes(searchLower));
                 const matchesFilter = filter === 'all' ? true : (filter === 'played' ? song.is_played : !song.is_played);
                 return matchesSearch && matchesFilter;
               }).map((song) => (

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart, Instagram, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { LeafDivider } from './FloralDecorations';
+import { FlowerDivider } from './CustomIllustrations';
 import { useTranslation } from 'react-i18next';
 
 // Helper to resolve dynamic content
@@ -30,7 +30,7 @@ export default function Footer({ content }) {
           transition={{ duration: 0.8 }}
           className="text-center mb-12"
         >
-          <LeafDivider />
+          <FlowerDivider />
           <h3 
             className="text-4xl mb-4"
             style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
@@ -141,16 +141,21 @@ export default function Footer({ content }) {
         style={{ borderColor: 'rgba(166, 123, 91, 0.2)' }}
       >
         <div className="container-wedding flex flex-col md:flex-row justify-between items-center gap-4">
-          <p 
-            className="text-sm flex items-center gap-2"
+          <div 
+            className="text-sm flex flex-col md:flex-row items-center gap-2 md:gap-4"
             style={{ color: '#8B7B6B' }}
           >
-            © {currentYear} {getTxt('couple_names', 'Dinah & Tze Ren')}. Made with 
-            <Heart className="w-4 h-4 fill-current" style={{ color: '#D4A59A' }} /> 
-            in {getTxt('location', 'Nairobi')}
-          </p>
+            <div className="flex items-center gap-1">
+              <span>Naoa &copy; {currentYear}</span>
+              <span>•</span>
+              <span>Built to last by</span>
+              <a href="https://okjtech.co.ke" target="_blank" rel="noopener noreferrer" className="inline-flex items-center hover:opacity-70 transition-opacity">
+                <img src="/okjtechnologies-logo/OKJTechLogo-Black_Transparent.png" alt="OKJTech" className="h-4 ml-1" />
+              </a>
+            </div>
+          </div>
           <p 
-            className="font-script text-lg"
+            className="font-script text-lg ml-auto"
             style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
           >
              {getTxt('message', 'Forever & Always')}

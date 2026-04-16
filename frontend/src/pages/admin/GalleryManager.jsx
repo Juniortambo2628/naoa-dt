@@ -1,37 +1,26 @@
 import { useState, useEffect } from 'react';
 import { galleryService, getAssetUrl } from '../../services/api';
-import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical, Check } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+/* Force refresh: 2026-04-15 06:45 - Critical fix for ReferenceError & HMR recovery */
 import { useGallery } from '../../hooks/useApiHooks';
+import { useSearch } from '../../context/SearchContext';
 
 export default function GalleryManager() {
   const { data: fetchedItems, isLoading: loading, refetch: fetchGallery } = useGallery();
   const [items, setItems] = useState([]);
-  const [newUrls, setNewUrls] = useState([]);
-  const [isAdding, setIsAdding] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [isReordering, setIsReordering] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [uploadingFiles, setUploadingFiles] = useState([]);
+  const { searchQuery } = useSearch();
 
   useEffect(() => {
     if (fetchedItems) setItems(fetchedItems);
   }, [fetchedItems]);
 
-  const handleBulkAdd = async (e) => {
-      e.preventDefault();
-      try {
-          // Create an item for each uploaded URL
-          await Promise.all(newUrls.map(url => 
-            galleryService.create({ image_url: url, caption: '' })
-          ));
-          setNewUrls([]);
-          setIsAdding(false);
-          fetchGallery();
-      } catch (err) {
-          alert('Failed to add images');
-      }
-  };
 
   const handleDelete = async (id) => {
       if (confirm('Delete this image?')) {
@@ -67,6 +56,28 @@ export default function GalleryManager() {
       setItems(newOrder);
   };
 
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (confirm(`Delete ${selectedIds.length} selected photos?`)) {
+        await Promise.all(selectedIds.map(id => galleryService.delete(id)));
+        setSelectedIds([]);
+        fetchGallery();
+    }
+  };
+
+  const handleBulkVisibility = async (visible) => {
+    await Promise.all(selectedIds.map(id => 
+        galleryService.update(id, { is_visible: visible })
+    ));
+    setSelectedIds([]);
+    fetchGallery();
+  };
+
   const saveOrder = async () => {
     try {
         const reorderedItems = items.map((item, index) => ({
@@ -81,17 +92,33 @@ export default function GalleryManager() {
     }
   };
 
+  const filteredItems = items
+    .filter(item => {
+      const activeSearch = searchQuery || '';
+      return (item.caption || '').toLowerCase().includes(activeSearch.toLowerCase());
+    })
+    .sort((a, b) => b.id - a.id);
+
   return (
     <div className="space-y-6">
        <AdminPageHero
             title="Gallery Management"
+            description={`${items.length} photos in gallery`}
             breadcrumb={[
                 { label: 'Dashboard', path: '/admin/dashboard' },
                 { label: 'Gallery' },
             ]}
             icon={<ImageIcon className="w-5 h-5 text-[#A67B5B]" />}
             actions={
-                <>
+                <div className="flex items-center gap-3">
+                    {items.length > 0 && (
+                        <button 
+                            onClick={() => setSelectedIds(selectedIds.length === items.length ? [] : items.map(i => i.id))}
+                            className="text-xs font-bold text-[#A67B5B] hover:text-[#8B7B6B] transition-colors"
+                        >
+                            {selectedIds.length === items.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                    )}
                     <button 
                         onClick={() => isReordering ? saveOrder() : setIsReordering(!isReordering)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
@@ -102,41 +129,57 @@ export default function GalleryManager() {
                     >
                         {isReordering ? 'Save Order' : <><ArrowUpDown className="w-4 h-4" /> Reorder</>}
                     </button>
-                    {!isReordering && (
-                        <button 
-                            onClick={() => setIsAdding(!isAdding)}
-                            className="btn-primary flex items-center gap-2"
-                        >
-                            <Plus className="w-5 h-5" /> Add photos
-                        </button>
-                    )}
-                </>
+                </div>
             }
-       />
+        />
 
-       {isAdding && (
-           <form onSubmit={handleBulkAdd} className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 space-y-4 animate-in fade-in slide-in-from-top-4">
-               <div>
-                   <label className="block text-sm font-medium text-stone-700 mb-2">Upload Photos</label>
-                   <ImageUpload 
-                        allowMultiple={true}
-                        maxFiles={10}
-                        onUpload={(url) => setNewUrls(prev => [...prev, url])}
-                   />
-                   <p className="text-xs text-stone-500 mt-2">
-                       {newUrls.length} photos ready to add. Captions can be added after uploading.
-                   </p>
-               </div>
-               
-               <div className="flex items-center gap-2 pt-4 border-t border-stone-50">
-                   <button type="button" onClick={() => { setIsAdding(false); setNewUrls([]); }} className="px-4 py-2 text-stone-500 hover:bg-stone-50 rounded-lg">Cancel</button>
-                   <button type="submit" disabled={newUrls.length === 0} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add {newUrls.length > 0 ? `${newUrls.length} Photos` : 'Photos'}
-                   </button>
-               </div>
-           </form>
-       )}
+        {/* Multi-Upload Dropzone */}
+        {!isReordering && (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-dashed border-[#A67B5B]/20 transition-all hover:border-[#A67B5B]/40">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
+                        <ImageIcon className="w-5 h-5 text-[#A67B5B]" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-stone-800">Add Gallery Photos</h3>
+                        <p className="text-xs text-stone-500">Drag and drop multiple images to upload them instantly</p>
+                    </div>
+                </div>
+                  <ImageUpload 
+                    allowMultiple={true} 
+                    maxFiles={10}
+                    showList={false}
+                    className="filepond-custom hide-filepond-list"
+                    onFileAdded={(file) => {
+                        setUploadingFiles(prev => [...prev, {
+                            id: file.id,
+                            name: file.filename,
+                            progress: 0,
+                            preview: URL.createObjectURL(file.file)
+                        }]);
+                    }}
+                    onFileProgress={(id, progress) => {
+                        setUploadingFiles(prev => prev.map(f => 
+                            f.id === id ? { ...f, progress } : f
+                        ));
+                    }}
+                    onFileRemoved={(id) => {
+                        setUploadingFiles(prev => prev.filter(f => f.id !== id));
+                    }}
+                    onUpload={async (url, id) => {
+                        try {
+                            await galleryService.create({ image_url: url, caption: '', order: -1 });
+                            setUploadingFiles(prev => prev.filter(f => f.id !== id));
+                            fetchGallery();
+                        } catch (err) {
+                            console.error('Auto-upload error:', err);
+                        }
+                    }} 
+                />
+            </div>
+        )}
+
+
 
        {editingItem && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEditingItem(null)}>
@@ -190,8 +233,36 @@ export default function GalleryManager() {
 
        {loading ? <p>Loading...</p> : (
            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-               {items.map(item => (
-                   <div key={item.id} className="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden shadow-sm">
+                {/* Uploading Placeholders */}
+                {uploadingFiles.map(file => (
+                    <div key={file.id} className="aspect-square rounded-xl overflow-hidden shadow-sm upload-placeholder shimmer-bg">
+                        <img src={file.preview} alt="Uploading..." className="w-full h-full object-cover" />
+                        <div className="upload-placeholder-overlay">
+                            <div className="text-white text-[10px] font-bold uppercase tracking-wider mb-1 bg-black/20 px-2 py-0.5 rounded shadow-sm backdrop-blur-md">
+                                Uploading {Math.round(file.progress * 100)}%
+                            </div>
+                            <div className="upload-progress-container">
+                                <div 
+                                    className="upload-progress-bar shadow-[0_0_8px_rgba(166,123,91,0.5)]" 
+                                    style={{ width: `${file.progress * 100}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+               {filteredItems.map(item => (
+                   <div 
+                    key={item.id} 
+                    className={`group relative aspect-square bg-stone-100 rounded-xl overflow-hidden shadow-sm transition-all cursor-pointer ${selectedIds.includes(item.id) ? 'ring-4 ring-[#A67B5B] ring-offset-2 scale-[0.98]' : ''}`}
+                    onClick={(e) => {
+                        if (e.target.closest('button')) return;
+                        toggleSelection(item.id);
+                    }}
+                   >
+                       <div className={`absolute top-3 left-3 z-20 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-[#A67B5B] border-[#A67B5B]' : 'bg-white/40 border-white/60 opacity-0 group-hover:opacity-100'}`}>
+                           {selectedIds.includes(item.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                       </div>
                        <img src={getAssetUrl(item.image_url)} alt={item.caption} className={`w-full h-full object-cover transition-opacity ${item.is_visible ? 'opacity-100' : 'opacity-50 grayscale'}`} />
                        
                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
@@ -248,6 +319,47 @@ export default function GalleryManager() {
                )}
            </div>
        )}
+
+        {/* Bulk Management Bar */}
+        {selectedIds.length > 0 && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8">
+                <div className="bg-[#4A3F35] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 backdrop-blur-md border border-white/10">
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold">{selectedIds.length} Items Selected</span>
+                        <button onClick={() => setSelectedIds([])} className="text-[10px] text-white/60 uppercase tracking-widest hover:text-white text-left">Deselect All</button>
+                    </div>
+                    
+                    <div className="h-8 w-px bg-white/10" />
+                    
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => handleBulkVisibility(true)}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center gap-1"
+                            title="Show Selected"
+                        >
+                            <Eye className="w-5 h-5" />
+                            <span className="text-[9px] uppercase font-bold tracking-tighter">Show</span>
+                        </button>
+                        <button 
+                            onClick={() => handleBulkVisibility(false)}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center gap-1"
+                            title="Hide Selected"
+                        >
+                            <EyeOff className="w-5 h-5" />
+                            <span className="text-[9px] uppercase font-bold tracking-tighter">Hide</span>
+                        </button>
+                        <button 
+                            onClick={handleBulkDelete}
+                            className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors flex flex-col items-center gap-1"
+                            title="Delete Selected"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                            <span className="text-[9px] uppercase font-bold tracking-tighter">Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 }

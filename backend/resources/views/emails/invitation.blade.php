@@ -24,7 +24,7 @@
         </p>
         
         <p style="font-size: 14px; color: #8C8279; margin-top: 40px; font-style: italic;">
-            Please respond by May 15th, 2025.
+            Please respond by {{ $rsvpDeadline }}.
         </p>
     </div>
 @endsection

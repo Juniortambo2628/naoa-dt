@@ -108,6 +108,7 @@ export default function AdminEmails() {
     <div className="space-y-6">
       <AdminPageHero
         title="Email Management"
+        description="Configure email templates and send digital invitations"
         breadcrumb={[
           { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'Emails' },

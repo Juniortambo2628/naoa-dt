@@ -8,9 +8,7 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
-    wedding_date: '',
     rsvp_enabled: false,
-    venue_name: '',
     admin_email_notifications: false,
     admin_email: '',
     public_url: '',
@@ -36,9 +34,7 @@ export default function AdminSettings() {
   useEffect(() => {
     if (settingsData) {
         setSettings({
-          wedding_date: settingsData.wedding_date || '',
           rsvp_enabled: String(settingsData.rsvp_enabled) === 'true',
-          venue_name: settingsData.venue_name || '',
           admin_email_notifications: String(settingsData.admin_email_notifications) === 'true',
           admin_email: settingsData.admin_email || '',
           public_url: settingsData.public_url || '',
@@ -59,7 +55,7 @@ export default function AdminSettings() {
         
         console.log('Saving settings payload:', payload);
         
-        await updateSettingsMutation.mutateAsync({ settings: payload });
+        await updateSettingsMutation.mutateAsync(payload);
         toast.success('System settings saved successfully');
     } catch (err) {
         console.error('Settings save error:', err);
@@ -116,6 +112,7 @@ export default function AdminSettings() {
     <div className="max-w-2xl mx-auto space-y-8">
       <AdminPageHero
         title="System Settings"
+        description="Manage system preferences, security, and RSVP visibility."
         breadcrumb={[
           { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'Settings' },
@@ -129,25 +126,6 @@ export default function AdminSettings() {
           <h2 className="text-lg font-medium text-stone-800 border-b pb-2">General</h2>
           
           <div className="grid gap-4">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Wedding Date</label>
-              <input 
-                type="date" 
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] outline-none"
-                value={settings.wedding_date}
-                onChange={(e) => setSettings({...settings, wedding_date: e.target.value})}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Venue Name</label>
-              <input 
-                type="text" 
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] outline-none"
-                value={settings.venue_name}
-                onChange={(e) => setSettings({...settings, venue_name: e.target.value})}
-              />
-            </div>
 
             <div className="flex items-center gap-3">
               <input 
