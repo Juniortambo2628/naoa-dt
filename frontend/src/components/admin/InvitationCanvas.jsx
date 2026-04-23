@@ -228,7 +228,27 @@ export default function InvitationCanvas({
             )}
             
             {/* Background Overlay */}
-            <div className="absolute inset-0 bg-white pointer-events-none" style={{ opacity: (design.overlayOpacity ?? 10) / 100, zIndex: 5 }} />
+            <div 
+                className="absolute inset-0 pointer-events-none" 
+                style={{ 
+                    opacity: (design.overlayOpacity ?? 10) / 100, 
+                    zIndex: 5,
+                    background: design.overlayGradient 
+                        ? (() => {
+                            const startColor = design.overlayGradientStartTransparent !== false ? 'transparent' : (design.overlayGradientStartColor || '#ffffff');
+                            const endColor = design.overlayGradientEndTransparent ? 'transparent' : (design.overlayGradientEndColor || design.overlayColor || '#ffffff');
+                            const direction = design.overlayGradientDirection || 'to bottom';
+                            const startPos = design.overlayGradientStartPos ?? 0;
+                            const endPos = design.overlayGradientEndPos ?? 100;
+                            
+                            if (direction.includes('circle')) {
+                                return `radial-gradient(${direction}, ${startColor} ${startPos}%, ${endColor} ${endPos}%)`;
+                            }
+                            return `linear-gradient(${direction}, ${startColor} ${startPos}%, ${endColor} ${endPos}%)`;
+                        })()
+                        : (design.overlayColor || '#ffffff')
+                }} 
+            />
 
             {/* Elements */}
             <div className="absolute inset-0 z-10">

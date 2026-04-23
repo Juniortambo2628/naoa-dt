@@ -8,7 +8,7 @@ import {
     AlignRight, AlignJustify, ArrowUpToLine, ArrowDownToLine, 
     ChevronUp, ChevronDown, ArrowUp, ArrowDown, X, MapPin,
     Table as TableIcon, SquareDashedMousePointer, Undo2, Redo2,
-    Loader2, CloudUpload, CloudCheck, AlertCircle
+    Loader2, CloudUpload, CloudCheck, AlertCircle, Maximize, Minimize, GripHorizontal, Eye, EyeOff
 } from 'lucide-react';
 import ImageUpload from '../../components/admin/ImageUpload';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
@@ -33,6 +33,9 @@ export default function InvitationDesigner() {
   const messageRef = useRef(null);
   const [isExporting, setIsExporting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('saved'); // saved, saving, error
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isWidgetExpanded, setIsWidgetExpanded] = useState(true);
+  const previewContainerRef = useRef(null);
   
   const dummyGuest = {
       name: 'John & Jane Doe',
@@ -1085,6 +1088,138 @@ export default function InvitationDesigner() {
                                 />
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-stone-400">Overlay Color</label>
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="color" 
+                                            value={design.overlayColor || '#ffffff'}
+                                            onChange={(e) => updateDesign('overlayColor', e.target.value)}
+                                            className="w-8 h-8 rounded border-0 p-0 cursor-pointer"
+                                        />
+                                        <span className="text-[10px] font-mono text-stone-500">{design.overlayColor || '#ffffff'}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-stone-400">Overlay Type</label>
+                                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox"
+                                            checked={design.overlayGradient || false}
+                                            onChange={(e) => updateDesign('overlayGradient', e.target.checked)}
+                                            className="rounded text-[#A67B5B] focus:ring-[#A67B5B]"
+                                        />
+                                        <span className="text-xs font-medium text-stone-600">Use Gradient</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Gradient Configuration Popup */}
+                            {design.overlayGradient && (
+                                <div className="space-y-4 p-4 bg-stone-50 border border-stone-200 rounded-xl animate-in fade-in slide-in-from-top-2">
+                                    <h4 className="text-[10px] uppercase font-bold text-[#A67B5B] tracking-wider">Gradient Configuration</h4>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Start Color */}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase font-bold text-stone-400">Start Color</label>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <input 
+                                                        type="color" 
+                                                        value={design.overlayGradientStartColor || '#ffffff'}
+                                                        onChange={(e) => updateDesign('overlayGradientStartColor', e.target.value)}
+                                                        className={`w-8 h-8 rounded border-0 p-0 ${design.overlayGradientStartTransparent !== false ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                        disabled={design.overlayGradientStartTransparent !== false}
+                                                    />
+                                                    <span className="text-[10px] font-mono text-stone-500">{design.overlayGradientStartTransparent !== false ? 'Transparent' : (design.overlayGradientStartColor || '#ffffff')}</span>
+                                                </div>
+                                                <label className="flex items-center gap-1 text-[10px] text-stone-600 cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={design.overlayGradientStartTransparent !== false}
+                                                        onChange={(e) => updateDesign('overlayGradientStartTransparent', e.target.checked)}
+                                                        className="rounded text-[#A67B5B]"
+                                                    />
+                                                    Make Transparent
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* End Color */}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase font-bold text-stone-400">End Color</label>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <input 
+                                                        type="color" 
+                                                        value={design.overlayGradientEndColor || design.overlayColor || '#ffffff'}
+                                                        onChange={(e) => updateDesign('overlayGradientEndColor', e.target.value)}
+                                                        className={`w-8 h-8 rounded border-0 p-0 ${design.overlayGradientEndTransparent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                        disabled={design.overlayGradientEndTransparent}
+                                                    />
+                                                    <span className="text-[10px] font-mono text-stone-500">{design.overlayGradientEndTransparent ? 'Transparent' : (design.overlayGradientEndColor || design.overlayColor || '#ffffff')}</span>
+                                                </div>
+                                                <label className="flex items-center gap-1 text-[10px] text-stone-600 cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={design.overlayGradientEndTransparent || false}
+                                                        onChange={(e) => updateDesign('overlayGradientEndTransparent', e.target.checked)}
+                                                        className="rounded text-[#A67B5B]"
+                                                    />
+                                                    Make Transparent
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* Direction */}
+                                        <div className="col-span-2 space-y-2 mt-2">
+                                            <label className="text-[10px] uppercase font-bold text-stone-400">Direction</label>
+                                            <select 
+                                                value={design.overlayGradientDirection || 'to bottom'}
+                                                onChange={(e) => updateDesign('overlayGradientDirection', e.target.value)}
+                                                className="w-full px-3 py-2 bg-white border border-stone-200 rounded-lg text-sm text-stone-600 focus:outline-none focus:ring-1 focus:ring-[#A67B5B]"
+                                            >
+                                                <option value="to bottom">Top to Bottom</option>
+                                                <option value="to top">Bottom to Top</option>
+                                                <option value="to right">Left to Right</option>
+                                                <option value="to left">Right to Left</option>
+                                                <option value="circle at center">Radial Center</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Start Position */}
+                                        <div className="col-span-2 space-y-2 mt-2">
+                                            <div className="flex justify-between text-[10px] text-stone-400 uppercase font-bold">
+                                                <span>Start Position</span>
+                                                <span>{design.overlayGradientStartPos ?? 0}%</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="100" 
+                                                value={design.overlayGradientStartPos ?? 0}
+                                                onChange={(e) => updateDesign('overlayGradientStartPos', parseInt(e.target.value))}
+                                                className="w-full h-1 bg-stone-200 rounded appearance-none cursor-pointer accent-[#A67B5B]"
+                                            />
+                                        </div>
+
+                                        {/* End Position */}
+                                        <div className="col-span-2 space-y-2 mt-2">
+                                            <div className="flex justify-between text-[10px] text-stone-400 uppercase font-bold">
+                                                <span>End Position</span>
+                                                <span>{design.overlayGradientEndPos ?? 100}%</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="100" 
+                                                value={design.overlayGradientEndPos ?? 100}
+                                                onChange={(e) => updateDesign('overlayGradientEndPos', parseInt(e.target.value))}
+                                                className="w-full h-1 bg-stone-200 rounded appearance-none cursor-pointer accent-[#A67B5B]"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <label className="flex items-center justify-between p-3 border border-stone-200 rounded-lg cursor-pointer hover:bg-stone-50">
                                 <span className="text-sm font-medium text-stone-700">Show Illustrations</span>
                                 <input 
@@ -1124,7 +1259,14 @@ export default function InvitationDesigner() {
             </div>
 
         {/* Live Preview Area */}
-        <div className="flex-1 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 flex items-center justify-center p-3 overflow-hidden relative">
+        <div 
+            ref={previewContainerRef}
+            className={`transition-all duration-300 flex items-center justify-center relative overflow-hidden ${
+                isFullscreen 
+                    ? 'fixed inset-0 z-[100] bg-stone-100/95 backdrop-blur-md p-8' 
+                    : 'flex-1 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
+            }`}
+        >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
             
             <InvitationCanvas 
@@ -1140,54 +1282,87 @@ export default function InvitationDesigner() {
             />
 
             {/* Floating Workspace Controls (Undo/Redo & Design Type) */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-stone-200 p-1.5 z-50">
-                <button 
-                    onClick={handleUndo} 
-                    disabled={historyIndex <= 0}
-                    className={`p-3 rounded-xl transition-all ${historyIndex > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-                    title="Undo (Ctrl+Z)"
-                >
-                    <Undo2 className="w-5 h-5" />
-                </button>
-                <div className="w-px h-6 bg-stone-200 mx-1" />
-                <button 
-                    onClick={handleRedo} 
-                    disabled={historyIndex >= history.length - 1}
-                    className={`p-3 rounded-xl transition-all ${historyIndex < history.length - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-                    title="Redo (Ctrl+Y)"
-                >
-                    <Redo2 className="w-5 h-5" />
-                </button>
-                <div className="w-px h-6 bg-stone-200 mx-1" />
+            <motion.div 
+                drag 
+                dragMomentum={false}
+                dragConstraints={previewContainerRef}
+                initial={{ x: "-50%", y: 0 }}
+                style={{ translateX: "-50%" }}
+                className="absolute bottom-6 left-1/2 flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-stone-200 p-1.5 z-50"
+            >
+                <div className="flex items-center px-2 cursor-grab active:cursor-grabbing text-stone-300 hover:text-stone-500" title="Drag to move">
+                    <GripHorizontal className="w-4 h-4" />
+                </div>
                 
-                {/* Selected Element Opacity Adjustment */}
-                {selectedItemId && (
-                    <>
-                        <div className="flex items-center gap-2 px-2" title="Element Opacity">
-                            <Sliders className="w-4 h-4 text-[#A67B5B]" />
-                            <input 
-                                type="range" 
-                                min="0" max="100" 
-                                value={design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
-                                onChange={(e) => handleDesignUpdate('update_item', { id: selectedItemId, opacity: parseInt(e.target.value) })}
-                                className="w-20 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#A67B5B]"
-                            />
-                            <span className="text-[10px] font-bold text-stone-500 w-6">{design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
-                        </div>
+                {isWidgetExpanded && (
+                    <div className="flex items-center">
                         <div className="w-px h-6 bg-stone-200 mx-1" />
-                    </>
-                )}
+                        <button 
+                            onClick={handleUndo} 
+                            disabled={historyIndex <= 0}
+                            className={`p-3 rounded-xl transition-all ${historyIndex > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+                            title="Undo (Ctrl+Z)"
+                        >
+                            <Undo2 className="w-5 h-5" />
+                        </button>
+                        <div className="w-px h-6 bg-stone-200 mx-1" />
+                        <button 
+                            onClick={handleRedo} 
+                            disabled={historyIndex >= history.length - 1}
+                            className={`p-3 rounded-xl transition-all ${historyIndex < history.length - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+                            title="Redo (Ctrl+Y)"
+                        >
+                            <Redo2 className="w-5 h-5" />
+                        </button>
+                        <div className="w-px h-6 bg-stone-200 mx-1" />
+                        
+                        {/* Selected Element Opacity Adjustment */}
+                        {selectedItemId && (
+                            <>
+                                <div className="flex items-center gap-2 px-2" title="Element Opacity">
+                                    <Sliders className="w-4 h-4 text-[#A67B5B]" />
+                                    <input 
+                                        type="range" 
+                                        min="0" max="100" 
+                                        value={design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
+                                        onChange={(e) => handleDesignUpdate('update_item', { id: selectedItemId, opacity: parseInt(e.target.value) })}
+                                        className="w-20 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#A67B5B]"
+                                    />
+                                    <span className="text-[10px] font-bold text-stone-500 w-6">{design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
+                                </div>
+                                <div className="w-px h-6 bg-stone-200 mx-1" />
+                            </>
+                        )}
 
-                <select
-                    value={designType}
-                    onChange={(e) => setDesignType(e.target.value)}
-                    className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-transparent text-[#A67B5B] cursor-pointer hover:bg-stone-100 transition-all border-none outline-none appearance-none"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A67B5B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', paddingRight: '20px' }}
+                        <select
+                            value={designType}
+                            onChange={(e) => setDesignType(e.target.value)}
+                            className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-transparent text-[#A67B5B] cursor-pointer hover:bg-stone-100 transition-all border-none outline-none appearance-none"
+                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A67B5B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', paddingRight: '20px' }}
+                        >
+                            <option value="invitation">Invitation</option>
+                            <option value="save_the_date">Save the Date</option>
+                        </select>
+                    </div>
+                )}
+                
+                <div className="w-px h-6 bg-stone-200 mx-1" />
+                <button
+                    onClick={() => setIsWidgetExpanded(!isWidgetExpanded)}
+                    className="p-2 rounded-xl transition-all text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]"
+                    title={isWidgetExpanded ? "Collapse Controls" : "Expand Controls"}
                 >
-                    <option value="invitation">Invitation</option>
-                    <option value="save_the_date">Save the Date</option>
-                </select>
-            </div>
+                    {isWidgetExpanded ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                <div className="w-px h-6 bg-stone-200 mx-1" />
+                <button
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                    className="p-2 rounded-xl transition-all text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]"
+                    title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Preview"}
+                >
+                    {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                </button>
+            </motion.div>
 
             {/* Hidden Exporter */}
             <InvitationExportContainer 
