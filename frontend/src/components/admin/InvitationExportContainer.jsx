@@ -76,7 +76,7 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
                 quality: 1.0,
                 pixelRatio: 2.0, // Reduced from 2.5 for better stability
                 cacheBust: true,
-                backgroundColor: '#ffffff',
+                backgroundColor: null,
                 includeStyles: true,
                 fontEmbedCSS: fontCSSData,
                 skipFonts: true,
@@ -189,14 +189,14 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
             pointerEvents: 'none',
             margin: 0,
             padding: 0,
-            backgroundColor: '#ffffff'
+            backgroundColor: 'transparent'
         }}>
             <div 
                 ref={exportRef} 
                 style={{ 
                     width: `${CANVAS_WIDTH}px`, 
                     height: `${CANVAS_HEIGHT}px`, 
-                    background: 'white', 
+                    background: 'transparent', 
                     position: 'relative', 
                     display: 'block',
                     margin: 0,

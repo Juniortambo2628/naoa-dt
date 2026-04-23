@@ -35,7 +35,7 @@ export default function InvitationCanvas({
   }, [selectedId, design.items]);
 
   const containerStyle = {
-    backgroundColor: design.backgroundColor || '#ffffff',
+    backgroundColor: design.backgroundColor || 'transparent',
     position: 'relative',
     overflow: 'hidden',
   };
@@ -85,7 +85,7 @@ export default function InvitationCanvas({
       } else if (item.type === 'rsvp_code') {
           return (
               <div 
-                className="w-full h-full flex flex-col items-center justify-center p-2 border-2 border-dashed border-stone-300 bg-white/80 backdrop-blur-sm gap-1"
+                className="w-full h-full flex flex-col items-center justify-center p-2 border-2 border-dashed border-stone-300 bg-transparent gap-1"
                 style={{ color: item.color || '#78716c' }}
               >
                   <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'inherit', lineHeight: 1, whiteSpace: 'nowrap' }}>RSVP Code</span>
@@ -228,7 +228,7 @@ export default function InvitationCanvas({
             )}
             
             {/* Background Overlay */}
-            <div className="absolute inset-0 bg-white pointer-events-none" style={{ opacity: (design.overlayOpacity || 10) / 100, zIndex: 5 }} />
+            <div className="absolute inset-0 bg-white pointer-events-none" style={{ opacity: (design.overlayOpacity ?? 10) / 100, zIndex: 5 }} />
 
             {/* Elements */}
             <div className="absolute inset-0 z-10">

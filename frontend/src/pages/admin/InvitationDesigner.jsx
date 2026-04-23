@@ -1159,6 +1159,25 @@ export default function InvitationDesigner() {
                     <Redo2 className="w-5 h-5" />
                 </button>
                 <div className="w-px h-6 bg-stone-200 mx-1" />
+                
+                {/* Selected Element Opacity Adjustment */}
+                {selectedItemId && (
+                    <>
+                        <div className="flex items-center gap-2 px-2" title="Element Opacity">
+                            <Sliders className="w-4 h-4 text-[#A67B5B]" />
+                            <input 
+                                type="range" 
+                                min="0" max="100" 
+                                value={design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
+                                onChange={(e) => handleDesignUpdate('update_item', { id: selectedItemId, opacity: parseInt(e.target.value) })}
+                                className="w-20 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#A67B5B]"
+                            />
+                            <span className="text-[10px] font-bold text-stone-500 w-6">{design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
+                        </div>
+                        <div className="w-px h-6 bg-stone-200 mx-1" />
+                    </>
+                )}
+
                 <select
                     value={designType}
                     onChange={(e) => setDesignType(e.target.value)}
