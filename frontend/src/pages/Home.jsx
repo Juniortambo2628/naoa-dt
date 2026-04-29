@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles } from 'lucide-react';
-import { contentService, getAssetUrl, polaroidService } from '../services/api';
+import { contentService, getAssetUrl, polaroidService, galleryService } from '../services/api';
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
@@ -797,8 +797,6 @@ function EventDetails({ content }) {
     </section>
   );
 }
-
-import { galleryService, getAssetUrl } from '../services/api';
 
 // Gallery with Parallax Effect
 function GallerySection({ content }) {
