@@ -1089,10 +1089,11 @@ export default function AdminGuests() {
       />
 
       <GuestModal
-        open={modalOpen}
+        isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         guest={selectedGuest}
         onSave={handleSave}
+        allGuests={guests}
       />
       
       {design && (
