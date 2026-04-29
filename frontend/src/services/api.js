@@ -95,7 +95,13 @@ export const getAssetUrl = (path) => {
   }
 
   // Production
-  const productionBase = 'https://api-dntwed.okjtech.co.ke';
+  // Derive the API origin from the configured baseURL
+  let productionBase = 'https://api-dntwed.okjtech.co.ke';
+  try {
+    if (baseURL && baseURL.startsWith('http')) {
+      productionBase = new URL(baseURL).origin;
+    }
+  } catch (e) { /* use default */ }
   return `${productionBase}${cleanPath}`;
 };
 

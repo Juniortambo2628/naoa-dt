@@ -36,7 +36,16 @@ class PageContentController extends Controller
             $query->where('is_visible', true);
         }
 
-        $item = $query->firstOrFail();
+        $item = $query->first();
+
+        if (!$item) {
+            return response()->json([
+                'section_key' => $key,
+                'content' => (object)[],
+                'is_visible' => true,
+            ]);
+        }
+
         $item->content = $this->normalizeUrls($item->content);
         
         return response()->json($item);
