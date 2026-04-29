@@ -49,7 +49,7 @@ class GuestController extends Controller
             });
         }
 
-        return GuestResource::collection($query->paginate(20));
+        return GuestResource::collection($query->orderBy('name')->get());
     }
 
     /**
