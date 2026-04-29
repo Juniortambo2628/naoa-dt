@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Search, Filter, Plus, Edit, Trash2, Check, Download, Loader2, Mail, Send, FileImage, FileText, Package, List, Grid, Upload, MessageCircle, X, ChevronDown, RotateCcw } from 'lucide-react';
+import { Users, Search, Filter, Plus, Edit, Trash2, Check, Download, Loader2, Mail, Send, FileImage, FileText, Package, List, Grid, Upload, MessageCircle, X, ChevronDown, RotateCcw, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService, settingService } from '../../services/api';
@@ -24,6 +24,7 @@ export default function AdminGuests() {
   const [selectedGuest, setSelectedGuest] = useState(null);
   const [loading, setLoading] = useState(false);
   const { searchQuery } = useSearch();
+  const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'alpha'
   const [filter, setFilter] = useState('all'); // all, confirmed, pending, declined
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
@@ -487,6 +488,9 @@ export default function AdminGuests() {
                             (guest.email && guest.email.toLowerCase().includes(searchLower));
       const matchesFilter = filter === 'all' ? true : guest.rsvp_status === filter;
       return matchesSearch && matchesFilter;
+  }).sort((a, b) => {
+      if (sortBy === 'alpha') return a.name.localeCompare(b.name);
+      return b.id - a.id; // latest added first
   });
 
   const totalPages = Math.ceil(filteredGuests.length / itemsPerPage);
@@ -581,16 +585,25 @@ export default function AdminGuests() {
         }
       />
 
-      <div className="flex gap-2">
-        {['all', 'confirmed', 'pending', 'declined'].map(f => (
-           <button 
-             key={f}
-             onClick={() => { setFilter(f); setCurrentPage(1); setSelectedIds([]); }}
-             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-white border text-stone-600 hover:bg-stone-50'}`}
-           >
-             {f.charAt(0).toUpperCase() + f.slice(1)}
-           </button>
-        ))}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex gap-2">
+          {['all', 'confirmed', 'pending', 'declined'].map(f => (
+             <button 
+               key={f}
+               onClick={() => { setFilter(f); setCurrentPage(1); setSelectedIds([]); }}
+               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-white border text-stone-600 hover:bg-stone-50'}`}
+             >
+               {f.charAt(0).toUpperCase() + f.slice(1)}
+             </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setSortBy(prev => prev === 'latest' ? 'alpha' : 'latest')}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white border text-stone-600 hover:bg-stone-50 transition-colors"
+        >
+          <ArrowUpDown className="w-4 h-4" />
+          {sortBy === 'latest' ? 'Latest Added' : 'A → Z'}
+        </button>
       </div>
 
       {/* Bulk Actions Bar */}
