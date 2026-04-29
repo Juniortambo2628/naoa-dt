@@ -7,6 +7,8 @@ import Footer from '../components/Footer';
 export default function PrivacyPolicy() {
     const sections = [
         {
+            icon: Eye,
+            title: "Information Collection",
             content: "We collect information you provide directly to us through RSVP forms, guestbook entries, and song requests. This includes your name, email address, and any personal messages you choose to share."
         },
         {

@@ -17,7 +17,10 @@ import {
   FlowersCentered
 } from '../components/CustomIllustrations';
 import { Skeleton, TimelineSkeleton } from '../components/Skeleton';
+import Loader from '../components/Loader';
 import { fadeInUp, staggerContainer, staggerItem } from '../hooks/useScrollAnimation';
+import { useContent } from '../context/ContentContext';
+import { Navigate } from 'react-router-dom';
 
 const iconMap = {
   'Ceremony': Heart,
@@ -49,23 +52,25 @@ const getContent = (content, section, field, i18n, fallbackKey, t) => {
 
 export default function Programme() {
   const { t, i18n } = useTranslation();
-  const [content, setContent] = useState(null);
+  const { contents: content, loading: contentLoading, isVisible } = useContent();
   const [schedule, setSchedule] = useState([]);
   const [updates, setUpdates] = useState(demoUpdates);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    contentService.getAll().then(res => {
-        const data = res.data || {};
-        // If the section is explicitly hidden, redirect to home
-        if (data['programme_page']?.is_visible === false) {
-           navigate('/');
-           return;
-        }
-        setContent(data);
-    }).catch(err => console.error(err));
-  }, [navigate]);
+    if (!contentLoading && !isVisible('programme_page')) {
+      navigate('/module-unavailable/programme');
+    }
+  }, [contentLoading, isVisible, navigate]);
+
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('programme_page')) {
+    return null;
+  }
 
   const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback, t);
 
@@ -142,7 +147,7 @@ export default function Programme() {
               className="text-5xl md:text-6xl mb-4"
               style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
             >
-              {getTxt('events', 'title', 'programme.title')}
+              {getTxt('programme_page', 'title', 'programme.title')}
             </h1>
             <p 
               className="text-lg"
@@ -373,7 +378,7 @@ export default function Programme() {
         </div>
       </main>
       
-      <Footer content={content} />
+      <Footer />
     </motion.div>
   );
 }

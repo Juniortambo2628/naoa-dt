@@ -522,4 +522,32 @@ class GuestController extends Controller
             'message' => count($ids) . ' guests updated successfully',
         ]);
     }
+
+    /**
+     * Reset a single guest's RSVP status (admin only)
+     */
+    public function resetRsvp(Guest $guest)
+    {
+        $guest->update([
+            'rsvp_status' => 'pending',
+            'confirmed_plus_ones' => 0,
+        ]);
+
+        // Reset all plus ones too
+        $guest->plusOnes()->update([
+            'rsvp_status' => 'pending',
+            'confirmed_plus_ones' => 0,
+        ]);
+
+        // Delete the RSVP response if it exists
+        $guest->rsvpResponse()->delete();
+        
+        // Also delete responses for plus ones
+        RsvpResponse::whereIn('guest_id', $guest->plusOnes()->pluck('id'))->delete();
+
+        return response()->json([
+            'message' => 'RSVP reset successfully for ' . $guest->name . ' and their plus ones.',
+            'guest' => new GuestResource($guest->fresh(['rsvpResponse', 'invitation', 'plusOnes']))
+        ]);
+    }
 }

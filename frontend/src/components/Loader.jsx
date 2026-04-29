@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 export default function Loader() {
   return (
     <div className="fixed inset-0 bg-[#FAF7F2] z-[100] flex items-center justify-center">
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 relative">
         <motion.span
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}

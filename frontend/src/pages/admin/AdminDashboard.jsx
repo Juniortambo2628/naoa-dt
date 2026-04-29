@@ -31,6 +31,8 @@ import AdminEmails from './AdminEmails';
 import AdminSettings from './AdminSettings';
 import AdminGuests from './AdminGuests';
 import AdminFAQ from './AdminFAQ';
+import AdminModules from './AdminModules';
+import AdminEnquiries from './AdminEnquiries';
 
 // Sidebar Component
 function Sidebar({ isOpen, onClose }) {
@@ -46,10 +48,12 @@ function Sidebar({ isOpen, onClose }) {
     { path: '/admin/dashboard/seating', icon: Users, label: 'Seating Chart', id: 'sidebar-seating' },
     { path: '/admin/dashboard/design', icon: Mail, label: 'Design Invitations', id: 'sidebar-design' },
     { path: '/admin/dashboard/gallery', icon: Image, label: 'Gallery', id: 'sidebar-gallery' },
-    { path: '/admin/dashboard/content', icon: LayoutDashboard, label: 'Website Content', id: 'sidebar-content' },
+    { path: '/admin/dashboard/modules', icon: LayoutDashboard, label: 'Modules', id: 'sidebar-modules' },
+    { path: '/admin/dashboard/content', icon: Edit, label: 'CMS', id: 'sidebar-content' },
     { path: '/admin/dashboard/schedule', icon: Calendar, label: 'Schedule', id: 'sidebar-schedule' },
     { path: '/admin/dashboard/songs', icon: Music, label: 'Song Requests', id: 'sidebar-songs' },
     { path: '/admin/dashboard/guestbook', icon: MessageSquare, label: 'Write to Us', id: 'sidebar-guestbook' },
+    { path: '/admin/dashboard/enquiries', icon: Mail, label: 'Enquiries', id: 'sidebar-enquiries' },
     { path: '/admin/dashboard/faqs', icon: HelpCircle, label: 'FAQs', id: 'sidebar-faqs' },
     { path: '/admin/dashboard/gifts', icon: Gift, label: 'Gifts', id: 'sidebar-gifts' },
     { path: '/admin/dashboard/emails', icon: Mail, label: 'Email Templates', id: 'sidebar-emails' },
@@ -559,12 +563,14 @@ export default function AdminDashboard() {
     if (path.includes('/design')) return <InvitationDesigner />;
     if (path.includes('/gallery')) return <GalleryManager />;
     if (path.includes('/content')) return <ContentManager />;
+    if (path.includes('/modules')) return <AdminModules />;
     if (path.includes('/schedule')) return <AdminSchedule />;
     if (path.includes('/gifts')) return <AdminGifts />;
     if (path.includes('/emails')) return <AdminEmails />;
     if (path.includes('/settings')) return <AdminSettings />;
     if (path.includes('/songs')) return <AdminSongRequests />;
     if (path.includes('/guestbook')) return <AdminGuestbook />;
+    if (path.includes('/enquiries')) return <AdminEnquiries />;
     if (path.includes('/faqs')) return <AdminFAQ />;
     if (path.includes('/test')) return <AdminTestLab />;
     return <DashboardOverview />;

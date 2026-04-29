@@ -83,6 +83,8 @@ class PageContentController extends Controller
             ]
         );
 
+        event(new \App\Events\PageContentUpdated($content));
+
         return response()->json($content);
     }
 }

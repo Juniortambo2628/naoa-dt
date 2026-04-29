@@ -17,6 +17,7 @@ import {
 } from '../components/CustomIllustrations';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Loader from '../components/Loader';
 import { Skeleton } from '../components/Skeleton';
 import SpotifySongSearch from '../components/SpotifySongSearch';
 
@@ -60,7 +61,7 @@ export default function RSVP() {
       const data = res.data || {};
       // If the section is explicitly hidden, redirect to home
       if (data['rsvp']?.is_visible === false || data['rsvp_page']?.is_visible === false) {
-         navigate('/');
+         navigate('/module-unavailable/rsvp');
          return;
       }
       setContent(data);
@@ -502,11 +503,11 @@ export default function RSVP() {
                     {t('rsvp.success_message')}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link to="/programme" className="btn-primary">
-                      {t('hero.programme_cta')}
+                    <Link to="/" className="btn-primary">
+                      Return Home
                     </Link>
-                    <Link to="/gifts" className="btn-secondary">
-                      {t('home.gift_registry')}
+                    <Link to="/faq" className="btn-secondary">
+                      View FAQs
                     </Link>
                   </div>
                 </div>

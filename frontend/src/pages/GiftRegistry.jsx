@@ -16,7 +16,10 @@ import {
 } from '../components/CustomIllustrations';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Loader from '../components/Loader';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
+import { useContent } from '../context/ContentContext';
+import { Navigate } from 'react-router-dom';
 
 // Demo gifts
 const demoGifts = [
@@ -285,8 +288,8 @@ function ClaimModal({ gift, onClose, onSubmit }) {
 
 export default function GiftRegistry() {
   const { t, i18n } = useTranslation();
+  const { contents: content, loading: contentLoading, isVisible } = useContent();
   const [gifts, setGifts] = useState(demoGifts);
-  const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
@@ -294,16 +297,18 @@ export default function GiftRegistry() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    contentService.getAll().then(res => {
-        const data = res.data || {};
-        // If the section is explicitly hidden, redirect to home
-        if (data['gifts']?.is_visible === false) {
-           navigate('/');
-           return;
-        }
-        setContent(data);
-    }).catch(err => console.error(err));
-  }, [navigate]);
+    if (!contentLoading && !isVisible('gifts')) {
+      navigate('/module-unavailable/gift registry');
+    }
+  }, [contentLoading, isVisible, navigate]);
+
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('gifts')) {
+    return null;
+  }
 
   const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback, t);
 
@@ -575,7 +580,7 @@ export default function GiftRegistry() {
         )}
       </AnimatePresence>
       
-      <Footer content={content} />
+      <Footer />
     </motion.div>
   );
 }

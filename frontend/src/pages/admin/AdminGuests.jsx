@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Search, Filter, Plus, Edit, Trash2, Check, Download, Loader2, Mail, Send, FileImage, FileText, Package, List, Grid, Upload, MessageCircle, X, ChevronDown } from 'lucide-react';
+import { Users, Search, Filter, Plus, Edit, Trash2, Check, Download, Loader2, Mail, Send, FileImage, FileText, Package, List, Grid, Upload, MessageCircle, X, ChevronDown, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService, settingService } from '../../services/api';
@@ -186,12 +186,21 @@ export default function AdminGuests() {
   };
 
   const handleSave = async (data) => {
-    if (selectedGuest) {
-        await guestService.update(selectedGuest.id, data);
-    } else {
-        await guestService.create(data);
+    try {
+        if (selectedGuest) {
+            await guestService.update(selectedGuest.id, data);
+            toast.success('Guest updated successfully');
+        } else {
+            await guestService.create(data);
+            toast.success('Guest added successfully');
+        }
+        refetchGuests();
+        setModalOpen(false);
+    } catch (err) {
+        console.error(err);
+        const errMsg = err.response?.data?.message || 'Failed to save guest. Check if email is unique.';
+        toast.error(errMsg);
     }
-    refetchGuests();
   };
 
   const toggleSelectAll = () => {
@@ -439,6 +448,19 @@ export default function AdminGuests() {
     }
   };
 
+  const handleResetRSVP = async (guest) => {
+    if (!window.confirm(`Reset RSVP status for ${guest.name}? This will remove their current response.`)) return;
+    
+    try {
+        await guestService.resetRSVP(guest.id);
+        toast.success(`RSVP reset for ${guest.name}`);
+        refetchGuests();
+    } catch (err) {
+        console.error(err);
+        toast.error("Failed to reset RSVP");
+    }
+  };
+
   const handleResetAllRSVPs = async () => {
     if (!window.confirm("Are you sure you want to reset RSVP status for ALL guests to 'pending'? This will allow you to send fresh invitations.")) return;
     
@@ -577,19 +599,19 @@ export default function AdminGuests() {
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-[100] flex items-center gap-6 border border-stone-800"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-[100] flex items-center flex-nowrap overflow-x-auto no-scrollbar gap-6 border border-stone-800 max-w-[95vw]"
           >
-            <div className="flex items-center gap-2 pr-6 border-r border-stone-800">
+            <div className="flex items-center gap-2 pr-6 border-r border-stone-800 shrink-0">
               <div className="w-6 h-6 rounded-full bg-[#A67B5B] flex items-center justify-center text-[10px] font-bold">
                 {selectedIds.length}
               </div>
-              <span className="text-sm font-medium">Selected</span>
+              <span className="text-sm font-medium whitespace-nowrap">Selected</span>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 border-r border-stone-800 pr-4">
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
+              <div className="flex items-center gap-3 border-r border-stone-800 pr-4 shrink-0">
                 <select 
-                  className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-2 py-1"
+                  className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-3 py-2 w-36"
                   onChange={(e) => {
                     if (e.target.value) {
                       handleBulkUpdate({ group: e.target.value });
@@ -604,51 +626,59 @@ export default function AdminGuests() {
                   <option value="other">Other</option>
                 </select>
 
-                <select 
-                  className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-2 py-1"
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleBulkUpdate({ invitation_via: e.target.value });
-                      e.target.value = '';
-                    }
-                  }}
-                >
-                  <option value="">Set Invite Via...</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="email">Email</option>
-                </select>
+                <div className="relative group/invite shrink-0">
+                    <button className="flex items-center gap-2 bg-stone-800 text-white text-xs px-4 py-2 rounded border border-stone-700 hover:bg-stone-700 transition-colors w-36 justify-between">
+                        Invite Via <ChevronDown className="w-3 h-3" />
+                    </button>
+                    <div className="absolute bottom-full left-0 mb-2 w-40 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 opacity-0 invisible group-hover/invite:opacity-100 group-hover/invite:visible transition-all">
+                        <button 
+                            onClick={handleBulkWhatsApp}
+                            className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
+                        >
+                            <MessageCircle className="w-3.5 h-3.5 text-green-500" /> WhatsApp
+                        </button>
+                        <button 
+                            onClick={handleBulkSendInvite}
+                            className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
+                            disabled={isBulkExporting}
+                        >
+                            <Mail className="w-3.5 h-3.5 text-blue-400" /> Email
+                        </button>
+                    </div>
+                </div>
               </div>
 
-              <button 
-                onClick={() => exportBulk('pdf')}
-                className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-sm"
-              >
-                <Download className="w-4 h-4" /> Export PDF
-              </button>
-              <button 
-                onClick={handleBulkWhatsApp}
-                className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-sm"
-              >
-                <MessageCircle className="w-4 h-4" /> Invite WhatsApp
-              </button>
-              <button 
-                onClick={handleBulkSendInvite}
-                className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-sm"
-                disabled={isBulkExporting}
-              >
-                <Mail className="w-4 h-4" /> Invite Email
-              </button>
-              <button 
-                onClick={handleBulkDelete}
-                className="flex items-center gap-2 hover:text-red-400 transition-colors text-sm"
-              >
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                  <button 
+                    onClick={() => exportBulk('pdf')}
+                    className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
+                  >
+                    <Download className="w-4 h-4" /> Export PDF
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                        if (window.confirm(`Reset RSVP status for ${selectedIds.length} selected guests?`)) {
+                            handleBulkUpdate({ rsvp_status: 'pending', confirmed_plus_ones: 0 });
+                        }
+                    }}
+                    className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Reset RSVP
+                  </button>
+
+                  <button 
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
+                  >
+                    <Trash2 className="w-4 h-4" /> Delete
+                  </button>
+              </div>
             </div>
             
             <button 
               onClick={() => setSelectedIds([])}
-              className="ml-4 p-1 hover:bg-stone-800 rounded-lg transition-colors border-l border-stone-800 pl-4"
+              className="ml-2 p-1 hover:bg-stone-800 rounded-lg transition-colors border-l border-stone-800 pl-4 shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -789,15 +819,28 @@ export default function AdminGuests() {
                                       </button>
                                   </td>
                                   <td className="px-3 py-2 text-xs">
-                                      <span className={`px-2 py-1 rounded w-fit flex items-center gap-1
+                                      <span className={`px-2 py-1 rounded-full flex items-center justify-center gap-1 w-fit whitespace-nowrap
                                           ${guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-700' :
                                           guest.rsvp_status === 'declined' ? 'bg-red-100 text-red-700' :
                                           'bg-orange-100 text-orange-700'}
                                       `}>
-                                          {guest.rsvp_status === 'confirmed' && <Check className="w-3 h-3" />}
+                                          {guest.rsvp_status === 'confirmed' && <Check className="w-2.5 h-2.5" />}
                                           {guest.rsvp_status === 'confirmed' ? 'Confirmed' : 
                                            guest.rsvp_status === 'declined' ? 'Declined' : 'Pending'}
                                       </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-center border-r border-stone-200">
+                                      <button 
+                                        onClick={() => {
+                                          if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
+                                            handleInlineSave(guest, 'rsvp_status', 'pending');
+                                          }
+                                        }}
+                                        className="p-1 text-stone-400 hover:text-orange-500"
+                                        title="Reset RSVP"
+                                      >
+                                          <RotateCcw className="w-4 h-4" />
+                                      </button>
                                   </td>
                               </tr>
                           ))}
@@ -906,13 +949,13 @@ export default function AdminGuests() {
                                        <div className="space-y-1">
                                            {guest.email && (
                                                <div className="flex items-center gap-1.5 text-xs text-stone-500">
-                                                   <Mail className="w-3 h-3 text-stone-400" />
+                                                   <Mail className="w-2.5 h-2.5 text-stone-400" />
                                                    {guest.email}
                                                </div>
                                            )}
                                            {guest.phone && (
                                                <div className="flex items-center gap-1.5 text-xs text-stone-600 font-medium">
-                                                   <MessageCircle className="w-3 h-3 text-green-500" />
+                                                   <MessageCircle className="w-2.5 h-2.5 text-green-500" />
                                                    {guest.phone}
                                                </div>
                                            )}
@@ -920,14 +963,14 @@ export default function AdminGuests() {
                                        </div>
                                    </td>
                                    <td className="px-6 py-4">
-                                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600 capitalize">
+                                       <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-600 capitalize">
                                            {guest.group}
                                        </span>
                                    </td>
                                   <td className="px-6 py-4">
                                       {guest.plus_ones && guest.plus_ones.length > 0 ? (
                                           <div>
-                                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                              <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700">
                                                   +{guest.plus_ones.length}
                                               </span>
                                               <div className="text-xs text-stone-500 mt-1">
@@ -939,14 +982,14 @@ export default function AdminGuests() {
                                       )}
                                   </td>
                                   <td className="px-6 py-4">
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex w-fit items-center gap-1 ${
+                                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex w-fit whitespace-nowrap items-center gap-1 ${
                                           guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-700' :
                                           guest.rsvp_status === 'declined' ? 'bg-red-100 text-red-700' :
                                           'bg-orange-100 text-orange-700'
                                       }`}>
-                                          {guest.rsvp_status === 'confirmed' && <Check className="w-3 h-3" />}
+                                          {guest.rsvp_status === 'confirmed' && <Check className="w-2.5 h-2.5" />}
                                           {guest.rsvp_status === 'confirmed' ? 'Confirmed' : 
-                                           guest.rsvp_status === 'declined' ? 'Declined' : 'Pending RSVP'}
+                                           guest.rsvp_status === 'declined' ? 'Declined' : 'Pending'}
                                       </span>
                                   </td>
                                   <td className="px-6 py-4 text-right">
@@ -959,7 +1002,18 @@ export default function AdminGuests() {
                                             <Send className="w-4 h-4" />
                                           </button>
                                           <button onClick={() => handleEdit(guest)} className="p-1 text-stone-400 hover:text-[#A67B5B]"><Edit className="w-4 h-4" /></button>
-                                          <button onClick={() => handleDelete(guest.id)} className="p-1 text-stone-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                          <button 
+                                              onClick={() => {
+                                                if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
+                                                  handleUpdateGuest(guest, { rsvp_status: 'pending', confirmed_plus_ones: 0 });
+                                                }
+                                              }}
+                                              className="p-1 text-stone-400 hover:text-orange-500"
+                                              title="Reset RSVP"
+                                            >
+                                              <RotateCcw className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDelete(guest.id)} className="p-1 text-stone-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                                       </div>
                                   </td>
                               </tr>

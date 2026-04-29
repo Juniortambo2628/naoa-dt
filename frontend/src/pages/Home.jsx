@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles } from 'lucide-react';
-import { contentService, getAssetUrl } from '../services/api';
+import { contentService, getAssetUrl, polaroidService } from '../services/api';
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
@@ -24,6 +24,41 @@ import { useCountUp, fadeInUp, staggerContainer, staggerItem, scaleIn } from '..
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Skeleton } from '../components/Skeleton';
+import { useContent } from '../context/ContentContext';
+
+// Polaroid Floating Image Component
+function PolaroidFloatingImage({ src, size = 160, duration = 10, delay = 0, rotate = 0, note = '', customSize, offsetX, offsetY, customRotation }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ 
+        opacity: 1, 
+        y: [0, -10, 0],
+        rotate: [rotate, rotate + 2, rotate]
+      }}
+      transition={{
+        opacity: { duration: 0.8, delay },
+        y: { duration: duration, repeat: Infinity, ease: "easeInOut", delay },
+        rotate: { duration: duration * 1.2, repeat: Infinity, ease: "easeInOut", delay }
+      }}
+      className="bg-white p-3 pb-8 shadow-xl rounded-sm"
+      style={{ 
+        width: customSize || size,
+        transform: `translate(${offsetX || 0}px, ${offsetY || 0}px) rotate(${customRotation || rotate}deg)`,
+        position: 'relative'
+      }}
+    >
+      <div className="bg-stone-100 w-full aspect-square overflow-hidden mb-3">
+        <img src={src} alt="Polaroid" className="w-full h-full object-cover" />
+      </div>
+      {note && (
+        <p className="text-center font-handwritten text-[#A67B5B] text-sm italic" style={{ fontFamily: "'Great Vibes', cursive" }}>
+          {note}
+        </p>
+      )}
+    </motion.div>
+  );
+}
 
 // Hero Section with Horizontal Names, Female/Male Icons, and Infinity Sign
 // Helper to resolve dynamic content
@@ -240,12 +275,6 @@ function HeroSection({ content }) {
             className="btn-primary btn-lg"
           >
             {t('hero.rsvp_cta')}
-          </Link>
-          <Link 
-            to="/programme" 
-            className="btn-secondary btn-lg"
-          >
-            {t('hero.programme_cta')}
           </Link>
         </motion.div>
       </motion.div>
@@ -835,7 +864,7 @@ function GallerySection({ content }) {
               >
                 <ParallaxImage
                   src={image.image_url || image.src}
-                  alt={image.caption || `Gallery ${index + 1}`}
+                  alt={`Gallery ${index + 1}`}
                   className="w-full h-full"
                   speed={0.3}
                   style={{ objectPosition: image.object_position || 'center' }}
@@ -906,12 +935,6 @@ function CTASection({ content }) {
                 {t('rsvp.respond')}
               </Link>
             </motion.div>
-            <motion.div variants={staggerItem}>
-              <Link to="/gifts" className="btn-secondary inline-flex items-center gap-2">
-                <Gift className="w-5 h-5" />
-                View Gift Registry
-              </Link>
-            </motion.div>
           </motion.div>
         </motion.div>
       </div>
@@ -921,15 +944,7 @@ function CTASection({ content }) {
 
 // Main Home Page
 export default function Home() {
-  const [content, setContent] = useState({});
-
-  useEffect(() => {
-    contentService.getAll().then(res => {
-        setContent(res.data || {});
-    }).catch(err => console.error("Failed to load content", err));
-  }, []);
-
-  const isVisible = (section) => !!content[section] && content[section].is_visible !== false;
+  const { contents: content, isVisible } = useContent();
 
   return (
     <motion.div
@@ -946,7 +961,7 @@ export default function Home() {
         {isVisible('gallery') && <GallerySection content={content} />}
         {isVisible('rsvp') && <CTASection content={content} />}
       </main>
-      <Footer content={content} />
+      <Footer />
     </motion.div>
   );
 }

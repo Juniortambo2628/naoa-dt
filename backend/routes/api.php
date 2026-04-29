@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TestController;
 use App\Http\Controllers\PolaroidImageController;
 use App\Http\Controllers\Api\CalendarController;
+use App\Http\Controllers\Api\EnquiryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +97,9 @@ Route::middleware('throttle:30,1')->group(function () {
         Route::get('/', [GuestbookController::class, 'index']);
         Route::post('/', [GuestbookController::class, 'store']);
     });
+
+    // Public Enquiries
+    Route::post('/enquiries', [EnquiryController::class, 'store']);
 });
 
 // Full Schedule for Public Programme (Events + Items)
@@ -126,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{guest}', [GuestController::class, 'update']);
         Route::delete('/{guest}', [GuestController::class, 'destroy']);
         Route::post('/{guest}/whatsapp-invite', [GuestController::class, 'markWhatsappSent']);
+        Route::post('/{guest}/reset-rsvp', [GuestController::class, 'resetRsvp']);
     });
 
     // Invitation Management (admin)
@@ -225,6 +230,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'guestbook-admin'], function () {
         Route::patch('/{guestbookEntry}/approve', [GuestbookController::class, 'approve']);
         Route::delete('/{guestbookEntry}', [GuestbookController::class, 'destroy']);
+    });
+
+    // Enquiry Management (Admin)
+    Route::group(['prefix' => 'enquiries'], function () {
+        Route::get('/', [EnquiryController::class, 'index']);
+        Route::get('/{enquiry}', [EnquiryController::class, 'show']);
+        Route::post('/{enquiry}/reply', [EnquiryController::class, 'reply']);
+        Route::delete('/{enquiry}', [EnquiryController::class, 'destroy']);
     });
 
     // 2FA Routes

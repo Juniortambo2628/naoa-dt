@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { contentService } from '../../services/api';
-import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Languages, Sparkles, Loader2 } from 'lucide-react';
+import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Languages, Sparkles, Loader2, Edit } from 'lucide-react';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import { useContent } from '../../context/ContentContext';
+import { toast } from 'react-hot-toast';
 
 const LANGUAGES = [
     { code: 'en', label: 'English' },
@@ -48,7 +50,7 @@ const SECTIONS = [
     },
     {
         key: 'events',
-        label: 'Wedding Day Timeline (Home Page)',
+        label: 'Wedding Timeline (Home)',
         fields: [
             { key: 'title', label: 'Main Section Title', type: 'text' },
             { key: 'description', label: 'Intro Text/Subtitle', type: 'textarea' },
@@ -105,7 +107,7 @@ const SECTIONS = [
     },
     {
         key: 'programme_page',
-        label: 'Wedding Programme Page',
+        label: 'Events Page (Full)',
         fields: [
             { key: 'title', label: 'Page Title', type: 'text' },
             { key: 'description', label: 'Subtitle/Description', type: 'textarea' },
@@ -130,6 +132,22 @@ const SECTIONS = [
         ]
     },
     {
+        key: 'faqs',
+        label: 'FAQ Page',
+        fields: [
+            { key: 'title', label: 'Page Title', type: 'text' },
+            { key: 'description', label: 'Subtitle/Description', type: 'textarea' }
+        ]
+    },
+    {
+        key: 'contact',
+        label: 'Contact Page',
+        fields: [
+            { key: 'title', label: 'Page Title', type: 'text' },
+            { key: 'description', label: 'Subtitle/Description', type: 'textarea' }
+        ]
+    },
+    {
         key: 'footer',
         label: 'Footer',
         fields: [
@@ -142,35 +160,29 @@ const SECTIONS = [
     }
 ];
 
-const TIME_OPTIONS = [];
-for (let i = 0; i < 24; i++) {
-  const hour = i === 0 || i === 12 ? 12 : i % 12;
-  const ampm = i < 12 ? 'AM' : 'PM';
-  TIME_OPTIONS.push(`${hour}:00 ${ampm}`);
-  TIME_OPTIONS.push(`${hour}:30 ${ampm}`);
-}
+const PAGES = [
+    { id: 'home', label: 'Home Page', sections: ['home_hero', 'countdown', 'our_story', 'events', 'gallery', 'rsvp', 'gifts', 'footer'] },
+    { id: 'programme', label: 'Events Page', sections: ['programme_page'] },
+    { id: 'songs', label: 'Song Requests', sections: ['songs_page'] },
+    { id: 'guestbook', label: 'Guestbook', sections: ['guestbook_page'] },
+    { id: 'faqs', label: 'FAQs', sections: ['faqs'] },
+    { id: 'contact', label: 'Contact', sections: ['contact'] }
+];
 
 export default function ContentManager() {
+  const { contents: globalContents, loading, updateLocalContent } = useContent();
+  const [activePage, setActivePage] = useState('home');
   const [contents, setContents] = useState({});
-  const [loading, setLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState('home_hero');
   const [saving, setSaving] = useState(null);
   const [activeLang, setActiveLang] = useState('en');
   const [translating, setTranslating] = useState(null);
 
   useEffect(() => {
-    fetchContent();
-  }, []);
-
-  const fetchContent = async () => {
-    try {
-        const res = await contentService.getAll();
-        setContents(res.data || {});
-    } catch (err) {
-        console.error(err);
+    if (globalContents && Object.keys(globalContents).length > 0) {
+        setContents(globalContents);
     }
-    setLoading(false);
-  };
+  }, [globalContents]);
 
   const handleUpdate = async (sectionKey, field, value) => {
       const currentSection = contents[sectionKey] || { content: {} };
@@ -206,6 +218,36 @@ export default function ContentManager() {
           }
       };
       setContents(newContents);
+  };
+
+  const handleToggleVisibility = async (sectionKey) => {
+      const currentSection = contents[sectionKey] || { content: {}, is_visible: true };
+      const newVisibility = currentSection.is_visible === false; // Toggle it
+      
+      // Update context state immediately
+      updateLocalContent(sectionKey, { is_visible: newVisibility });
+      
+      // Also update local draft state
+      setContents(prev => ({
+          ...prev,
+          [sectionKey]: {
+              ...(prev[sectionKey] || { content: {} }),
+              is_visible: newVisibility
+          }
+      }));
+      
+      // Auto-save visibility change
+      try {
+          await contentService.update(sectionKey, {
+              content: currentSection.content,
+              is_visible: newVisibility
+          });
+          toast.success(`${sectionKey.replace('_', ' ')} is now ${newVisibility ? 'enabled' : 'disabled'}`);
+      } catch (err) {
+          toast.error('Failed to update visibility');
+          // Revert on failure
+          updateLocalContent(sectionKey, { is_visible: !newVisibility });
+      }
   };
 
   const handleTranslate = async (sectionKey, fieldKey) => {
@@ -273,13 +315,13 @@ export default function ContentManager() {
   return (
     <div className="space-y-6">
        <AdminPageHero
-            title="Content Management"
-            description="Customize text, images, and sections of your website"
+            title="CMS - Content Management"
+            description={`Editing: ${PAGES.find(p => p.id === activePage)?.label}`}
             breadcrumb={[
                 { label: 'Dashboard', path: '/admin/dashboard' },
-                { label: 'Content' },
+                { label: 'CMS' },
             ]}
-            icon={<Layout className="w-5 h-5 text-[#A67B5B]" />}
+            icon={<Edit className="w-5 h-5 text-[#A67B5B]" />}
             actions={
                 <div className="flex bg-white rounded-lg p-1 shadow-sm border border-stone-200">
                     {LANGUAGES.map(lang => (
@@ -297,10 +339,8 @@ export default function ContentManager() {
                     ))}
                 </div>
             }
-       />
-
-       <div className="space-y-4">
-           {SECTIONS.map(section => {
+       />        <div className="space-y-4 pb-32">
+           {SECTIONS.filter(s => PAGES.find(p => p.id === activePage)?.sections.includes(s.key)).map(section => {
                const isExpanded = expandedSection === section.key;
                const sectionData = contents[section.key] || { content: {} };
                const isSaving = saving === section.key;
@@ -317,7 +357,18 @@ export default function ContentManager() {
                                     <span className="w-2 h-2 rounded-full bg-green-400" title="Has content"></span>
                                 )}
                            </span>
-                           {isExpanded ? <ChevronDown className="w-5 h-5 text-stone-400" /> : <ChevronRight className="w-5 h-5 text-stone-400" />}
+                           <div className="flex items-center gap-6">
+                               <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                   <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Visible</span>
+                                   <button 
+                                        onClick={() => handleToggleVisibility(section.key)}
+                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${sectionData.is_visible !== false ? 'bg-[#A67B5B]' : 'bg-stone-300'}`}
+                                   >
+                                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${sectionData.is_visible !== false ? 'translate-x-5' : 'translate-x-1'}`} />
+                                   </button>
+                               </div>
+                               {isExpanded ? <ChevronDown className="w-5 h-5 text-stone-400" /> : <ChevronRight className="w-5 h-5 text-stone-400" />}
+                           </div>
                        </button>
 
                         {isExpanded && (
@@ -442,25 +493,7 @@ export default function ContentManager() {
                                     })}
                                 </div>
 
-                                <div className="flex justify-between items-center pt-4 border-t border-stone-50">
-                                     <div className="flex items-center gap-2">
-                                         <label className="text-sm text-stone-600 flex items-center gap-2 cursor-pointer select-none">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={sectionData.is_visible ?? true}
-                                                onChange={e => {
-                                                    const newContents = {
-                                                        ...contents,
-                                                        [section.key]: { ...sectionData, is_visible: e.target.checked }
-                                                    };
-                                                    setContents(newContents);
-                                                }}
-                                                className="rounded text-[#A67B5B] focus:ring-[#A67B5B]"
-                                            />
-                                            Visible on site
-                                         </label>
-                                     </div>
-                                
+                                <div className="flex justify-end items-center pt-4 border-t border-stone-50">
                                      <button 
                                         onClick={() => handleSave(section.key)}
                                         disabled={isSaving}
@@ -479,6 +512,26 @@ export default function ContentManager() {
                 );
             })}
         </div>
-     </div>
-   );
+
+        {/* Page Context Switcher Toolbar */}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white p-1.5 rounded-2xl shadow-2xl z-50 flex items-center gap-1 border border-stone-800">
+            {PAGES.map(page => (
+                <button
+                    key={page.id}
+                    onClick={() => {
+                        setActivePage(page.id);
+                        setExpandedSection(page.sections[0]);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                        activePage === page.id 
+                            ? 'bg-[#A67B5B] text-white shadow-lg' 
+                            : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                    }`}
+                >
+                    {page.label}
+                </button>
+            ))}
+        </div>
+    </div>
+  );
 }

@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Heart, Instagram, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { FlowerDivider } from './CustomIllustrations';
 import { useTranslation } from 'react-i18next';
+import { useContent } from '../context/ContentContext';
 
 // Helper to resolve dynamic content
 const getContent = (content, section, field, i18n, fallback) => {
@@ -14,10 +15,12 @@ const getContent = (content, section, field, i18n, fallback) => {
   return val;
 };
 
-export default function Footer({ content }) {
+export default function Footer() {
   const currentYear = new Date().getFullYear();
   const { i18n } = useTranslation();
-  const getTxt = (field, fallback) => getContent(content, 'footer', field, i18n, fallback);
+  const { contents, isVisible, getContent: getFromContext } = useContent();
+  const location = useLocation();
+  const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
 
   return (
     <footer style={{ background: 'linear-gradient(180deg, #F8E8E0 0%, #E8D4C8 100%)' }}>
@@ -41,7 +44,7 @@ export default function Footer({ content }) {
             className="text-lg"
             style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
           >
-             {getContent(content, 'home_hero', 'date_text', i18n, 'June 15th, 2025')}
+             {getFromContext('home_hero', 'date_text', i18n.language, 'June 15th, 2025')}
           </p>
         </motion.div>
 
@@ -56,13 +59,16 @@ export default function Footer({ content }) {
             </h4>
             <div className="space-y-3">
               {[
-                { label: 'Home', path: '/' },
-                { label: 'RSVP', path: '/rsvp' },
-                { label: 'Programme', path: '/programme' },
-                { label: 'Gifts', path: '/gifts' },
-                { label: 'FAQs', path: '/faq' },
-                { label: 'Privacy Policy', path: '/privacy-policy' }
-              ].map((item) => (
+                { label: 'Home', path: '/', key: null },
+                { label: 'RSVP', path: '/rsvp', key: 'rsvp' },
+                { label: 'Programme', path: '/programme', key: 'programme_page' },
+                { label: 'Gifts', path: '/gifts', key: 'gifts' },
+                { label: 'Gallery', path: '/gallery', key: 'gallery' },
+                { label: 'FAQs', path: '/faq', key: 'faqs' },
+                { label: 'Contact', path: '/contact', key: 'contact' }
+              ].filter(item => {
+                return isVisible(item.key);
+              }).map((item) => (
                 <Link 
                   key={item.label}
                   to={item.path} 
@@ -85,20 +91,20 @@ export default function Footer({ content }) {
             </h4>
             <div className="space-y-4">
               <a 
-                href={`mailto:${getTxt('contact_email', 'wedding@dinahandtzeren.com')}`}
+                href="mailto:tangtzeren@gmail.com"
                 className="flex items-center justify-center md:justify-start gap-3 transition-colors"
                 style={{ color: '#6B5D52' }}
               >
                 <Mail className="w-5 h-5" style={{ color: '#A67B5B' }} />
-                <span>{getTxt('contact_email', 'wedding@dinahandtzeren.com')}</span>
+                <span>tangtzeren@gmail.com</span>
               </a>
               <a 
-                href="tel:+254700000000" 
+                href="tel:+19055312912" 
                 className="flex items-center justify-center md:justify-start gap-3 transition-colors"
                 style={{ color: '#6B5D52' }}
               >
                 <Phone className="w-5 h-5" style={{ color: '#A67B5B' }} />
-                <span>+254 700 000 000</span>
+                <span>+1-905-531-2912</span>
               </a>
             </div>
           </div>

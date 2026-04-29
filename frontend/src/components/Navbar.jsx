@@ -6,14 +6,14 @@ import api from '../services/api';
 
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import { useContent } from '../context/ContentContext';
 
 export default function Navbar() {
   const { t } = useTranslation();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const location = useLocation();
-
-  const [contents, setContents] = useState({});
+  const { contents, isVisible } = useContent();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,11 +21,6 @@ export default function Navbar() {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     
-    // Fetch content visibility settings
-    api.get('/content').then(res => {
-      setContents(res.data || {});
-    }).catch(err => console.error(err));
-
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -36,15 +31,12 @@ export default function Navbar() {
     { name: t('nav.gallery'), path: '/gallery', section: 'gallery' },
     { name: t('nav.songs') || 'Pour Jamz', path: '/songs', section: 'songs_page' },
     { name: t('nav.guestbook') || 'Write to Us', path: '/guestbook', section: 'guestbook_page' },
+    { name: 'FAQs', path: '/faq', section: 'faqs' },
+    { name: 'Contact', path: '/contact', section: 'contact' },
   ];
 
   const filteredLinks = navLinks.filter(link => {
-    if (!link.section) return true;
-    const sectionContent = contents[link.section];
-    // If we're not an admin, we only get visible sections from the backend.
-    // If we ARE an admin, we get all sections, so we must check is_visible.
-    // Default to visible (matching DB default) if not explicitly set to false.
-    return !!sectionContent && sectionContent.is_visible !== false;
+    return isVisible(link.section);
   });
   const isActive = (path) => location.pathname === path;
 
@@ -82,7 +74,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8 relative">
             <div className="flex gap-8">
               {filteredLinks.map((link, index) => (
                 <Link
@@ -109,30 +101,44 @@ export default function Navbar() {
                 ))}
             </div>
             
-            <div className="h-6 w-px bg-stone-300 mx-2" />
-            <LanguageSwitcher />
+            {isVisible('language_switcher') && (
+                <>
+                    <div className="h-6 w-px bg-stone-300 mx-2" />
+                    <LanguageSwitcher />
+                </>
+            )}
 
-            {/* CTA Button */}
-            <Link
-                to="/rsvp"
-                className="px-6 py-2 rounded-full font-medium text-sm uppercase tracking-wider transition-all"
-                style={{
-                background: 'linear-gradient(135deg, #A67B5B 0%, #C8A68E 100%)',
-                color: 'white',
-                fontFamily: "'Cormorant Garamond', serif",
-                boxShadow: '0 4px 15px rgba(166, 123, 91, 0.25)',
-                }}
-            >
-                {t('nav.rsvp')}
-            </Link>
+            {(!contents['rsvp'] || contents['rsvp'].is_visible !== false) && (
+                <Link
+                    to="/rsvp"
+                    className="px-6 py-2 rounded-full font-medium text-sm uppercase tracking-wider transition-all"
+                    style={{
+                    background: 'linear-gradient(135deg, #A67B5B 0%, #C8A68E 100%)',
+                    color: 'white',
+                    fontFamily: "'Cormorant Garamond', serif",
+                    boxShadow: '0 4px 15px rgba(166, 123, 91, 0.25)',
+                    }}
+                >
+                    {t('nav.rsvp')}
+                </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-4">
-            <LanguageSwitcher />
+          <div className="md:hidden flex items-center gap-2">
+            {isVisible('rsvp') && (
+                <Link
+                    to="/rsvp"
+                    className="px-4 py-1.5 rounded-full font-medium text-xs uppercase tracking-wider bg-[#A67B5B] text-white shadow-sm"
+                    style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                >
+                    RSVP
+                </Link>
+            )}
+            {isVisible('language_switcher') && <LanguageSwitcher />}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="p-2"
+                className="p-1.5"
                 style={{ color: '#A67B5B' }}
             >
                 {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

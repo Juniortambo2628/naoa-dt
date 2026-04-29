@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mail, QrCode, Send, RefreshCw, CheckCircle, AlertCircle, FlaskConical } from 'lucide-react';
-import api from '../../services/api';
+import api, { guestService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 
 export default function AdminTestLab() {
@@ -26,6 +26,24 @@ export default function AdminTestLab() {
           addLog(`Failed to send email: ${err.message}`, 'error');
       }
       setLoading(false);
+  };
+
+  const handleVerifyCode = async () => {
+    if (!testCode) return;
+    setLoading(true);
+    addLog(`Verifying code: ${testCode}...`, 'info');
+    try {
+        const res = await guestService.getByCode(testCode);
+        addLog(`Code Valid! Guest: ${res.data.name}`, 'success');
+        addLog(`RSVP Status: ${res.data.rsvp_status}`, 'info');
+    } catch (err) {
+        if (err.response?.status === 404) {
+            addLog(`Code Not Found: ${testCode}. Please create a guest with this code first.`, 'error');
+        } else {
+            addLog(`Error: ${err.response?.data?.message || err.message}`, 'error');
+        }
+    }
+    setLoading(false);
   };
 
   const generateRandomCode = () => {
@@ -128,7 +146,16 @@ export default function AdminTestLab() {
                         className="w-32 h-32"
                        />
                   </div>
-                  <p className="text-center text-xs text-stone-400">Scan to test deep linking</p>
+                  <div className="flex flex-col gap-3">
+                      <button 
+                        onClick={handleVerifyCode}
+                        disabled={loading}
+                        className="w-full py-3 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6A4E] transition-all font-medium flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle className="w-4 h-4" /> Verify RSVP Code
+                      </button>
+                      <p className="text-center text-xs text-stone-400">Scan or click verify to test code validity</p>
+                  </div>
               </div>
           </div>
       </div>

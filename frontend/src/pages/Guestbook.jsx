@@ -12,7 +12,10 @@ import {
 } from '../components/CustomIllustrations';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Loader from '../components/Loader';
 import { Skeleton, MessageSkeleton } from '../components/Skeleton';
+import { useContent } from '../context/ContentContext';
+import { Navigate } from 'react-router-dom';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -40,7 +43,7 @@ export default function Guestbook() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [content, setContent] = useState({});
+  const { contents: content, loading: contentLoading, isVisible } = useContent();
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -56,27 +59,24 @@ export default function Guestbook() {
 
   useEffect(() => {
     fetchEntries();
-    const fetchContentAndCheckVisibility = async () => {
-      try {
-        const res = await contentService.getAll();
-        const data = res.data || {};
-        
-        // If the section is explicitly hidden, redirect to home
-        if (data['guestbook_page']?.is_visible === false) {
-           navigate('/');
-           return;
-        }
-        
-        setContent(data);
-      } catch (err) {
-        console.error('Failed to load content', err);
-      }
-    };
-    fetchContentAndCheckVisibility();
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchEntries, 30000);
     return () => clearInterval(interval);
-  }, [fetchEntries, navigate]);
+  }, [fetchEntries]);
+
+  useEffect(() => {
+    if (!contentLoading && !isVisible('guestbook_page')) {
+      navigate('/module-unavailable/guestbook');
+    }
+  }, [contentLoading, isVisible, navigate]);
+
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('guestbook_page')) {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -312,7 +312,7 @@ export default function Guestbook() {
         </div>
       </main>
 
-      <Footer content={content} />
+      <Footer />
     </motion.div>
   );
 }

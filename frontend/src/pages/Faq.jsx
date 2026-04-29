@@ -4,27 +4,42 @@ import { MessageSquare, ChevronRight } from 'lucide-react';
 import { faqService, contentService } from '../services/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useTranslation } from 'react-i18next';
+import { Navigate, Link } from 'react-router-dom';
+import { useContent } from '../context/ContentContext';
+
+const getContent = (content, section, field, i18n, fallback) => {
+  const sectionData = content?.[section]?.content;
+  const val = sectionData?.[field];
+  
+  if (!val) return fallback;
+  
+  // Handle multi-language object
+  if (typeof val === 'object') {
+    return val[i18n.language] || val['en'] || fallback;
+  }
+  
+  // Handle legacy string (assume English or universal)
+  return val;
+};
 
 export default function Faq() {
+    const { t, i18n } = useTranslation();
+    const { contents: content, loading: contentLoading } = useContent();
+    const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback);
     const [faqs, setFaqs] = useState([]);
-    const [content, setContent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeFaqId, setActiveFaqId] = useState(null);
+    const answerRef = React.useRef(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [faqRes, contentRes] = await Promise.all([
-                    faqService.getAll(),
-                    contentService.getAll().catch(() => ({ data: null }))
-                ]);
+                const faqRes = await faqService.getAll();
                 const loadedFaqs = faqRes.data || [];
                 setFaqs(loadedFaqs);
                 if (loadedFaqs.length > 0) {
                     setActiveFaqId(loadedFaqs[0].id);
-                }
-                if (contentRes.data) {
-                    setContent(contentRes.data);
                 }
             } catch (error) {
                 console.error("Failed to fetch FAQ data", error);
@@ -34,6 +49,16 @@ export default function Faq() {
         };
         fetchData();
     }, []);
+
+    useEffect(() => {
+        if (activeFaqId && window.innerWidth < 768) {
+            answerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [activeFaqId]);
+
+    if (!contentLoading && content && content['faqs']?.is_visible === false) {
+        return <Navigate to="/module-unavailable/faqs" replace />;
+    }
 
     const activeFaq = faqs.find(f => f.id === activeFaqId);
 
@@ -55,10 +80,10 @@ export default function Faq() {
                         className="text-center mb-16"
                     >
                         <h1 className="text-4xl md:text-5xl text-[#A67B5B] mb-4" style={{ fontFamily: "'Great Vibes', cursive" }}>
-                            Frequently Asked Questions
+                            {getTxt('faqs', 'title', 'Frequently Asked Questions')}
                         </h1>
                         <p className="text-[#6B5D52] font-serif text-lg">
-                            Find answers to common questions about our special day.
+                            {getTxt('faqs', 'description', 'Find answers to common questions about our special day.')}
                         </p>
                     </motion.div>
 
@@ -67,7 +92,7 @@ export default function Faq() {
                     ) : faqs.length === 0 ? (
                         <div className="text-center text-stone-500 italic py-12">No FAQs available at the moment. Check back soon!</div>
                     ) : (
-                        <div className="bg-white rounded-[2rem] shadow-sm border border-stone-100 overflow-hidden flex flex-col md:flex-row min-h-[600px] max-h-[85vh]">
+                        <div className="bg-white rounded-[2rem] shadow-sm border border-stone-100 overflow-hidden flex flex-col md:flex-row min-h-[500px] md:min-h-[600px] max-h-none md:max-h-[85vh]">
                             {/* Left Column: Questions List */}
                             <div className="w-full md:w-2/5 lg:w-1/3 bg-[#FFF9F5]/30 border-b md:border-b-0 md:border-r border-stone-100 flex flex-col">
                                 <div className="p-6 lg:p-8 border-b border-stone-100">
@@ -99,7 +124,7 @@ export default function Faq() {
                             </div>
                             
                             {/* Right Column: Active Answer */}
-                            <div className="w-full md:w-3/5 lg:w-2/3 p-6 lg:p-12 overflow-y-auto bg-white relative">
+                            <div className="w-full md:w-3/5 lg:w-2/3 p-6 lg:p-12 overflow-y-auto bg-white relative" ref={answerRef}>
                                 <AnimatePresence mode="popLayout">
                                     {activeFaq && (
                                         <motion.div
@@ -110,12 +135,14 @@ export default function Faq() {
                                             transition={{ duration: 0.3 }}
                                             className="h-full"
                                         >
-                                            <h2 className="font-serif text-3xl md:text-4xl text-stone-800 mb-8 pb-6 border-b border-stone-100">
-                                                {activeFaq.question}
-                                            </h2>
+                                            <div className="sticky top-0 bg-white z-10 pb-6 mb-8 border-b border-stone-100 pt-2 md:pt-0">
+                                                <h2 className="font-serif text-2xl md:text-4xl text-stone-800">
+                                                    {activeFaq.question}
+                                                </h2>
+                                            </div>
                                             
                                             <div 
-                                                className="text-stone-600 prose prose-stone max-w-none break-words leading-relaxed 
+                                                className="text-stone-600 prose prose-stone max-w-none [overflow-wrap:anywhere] [word-break:normal] leading-relaxed 
                                                     [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 
                                                     [&_table]:w-full [&_table]:table-fixed [&_table]:border-collapse [&_table]:my-6 [&_table]:rounded-lg [&_table]:overflow-hidden
                                                     [&_th]:!border [&_th]:!border-stone-200 [&_th]:!bg-[#F8E8E0] [&_th]:!p-4 [&_th]:!text-left [&_th]:!font-semibold [&_th]:!text-[#8B7B6B]
@@ -130,20 +157,22 @@ export default function Faq() {
                         </div>
                     )}
                     
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.8 }}
-                        className="mt-20 text-center"
-                    >
-                        <p className="text-stone-500 mb-4">Still have questions?</p>
-                        <a 
-                            href="/guestbook" 
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-[#A67B5B] text-[#A67B5B] rounded-full hover:bg-[#A67B5B] hover:text-white transition-colors shadow-sm"
+                    {(!content || content['guestbook_page']?.is_visible !== false) && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.8 }}
+                            className="mt-12 md:mt-20 text-center"
                         >
-                            <MessageSquare className="w-4 h-4" /> Drop us a message
-                        </a>
-                    </motion.div>
+                            <p className="text-stone-500 mb-4">Still have questions?</p>
+                            <Link 
+                                to="/contact" 
+                                className="inline-flex items-center gap-2 px-8 py-3.5 bg-white border border-[#A67B5B] text-[#A67B5B] rounded-full hover:bg-[#A67B5B] hover:text-white transition-all shadow-sm active:scale-95"
+                            >
+                                <MessageSquare className="w-4 h-4" /> Enquire Now
+                            </Link>
+                        </motion.div>
+                    )}
                 </div>
             </main>
 

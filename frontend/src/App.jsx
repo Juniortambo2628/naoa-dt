@@ -18,12 +18,17 @@ const Faq = lazy(() => import('./pages/Faq'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const DigitalInvitation = lazy(() => import('./pages/DigitalInvitation'));
+const Contact = lazy(() => import('./pages/Contact'));
+const AdminEnquiries = lazy(() => import('./pages/admin/AdminEnquiries'));
 
 import Loader from './components/Loader';
 import CookieConsent from './components/CookieConsent';
+import NotFound from './components/NotFound';
+import ModuleDisabled from './components/ModuleDisabled';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
+import { ContentProvider } from './context/ContentContext';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -55,7 +60,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
+        <ContentProvider>
+          <Router>
           <Toaster position="top-right" />
           <AnimatePresence mode="wait">
             <Suspense fallback={<Loader />}>
@@ -72,16 +78,22 @@ function App() {
                 <Route path="/faq" element={<Faq />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/invitation/:code" element={<DigitalInvitation />} />
+                <Route path="/contact" element={<Contact />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLogin />} />
-                <Route path="//admin" element={<Navigate to="/admin" replace />} />
+                <Route path="/admin/dashboard/enquiries" element={<AdminDashboard />} />
                 <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
+                {/* Auxiliary Routes */}
+                <Route path="/module-unavailable/:module" element={<ModuleDisabled />} />
+                <Route path="/404" element={<NotFound />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </AnimatePresence>
           <CookieConsent />
         </Router>
+        </ContentProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

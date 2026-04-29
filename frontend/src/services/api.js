@@ -153,6 +153,9 @@ export const guestService = {
 
   // Bulk update guests
   bulkUpdate: (ids, data) => api.post('/guests/bulk-update', { ids, data }),
+
+  // Reset RSVP status (admin)
+  resetRSVP: (id) => api.post(`/guests/${id}/reset-rsvp`),
 };
 
 // Event/Schedule services
@@ -304,4 +307,30 @@ export const faqService = {
   uploadMedia: (formData) => api.post('/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
   })
+};
+
+// Polaroid services
+export const polaroidService = {
+  getAll: () => api.get('/polaroid-images'),
+  create: (data) => api.post('/polaroid-images', data),
+  update: (id, data) => api.put(`/polaroid-images/${id}`, data),
+  delete: (id) => api.delete(`/polaroid-images/${id}`),
+};
+
+// Enquiry services
+export const enquiryService = {
+  // Send enquiry from public form
+  send: (data) => api.post('/enquiries', data),
+  
+  // Get all enquiries (admin)
+  getAll: (params) => api.get('/enquiries', { params }),
+  
+  // Get single enquiry (admin)
+  get: (id) => api.get(`/enquiries/${id}`),
+  
+  // Reply to enquiry (admin)
+  reply: (id, message) => api.post(`/enquiries/${id}/reply`, { message }),
+  
+  // Delete enquiry (admin)
+  delete: (id) => api.delete(`/enquiries/${id}`),
 };

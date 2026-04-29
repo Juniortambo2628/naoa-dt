@@ -12,7 +12,10 @@ import {
 } from '../components/CustomIllustrations';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Loader from '../components/Loader';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
+import { useContent } from '../context/ContentContext';
+import { Navigate } from 'react-router-dom';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -33,8 +36,23 @@ const staggerContainer = {
   },
 };
 
+const getContent = (content, section, field, i18n, fallback) => {
+  const sectionData = content?.[section]?.content;
+  const val = sectionData?.[field];
+  
+  if (!val) return fallback;
+  
+  // Handle multi-language object
+  if (typeof val === 'object') {
+    return val[i18n.language] || val['en'] || fallback;
+  }
+  
+  // Handle legacy string (assume English or universal)
+  return val;
+};
+
 export default function Gallery() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -47,7 +65,7 @@ export default function Gallery() {
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [content, setContent] = useState({});
+  const { contents: content, loading: contentLoading, isVisible } = useContent();
   
   // Slideshow state
   const [slideshowActive, setSlideshowActive] = useState(false);
@@ -68,27 +86,24 @@ export default function Gallery() {
 
   useEffect(() => {
     fetchGallery();
-    const fetchContentAndCheckVisibility = async () => {
-      try {
-        const res = await contentService.getAll();
-        const data = res.data || {};
-        
-        // If the section is explicitly hidden, redirect to home
-        if (data['gallery']?.is_visible === false) {
-           navigate('/');
-           return;
-        }
-        
-        setContent(data);
-      } catch (err) {
-        console.error('Failed to load content', err);
-      }
-    };
-    fetchContentAndCheckVisibility();
     // Auto-refresh every 30 seconds for live updates
     const interval = setInterval(fetchGallery, 30000);
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, []);
+
+  useEffect(() => {
+    if (!contentLoading && !isVisible('gallery')) {
+      navigate('/module-unavailable/gallery');
+    }
+  }, [contentLoading, isVisible, navigate]);
+
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('gallery')) {
+    return null; // The useEffect will handle redirect
+  }
 
   // Slideshow controls
   const startSlideshow = () => {
@@ -192,17 +207,17 @@ export default function Gallery() {
               className="text-5xl md:text-6xl mb-4"
               style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
             >
-              {t('gallery.title') || 'Our Gallery'}
+              {getContent(content, 'gallery', 'title', i18n, 'Our Gallery')}
             </h1>
             <p 
               className="text-lg mb-6"
               style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
             >
-              {t('gallery.subtitle') || 'Cherished moments from our journey together'}
+              {getContent(content, 'gallery', 'subtitle', i18n, 'Cherished moments from our journey together')}
             </p>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            {/* Action Buttons hidden as per request */}
+            {/* <div className="flex flex-wrap items-center justify-center gap-4">
               <button
                 onClick={() => setShowUploadModal(true)}
                 className="btn-primary flex items-center gap-2"
@@ -228,7 +243,7 @@ export default function Gallery() {
                   )}
                 </button>
               )}
-            </div>
+            </div> */}
           </motion.div>
 
           {loading ? (
@@ -260,19 +275,14 @@ export default function Gallery() {
                 >
                     <img
                     src={getAssetUrl(image.image_url)}
-                    alt={image.caption || 'Gallery image'}
+                    alt="Gallery image"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     style={{ objectPosition: image.object_position || 'center' }}
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="absolute bottom-4 left-4 right-4 text-white">
-                      {image.caption && (
-                        <p className="text-sm">{image.caption}</p>
-                      )}
-                      {image.uploaded_by && (
-                        <p className="text-xs opacity-75 mt-1">📸 {image.uploaded_by}</p>
-                      )}
+                      {/* Captions removed as per request */}
                     </div>
                   </div>
                 </motion.div>
@@ -300,18 +310,11 @@ export default function Gallery() {
             </button>
             <img
               src={getAssetUrl(selectedImage.image_url)}
-              alt={selectedImage.caption || 'Gallery image'}
+              alt="Gallery image"
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
-            {(selectedImage.caption || selectedImage.uploaded_by) && (
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-center px-4">
-                {selectedImage.caption && <p className="text-lg">{selectedImage.caption}</p>}
-                {selectedImage.uploaded_by && (
-                  <p className="text-sm opacity-75 mt-1">📸 Shared by {selectedImage.uploaded_by}</p>
-                )}
-              </div>
-            )}
+            {/* Captions removed as per request */}
           </motion.div>
         )}
       </AnimatePresence>
@@ -361,12 +364,6 @@ export default function Gallery() {
 
             {/* Slide info */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-center">
-              {images[currentSlide]?.caption && (
-                <p className="text-xl mb-2">{images[currentSlide].caption}</p>
-              )}
-              {images[currentSlide]?.uploaded_by && (
-                <p className="text-sm opacity-75">📸 {images[currentSlide].uploaded_by}</p>
-              )}
               <p className="text-sm opacity-50 mt-4">
                 {currentSlide + 1} / {images.length}
               </p>
@@ -507,7 +504,7 @@ export default function Gallery() {
         )}
       </AnimatePresence>
 
-      <Footer content={content} />
+      <Footer />
     </motion.div>
   );
 }
