@@ -798,7 +798,7 @@ function EventDetails({ content }) {
   );
 }
 
-import { galleryService } from '../services/api';
+import { galleryService, getAssetUrl } from '../services/api';
 
 // Gallery with Parallax Effect
 function GallerySection({ content }) {
@@ -863,7 +863,7 @@ function GallerySection({ content }) {
                 whileHover={{ scale: 1.02 }}
               >
                 <ParallaxImage
-                  src={image.image_url || image.src}
+                  src={image.image_url?.startsWith('http') ? image.image_url : getAssetUrl(image.image_url || image.src)}
                   alt={`Gallery ${index + 1}`}
                   className="w-full h-full"
                   speed={0.3}
