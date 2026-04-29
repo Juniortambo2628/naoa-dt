@@ -347,10 +347,12 @@ export default function ContentManager() {
 
                return (
                    <div key={section.key} className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
-                       <button 
-                            onClick={() => setExpandedSection(isExpanded ? null : section.key)}
-                            className={`w-full flex items-center justify-between p-4 transition-colors text-left ${isExpanded ? 'bg-stone-50' : 'hover:bg-stone-50'}`}
-                       >
+                        <div 
+                             role="button"
+                             tabIndex={0}
+                             onClick={() => setExpandedSection(isExpanded ? null : section.key)}
+                             className={`w-full flex items-center justify-between p-4 transition-colors text-left cursor-pointer ${isExpanded ? 'bg-stone-50' : 'hover:bg-stone-50'}`}
+                        >
                            <span className="font-medium text-stone-700 flex items-center gap-2">
                                 {section.label}
                                 {sectionData.content && Object.keys(sectionData.content).length > 0 && (
@@ -369,7 +371,7 @@ export default function ContentManager() {
                                </div>
                                {isExpanded ? <ChevronDown className="w-5 h-5 text-stone-400" /> : <ChevronRight className="w-5 h-5 text-stone-400" />}
                            </div>
-                       </button>
+                       </div>
 
                         {isExpanded && (
                             <div className="p-6 border-t border-stone-100 space-y-6 animate-in slide-in-from-top-2">
