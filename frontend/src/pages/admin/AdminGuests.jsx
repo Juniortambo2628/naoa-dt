@@ -166,24 +166,6 @@ export default function AdminGuests() {
       }
   };
 
-  const handleResetAllRSVPs = async () => {
-      if (window.confirm('Are you sure you want to reset RSVPs for ALL guests? This will set their status to pending.')) {
-          try {
-              setLoading(true);
-              const allIds = guests.map(g => g.id);
-              if (allIds.length === 0) return;
-              await guestService.bulkUpdate(allIds, { rsvp_status: 'pending', confirmed_plus_ones: 0 });
-              toast.success('All RSVPs have been reset');
-              refetchGuests();
-          } catch (err) {
-              console.error(err);
-              toast.error('Failed to reset all RSVPs');
-          } finally {
-              setLoading(false);
-          }
-      }
-  };
-
 
   const handleAdd = () => {
     setSelectedGuest(null);
