@@ -92,7 +92,12 @@ class PageContentController extends Controller
             ]
         );
 
-        event(new \App\Events\PageContentUpdated($content));
+        try {
+            event(new \App\Events\PageContentUpdated($content));
+        } catch (\Exception $e) {
+            // Broadcast failure (e.g. Reverb not running) — log but don't break the update
+            \Log::warning('Broadcast failed for PageContentUpdated: ' . $e->getMessage());
+        }
 
         return response()->json($content);
     }
