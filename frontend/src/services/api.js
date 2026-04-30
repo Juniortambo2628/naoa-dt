@@ -152,7 +152,7 @@ export const guestService = {
   confirmImport: (data) => api.post('/guests/import-confirm', data),
   
   // Export guests to Excel
-  export: () => api.get('/guests/export', { responseType: 'blob' }),
+  export: () => api.get('/export/guests', { responseType: 'blob' }),
 
   // Get guest statistics
   getStats: () => api.get('/guests/statistics'),

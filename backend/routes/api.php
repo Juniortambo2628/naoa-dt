@@ -23,7 +23,7 @@ use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TestController;
-use App\Http\Controllers\PolaroidImageController;
+use App\Http\Controllers\Api\PolaroidImageController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\EnquiryController;
 
@@ -121,7 +121,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'guests'], function () {
         Route::get('/', [GuestController::class, 'index']);
         Route::get('/statistics', [GuestController::class, 'statistics']);
-        Route::get('/export', [GuestController::class, 'export']);
         Route::post('/import', [GuestController::class, 'import']);
         Route::post('/validate-import', [GuestController::class, 'validateImport']);
         Route::post('/import-confirm', [GuestController::class, 'importConfirm']);

@@ -93,28 +93,32 @@
         <div class="summary-grid">
             <div class="summary-item">
                 <div class="summary-value">{{ $totalConfirmed }}</div>
-                <div class="summary-label">Confirmed Guests</div>
+                <div class="summary-label">Confirmed Entries</div>
             </div>
             <div class="summary-item">
                 <div class="summary-value">{{ $totalAttendees }}</div>
-                <div class="summary-label">Total Attendees (with +1s)</div>
+                <div class="summary-label">Total Headcount</div>
             </div>
         </div>
     </div>
 
     <div class="dietary-section">
-        <h3>Dietary Requirements</h3>
+        <h3>Dietary Requirements Summary</h3>
         <table>
             <tr>
-                <th>Preference</th>
+                <th>Requirement</th>
                 <th>Count</th>
             </tr>
-            @foreach($dietaryBreakdown as $diet => $count)
+            @forelse($dietaryBreakdown as $diet => $count)
             <tr>
-                <td>{{ $diet ?: 'Standard' }}</td>
+                <td>{{ $diet ?: 'None/Standard' }}</td>
                 <td>{{ $count }}</td>
             </tr>
-            @endforeach
+            @empty
+            <tr>
+                <td colspan="2">No special requirements noted.</td>
+            </tr>
+            @endforelse
         </table>
     </div>
 
@@ -122,14 +126,14 @@
     <table>
         <tr>
             <th>Name</th>
-            <th>+1s</th>
-            <th>Dietary</th>
+            <th>Type</th>
+            <th>Dietary Notes</th>
             <th>Table</th>
         </tr>
         @foreach($guests as $guest)
         <tr>
             <td>{{ $guest['name'] }}</td>
-            <td>{{ $guest['plus_ones'] }}</td>
+            <td>{{ $guest['is_plus_one'] ? 'Plus One' : 'Primary Guest' }}</td>
             <td>{{ $guest['dietary'] }}</td>
             <td>{{ $guest['table'] }}</td>
         </tr>

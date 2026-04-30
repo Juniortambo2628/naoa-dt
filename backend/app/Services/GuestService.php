@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Guest;
-use App\Models\RsvpResponse;
 use App\Models\SongRequest;
 use App\Models\Notification;
 use App\Models\Setting;
@@ -31,18 +30,9 @@ class GuestService
                 // Update primary guest status
                 $guest->update([
                     'rsvp_status' => $status,
-                    'confirmed_plus_ones' => $plusOnes,
+                    'rsvp_message' => $data['message'] ?? null,
+                    'dietary_notes' => $data['dietary_notes'] ?? null,
                 ]);
-
-                // Create or update response
-                RsvpResponse::updateOrCreate(
-                    ['guest_id' => $guest->id],
-                    [
-                        'attending' => $data['attending'],
-                        'plus_ones_count' => $plusOnes,
-                        'message' => $data['message'] ?? null,
-                    ]
-                );
 
                 // Handle Song Request
                 if (!empty($data['song_request'])) {
@@ -72,17 +62,20 @@ class GuestService
                     ]);
                 }
 
-                // Update plus-ones status
-                foreach ($guest->plusOnes as $po) {
-                    $po->update(['rsvp_status' => $status]);
-                    
-                    RsvpResponse::updateOrCreate(
-                        ['guest_id' => $po->id],
-                        [
-                            'attending' => $data['attending'],
-                            'plus_ones_count' => 0,
-                        ]
-                    );
+                // Update plus-ones status and names
+                $plusOnesData = $data['plus_ones_data'] ?? [];
+                foreach ($guest->plusOnes as $index => $po) {
+                    $updateData = [
+                        'rsvp_status' => $status,
+                        'dietary_notes' => $data['dietary_notes'] ?? null,
+                    ];
+
+                    // Update name if provided in plus_ones_data array
+                    if (isset($plusOnesData[$index]['name']) && !empty($plusOnesData[$index]['name'])) {
+                        $updateData['name'] = $plusOnesData[$index]['name'];
+                    }
+
+                    $po->update($updateData);
 
                     if ($po->invitation) {
                         $po->invitation->update(['status' => 'responded']);
@@ -123,10 +116,13 @@ class GuestService
         // Record notification for admin in database
         try {
             Notification::create([
-                'title' => 'New RSVP: ' . $guest->name,
-                'message' => $guest->name . ' has ' . ($data['attending'] ? 'confirmed their attendance.' : 'respectfully declined.'),
-                'type' => 'rsvp',
-                'meta_data' => [
+                'id' => \Illuminate\Support\Str::uuid(),
+                'type' => 'App\Notifications\RSVPReceived',
+                'notifiable_type' => 'App\Models\User',
+                'notifiable_id' => 1, // Default admin
+                'data' => [
+                    'title' => 'New RSVP: ' . $guest->name,
+                    'message' => $guest->name . ' has ' . ($data['attending'] ? 'confirmed their attendance.' : 'respectfully declined.'),
                     'guest_id' => $guest->id,
                     'attending' => $data['attending'],
                     'plus_ones' => $plusOnes,

@@ -19,6 +19,7 @@ export default function AdminFAQ() {
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedFaq, setSelectedFaq] = useState(null);
+    const [order, setOrder] = useState(0);
     const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
     const [tableModalOpen, setTableModalOpen] = useState(false);
     const { searchQuery } = useSearch();
@@ -43,17 +44,25 @@ export default function AdminFAQ() {
         fetchFaqs();
     }, []);
 
+    useEffect(() => {
+        if (selectedFaq) {
+            setQuestion(selectedFaq.question || '');
+            setAnswer(selectedFaq.answer || '');
+            setOrder(selectedFaq.order || 0);
+        } else {
+            setQuestion('');
+            setAnswer('');
+            setOrder(0);
+        }
+    }, [selectedFaq, modalOpen]);
+
     const handleAdd = () => {
         setSelectedFaq(null);
-        setQuestion('');
-        setAnswer('');
-        setUploadedFileUrl(null);
         setModalOpen(true);
     };
 
     const handleEdit = (faq) => {
         setSelectedFaq(faq);
-        setQuestion(faq.question);
         setAnswer(faq.answer);
         setUploadedFileUrl(null);
         setModalOpen(true);
@@ -127,9 +136,11 @@ export default function AdminFAQ() {
 
     const modules = {
         toolbar: [
-            [{ 'header': [1, 2, false] }],
+            [{ 'header': [1, 2, 3, false] }],
             ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': ['#000000', '#ffffff', '#4A3F35', '#A67B5B', '#8B6A4D', '#7D8B9A', '#8B9A7D', '#D4A59A', '#F8E8E0', '#6B5E53', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff'] }, { 'background': [] }],
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'align': [] }],
             ['link', 'clean']
         ],
     };

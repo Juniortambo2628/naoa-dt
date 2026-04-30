@@ -125,7 +125,18 @@
             <div class="header">
                 <div class="names">Dinah & Tze Ren</div>
                 <div class="ornament">❧</div>
-                <div class="date-line">June 15th, 2025 • Karen, Nairobi</div>
+                @php
+                    $countdown = \App\Models\PageContent::where('section_key', 'countdown')->first();
+                    $dateRaw = $countdown->content['wedding_date'] ?? '2026-11-14';
+                    $formattedDate = \Carbon\Carbon::parse($dateRaw)->format('F jS, Y');
+                    
+                    $homeHero = \App\Models\PageContent::where('section_key', 'home_hero')->first();
+                    $location = $homeHero->content['location'] ?? 'Nairobi, Kenya';
+                    if (is_array($location)) {
+                        $location = $location['en'] ?? array_values($location)[0];
+                    }
+                @endphp
+                <div class="date-line">{{ $formattedDate }} • {{ $location }}</div>
             </div>
             
             <div class="content">

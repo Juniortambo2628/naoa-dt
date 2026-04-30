@@ -24,10 +24,9 @@ class Guest extends Model
         'song_request',
         'qr_code',
         'checked_in_at',
-        'dietary_preference',
         'rsvp_status',
-        'confirmed_plus_ones',
-        'notes',
+        'rsvp_message',
+        'dietary_notes',
         'parent_guest_id',
         'save_the_date_method',
         'invitation_via',
@@ -78,10 +77,6 @@ class Guest extends Model
         return $code;
     }
 
-    public function rsvpResponse(): HasOne
-    {
-        return $this->hasOne(RsvpResponse::class);
-    }
 
     public function invitation(): HasOne
     {
@@ -95,11 +90,11 @@ class Guest extends Model
 
     public function hasResponded(): bool
     {
-        return $this->rsvpResponse !== null;
+        return $this->rsvp_status !== 'pending';
     }
 
     public function isAttending(): bool
     {
-        return $this->rsvpResponse?->attending ?? false;
+        return $this->rsvp_status === 'confirmed';
     }
 }

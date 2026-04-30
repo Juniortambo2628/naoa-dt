@@ -116,7 +116,9 @@ export default function RSVP() {
       await guestService.submitRSVP(guestData.unique_code, {
         attending: data.attending === 'yes',
         plus_ones_count: parseInt(data.plus_ones) || 0,
+        plus_ones_data: data.plus_ones_data,
         message: data.message,
+        dietary_notes: data.dietary_notes,
         song_request: showSongRequest ? songRequest : '',
       });
       setSubmitted(true);
@@ -297,19 +299,31 @@ export default function RSVP() {
                                 </div>
                                 <div>
                                     <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Plus Ones</span>
-                                    <span className="text-sm font-medium text-stone-700">{guestData?.confirmed_plus_ones || 0} extra people</span>
+                                    <span className="text-sm font-medium text-stone-700">{(guestData?.plus_ones?.length || 0)} extra people</span>
                                 </div>
                             </div>
 
-                            {guestData?.rsvp_response?.message && (
+                            {guestData?.rsvp_message && (
                                 <div className="col-span-1 sm:col-span-2 p-4 bg-white rounded-xl border border-stone-100 shadow-sm">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-[#A67B5B]">
                                             <MessageSquare className="w-4 h-4" />
                                         </div>
-                                        <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Your Message</span>
+                                    <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Your Message</span>
                                     </div>
-                                    <p className="text-sm text-stone-700 italic">"{guestData.rsvp_response.message}"</p>
+                                    <p className="text-sm text-stone-700 italic">"{guestData.rsvp_message}"</p>
+                                </div>
+                            )}
+
+                            {guestData?.dietary_notes && (
+                                <div className="col-span-1 sm:col-span-2 p-4 bg-white rounded-xl border border-stone-100 shadow-sm mt-4">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-[#A67B5B]">
+                                            <UtensilsCrossed className="w-4 h-4" />
+                                        </div>
+                                        <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Dietary Notes</span>
+                                    </div>
+                                    <p className="text-sm text-stone-700">{guestData.dietary_notes}</p>
                                 </div>
                             )}
                         </div>
@@ -383,6 +397,32 @@ export default function RSVP() {
                         </div>
                       </div>
 
+                      {/* Plus One Names */}
+                      {attending === 'yes' && guestData?.plus_ones?.length > 0 && (
+                        <div className="space-y-4">
+                          <label className="input-label flex items-center gap-2">
+                            <Users className="w-5 h-5" style={{ color: '#A67B5B' }} />
+                            {t('rsvp.plus_ones_names', 'Who is coming with you?')}
+                          </label>
+                          <div className="space-y-3">
+                            {guestData.plus_ones.map((po, idx) => (
+                              <div key={po.id} className="relative">
+                                <input
+                                  type="text"
+                                  {...register(`plus_ones_data.${idx}.name`)}
+                                  defaultValue={po.name.includes('(Plus One') ? '' : po.name}
+                                  className="input-field"
+                                  placeholder={t('rsvp.plus_one_placeholder', `Plus One ${idx + 1} Name`)}
+                                />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-stone-300 uppercase tracking-wider font-bold">
+                                  Guest {idx + 1}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Song Request Prompt */}
                       {attending === 'yes' && (
                         <div className="bg-[#8B9A7D]/5 p-6 rounded-2xl border border-[#8B9A7D]/10 space-y-4">
@@ -430,6 +470,23 @@ export default function RSVP() {
                             )}
                         </div>
                       )}
+
+                      {/* Dietary Requirements */}
+                      {attending === 'yes' && (
+                        <div>
+                          <label className="input-label flex items-center gap-2">
+                            <UtensilsCrossed className="w-5 h-5" style={{ color: '#A67B5B' }} />
+                            {t('rsvp.dietary_label', 'Dietary Requirements')}
+                          </label>
+                          <textarea
+                            {...register('dietary_notes')}
+                            rows={3}
+                            className="input-field resize-none"
+                            placeholder={t('rsvp.dietary_placeholder', 'Please let us know if you or your plus ones have any allergies or dietary restrictions...')}
+                          />
+                        </div>
+                      )}
+
                       {/* Message */}
                       <div>
                         <label className="input-label flex items-center gap-2">

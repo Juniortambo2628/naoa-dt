@@ -700,7 +700,7 @@ export default function AdminGuests() {
                   <button 
                     onClick={() => {
                         if (window.confirm(`Reset RSVP status for ${selectedIds.length} selected guests?`)) {
-                            handleBulkUpdate({ rsvp_status: 'pending', confirmed_plus_ones: 0 });
+                            handleBulkUpdate({ rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
                         }
                     }}
                     className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
@@ -768,7 +768,9 @@ export default function AdminGuests() {
                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">F - Extra Plus Ones Allowed</th>
                                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">G - RSVP Code</th>
                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100 text-center">H - Invite</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider bg-stone-100">I - RSVP Status</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">I - RSVP Status</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">J - Message</th>
+                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider bg-stone-100">K - Dietary</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-200">
@@ -1046,7 +1048,7 @@ export default function AdminGuests() {
                                           <button 
                                               onClick={() => {
                                                 if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
-                                                  handleUpdateGuest(guest, { rsvp_status: 'pending', confirmed_plus_ones: 0 });
+                                                  handleUpdateGuest(guest, { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
                                                 }
                                               }}
                                               className="p-1 text-stone-400 hover:text-orange-500"

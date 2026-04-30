@@ -85,7 +85,7 @@ export default function InvitationCanvas({
       } else if (item.type === 'rsvp_code') {
           return (
               <div 
-                className="w-full h-full flex flex-col items-center justify-center p-2 border-2 border-dashed border-stone-300 bg-transparent gap-1"
+                className="w-full h-full flex flex-col items-center justify-center p-2 bg-transparent gap-1"
                 style={{ color: item.color || '#78716c' }}
               >
                   <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'inherit', lineHeight: 1, whiteSpace: 'nowrap' }}>RSVP Code</span>

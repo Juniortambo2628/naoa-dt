@@ -6,7 +6,7 @@ import AdminTestLab from './AdminTestLab';
 import {
   LayoutDashboard, Users, Calendar, Gift, Mail, Settings, Image,
   Menu, Bell, LogOut, ChevronDown, ChevronRight, Search, Filter, X, Plus, Edit, Trash2,
-  Check, Clock, TrendingUp, Download, PieChart, BarChart, Heart, UserCheck, Music, MessageSquare, FlaskConical, Info, HelpCircle
+  Check, Clock, TrendingUp, Download, PieChart, BarChart, Heart, UserCheck, Music, MessageSquare, FlaskConical, Info, HelpCircle, CheckCircle
 } from 'lucide-react';
 
 import AdminTutorial from '../../components/admin/AdminTutorial';
@@ -33,6 +33,7 @@ import AdminGuests from './AdminGuests';
 import AdminFAQ from './AdminFAQ';
 import AdminModules from './AdminModules';
 import AdminEnquiries from './AdminEnquiries';
+import AdminRSVPs from './AdminRSVPs';
 
 // Sidebar Component
 function Sidebar({ isOpen, onClose }) {
@@ -44,6 +45,7 @@ function Sidebar({ isOpen, onClose }) {
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', id: 'sidebar-dashboard' },
     { path: '/admin/dashboard/analytics', icon: PieChart, label: 'Analytics', id: 'sidebar-analytics' },
     { path: '/admin/dashboard/guests', icon: Users, label: 'Guests', id: 'sidebar-guests' },
+    { path: '/admin/dashboard/rsvps', icon: CheckCircle, label: 'RSVPs', id: 'sidebar-rsvps' },
     { path: '/admin/dashboard/checkin', icon: UserCheck, label: 'Check-In', id: 'sidebar-checkin' },
     { path: '/admin/dashboard/seating', icon: Users, label: 'Seating Chart', id: 'sidebar-seating' },
     { path: '/admin/dashboard/design', icon: Mail, label: 'Design Invitations', id: 'sidebar-design' },
@@ -559,6 +561,7 @@ export default function AdminDashboard() {
     if (path.includes('/analytics')) return <AnalyticsCharts />;
     if (path.includes('/checkin')) return <CheckInScanner />;
     if (path.includes('/guests')) return <AdminGuests />;
+    if (path.includes('/rsvps')) return <AdminRSVPs />;
     if (path.includes('/seating')) return <SeatingChart />;
     if (path.includes('/design')) return <InvitationDesigner />;
     if (path.includes('/gallery')) return <GalleryManager />;

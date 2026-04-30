@@ -60,7 +60,6 @@ function PolaroidFloatingImage({ src, size = 160, duration = 10, delay = 0, rota
   );
 }
 
-// Hero Section with Horizontal Names, Female/Male Icons, and Infinity Sign
 // Helper to resolve dynamic content
 const getContent = (content, section, field, i18n, fallbackKey, t) => {
   const sectionData = content?.[section]?.content;
@@ -78,7 +77,7 @@ const getContent = (content, section, field, i18n, fallbackKey, t) => {
 };
 
 // Hero Section with Horizontal Names, Female/Male Icons, and Infinity Sign
-function HeroSection({ content }) {
+function HeroSection({ content, loading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'home_hero', field, i18n, fallback, t);
   const getStoryTxt = (field, fallback) => getContent(content, 'our_story', field, i18n, fallback, t);
@@ -93,8 +92,6 @@ function HeroSection({ content }) {
   const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
-
-
 
   // Animation key to force replay when returning to view
   const [animationKey, setAnimationKey] = useState(0);
@@ -116,8 +113,6 @@ function HeroSection({ content }) {
       {/* Custom Flower Corners */}
       <MainFlowerTopLeft size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
       <MainFlowerBottomRight size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
-      
-      {/* Floating Flowers Removed as requested */}
       
       {/* Hero Content */}
       <motion.div 
@@ -144,8 +139,8 @@ function HeroSection({ content }) {
           className="text-lg md:text-xl mb-8 tracking-[0.3em] uppercase"
           style={{ color: '#8B7B6B', fontFamily: "'Cormorant Garamond', serif" }}
         >
-          {Object.keys(content).length === 0 ? (
-            <Skeleton variant="text" width="60%" height="24px" className="mx-auto" />
+          {loading ? (
+            <Skeleton variant="text" width="60%" height="24px" className="mx-auto" as="span" />
           ) : (
             getTxt('subtitle', 'hero.getting_married')
           )}
@@ -176,7 +171,7 @@ function HeroSection({ content }) {
                 lineHeight: 1.1,
               }}
             >
-              {getStoryTxt('bride_name', 'Dinah')}
+              {loading ? <Skeleton variant="text" width="150px" height="60px" as="span" /> : getStoryTxt('bride_name', 'Dinah')}
             </motion.h1>
           </div>
           
@@ -213,7 +208,7 @@ function HeroSection({ content }) {
                 lineHeight: 1.1,
               }}
             >
-              {getStoryTxt('groom_name', 'Tze Ren')}
+              {loading ? <Skeleton variant="text" width="200px" height="60px" as="span" /> : getStoryTxt('groom_name', 'Tze Ren')}
             </motion.h1>
             <motion.div
               key={`male-icon-${animationKey}`}
@@ -250,15 +245,11 @@ function HeroSection({ content }) {
             className="text-2xl md:text-3xl mb-4 font-medium"
             style={{ color: '#4A3F35', fontFamily: "'Cormorant Garamond', serif" }}
           >
-
-            {getTxt('date_text', 'hero.date')}
+            {loading ? <Skeleton variant="text" width="250px" height="30px" className="mx-auto" as="span" /> : getTxt('date_text', 'hero.date')}
           </p>
-          <p 
-            className="text-lg md:text-xl flex items-center justify-center gap-2"
-            style={{ color: '#6B5D52' }}
-          >
-            <MapPin className="w-5 h-5" style={{ color: '#A67B5B' }} />
-            {getTxt('location', 'hero.location')}
+          <p className="flex items-center justify-center gap-2 text-lg md:text-xl" style={{ color: '#6B5D52' }}>
+            <MapPin className="w-5 h-5 flex-shrink-0" style={{ color: '#A67B5B' }} />
+            {loading ? <Skeleton variant="text" width="300px" height="24px" as="span" /> : getTxt('location', 'hero.location')}
           </p>
         </motion.div>
 
@@ -292,7 +283,7 @@ function HeroSection({ content }) {
 }
 
 // Countdown Section with Animated Numbers
-function CountdownSection({ content }) {
+function CountdownSection({ content, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'countdown', field, i18n, fallback, t);
   
@@ -350,11 +341,15 @@ function CountdownSection({ content }) {
           <FlowerDivider />
           
           <motion.div variants={fadeInUp} className="mb-4">
-            <CalligraphicText 
-              text={getTxt('title', 'countdown.title')} 
-              fontSize="3.5rem"
-              duration={2}
-            />
+            {cmsLoading ? (
+              <Skeleton variant="text" width="300px" height="48px" className="mx-auto" as="span" />
+            ) : (
+              <CalligraphicText 
+                text={getTxt('title', 'countdown.title')} 
+                fontSize="3.5rem"
+                duration={2}
+              />
+            )}
           </motion.div>
           
           <motion.p
@@ -362,7 +357,7 @@ function CountdownSection({ content }) {
             className="text-xl mb-14"
             style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
           >
-            {getTxt('subtitle', 'countdown.subtitle')}
+            {cmsLoading ? <Skeleton variant="text" width="400px" className="mx-auto" as="span" /> : getTxt('subtitle', 'countdown.subtitle')}
           </motion.p>
           
           <motion.div 
@@ -402,20 +397,15 @@ function CountdownSection({ content }) {
 }
 
 // Story Section with Love Birds and Interactive Elements
-// Story Section with Love Birds and Interactive Elements
-function StorySection({ content }) {
+function StorySection({ content, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'our_story', field, i18n, fallback, t);
 
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.3 });
   
-
-
   return (
     <section ref={ref} className="section relative" style={{ background: '#FFFEF8', zIndex: 30 }}>
-      {/* Floating Flowers Removed as requested */}
-      
       <div className="container-wedding relative z-10">
         <motion.div
           initial="hidden"
@@ -426,15 +416,18 @@ function StorySection({ content }) {
           <div className="text-center mb-16">
             <FlowerDivider />
             <motion.div variants={fadeInUp}>
-              <CalligraphicText 
-                text={getTxt('title', 'story.title')} 
-                fontSize="3.5rem"
-                duration={2}
-              />
+              {cmsLoading ? (
+                <Skeleton variant="text" width="300px" height="48px" className="mx-auto" />
+              ) : (
+                <CalligraphicText 
+                  text={getTxt('title', 'story.title')} 
+                  fontSize="3.5rem"
+                  duration={2}
+                />
+              )}
             </motion.div>
           </div>
           
-          {/* Flowers Centered Illustration - replacing LoveBirds */}
           <motion.div
             variants={fadeInUp}
             className="flex justify-center mb-12"
@@ -442,7 +435,6 @@ function StorySection({ content }) {
             <FlowersCentered size={300} />
           </motion.div>
           
-          {/* Couple Photos with Sticky Effect */}
           <motion.div 
             variants={staggerContainer}
             className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-20 mb-16"
@@ -466,7 +458,6 @@ function StorySection({ content }) {
                     </div>
                   )}
                 </div>
-                {/* Decorative ring */}
                 <motion.div
                   className="absolute inset-0 -m-3 rounded-full border-2"
                   style={{ borderColor: '#D4A59A' }}
@@ -478,13 +469,13 @@ function StorySection({ content }) {
                 className="text-4xl mb-1"
                 style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
               >
-                {getTxt('bride_name', 'Dinah')}
+                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('bride_name', 'Dinah')}
               </h3>
-              {content?.our_story?.content?.bride_role && (
+              {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.bride_role && (
                 <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
                   {getTxt('bride_role', 'story.bride_role')}
                 </p>
-              )}
+              ))}
             </RevealOnScroll>
             
             {/* Animated Heart */}
@@ -538,17 +529,16 @@ function StorySection({ content }) {
                 className="text-4xl mb-1"
                 style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
               >
-                {getTxt('groom_name', 'Tze Ren')}
+                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('groom_name', 'Tze Ren')}
               </h3>
-              {content?.our_story?.content?.groom_role && (
+              {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.groom_role && (
                 <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
                   {getTxt('groom_role', 'story.groom_role')}
                 </p>
-              )}
+              ))}
             </RevealOnScroll>
           </motion.div>
           
-          {/* Story Text with Word Animation */}
           <motion.div 
             variants={fadeInUp}
             className="max-w-3xl mx-auto text-center"
@@ -557,13 +547,23 @@ function StorySection({ content }) {
               className="text-xl leading-relaxed mb-8"
               style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
             >
-              {getTxt('content', 'story.part1')}
+              {cmsLoading ? (
+                <>
+                  <Skeleton variant="text" width="100%" as="span" />
+                  <Skeleton variant="text" width="90%" as="span" />
+                </>
+              ) : getTxt('content', 'story.part1')}
             </p>
             <p 
               className="text-xl leading-relaxed mb-8"
               style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
             >
-              {getTxt('content_2', 'story.part2')}
+              {cmsLoading ? (
+                <>
+                  <Skeleton variant="text" width="100%" as="span" />
+                  <Skeleton variant="text" width="85%" as="span" />
+                </>
+              ) : getTxt('content_2', 'story.part2')}
             </p>
             <motion.p 
               className="text-4xl md:text-5xl mt-10"
@@ -573,7 +573,7 @@ function StorySection({ content }) {
               viewport={{ once: false }}
               transition={{ duration: 0.8 }}
             >
-              {getTxt('quote', 'story.quote')}
+              {cmsLoading ? <Skeleton variant="text" width="200px" height="48px" className="mx-auto" as="span" /> : getTxt('quote', 'story.quote')}
             </motion.p>
           </motion.div>
         </motion.div>
@@ -583,7 +583,7 @@ function StorySection({ content }) {
 }
 
 // Event Details with Timeline Illustration
-function EventDetails({ content }) {
+function EventDetails({ content, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'events', field, i18n, fallback, t);
   
@@ -637,7 +637,6 @@ function EventDetails({ content }) {
       className="section relative"
       style={{ background: 'linear-gradient(180deg, #FDF5F2 0%, #F8E8E0 100%)', zIndex: 20 }}
     >
-      {/* Custom polaroids (no floating flowers) */}
       <div className="absolute top-8 left-24 pointer-events-none">
          {(() => {
              const p = getPolaroid(6, 'events_top_left');
@@ -686,17 +685,19 @@ function EventDetails({ content }) {
           <div className="text-center mb-16">
             <FlowerDivider />
             <motion.div variants={fadeInUp}>
-              <CalligraphicText 
-                text={getTxt('title', 'events.title')} 
-                fontSize="3.5rem"
-                duration={2}
-              />
+              {cmsLoading ? (
+                <Skeleton variant="text" width="300px" height="48px" className="mx-auto" />
+              ) : (
+                <CalligraphicText 
+                  text={getTxt('title', 'events.title')} 
+                  fontSize="3.5rem"
+                  duration={2}
+                />
+              )}
             </motion.div>
           </div>
           
-          {/* Interactive Timeline */}
           <div className="relative">
-            {/* Vertical Line */}
             <div className="absolute left-1/2 top-0 bottom-0 w-1 -translate-x-1/2 hidden md:block">
               <motion.div
                 className="w-full h-full"
@@ -722,7 +723,6 @@ function EventDetails({ content }) {
                 viewport={{ once: false, amount: 0.3 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
               >
-                {/* Content Card */}
                 <div className={`flex-1 ${index % 2 === 0 ? 'md:text-right' : 'md:text-left'}`}>
                   <motion.div
                     className="inline-block p-8 rounded-3xl"
@@ -771,7 +771,6 @@ function EventDetails({ content }) {
                   </motion.div>
                 </div>
                 
-                {/* Center Circle with Illustration */}
                 <motion.div
                   className="relative z-10 flex-shrink-0"
                   whileHover={{ scale: 1.1, rotate: 5 }}
@@ -799,21 +798,27 @@ function EventDetails({ content }) {
 }
 
 // Gallery with Parallax Effect
-function GallerySection({ content }) {
+function GallerySection({ content, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'gallery', field, i18n, fallback, t);
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchGallery = async () => {
+    try {
+      const res = await galleryService.getAll();
+      const visibleImages = (res.data || []).filter(img => img.is_visible !== false);
+      setImages(visibleImages);
+    } catch (err) {
+      console.error("Home gallery fetch failed", err);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
-    galleryService.getAll().then(res => {
-        setImages(res.data || []);
-    }).catch(err => console.error(err))
-    .finally(() => setLoading(false));
+    fetchGallery().finally(() => setLoading(false));
   }, []);
 
-  // Fallback images if gallery is empty
   const displayImages = images.length > 0 ? images : [
     { image_url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80', span: 'col-span-2 row-span-2' },
     { image_url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80', span: '' },
@@ -835,11 +840,15 @@ function GallerySection({ content }) {
           <div className="text-center mb-16">
             <FlowerDivider />
             <motion.div variants={fadeInUp}>
-              <CalligraphicText 
-                text={getTxt('title', 'gallery.title')} 
-                fontSize="3.5rem"
-                duration={2}
-              />
+              {cmsLoading ? (
+                <Skeleton variant="text" width="300px" height="48px" className="mx-auto" />
+              ) : (
+                <CalligraphicText 
+                  text={getTxt('title', 'gallery.title')} 
+                  fontSize="3.5rem"
+                  duration={2}
+                />
+              )}
             </motion.div>
           </div>
           
@@ -861,8 +870,8 @@ function GallerySection({ content }) {
                 whileHover={{ scale: 1.02 }}
               >
                 <ParallaxImage
-                  src={image.image_url?.startsWith('http') ? image.image_url : getAssetUrl(image.image_url || image.src)}
-                  alt={`Gallery ${index + 1}`}
+                  src={getAssetUrl(image.image_url || image.src)}
+                  alt=""
                   className="w-full h-full"
                   speed={0.3}
                   style={{ objectPosition: image.object_position || 'center' }}
@@ -885,7 +894,7 @@ function GallerySection({ content }) {
 }
 
 // CTA Section
-function CTASection({ content }) {
+function CTASection({ content, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'rsvp', field, i18n, fallback, t);
 
@@ -894,8 +903,6 @@ function CTASection({ content }) {
       className="section relative"
       style={{ background: 'linear-gradient(135deg, #F8E8E0 0%, #FDF5F2 50%, #F8E8E0 100%)', zIndex: 0 }}
     >
-      {/* Floating Flowers Removed as requested */}
-      
       <div className="container-wedding relative z-10">
         <motion.div
           initial="hidden"
@@ -906,13 +913,16 @@ function CTASection({ content }) {
         >
           <FlowerDivider />
           
-          
           <motion.div variants={fadeInUp}>
-            <CalligraphicText 
-              text={getTxt('title', 'rsvp.title')} 
-              fontSize="3.5rem"
-              duration={2}
-            />
+            {cmsLoading ? (
+              <Skeleton variant="text" width="300px" height="48px" className="mx-auto" />
+            ) : (
+              <CalligraphicText 
+                text={getTxt('title', 'rsvp.title')} 
+                fontSize="3.5rem"
+                duration={2}
+              />
+            )}
           </motion.div>
           
           <motion.p
@@ -920,7 +930,7 @@ function CTASection({ content }) {
             className="text-xl mt-6 mb-12"
             style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
           >
-            {getTxt('description', 'rsvp.subtitle')}
+            {cmsLoading ? <Skeleton variant="text" width="400px" className="mx-auto" as="span" /> : getTxt('description', 'rsvp.subtitle')}
           </motion.p>
           
           <motion.div 
@@ -942,7 +952,7 @@ function CTASection({ content }) {
 
 // Main Home Page
 export default function Home() {
-  const { contents: content, isVisible } = useContent();
+  const { contents: content, isVisible, loading: contentLoading } = useContent();
 
   return (
     <motion.div
@@ -952,12 +962,12 @@ export default function Home() {
     >
       <Navbar />
       <main>
-        {isVisible('home_hero') && <HeroSection content={content} />}
-        {isVisible('countdown') && <CountdownSection content={content} />}
-        {isVisible('our_story') && <StorySection content={content} />}
-        {isVisible('events') && <EventDetails content={content} />}
-        {isVisible('gallery') && <GallerySection content={content} />}
-        {isVisible('rsvp') && <CTASection content={content} />}
+        {isVisible('home_hero') && <HeroSection content={content} loading={contentLoading} />}
+        {isVisible('countdown') && <CountdownSection content={content} loading={contentLoading} />}
+        {isVisible('our_story') && <StorySection content={content} loading={contentLoading} />}
+        {isVisible('events') && <EventDetails content={content} loading={contentLoading} />}
+        {isVisible('gallery') && <GallerySection content={content} loading={contentLoading} />}
+        {isVisible('rsvp') && <CTASection content={content} loading={contentLoading} />}
       </main>
       <Footer />
     </motion.div>

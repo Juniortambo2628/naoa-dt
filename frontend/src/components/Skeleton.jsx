@@ -5,11 +5,15 @@ export const Skeleton = ({
   width, 
   height, 
   className = '', 
-  style = {} 
+  style = {},
+  as = 'div'
 }) => {
+  const Component = motion[as];
+  
   const baseStyle = {
     background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
     backgroundSize: '200% 100%',
+    display: as === 'span' ? 'inline-block' : 'block',
     ...style
   };
 
@@ -20,7 +24,7 @@ export const Skeleton = ({
   };
 
   return (
-    <motion.div
+    <Component
       animate={{ 
         backgroundPosition: ['100% 0', '-100% 0'] 
       }}

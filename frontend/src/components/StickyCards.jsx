@@ -285,6 +285,7 @@ export function RevealOnScroll({
   delay = 0,
   duration = 0.8,
   className = '',
+  as = 'div'
 }) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -309,15 +310,16 @@ export function RevealOnScroll({
   });
   
   const opacity = useTransform(scrollYProgress, [0, 0.4], [0, 1]);
+  const Component = motion[as];
   
   return (
-    <motion.div
+    <Component
       ref={ref}
       className={className}
       style={{ opacity, ...animatedValues }}
     >
       {children}
-    </motion.div>
+    </Component>
   );
 }
 

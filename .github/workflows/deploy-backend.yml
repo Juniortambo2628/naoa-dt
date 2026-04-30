@@ -17,36 +17,26 @@ jobs:
 
     # Step 1: Deploy Core Files (excluding public/ and uploaded content)
     - name: Deploy Core to /naoa-core
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      uses: easingthemes/ssh-deploy@v5.1.0
       with:
-        username: ${{ secrets.SFTP_USERNAME }}
-        server: ${{ secrets.SFTP_HOST }}
-        ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
-        local_path: './backend/*'
-        remote_path: '/home/zhpebukm/naoa-core'
-        args: '-o ConnectTimeout=5'
-        delete_remote_files: false
-        exclude: |
-          .env
-          public/
-          storage/app/public/uploads/*
-          storage/app/public/illustrations/*
-          storage/framework/cache/*
-          storage/framework/sessions/*
-          storage/framework/views/*
-          storage/logs/*
+        SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.SFTP_HOST }}
+        REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
+        SOURCE: 'backend/'
+        TARGET: '/home/zhpebukm/naoa-core'
+        ARGS: '-rlgoDzvc -i --delete'
+        EXCLUDE: "/.env, /public/, /storage/app/public/uploads/*, /storage/app/public/illustrations/*, /storage/framework/cache/*, /storage/framework/sessions/*, /storage/framework/views/*, /storage/logs/*"
 
     # Step 2: Deploy Public Files (index.php, .htaccess, etc.) to the API web root
     - name: Deploy Public assets to Web Root
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      uses: easingthemes/ssh-deploy@v5.1.0
       with:
-        username: ${{ secrets.SFTP_USERNAME }}
-        server: ${{ secrets.SFTP_HOST }}
-        ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
-        local_path: './backend/public/*'
-        remote_path: '/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public'
-        args: '-o ConnectTimeout=5'
-        delete_remote_files: false
+        SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.SFTP_HOST }}
+        REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
+        SOURCE: 'backend/public/'
+        TARGET: '/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public'
+        ARGS: '-rlgoDzvc -i --delete'
 
     # NOTE: Storage symlink must exist on server:
     # ln -s /home/zhpebukm/naoa-core/storage/app/public /home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/storage

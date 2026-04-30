@@ -40,7 +40,7 @@
     @if($guestMessage)
     <div style="margin-bottom: 30px;">
         <h3 style="color: #8C6A4D; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Message from Guest:</h3>
-        <div style="font-style: italic; color: #555; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border: 1px dashed #ddd;">
+        <div style="font-style: italic; color: #555; padding: 20px; background-color: #f9f9f9; border-radius: 8px; border: 1px solid #eee;">
             "{{ $guestMessage }}"
         </div>
     </div>

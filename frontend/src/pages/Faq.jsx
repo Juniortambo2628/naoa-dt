@@ -142,12 +142,13 @@ export default function Faq() {
                                             </div>
                                             
                                             <div 
-                                                className="text-stone-600 prose prose-stone max-w-none [overflow-wrap:anywhere] [word-break:normal] leading-relaxed 
+                                                className="text-stone-600 prose prose-stone max-w-none leading-relaxed 
+                                                    [overflow-wrap:break-word] [word-wrap:break-word]
                                                     [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 
-                                                    [&_table]:w-full [&_table]:table-fixed [&_table]:border-collapse [&_table]:my-6 [&_table]:rounded-lg [&_table]:overflow-hidden
+                                                    [&_table]:w-full [&_table]:min-w-[500px] [&_table]:border-collapse [&_table]:my-6 [&_table]:rounded-lg
                                                     [&_th]:!border [&_th]:!border-stone-200 [&_th]:!bg-[#F8E8E0] [&_th]:!p-4 [&_th]:!text-left [&_th]:!font-semibold [&_th]:!text-[#8B7B6B]
                                                     [&_td]:!border [&_td]:!border-stone-200 [&_td]:!p-4 [&_td]:!align-top
-                                                    [&_tr:nth-child(even)]:!bg-[#FFF9F5]/80 [&_p]:!my-2 overflow-x-auto"
+                                                    [&_tr:nth-child(even)]:!bg-[#FFF9F5]/80 [&_p]:!my-2 overflow-x-auto scrollbar-thin scrollbar-thumb-stone-200"
                                                 dangerouslySetInnerHTML={{ __html: activeFaq.answer }}
                                             />
                                         </motion.div>

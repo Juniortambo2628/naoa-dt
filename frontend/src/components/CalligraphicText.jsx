@@ -13,15 +13,17 @@ export function CalligraphicText({
   duration = 2.5,
   fontSize = '4rem',
   color = '#A67B5B',
+  as = 'div'
 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.5 });
   
   // Generate a unique ID for each text instance
   const pathId = `text-path-${text.replace(/\s/g, '-').toLowerCase()}`;
+  const Component = as;
   
   return (
-    <div ref={ref} className={`relative inline-block ${className}`} style={style}>
+    <Component ref={ref} className={`relative inline-block ${className}`} style={style}>
       {/* Hidden text for accessibility */}
       <span className="sr-only">{text}</span>
       
@@ -111,7 +113,7 @@ export function CalligraphicText({
           {text}
         </motion.text>
       </svg>
-    </div>
+    </Component>
   );
 }
 

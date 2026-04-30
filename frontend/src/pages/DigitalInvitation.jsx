@@ -34,6 +34,92 @@ export default function DigitalInvitation() {
         day: 'numeric'
     });
 
+    const eventTime = content?.event_details?.content?.time || '2:00 PM';
+
+    const getTxt = (section, field, fallback) => {
+        const sectionData = content?.[section]?.content;
+        const val = sectionData?.[field];
+        if (!val) return fallback;
+        if (typeof val === 'object') return val['en'] || val[Object.keys(val)[0]] || fallback;
+        return val;
+    };
+
+    const weddingDateText = getTxt('home_hero', 'date_text', formattedDate);
+    const eventTimeText = getTxt('event_details', 'time', eventTime);
+
+    const getEventDetails = () => {
+        // Parse wedding date (YYYY-MM-DD)
+        const dateParts = weddingDate.split('T')[0].split('-');
+        const year = dateParts[0];
+        const month = dateParts[1];
+        const day = dateParts[2];
+        
+        // Parse event time (e.g., "2:00 PM")
+        let hour = 14; // default
+        let minute = 0;
+        
+        if (eventTime) {
+            const timeMatch = eventTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            if (timeMatch) {
+                hour = parseInt(timeMatch[1]);
+                minute = parseInt(timeMatch[2]);
+                const ampm = timeMatch[3].toUpperCase();
+                if (ampm === 'PM' && hour < 12) hour += 12;
+                if (ampm === 'AM' && hour === 12) hour = 0;
+            }
+        }
+        
+        const pad = (n) => n.toString().padStart(2, '0');
+        const startStr = `${year}${month}${day}T${pad(hour)}${pad(minute)}00`;
+        
+        // End time (assume 4 hours duration)
+        const endHour = (hour + 4) % 24;
+        const endDay = hour + 4 >= 24 ? pad(parseInt(day) + 1) : day;
+        const endStr = `${year}${month}${endDay}T${pad(endHour)}${pad(minute)}00`;
+
+        return {
+            start: startStr,
+            end: endStr,
+            title: "Dinah & Tze Ren's Wedding",
+            location: venueName,
+            description: "We are so happy to share our special day with you! Please join us for our wedding celebration."
+        };
+    };
+
+    const getGoogleCalendarUrl = () => {
+        const details = getEventDetails();
+        const title = encodeURIComponent(details.title);
+        const loc = encodeURIComponent(details.location);
+        const desc = encodeURIComponent(details.description);
+        
+        return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${details.start}/${details.end}&details=${desc}&location=${loc}&sf=true&output=xml`;
+    };
+
+    const downloadIcs = () => {
+        const details = getEventDetails();
+        const icsContent = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//Dinah and Tze Ren Wedding//EN",
+            "BEGIN:VEVENT",
+            `SUMMARY:${details.title}`,
+            `LOCATION:${details.location}`,
+            `DESCRIPTION:${details.description}`,
+            `DTSTART:${details.start}`,
+            `DTEND:${details.end}`,
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ].join("\r\n");
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.setAttribute('download', 'wedding-invitation.ics');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     useEffect(() => {
         const handleResize = () => {
             const containerWidth = window.innerWidth > 1024 ? 540 : (window.innerWidth - 32);
@@ -108,7 +194,7 @@ export default function DigitalInvitation() {
                     </div>
                     
                     <p className="text-center text-stone-400 text-xs mt-6 font-medium uppercase tracking-[0.2em] animate-pulse">
-                        Interactive Invitation
+                        Invitation Card
                     </p>
                 </motion.div>
 
@@ -139,7 +225,8 @@ export default function DigitalInvitation() {
                                 <Calendar className="w-5 h-5" />
                             </div>
                             <h3 className="font-bold text-stone-800 mb-1 italic">When</h3>
-                            <p className="text-sm text-stone-500">{formattedDate}</p>
+                            <p className="text-sm text-stone-500">{weddingDateText}</p>
+                            <p className="text-sm text-stone-500">{eventTimeText}</p>
                         </div>
                         <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow group">
                             <div className="w-10 h-10 bg-[#fcfaf8] text-[#A67B5B] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#A67B5B] group-hover:text-white transition-colors">
@@ -159,12 +246,15 @@ export default function DigitalInvitation() {
                             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </button>
                         
-                        <button 
-                            className="px-8 py-5 rounded-2xl font-bold text-stone-600 border-2 border-stone-200 hover:bg-stone-50 transition-colors"
-                            onClick={() => window.print()}
-                        >
-                            Save Invitation
-                        </button>
+                        <div className="flex flex-col gap-2 flex-1">
+                            <button 
+                                onClick={downloadIcs}
+                                className="px-8 py-5 rounded-2xl font-bold text-stone-600 border-2 border-stone-200 hover:bg-stone-50 transition-colors flex items-center justify-center gap-3 text-center"
+                            >
+                                <Calendar className="w-5 h-5" />
+                                Add to Calendar
+                            </button>
+                        </div>
                     </div>
                     
                     {guest.rsvp_status !== 'pending' && (

@@ -30,15 +30,16 @@ class ExportController extends Controller
             'title' => 'Wedding Guest Summary - Vendor Copy',
             'date' => now()->format('F j, Y'),
             'totalConfirmed' => $guests->count(),
-            'totalAttendees' => $guests->count() + $guests->sum('plus_ones'),
-            'dietaryBreakdown' => $guests->groupBy('dietary_preference')
+            'totalAttendees' => $guests->count(), // Headcount is simply the count of confirmed individual records
+            'dietaryBreakdown' => $guests->whereNotNull('dietary_notes')
+                ->groupBy('dietary_notes')
                 ->map(fn($g) => $g->count())
                 ->toArray(),
             'guests' => $guests->map(fn($g) => [
                 'name' => $g->name,
-                'plus_ones' => $g->plus_ones,
-                'dietary' => $g->dietary_preference ?: 'Standard',
+                'dietary' => $g->dietary_notes ?: 'None',
                 'table' => $g->table?->name ?: 'Unassigned',
+                'is_plus_one' => $g->parent_guest_id !== null,
             ])->toArray()
         ];
 

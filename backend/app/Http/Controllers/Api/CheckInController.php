@@ -76,9 +76,7 @@ class CheckInController extends Controller
     public function getStats()
     {
         // Count guests who have RSVP'd as attending
-        $total = Guest::whereHas('rsvpResponse', function ($query) {
-            $query->where('attending', true);
-        })->count();
+        $total = Guest::where('rsvp_status', 'confirmed')->count();
         
         $checkedIn = Guest::whereNotNull('checked_in_at')->count();
 

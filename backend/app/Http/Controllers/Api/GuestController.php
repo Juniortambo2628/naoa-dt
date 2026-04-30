@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
-use App\Models\RsvpResponse;
 use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +21,7 @@ class GuestController extends Controller
     {
         // Only show primary guests (not plus-ones) with their plus ones included
         /** @var \Illuminate\Database\Eloquent\Builder $query */
-        $query = Guest::with(['rsvpResponse', 'invitation', 'parentGuest', 'plusOnes.invitation', 'plusOnes.rsvpResponse']);
+        $query = Guest::with(['invitation', 'parentGuest', 'plusOnes.invitation']);
 
         // Filter by group
         if ($request->has('group')) {
@@ -57,7 +56,7 @@ class GuestController extends Controller
      */
     public function getByCode(string $code)
     {
-        $guest = Guest::with(['rsvpResponse', 'invitation'])
+        $guest = Guest::with(['invitation', 'plusOnes'])
             ->where('unique_code', strtoupper($code))
             ->first();
 
@@ -102,7 +101,7 @@ class GuestController extends Controller
 
         return response()->json([
             'message' => $result['message'],
-            'guest' => new GuestResource($guest->fresh(['rsvpResponse'])),
+            'guest' => new GuestResource($guest->fresh()),
         ]);
     }
 
@@ -260,19 +259,19 @@ class GuestController extends Controller
         $declined = Guest::where('rsvp_status', 'declined')->count();
         $pending = Guest::where('rsvp_status', 'pending')->count();
         
-        $totalGuests = Guest::where('rsvp_status', 'confirmed')
-            ->sum(DB::raw('1 + confirmed_plus_ones'));
+        // Accurate headcount: Every record in Guest table that is 'confirmed'
+        // This includes primary guests and their plus-ones if they have separate records
+        $totalGuests = $attending;
 
-        $recent = Guest::whereHas('rsvpResponse')
-            ->with('rsvpResponse')
+        $recent = Guest::where('rsvp_status', '!=', 'pending')
             ->latest('updated_at')
             ->limit(5)
             ->get()
             ->map(function($g) {
                 return [
                     'name' => $g->name,
-                    'attending' => $g->rsvpResponse->attending,
-                    'updated_at' => $g->rsvpResponse->updated_at
+                    'attending' => $g->rsvp_status === 'confirmed',
+                    'updated_at' => $g->updated_at
                 ];
             });
 
@@ -286,38 +285,11 @@ class GuestController extends Controller
         ]);
     }
     /**
-     * Export guests (admin only)
+     * Legacy Export (Deprecated) - Replaced by ExportController@exportGuestsExcel
      */
     public function export()
     {
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="guests.csv"',
-        ];
-
-        $callback = function () {
-            $file = fopen('php://output', 'w');
-            
-            // Header
-            fputcsv($file, ['Name', 'Email', 'Group', 'Status', 'Invitation Via', 'Plus Ones', 'Message']);
-
-            // Data
-            Guest::with('rsvpResponse')->cursor()->each(function ($guest) use ($file) {
-                fputcsv($file, [
-                    $guest->name,
-                    $guest->email,
-                    $guest->group,
-                    $guest->rsvp_response ? ($guest->rsvp_response->attending ? 'Attending' : 'Declined') : 'Pending',
-                    $guest->invitation_via,
-                    $guest->rsvp_response ? $guest->rsvp_response->plus_ones_count : 0,
-                    $guest->rsvp_response ? $guest->rsvp_response->message : '',
-                ]);
-            });
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return redirect()->action([ExportController::class, 'exportGuestsExcel']);
     }
 
     /**
@@ -530,24 +502,19 @@ class GuestController extends Controller
     {
         $guest->update([
             'rsvp_status' => 'pending',
-            'confirmed_plus_ones' => 0,
+            'rsvp_message' => null,
+            'dietary_notes' => null,
         ]);
 
         // Reset all plus ones too
         $guest->plusOnes()->update([
             'rsvp_status' => 'pending',
-            'confirmed_plus_ones' => 0,
+            'dietary_notes' => null,
         ]);
-
-        // Delete the RSVP response if it exists
-        $guest->rsvpResponse()->delete();
-        
-        // Also delete responses for plus ones
-        RsvpResponse::whereIn('guest_id', $guest->plusOnes()->pluck('id'))->delete();
 
         return response()->json([
             'message' => 'RSVP reset successfully for ' . $guest->name . ' and their plus ones.',
-            'guest' => new GuestResource($guest->fresh(['rsvpResponse', 'invitation', 'plusOnes']))
+            'guest' => new GuestResource($guest->fresh(['invitation', 'plusOnes']))
         ]);
     }
 }

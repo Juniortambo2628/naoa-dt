@@ -9,7 +9,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
     group: 'family',
     invitation_via: 'whatsapp',
     plus_ones_allowed: 0,
-    plus_ones_data: []
+    plus_ones_data: [],
+    rsvp_message: '',
+    dietary_notes: '',
   });
   const [loading, setLoading] = useState(false);
   const [activeAutocomplete, setActiveAutocomplete] = useState(null); // index of active autocomplete
@@ -31,7 +33,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
         group: guest.group || 'family',
         invitation_via: guest.invitation_via || 'whatsapp',
         plus_ones_allowed: guest.plus_ones_allowed || 0,
-        plus_ones_data: plusOnesData
+        plus_ones_data: plusOnesData,
+        rsvp_message: guest.rsvp_message || '',
+        dietary_notes: guest.dietary_notes || '',
       });
     } else {
       setFormData({
@@ -41,7 +45,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
         group: 'family',
         invitation_via: 'whatsapp',
         plus_ones_allowed: 0,
-        plus_ones_data: []
+        plus_ones_data: [],
+        rsvp_message: '',
+        dietary_notes: '',
       });
     }
   }, [guest, isOpen]);
@@ -213,9 +219,31 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
             <input
               type="tel"
               className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
-              value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">RSVP Message</label>
+              <textarea
+                className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] text-sm resize-none"
+                rows={2}
+                value={formData.rsvp_message}
+                onChange={(e) => setFormData({ ...formData, rsvp_message: e.target.value })}
+                placeholder="Guest's message..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Dietary Notes</label>
+              <textarea
+                className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] text-sm resize-none"
+                rows={2}
+                value={formData.dietary_notes}
+                onChange={(e) => setFormData({ ...formData, dietary_notes: e.target.value })}
+                placeholder="Allergies, restrictions..."
+              />
+            </div>
           </div>
 
           {/* Plus Ones Details Section */}

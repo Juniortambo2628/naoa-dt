@@ -265,7 +265,13 @@ function EventModal({ isOpen, onClose, onSave, event }) {
                 description: event.description || ''
             });
         } else {
-            setFormData({ name: '', event_date: new Date().toISOString().split('T')[0], event_time: '14:00', venue: '', description: '' });
+            setFormData({ 
+                name: '', 
+                event_date: new Date().toISOString().split('T')[0], 
+                event_time: '14:00', 
+                venue: '', 
+                description: '' 
+            });
         }
     }, [event, isOpen]);
 
@@ -345,7 +351,14 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
                 type: item.type || 'ceremony'
             });
         } else {
-            setFormData({ title: '', start_time: '', end_time: '', description: '', location: '', type: 'ceremony' });
+            setFormData({ 
+                title: '', 
+                start_time: '', 
+                end_time: '', 
+                description: '', 
+                location: '', 
+                type: 'ceremony' 
+            });
         }
     }, [item, isOpen]);
 

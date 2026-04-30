@@ -15,6 +15,7 @@ import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import { saveAs } from 'file-saver';
+import { Skeleton } from '../../components/Skeleton';
 /* Force refresh: 2026-04-15 07:02 - Syntax fix complete. Component should now reload. */
 
 export default function InvitationDesigner() {
@@ -497,13 +498,20 @@ export default function InvitationDesigner() {
           }
        />
 
-       <div className="flex-1 flex gap-6 overflow-hidden">
-        {/* Controls Sidebar */}
-        <div className="w-96 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col overflow-hidden">
-            
-            <div className="flex-1 overflow-y-auto font-sans">
-                <div className="p-6 space-y-8">
-                    {/* Tabs Navigation */}
+        <div className="flex-1 flex gap-6 overflow-hidden">
+         {/* Controls Sidebar */}
+         <div className="w-96 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col overflow-hidden">
+             
+             {loading ? (
+                 <div className="p-6 space-y-6">
+                     <Skeleton variant="text" width="100%" height="40px" className="rounded-xl" />
+                     <Skeleton variant="image" width="100%" height="200px" className="rounded-xl" />
+                     <Skeleton variant="image" width="100%" height="150px" className="rounded-xl" />
+                 </div>
+             ) : (
+             <div className="flex-1 overflow-y-auto font-sans">
+                 <div className="p-6 space-y-8">
+                     {/* Tabs Navigation */}
                     <div className="flex p-1 bg-stone-100/50 rounded-xl mb-6">
                         {(['style', 'text', 'layout', 'items', 'layers']).map(tab => (
                             <button
@@ -1254,9 +1262,9 @@ export default function InvitationDesigner() {
                     </div>
                 )}
             </div>
-            </div>
-
-            </div>
+        </div>
+    )}
+</div>
 
         {/* Live Preview Area */}
         <div 
@@ -1269,17 +1277,23 @@ export default function InvitationDesigner() {
         >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
             
-            <InvitationCanvas 
-                design={design} 
-                onUpdateDesign={handleDesignUpdate} 
-                selectedId={selectedItemId}
-                onSelectExclusively={setSelectedItemId}
-                mode="edit" 
-                guest={dummyGuest}
-                showGrid={design.showGrid}
-                snapToGrid={design.snapToGrid}
-                weddingSettings={settings}
-            />
+            {loading ? (
+                 <div className="flex-1 flex items-center justify-center p-8 z-10">
+                     <Skeleton variant="image" width="400px" height="600px" className="rounded-2xl shadow-xl max-w-full" />
+                 </div>
+            ) : (
+                <InvitationCanvas 
+                    design={design} 
+                    onUpdateDesign={(type, payload) => updateDesign(type, payload)} 
+                    selectedId={selectedItemId}
+                    onSelectExclusively={setSelectedItemId}
+                    mode="edit" 
+                    guest={dummyGuest}
+                    showGrid={design.showGrid}
+                    snapToGrid={design.snapToGrid}
+                    weddingSettings={settings}
+                />
+            )}
 
             {/* Floating Workspace Controls (Undo/Redo & Design Type) */}
             <motion.div 

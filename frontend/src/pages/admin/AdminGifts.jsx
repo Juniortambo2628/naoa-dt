@@ -165,7 +165,14 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
                 description: gift.description || ''
             });
         } else {
-            setFormData({ name: '', price: '', image_url: '', product_link: '', is_cash_fund: false, description: '' });
+            setFormData({ 
+                name: '', 
+                price: '', 
+                image_url: '', 
+                product_link: '', 
+                is_cash_fund: false, 
+                description: '' 
+            });
         }
     }, [gift, isOpen]);
 

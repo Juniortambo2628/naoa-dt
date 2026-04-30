@@ -63,7 +63,16 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
                         {/* Header */}
                         <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
                             <div>
-                                <h3 className="text-xl font-bold text-stone-800">Invite {guest.name}</h3>
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-xl font-bold text-stone-800">Invite {guest.name}</h3>
+                                    {guest.rsvp_status !== 'pending' && (
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                            guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {guest.rsvp_status}
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-sm text-stone-500 mt-1">Select your preferred invitation channel</p>
                             </div>
                             <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors text-stone-400">

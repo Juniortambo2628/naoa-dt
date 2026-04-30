@@ -42,7 +42,6 @@ export default function GalleryManager() {
       e.preventDefault();
       try {
           await galleryService.update(editingItem.id, { 
-              caption: editingItem.caption,
               object_position: editingItem.object_position || 'center'
           });
           setEditingItem(null);
@@ -95,7 +94,7 @@ export default function GalleryManager() {
   const filteredItems = items
     .filter(item => {
       const activeSearch = searchQuery || '';
-      return (item.caption || '').toLowerCase().includes(activeSearch.toLowerCase());
+      return true; // Search by caption removed as captions are gone
     })
     .sort((a, b) => b.id - a.id);
 
@@ -213,15 +212,7 @@ export default function GalleryManager() {
                                ))}
                            </div>
                        </div>
-                       <div className="mb-4">
-                           <label className="block text-sm font-medium text-stone-700 mb-2">Caption</label>
-                           <textarea
-                                className="w-full p-3 border border-stone-200 rounded-lg text-sm h-24 resize-none focus:ring-2 focus:ring-[#A67B5B]/20 outline-none"
-                                placeholder="Add a caption..."
-                                value={editingItem.caption || ''}
-                                onChange={e => setEditingItem({...editingItem, caption: e.target.value})}
-                           />
-                       </div>
+                       
                        <div className="flex justify-end gap-2">
                            <button type="button" onClick={() => setEditingItem(null)} className="btn-secondary">Cancel</button>
                            <button type="submit" className="btn-primary">Save Changes</button>
@@ -263,7 +254,7 @@ export default function GalleryManager() {
                        <div className={`absolute top-3 left-3 z-20 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-[#A67B5B] border-[#A67B5B]' : 'bg-white/40 border-white/60 opacity-0 group-hover:opacity-100'}`}>
                            {selectedIds.includes(item.id) && <Check className="w-3.5 h-3.5 text-white" />}
                        </div>
-                       <img src={getAssetUrl(item.image_url)} alt={item.caption} className={`w-full h-full object-cover transition-opacity ${item.is_visible ? 'opacity-100' : 'opacity-50 grayscale'}`} />
+                       <img src={getAssetUrl(item.image_url)} alt="Gallery Image" className={`w-full h-full object-cover transition-opacity ${item.is_visible ? 'opacity-100' : 'opacity-50 grayscale'}`} />
                        
                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                            <div className="mb-2">
@@ -272,27 +263,27 @@ export default function GalleryManager() {
                                        Guest Upload: {item.uploaded_by}
                                    </span>
                                )}
-                               <p className="text-white text-sm font-medium truncate">{item.caption || 'No caption'}</p>
+                               <p className="text-white text-sm font-medium truncate">Uploaded by: {item.uploaded_by || 'Anonymous'}</p>
                            </div>
                            <div className="flex gap-2">
                                <button 
                                     onClick={() => setEditingItem(item)}
                                     className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-lg backdrop-blur-sm flex-1 flex items-center justify-center gap-2"
                                >
-                                   <ImageIcon className="w-3 h-3" /> <span className="text-xs">Edit</span>
+                                    <ImageIcon className="w-3 h-3" /> <span className="text-xs">Edit</span>
                                </button>
                                <button 
                                     onClick={() => toggleVisibility(item)}
                                     className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-lg backdrop-blur-sm"
                                     title={item.is_visible ? 'Hide' : 'Show'}
                                >
-                                   {item.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                    {item.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                </button>
                                <button 
                                     onClick={() => handleDelete(item.id)}
                                     className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg backdrop-blur-sm"
                                >
-                                   <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-4 h-4" />
                                </button>
                            </div>
                        </div>

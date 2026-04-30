@@ -30,15 +30,38 @@ export default function AdminEmails() {
   const [savingSettings, setSavingSettings] = useState(false);
 
   const handleBulkSend = async () => {
-    if (!window.confirm('Send invitations to all pending guests?')) return;
+    if (!window.confirm('Send digital invitations to all guests with pending RSVPs and valid email addresses?')) return;
     setLoading(true);
     try {
-        // Mock bulk send or implement real one if API supports
-        // invitationService.sendBulk(...)
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Mock delay
-        alert('Emails queued successfully!');
+        // Fetch current guest list to find pending ones
+        const guestsRes = await guestService.getAll();
+        const allGuests = guestsRes.data.data || guestsRes.data;
+        
+        // Filter: Pending RSVP AND has Email AND is NOT a plus-one (we send to primary guests, send method handles their plus-ones)
+        const pendingGuests = allGuests.filter(g => 
+            g.rsvp_status === 'pending' && 
+            g.email && 
+            !g.parent_guest_id
+        );
+
+        if (pendingGuests.length === 0) {
+            alert('No pending primary guests with email addresses found.');
+            setLoading(false);
+            return;
+        }
+
+        if (!window.confirm(`Found ${pendingGuests.length} primary guests to invite. Proceed?`)) {
+            setLoading(false);
+            return;
+        }
+
+        const guestIds = pendingGuests.map(g => g.id);
+        const res = await invitationService.sendBulk(guestIds);
+        
+        alert(`Successfully queued ${res.data.sent_count} invitations! ${res.data.error_count > 0 ? res.data.error_count + ' failed.' : ''}`);
     } catch(e) {
-        alert('Failed to send emails');
+        console.error("Bulk send failed", e);
+        alert('Failed to send bulk invitations: ' + (e.response?.data?.message || e.message));
     }
     setLoading(false);
   };

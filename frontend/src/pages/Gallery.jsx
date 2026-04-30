@@ -62,7 +62,6 @@ export default function Gallery() {
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadPreview, setUploadPreview] = useState(null);
   const [guestName, setGuestName] = useState('');
-  const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const { contents: content, loading: contentLoading, isVisible } = useContent();
@@ -97,13 +96,6 @@ export default function Gallery() {
     }
   }, [contentLoading, isVisible, navigate]);
 
-  if (contentLoading) {
-    return <Loader />;
-  }
-
-  if (!isVisible('gallery')) {
-    return null; // The useEffect will handle redirect
-  }
 
   // Slideshow controls
   const startSlideshow = () => {
@@ -150,6 +142,14 @@ export default function Gallery() {
     }
   };
 
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('gallery')) {
+    return null; // The useEffect will handle redirect
+  }
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadFile || !guestName.trim()) return;
@@ -159,7 +159,7 @@ export default function Gallery() {
       const formData = new FormData();
       formData.append('image', uploadFile);
       formData.append('guest_name', guestName);
-      formData.append('caption', caption);
+      formData.append('caption', ''); // Captions removed from UI but kept in API for compatibility
 
       await api.post('/gallery/guest-upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -172,7 +172,6 @@ export default function Gallery() {
         setUploadFile(null);
         setUploadPreview(null);
         setGuestName('');
-        setCaption('');
         setUploadSuccess(false);
       }, 2000);
     } catch (err) {
@@ -470,18 +469,7 @@ export default function Gallery() {
                     />
                   </div>
 
-                  <div>
-                    <label className="input-label">
-                      {t('gallery.caption') || 'Caption (optional)'}
-                    </label>
-                    <input
-                      type="text"
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      className="input-field"
-                      placeholder={t('gallery.caption_placeholder') || 'Add a caption'}
-                    />
-                  </div>
+
 
                   <button
                     type="submit"
