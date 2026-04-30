@@ -9,7 +9,6 @@ import Loader from '../components/Loader';
 export default function DigitalInvitation() {
     const { code } = useParams();
     const navigate = useNavigate();
-    const [scale, setScale] = useState(1);
     
     const { data: guest, isLoading: isGuestLoading, isError: isGuestError } = useGuestByCode(code);
     const { data: settings, isLoading: isSettingsLoading } = useSettings();
@@ -121,20 +120,7 @@ export default function DigitalInvitation() {
     };
 
     useEffect(() => {
-        const handleResize = () => {
-            const containerWidth = window.innerWidth > 1024 ? 540 : (window.innerWidth - 32);
-            const canvasWidth = design.orientation === 'landscape' ? 625 : 500;
-            
-            if (containerWidth < canvasWidth) {
-                setScale(containerWidth / canvasWidth);
-            } else {
-                setScale(1);
-            }
-        };
-
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        // We let InvitationCanvas handle its own scaling now
     }, [design.orientation]);
 
     if (isLoading) return <Loader />;
@@ -174,15 +160,13 @@ export default function DigitalInvitation() {
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="w-full max-w-[540px] flex flex-col items-center"
+                    className="w-full max-w-[625px] flex flex-col items-center"
                 >
                     <div 
-                        className="relative origin-top transition-transform duration-300 rounded-sm shadow-2xl overflow-hidden"
+                        className="w-full relative shadow-2xl rounded-lg overflow-hidden border border-stone-200"
                         style={{ 
-                            transform: `scale(${scale})`,
-                            height: design.orientation === 'landscape' ? 500 : 625,
-                            width: design.orientation === 'landscape' ? 625 : 500,
-                            marginBottom: `-${(1 - scale) * (design.orientation === 'landscape' ? 500 : 625)}px`,
+                            aspectRatio: design.orientation === 'landscape' ? '625/500' : '500/625',
+                            backgroundColor: design.backgroundColor || '#ffffff'
                         }}
                     >
                         <InvitationCanvas 
@@ -226,7 +210,6 @@ export default function DigitalInvitation() {
                             </div>
                             <h3 className="font-bold text-stone-800 mb-1 italic">When</h3>
                             <p className="text-sm text-stone-500">{weddingDateText}</p>
-                            <p className="text-sm text-stone-500">{eventTimeText}</p>
                         </div>
                         <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow group">
                             <div className="w-10 h-10 bg-[#fcfaf8] text-[#A67B5B] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#A67B5B] group-hover:text-white transition-colors">
