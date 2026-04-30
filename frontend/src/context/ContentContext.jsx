@@ -64,7 +64,8 @@ export const ContentProvider = ({ children }) => {
     const isVisible = useCallback((section) => {
         if (!section) return true;
         const sectionData = contents[section];
-        return !sectionData || sectionData.is_visible !== false;
+        // Explicitly check for false or 0 to handle various DB representation
+        return !sectionData || (sectionData.is_visible !== false && sectionData.is_visible !== 0);
     }, [contents]);
 
     const updateLocalContent = useCallback((key, data) => {
