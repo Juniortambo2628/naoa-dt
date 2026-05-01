@@ -10,6 +10,7 @@ export default function AdminRSVPs() {
     const { data: guestsData, isLoading } = useGuests();
     const { searchQuery } = useSearch();
     const [rsvps, setRsvps] = useState([]);
+    const [filterWithMessages, setFilterWithMessages] = useState(false);
     const [stats, setStats] = useState({ total: 0, attending: 0, declined: 0, withMessage: 0 });
 
     useEffect(() => {
@@ -58,7 +59,14 @@ export default function AdminRSVPs() {
             (po.dietary_notes && po.dietary_notes.toLowerCase().includes(query))
         );
 
-        return matchesPrimary || matchesPlusOnes;
+        const matchesQuery = matchesPrimary || matchesPlusOnes;
+        if (!matchesQuery) return false;
+
+        if (filterWithMessages) {
+            return !!guest.rsvp_message;
+        }
+
+        return true;
     });
 
     if (isLoading) {
@@ -122,10 +130,25 @@ export default function AdminRSVPs() {
                 ))}
             </div>
 
-            {/* List of Responses */}
             <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-                <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
+                <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50/50">
                     <h2 className="text-lg font-semibold text-stone-800">Recent Responses</h2>
+                    
+                    <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-stone-200 w-fit">
+                        <button
+                            onClick={() => setFilterWithMessages(false)}
+                            className={`px-4 py-2 text-sm rounded-lg transition-colors ${!filterWithMessages ? 'bg-[#4A3F35] text-white shadow-sm' : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'}`}
+                        >
+                            All Responses
+                        </button>
+                        <button
+                            onClick={() => setFilterWithMessages(true)}
+                            className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 ${filterWithMessages ? 'bg-[#A67B5B] text-white shadow-sm' : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'}`}
+                        >
+                            <MessageSquare className="w-4 h-4" />
+                            With Messages
+                        </button>
+                    </div>
                 </div>
                 
                 {filteredRsvps.length === 0 ? (

@@ -45,7 +45,7 @@ function Sidebar({ isOpen, onClose }) {
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', id: 'sidebar-dashboard' },
     { path: '/admin/dashboard/analytics', icon: PieChart, label: 'Analytics', id: 'sidebar-analytics' },
     { path: '/admin/dashboard/guests', icon: Users, label: 'Guests', id: 'sidebar-guests' },
-    { path: '/admin/dashboard/rsvps', icon: CheckCircle, label: 'RSVPs', id: 'sidebar-rsvps' },
+    { path: '/admin/dashboard/rsvps', icon: CheckCircle, label: 'RSVPs & Messages', id: 'sidebar-rsvps' },
     { path: '/admin/dashboard/checkin', icon: UserCheck, label: 'Check-In', id: 'sidebar-checkin' },
     { path: '/admin/dashboard/seating', icon: Users, label: 'Seating Chart', id: 'sidebar-seating' },
     { path: '/admin/dashboard/design', icon: Mail, label: 'Design Invitations', id: 'sidebar-design' },

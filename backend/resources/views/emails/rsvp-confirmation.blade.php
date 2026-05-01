@@ -23,13 +23,13 @@
                     $formattedDate = \Carbon\Carbon::parse($dateRaw)->format('F jS, Y');
                     
                     $homeHero = \App\Models\PageContent::where('section_key', 'home_hero')->first();
-                    $location = $homeHero->content['location'] ?? 'Nairobi, Kenya';
+                    $location = $homeHero->content['venue']['en'] ?? $homeHero->content['location'] ?? 'Zereniti House, Limuru, Kenya';
                     if (is_array($location)) {
                         $location = $location['en'] ?? array_values($location)[0];
                     }
                     
                     $eventDetails = \App\Models\PageContent::where('section_key', 'event_details')->first();
-                    $time = $eventDetails->content['time'] ?? '2:00 PM';
+                    $time = $eventDetails->content['time'] ?? 'TBD';
                 @endphp
                 <div style="margin-bottom: 10px;"><strong>Date:</strong> {{ $formattedDate }}</div>
                 <div style="margin-bottom: 10px;"><strong>Time:</strong> {{ $time }}</div>
