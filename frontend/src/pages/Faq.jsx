@@ -32,6 +32,7 @@ export default function Faq() {
     const [activeFaqId, setActiveFaqId] = useState(null);
     const [expandedTableHtml, setExpandedTableHtml] = useState(null);
     const answerRef = React.useRef(null);
+    const activeFaq = faqs.find(f => f.id === activeFaqId);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -115,7 +116,6 @@ export default function Faq() {
         return <Navigate to="/module-unavailable/faqs" replace />;
     }
 
-    const activeFaq = faqs.find(f => f.id === activeFaqId);
 
     return (
         <motion.div
