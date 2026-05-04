@@ -656,7 +656,7 @@ p {
 
 /* FAQ Answer Prose - Word wrap, bullet points, tables */
 .faq-answer-prose {
-  overflow-wrap: normal;
+  overflow-wrap: break-word;
   word-break: normal;
   white-space: normal;
 }
@@ -717,7 +717,7 @@ p {
   font-weight: 600;
   color: #8B7B6B;
   white-space: normal;
-  overflow-wrap: normal;
+  overflow-wrap: break-word;
   word-break: normal;
 }
 
@@ -726,7 +726,7 @@ p {
   padding: 0.75rem;
   vertical-align: top;
   white-space: normal;
-  overflow-wrap: normal;
+  overflow-wrap: break-word;
   word-break: normal;
 }
 

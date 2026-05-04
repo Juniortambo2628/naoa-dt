@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, ChevronRight } from 'lucide-react';
+import { MessageSquare, ChevronRight, X } from 'lucide-react';
 import { faqService, contentService } from '../services/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -30,6 +30,7 @@ export default function Faq() {
     const [faqs, setFaqs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeFaqId, setActiveFaqId] = useState(null);
+    const [expandedTableHtml, setExpandedTableHtml] = useState(null);
     const answerRef = React.useRef(null);
 
     useEffect(() => {
@@ -54,7 +55,61 @@ export default function Faq() {
         if (activeFaqId && window.innerWidth < 768) {
             answerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-    }, [activeFaqId]);
+        
+        // Wrap tables and add expand button
+        if (answerRef.current && activeFaq) {
+            const timer = setTimeout(() => {
+                if (!answerRef.current) return;
+                const tables = answerRef.current.querySelectorAll('table');
+                tables.forEach((table, index) => {
+                    if (!table.parentElement.classList.contains('table-scroll-container')) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'table-wrapper relative my-6 rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden';
+                        
+                        const header = document.createElement('div');
+                        header.className = 'bg-[#FFF9F5] px-4 py-3 border-b border-stone-200 flex justify-between items-center';
+                        header.innerHTML = `
+                            <span class="text-sm font-semibold text-stone-700">Table Data</span>
+                            <button class="expand-table-btn text-xs bg-white border border-[#A67B5B] text-[#A67B5B] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-[#A67B5B] hover:text-white transition-colors font-medium shadow-sm" data-table-index="${index}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                                Expand
+                            </button>
+                        `;
+                        
+                        const scrollContainer = document.createElement('div');
+                        scrollContainer.className = 'table-scroll-container overflow-x-auto p-0';
+                        
+                        table.parentNode.insertBefore(wrapper, table);
+                        scrollContainer.appendChild(table);
+                        wrapper.appendChild(header);
+                        wrapper.appendChild(scrollContainer);
+                    }
+                });
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [activeFaqId, activeFaq]);
+
+    useEffect(() => {
+        const handleExpandClick = (e) => {
+            const btn = e.target.closest('.expand-table-btn');
+            if (btn) {
+                const wrapper = btn.closest('.table-wrapper');
+                const table = wrapper.querySelector('table');
+                if (table) {
+                    setExpandedTableHtml(table.outerHTML);
+                }
+            }
+        };
+        
+        const ref = answerRef.current;
+        if (ref) {
+            ref.addEventListener('click', handleExpandClick);
+        }
+        return () => {
+            if (ref) ref.removeEventListener('click', handleExpandClick);
+        };
+    }, []);
 
     if (!contentLoading && content && content['faqs']?.is_visible === false) {
         return <Navigate to="/module-unavailable/faqs" replace />;
@@ -72,7 +127,7 @@ export default function Faq() {
             <Navbar />
             
             <main className="flex-grow pt-32 pb-20">
-                <div className="max-w-7xl mx-auto px-6">
+                <div className="w-full px-4 md:px-8 lg:px-12 mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -94,7 +149,7 @@ export default function Faq() {
                     ) : (
                         <div className="bg-white rounded-[2rem] shadow-sm border border-stone-100 overflow-hidden flex flex-col md:flex-row min-h-[500px] md:min-h-[600px] max-h-none md:max-h-[85vh]">
                             {/* Left Column: Questions List */}
-                            <div className="w-full md:w-2/5 lg:w-1/3 bg-[#FFF9F5]/30 border-b md:border-b-0 md:border-r border-stone-100 flex flex-col">
+                            <div className="w-full md:w-80 shrink-0 bg-[#FFF9F5]/30 border-b md:border-b-0 md:border-r border-stone-100 flex flex-col">
                                 <div className="p-6 lg:p-8 border-b border-stone-100">
                                     <h2 className="font-serif text-2xl text-stone-800">Topics</h2>
                                 </div>
@@ -124,7 +179,7 @@ export default function Faq() {
                             </div>
                             
                             {/* Right Column: Active Answer */}
-                            <div className="w-full md:w-3/5 lg:w-2/3 p-6 lg:p-12 overflow-y-auto bg-white relative" ref={answerRef}>
+                            <div className="flex-1 min-w-0 p-6 lg:p-12 overflow-y-auto bg-white relative" ref={answerRef}>
                                 <AnimatePresence mode="popLayout">
                                     {activeFaq && (
                                         <motion.div
@@ -142,7 +197,7 @@ export default function Faq() {
                                             </div>
                                             
                                             <div 
-                                                className="faq-answer-prose text-stone-600 prose prose-stone max-w-none leading-relaxed overflow-x-auto scrollbar-thin scrollbar-thumb-stone-200"
+                                                className="faq-answer-prose text-stone-600 prose prose-stone max-w-none leading-relaxed"
                                                 dangerouslySetInnerHTML={{ __html: activeFaq.answer }}
                                             />
                                         </motion.div>
@@ -172,6 +227,40 @@ export default function Faq() {
             </main>
 
             <Footer content={content} />
+
+            {/* Expanded Table Modal */}
+            <AnimatePresence>
+                {expandedTableHtml && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8"
+                        onClick={() => setExpandedTableHtml(null)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="px-6 py-4 border-b border-stone-100 flex justify-between items-center bg-[#FFF9F5]">
+                                <h3 className="font-serif text-xl text-stone-800">Detailed View</h3>
+                                <button 
+                                    onClick={() => setExpandedTableHtml(null)}
+                                    className="p-2 text-stone-400 hover:text-stone-600 hover:bg-white rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="p-6 overflow-auto flex-1 bg-white faq-answer-prose">
+                                <div dangerouslySetInnerHTML={{ __html: expandedTableHtml }} />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
