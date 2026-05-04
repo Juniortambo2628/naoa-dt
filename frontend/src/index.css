@@ -655,10 +655,14 @@ p {
 }
 
 /* FAQ Answer Prose - Word wrap, bullet points, tables */
-.faq-answer-prose {
-  overflow-wrap: break-word;
-  word-break: normal;
-  white-space: normal;
+.faq-answer-prose,
+.faq-answer-prose p,
+.faq-answer-prose span,
+.faq-answer-prose div,
+.faq-answer-prose li {
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  white-space: normal !important;
 }
 
 /* Bullet points & numbered lists */

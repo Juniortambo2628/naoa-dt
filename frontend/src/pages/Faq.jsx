@@ -69,13 +69,22 @@ export default function Faq() {
                         
                         const header = document.createElement('div');
                         header.className = 'bg-[#FFF9F5] px-4 py-3 border-b border-stone-200 flex justify-between items-center';
-                        header.innerHTML = `
-                            <span class="text-sm font-semibold text-stone-700">Table Data</span>
-                            <button class="expand-table-btn text-xs bg-white border border-[#A67B5B] text-[#A67B5B] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-[#A67B5B] hover:text-white transition-colors font-medium shadow-sm" data-table-index="${index}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
-                                Expand
-                            </button>
+                        const titleSpan = document.createElement('span');
+                        titleSpan.className = 'text-sm font-semibold text-stone-700';
+                        titleSpan.innerText = 'Table Data';
+                        
+                        const expandBtn = document.createElement('button');
+                        expandBtn.className = 'expand-table-btn text-xs bg-white border border-[#A67B5B] text-[#A67B5B] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-[#A67B5B] hover:text-white transition-colors font-medium shadow-sm';
+                        expandBtn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                            Expand
                         `;
+                        expandBtn.onclick = () => {
+                            setExpandedTableHtml(table.outerHTML);
+                        };
+                        
+                        header.appendChild(titleSpan);
+                        header.appendChild(expandBtn);
                         
                         const scrollContainer = document.createElement('div');
                         scrollContainer.className = 'table-scroll-container overflow-x-auto p-0';
@@ -91,26 +100,6 @@ export default function Faq() {
         }
     }, [activeFaqId, activeFaq]);
 
-    useEffect(() => {
-        const handleExpandClick = (e) => {
-            const btn = e.target.closest('.expand-table-btn');
-            if (btn) {
-                const wrapper = btn.closest('.table-wrapper');
-                const table = wrapper.querySelector('table');
-                if (table) {
-                    setExpandedTableHtml(table.outerHTML);
-                }
-            }
-        };
-        
-        const ref = answerRef.current;
-        if (ref) {
-            ref.addEventListener('click', handleExpandClick);
-        }
-        return () => {
-            if (ref) ref.removeEventListener('click', handleExpandClick);
-        };
-    }, []);
 
     if (!contentLoading && content && content['faqs']?.is_visible === false) {
         return <Navigate to="/module-unavailable/faqs" replace />;
