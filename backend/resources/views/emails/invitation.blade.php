@@ -38,7 +38,7 @@
         @endphp
 
         <div style="margin-top: 30px; padding: 20px; border-top: 1px solid #F0ECE9;">
-            <p style="font-size: 13px; color: #8C8279; margin-bottom: 15px;">📅 Add this celebration to your calendar:</p>
+            <p style="font-size: 13px; color: #8C8279; margin-bottom: 15px;">Add this celebration to your calendar:</p>
             <div style="text-align: center;">
                 <a href="{{ $googleCalendarUrl }}" target="_blank" style="display: inline-block; font-size: 12px; color: #A67B5B; text-decoration: none; padding: 10px 20px; border: 1px solid #A67B5B; border-radius: 50px; margin: 5px;">Google Calendar</a>
                 <a href="{{ $icsUrl }}" target="_blank" style="display: inline-block; font-size: 12px; color: #A67B5B; text-decoration: none; padding: 10px 20px; border: 1px solid #A67B5B; border-radius: 50px; margin: 5px;">Apple / Outlook (.ics)</a>
@@ -46,7 +46,7 @@
         </div>
 
         <p style="font-size: 12px; color: #A67B5B; margin-top: 25px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-            📎 A personalized invitation card is attached
+            A personalized invitation card is attached
         </p>
         
         <p style="font-size: 14px; color: #8C8279; margin-top: 40px; font-style: italic;">

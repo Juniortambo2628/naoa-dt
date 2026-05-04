@@ -124,7 +124,7 @@
         <div class="container">
             <div class="header">
                 <div class="names">Dinah & Tze Ren</div>
-                <div class="ornament">❧</div>
+                <div class="ornament">&mdash;</div>
                 @php
                     $countdown = \App\Models\PageContent::where('section_key', 'countdown')->first();
                     $dateRaw = $countdown->content['wedding_date'] ?? '2026-11-14';

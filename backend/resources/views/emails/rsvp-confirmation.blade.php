@@ -6,9 +6,7 @@
     <div style="text-align: center;">
         <h2 style="font-size: 24px; color: #4A3F35; margin-bottom: 20px;">Dear {{ $guest->name }},</h2>
         
-        @if(!$attending)
-            <div style="font-size: 48px; margin-bottom: 20px;">💌</div>
-        @endif
+
 
         <p style="font-size: 16px; color: #6B5E53; line-height: 1.8; margin-bottom: 30px;">
             {!! nl2br(e($messageText)) !!}

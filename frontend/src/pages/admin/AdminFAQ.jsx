@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, Reorder } from 'framer-motion';
+import { motion, Reorder, useDragControls } from 'framer-motion';
 import { Plus, Edit, Trash2, Save, X, HelpCircle, GripVertical, Image as ImageIcon, Table as TableIcon } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import TableInsertModal from '../../components/admin/TableInsertModal';
@@ -13,6 +13,50 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 import { useSearch } from '../../context/SearchContext';
 
 registerPlugin(FilePondPluginImagePreview);
+
+function FaqReorderItem({ faq, searchQuery, onEdit, onDelete }) {
+    const dragControls = useDragControls();
+
+    return (
+        <Reorder.Item 
+            value={faq} 
+            dragListener={false}
+            dragControls={dragControls}
+            className="p-4 flex gap-4 bg-white items-start hover:bg-stone-50 transition-colors shadow-sm relative group"
+        >
+            <div 
+                className={`mt-1 text-stone-300 hover:text-stone-500 ${searchQuery ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}
+                onPointerDown={(e) => { if (!searchQuery) dragControls.start(e); }}
+            >
+                <GripVertical className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-stone-800 text-lg mb-2">{faq.question}</h3>
+                <div 
+                    className="faq-answer-prose text-stone-600 prose prose-sm max-w-none max-h-24 overflow-hidden relative"
+                    dangerouslySetInnerHTML={{ __html: faq.answer }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-stone-50 to-transparent pointer-events-none"></div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+                <button 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onEdit(faq); }} 
+                    className="p-2 text-[#A67B5B] bg-[#A67B5B]/10 rounded-lg hover:bg-[#A67B5B]/20 transition-colors"
+                >
+                    <Edit className="w-4 h-4" />
+                </button>
+                <button 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onDelete(faq.id); }} 
+                    className="p-2 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
+        </Reorder.Item>
+    );
+}
 
 export default function AdminFAQ() {
     const [faqs, setFaqs] = useState([]);
@@ -173,37 +217,13 @@ export default function AdminFAQ() {
                 ) : (
                     <Reorder.Group axis="y" values={filteredFaqs} onReorder={handleReorder} className="divide-y divide-stone-100">
                         {filteredFaqs.map((faq) => (
-                            <Reorder.Item 
-                                key={faq.id} 
-                                value={faq} 
-                                className="p-4 flex gap-4 bg-white items-start hover:bg-stone-50 transition-colors shadow-sm relative group cursor-pointer"
-                            >
-                                <div className={`mt-1 text-stone-300 hover:text-stone-500 ${searchQuery ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}>
-                                    <GripVertical className="w-5 h-5" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-medium text-stone-800 text-lg mb-2">{faq.question}</h3>
-                                    <div 
-                                        className="text-stone-600 prose prose-sm max-w-none max-h-24 overflow-hidden relative break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg"
-                                        dangerouslySetInnerHTML={{ __html: faq.answer }}
-                                    />
-                                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-stone-50 to-transparent flex justify-end px-4"></div>
-                                </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleEdit(faq); }} 
-                                        className="p-2 text-[#A67B5B] bg-[#A67B5B]/10 rounded-lg hover:bg-[#A67B5B]/20"
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(faq.id); }} 
-                                        className="p-2 text-red-500 bg-red-50 rounded-lg hover:bg-red-100"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </Reorder.Item>
+                            <FaqReorderItem 
+                                key={faq.id}
+                                faq={faq}
+                                searchQuery={searchQuery}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                            />
                         ))}
                     </Reorder.Group>
                 )}

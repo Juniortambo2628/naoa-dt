@@ -18,9 +18,9 @@
                 <td style="padding: 10px 0; color: #777;"><strong>RSVP Status:</strong></td>
                 <td style="padding: 10px 0;">
                     @if($attending)
-                        <span style="color: #2e7d32; font-weight: bold;">✅ Attending</span>
+                        <span style="color: #2e7d32; font-weight: bold;">Attending</span>
                     @else
-                        <span style="color: #c62828; font-weight: bold;">❌ Declined</span>
+                        <span style="color: #c62828; font-weight: bold;">Declined</span>
                     @endif
                 </td>
             </tr>
