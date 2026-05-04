@@ -656,9 +656,9 @@ p {
 
 /* FAQ Answer Prose - Word wrap, bullet points, tables */
 .faq-answer-prose {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  hyphens: auto;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: normal;
 }
 
 /* Bullet points & numbered lists */
@@ -703,25 +703,31 @@ p {
 /* Tables */
 .faq-answer-prose table {
   width: 100%;
-  min-width: 500px;
   border-collapse: collapse;
   margin: 1.5rem 0;
   border-radius: 0.5rem;
+  table-layout: auto;
 }
 
 .faq-answer-prose th {
   border: 1px solid #d6d3d1;
   background-color: #F8E8E0;
-  padding: 1rem;
+  padding: 0.75rem;
   text-align: left;
   font-weight: 600;
   color: #8B7B6B;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .faq-answer-prose td {
   border: 1px solid #d6d3d1;
-  padding: 1rem;
+  padding: 0.75rem;
   vertical-align: top;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .faq-answer-prose tr:nth-child(even) {
