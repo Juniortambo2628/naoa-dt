@@ -64,8 +64,11 @@ export const ContentProvider = ({ children }) => {
     const isVisible = useCallback((section) => {
         if (!section) return true;
         const sectionData = contents[section];
+        // If data is missing, it's invisible (backend filters out invisible items for public users)
+        if (!sectionData) return false;
+        
         // Explicitly check for false or 0 to handle various DB representation
-        return !sectionData || (sectionData.is_visible !== false && sectionData.is_visible !== 0);
+        return sectionData.is_visible !== false && sectionData.is_visible !== 0;
     }, [contents]);
 
     const updateLocalContent = useCallback((key, data) => {

@@ -108,7 +108,7 @@ export default function Navbar() {
                 </>
             )}
 
-            {(!contents['rsvp'] || contents['rsvp'].is_visible !== false) && (
+            {isVisible('rsvp') && (
                 <Link
                     to="/rsvp"
                     className="px-6 py-2 rounded-full font-medium text-sm uppercase tracking-wider transition-all"
@@ -178,19 +178,21 @@ export default function Navbar() {
                   </Link>
                 </motion.div>
               ))}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Link
-                  to="/rsvp"
-                  onClick={() => setIsOpen(false)}
-                  className="btn-primary mt-8"
+              {isVisible('rsvp') && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
                 >
-                  RSVP Now
-                </Link>
-              </motion.div>
+                  <Link
+                    to="/rsvp"
+                    onClick={() => setIsOpen(false)}
+                    className="btn-primary mt-8"
+                  >
+                    RSVP Now
+                  </Link>
+                </motion.div>
+              )}
             </div>
           </motion.div>
         )}
