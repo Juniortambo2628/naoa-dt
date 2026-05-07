@@ -130,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{guest}', [GuestController::class, 'destroy']);
         Route::post('/{guest}/whatsapp-invite', [GuestController::class, 'markWhatsappSent']);
         Route::post('/{guest}/reset-rsvp', [GuestController::class, 'resetRsvp']);
+        Route::post('/bulk-resend-confirmation', [GuestController::class, 'resendConfirmationBulk']);
     });
 
     // Invitation Management (admin)

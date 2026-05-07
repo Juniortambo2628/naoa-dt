@@ -367,9 +367,11 @@ export default function RSVP() {
                             >
                               <input
                                 type="radio"
-                                {...register('attending', { required: true })}
                                 value={option}
-                                onChange={(e) => setAttending(e.target.value)}
+                                {...register('attending', { 
+                                  required: true,
+                                  onChange: (e) => setAttending(e.target.value)
+                                })}
                                 className="sr-only peer"
                               />
                               <div 

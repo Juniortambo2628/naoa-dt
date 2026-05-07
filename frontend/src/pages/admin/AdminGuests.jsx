@@ -287,6 +287,28 @@ export default function AdminGuests() {
     }
   };
 
+  const handleBulkResendConfirmation = async () => {
+    const targets = guests.filter(g => selectedIds.includes(g.id) && g.email && g.rsvp_status !== 'pending');
+    if (targets.length === 0) {
+        toast.error("No selected guests with email addresses who have already RSVP'd.");
+        return;
+    }
+
+    if (!window.confirm(`Resend RSVP confirmation emails to ${targets.length} guests?`)) return;
+
+    try {
+        setLoading(true);
+        const res = await guestService.resendConfirmationBulk(targets.map(t => t.id));
+        toast.success(res.data.message || `Sent confirmation emails successfully!`);
+        setSelectedIds([]);
+    } catch (err) {
+        console.error("Bulk resend confirmation failed", err);
+        toast.error("Failed to resend confirmation emails.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
   const handleBulkUpdate = async (data) => {
     try {
       setLoading(true);
@@ -662,6 +684,13 @@ export default function AdminGuests() {
                                 disabled={isBulkExporting}
                             >
                                 <Mail className="w-3.5 h-3.5 text-blue-400" /> Email
+                            </button>
+                            <button 
+                                onClick={() => { handleBulkResendConfirmation(); setShowBulkMenu(null); }}
+                                className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
+                                disabled={loading}
+                            >
+                                <Send className="w-3.5 h-3.5 text-emerald-400" /> Resend Confirmation
                             </button>
                         </div>
                     )}

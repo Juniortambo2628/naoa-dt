@@ -517,4 +517,34 @@ class GuestController extends Controller
             'guest' => new GuestResource($guest->fresh(['invitation', 'plusOnes']))
         ]);
     }
+
+    /**
+     * Bulk resend confirmation emails (admin only)
+     */
+    public function resendConfirmationBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:guests,id',
+        ]);
+
+        $guests = Guest::whereIn('id', $request->ids)->get();
+        $count = 0;
+
+        foreach ($guests as $guest) {
+            if ($guest->email && $guest->rsvp_status !== 'pending') {
+                try {
+                    $isAttending = $guest->rsvp_status === 'confirmed';
+                    \Illuminate\Support\Facades\Mail::to($guest->email)->send(new \App\Mail\RSVPConfirmation($guest, $isAttending));
+                    $count++;
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Resend RSVP confirmation failed for ' . $guest->name . ': ' . $e->getMessage());
+                }
+            }
+        }
+
+        return response()->json([
+            'message' => "Confirmation emails sent to {$count} guests."
+        ]);
+    }
 }

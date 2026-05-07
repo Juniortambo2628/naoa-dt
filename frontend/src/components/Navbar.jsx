@@ -154,7 +154,7 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 md:hidden"
+            className="fixed inset-0 z-[90] md:hidden"
             style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}
           >
             <div className="flex flex-col items-center justify-center min-h-screen gap-8">

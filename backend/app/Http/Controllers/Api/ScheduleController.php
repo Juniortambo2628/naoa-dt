@@ -28,7 +28,7 @@ class ScheduleController extends Controller
     /**
      * Get schedule items for an event
      */
-    public function getSchedule(Event $event = null)
+    public function getSchedule(?Event $event = null)
     {
         $query = ScheduleItem::with('liveUpdates');
         

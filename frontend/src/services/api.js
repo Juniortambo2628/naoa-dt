@@ -162,6 +162,9 @@ export const guestService = {
 
   // Reset RSVP status (admin)
   resetRSVP: (id) => api.post(`/guests/${id}/reset-rsvp`),
+
+  // Bulk resend confirmation emails (admin)
+  resendConfirmationBulk: (ids) => api.post('/guests/bulk-resend-confirmation', { ids }),
 };
 
 // Event/Schedule services
