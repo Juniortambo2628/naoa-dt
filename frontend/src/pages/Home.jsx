@@ -147,27 +147,26 @@ function HeroSection({ content, loading }) {
         </motion.div>
         
         {/* Horizontal Names with Icons and Infinity Sign */}
-        <div className="flex flex-row flex-wrap items-center justify-center gap-2 md:gap-6 mb-8 md:mb-10 max-w-full">
-          {/* Female Icon + Dinah */}
-          <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 mb-8 md:mb-10">
+          {/* Dinah Group */}
+          <div className="flex items-center gap-3">
             <motion.div
               key={`female-icon-${animationKey}`}
-              initial={{ opacity: 0, x: -10, scale: 0.5 }}
-              animate={isInView ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: -10, scale: 0.5 }}
-              transition={{ duration: 0.8, delay: 0.5, type: "spring" }}
+              initial={{ opacity: 0, x: -5, scale: 0.8 }}
+              animate={isInView ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: -5, scale: 0.8 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
             >
-              <FemaleIcon size={40} className="w-10 h-10 md:w-24 md:h-24" animate={false} />
+              <FemaleIcon size={40} className="w-12 h-12 md:w-24 md:h-24" animate={false} />
             </motion.div>
             <motion.h1
               key={`dinah-${animationKey}`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-              transition={{ duration: 1, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl"
+              initial={{ opacity: 0, x: -10 }}
+              animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
+              transition={{ duration: 1, delay: 0.6 }}
+              className="text-5xl md:text-7xl lg:text-8xl"
               style={{ 
                 fontFamily: "'Great Vibes', cursive", 
                 color: '#A67B5B',
-                textShadow: '2px 2px 4px rgba(166, 123, 91, 0.1)',
                 lineHeight: 1.1,
               }}
             >
@@ -181,30 +180,29 @@ function HeroSection({ content, loading }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
             transition={{ delay: 1, duration: 0.5 }}
-            className="mx-1 md:mx-0"
+            className="hidden md:block"
           >
             <InfinitySign 
               size={50} 
-              className="w-12 h-6 md:w-[120px] md:h-[60px]"
+              className="md:w-[100px] md:h-[50px]"
               color="#A67B5B" 
-              strokeWidth={2.5}
+              strokeWidth={2}
               delay={1.2}
               duration={1.5}
             />
           </motion.div>
           
-          {/* Tze Ren + Male Icon */}
-          <div className="flex items-center gap-2 md:gap-3">
+          {/* Tze Ren Group */}
+          <div className="flex items-center gap-3">
             <motion.h1
               key={`tzeren-${animationKey}`}
-              initial={{ opacity: 0, x: 20 }}
-              animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-              transition={{ delay: 2.5, duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl"
+              initial={{ opacity: 0, x: 10 }}
+              animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 10 }}
+              transition={{ delay: 1.5, duration: 1 }}
+              className="text-5xl md:text-7xl lg:text-8xl"
               style={{ 
                 fontFamily: "'Great Vibes', cursive", 
                 color: '#A67B5B',
-                textShadow: '2px 2px 4px rgba(166, 123, 91, 0.1)',
                 lineHeight: 1.1,
               }}
             >
@@ -212,11 +210,11 @@ function HeroSection({ content, loading }) {
             </motion.h1>
             <motion.div
               key={`male-icon-${animationKey}`}
-              initial={{ opacity: 0, x: 10, scale: 0.5 }}
-              animate={isInView ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: 10, scale: 0.5 }}
-              transition={{ duration: 0.8, delay: 2.8, type: "spring" }}
+              initial={{ opacity: 0, x: 5, scale: 0.8 }}
+              animate={isInView ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: 5, scale: 0.8 }}
+              transition={{ duration: 0.8, delay: 1.8 }}
             >
-              <MaleIcon size={40} className="w-10 h-10 md:w-24 md:h-24" animate={false} />
+              <MaleIcon size={40} className="w-12 h-12 md:w-24 md:h-24" animate={false} />
             </motion.div>
           </div>
         </div>
