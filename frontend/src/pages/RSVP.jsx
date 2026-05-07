@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowRight, Users, UtensilsCrossed, MessageSquare, 
   CheckCircle2, Heart, Loader2, AlertCircle, HelpCircle, UserCheck 
@@ -55,6 +55,7 @@ export default function RSVP() {
   const { t, i18n } = useTranslation();
   const [content, setContent] = useState(null);
   const navigate = useNavigate();
+  const { code } = useParams();
 
   useEffect(() => {
     contentService.getAll().then(res => {
@@ -67,6 +68,12 @@ export default function RSVP() {
       setContent(data);
     }).catch(err => console.error(err));
   }, [navigate]);
+
+  useEffect(() => {
+    if (code) {
+      onCodeSubmit({ code });
+    }
+  }, [code]);
 
   const getTxt = (field, fallback) => getContent(content?.rsvp, field, i18n, fallback, t);
 

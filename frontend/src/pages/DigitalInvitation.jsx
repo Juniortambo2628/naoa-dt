@@ -160,7 +160,7 @@ export default function DigitalInvitation() {
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="w-full max-w-[625px] flex flex-col items-center"
+                    className="hidden lg:flex w-full max-w-[625px] flex-col items-center"
                 >
                     <div 
                         className="w-full relative shadow-2xl rounded-lg overflow-hidden border border-stone-200"
