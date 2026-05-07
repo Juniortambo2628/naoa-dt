@@ -13,6 +13,10 @@
 
     RewriteEngine On
 
+    # Proxy WebSocket requests to Reverb
+    RewriteCond %{HTTP:Upgrade} =websocket [NC]
+    RewriteRule ^app/(.*) http://127.0.0.1:8080/app/$1 [P,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
