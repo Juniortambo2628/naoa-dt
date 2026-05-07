@@ -79,7 +79,8 @@ body {
   background: linear-gradient(180deg, var(--color-ivory) 0%, var(--color-blush-light) 100%);
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100vw;
 }
 
 /* Typography */

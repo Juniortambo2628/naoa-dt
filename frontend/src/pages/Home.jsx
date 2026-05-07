@@ -103,7 +103,7 @@ function HeroSection({ content, loading }) {
   }, [isInView]);
 
   return (
-    <section ref={ref} className="relative min-h-[100dvh] flex items-center justify-center py-10 md:py-0" style={{ zIndex: 50 }}>
+    <section ref={ref} className="relative min-h-[100dvh] flex items-center justify-center py-10 md:py-0 overflow-hidden" style={{ zIndex: 50 }}>
       {/* Soft gradient background */}
       <div 
         className="absolute inset-0"
