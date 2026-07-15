@@ -2,9 +2,40 @@ import { useState, useEffect } from 'react';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Loader2, Save, Shield, ShieldCheck, X, Settings } from 'lucide-react';
+import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminModal from '../../components/admin/AdminModal';
+import { AdminInput } from '../../components/admin/AdminInput';
+import Spinner from '../../components/admin/Spinner';
+
+const settingSections = [
+  {
+    id: 'general',
+    label: 'General',
+    icon: Globe,
+    description: 'Control public-facing features and primary URL.',
+  },
+  {
+    id: 'security',
+    label: 'Security',
+    icon: Lock,
+    description: 'Protect your account with two-factor authentication.',
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: Mail,
+    description: 'Choose when and where you receive alerts.',
+  },
+  {
+    id: 'features',
+    label: 'Features',
+    icon: Music,
+    description: 'Toggle optional functionality like song request limits.',
+  },
+];
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
@@ -52,9 +83,7 @@ export default function AdminSettings() {
             admin_email_notifications: String(settings.admin_email_notifications),
             song_request_limit_enabled: String(settings.song_request_limit_enabled),
         };
-        
-        console.log('Saving settings payload:', payload);
-        
+
         await updateSettingsMutation.mutateAsync(payload);
         toast.success('System settings saved successfully');
     } catch (err) {
@@ -75,7 +104,6 @@ export default function AdminSettings() {
             }
         }
     } else {
-        // Start setup
         setVerifying2fa(true);
         try {
             const res = await twoFactorService.setup();
@@ -92,10 +120,7 @@ export default function AdminSettings() {
     e.preventDefault();
     setVerifying2fa(true);
     try {
-        const res = await twoFactorService.confirm(verificationCode);
-        // We can manually checkAuth or use the returned user if we had a setUser in this scope
-        // For now, checkAuth is enough but we'll ensure it works by passing the returned user if we had a way.
-        // Actually, checkAuth fetches from /user which we just updated.
+        await twoFactorService.confirm(verificationCode);
         await checkAuth();
         setShow2faModal(false);
         setVerificationCode('');
@@ -106,197 +131,234 @@ export default function AdminSettings() {
     setVerifying2fa(false);
   };
 
-  if (isLoading) return <div className="text-center py-8"><Loader2 className="animate-spin w-8 h-8 mx-auto text-[#A67B5B]" /></div>;
+  if (isLoading) return <div className="text-center py-8"><Spinner size="lg" /></div>;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <AdminPageHero
-        title="System Settings"
-        description="Manage system preferences, security, and RSVP visibility."
-        breadcrumb={[
-          { label: 'Dashboard', path: '/admin/dashboard' },
-          { label: 'Settings' },
-        ]}
-        icon={<Settings className="w-5 h-5 text-[#A67B5B]" />}
-      />
+    <AdminPageLayout
+      hero={
+        <AdminPageHero
+          title="System Settings"
+          description="Manage system preferences, security, and RSVP visibility."
+          breadcrumb="Settings"
+          icon={<Settings className="w-5 h-5 text-[#A67B5B]" />}
+        />
+      }
+    >
+      <div className="grid lg:grid-cols-3 gap-8 items-start">
+        {/* Left Column: Settings Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <form onSubmit={handleSave} className="space-y-6">
+            {/* General */}
+            <SettingsCard icon={Globe} title="General" description="Public URL and core site behavior.">
+              <div className="space-y-5">
+                <Toggle
+                  id="rsvpToggle"
+                  checked={settings.rsvp_enabled}
+                  onChange={(checked) => setSettings({ ...settings, rsvp_enabled: checked })}
+                  label="Enable Public RSVP Form"
+                  hint="Let guests submit or update their RSVP from the public site."
+                />
 
-      <form onSubmit={handleSave} className="space-y-6">
-        {/* General Settings */}
-        <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100 space-y-6">
-          <h2 className="text-lg font-medium text-stone-800 border-b pb-2">General</h2>
-          
-          <div className="grid gap-4">
+                <div className="pt-4 border-t border-stone-100">
+                  <AdminInput
+                    label="Public App URL"
+                    type="url"
+                    placeholder="https://dntwed.okjtech.co.ke"
+                    value={settings.public_url}
+                    onChange={(e) => setSettings({ ...settings, public_url: e.target.value })}
+                  />
+                  <p className="mt-1.5 text-xs text-stone-400">Used for absolute links in generated PDFs and emails.</p>
+                </div>
+              </div>
+            </SettingsCard>
 
-            <div className="flex items-center gap-3">
-              <input 
-                type="checkbox" 
-                id="rsvpToggle"
-                className="w-5 h-5 text-[#A67B5B] rounded focus:ring-[#A67B5B]"
-                checked={settings.rsvp_enabled}
-                onChange={(e) => setSettings({...settings, rsvp_enabled: e.target.checked})}
-              />
-              <label htmlFor="rsvpToggle" className="text-sm font-medium text-stone-700">Enable Public RSVP Form</label>
-            </div>
-
-            <div className="pt-4 border-t border-stone-50">
-              <label className="block text-sm font-medium text-stone-700 mb-1">Public App URL</label>
-              <input 
-                type="url" 
-                placeholder="https://dntwed.okjtech.co.ke"
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] outline-none"
-                value={settings.public_url}
-                onChange={(e) => setSettings({...settings, public_url: e.target.value})}
-              />
-              <p className="mt-1 text-[10px] text-stone-400 italic">Used for creating absolute links in generated PDFs (e.g. Save the Date links).</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Security / 2FA */}
-        <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100 space-y-6">
-          <div className="flex items-center justify-between border-b pb-2">
-            <h2 className="text-lg font-medium text-stone-800 flex items-center gap-2">
-                <Shield className="w-5 h-5 text-stone-400" />
-                Security
-            </h2>
-          </div>
-          
-          <div className="flex items-center justify-between p-4 rounded-xl bg-stone-50 border border-stone-100">
-              <div className="flex items-center gap-4">
+            {/* Security */}
+            <SettingsCard icon={Lock} title="Security" description="Account protection settings.">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-stone-50 border border-stone-100">
+                <div className="flex items-center gap-4">
                   <div className={`p-3 rounded-full ${is2faEnabled ? 'bg-green-100 text-green-600' : 'bg-stone-200 text-stone-500'}`}>
-                      {is2faEnabled ? <ShieldCheck className="w-6 h-6" /> : <Shield className="w-6 h-6" />}
+                    {is2faEnabled ? <ShieldCheck className="w-6 h-6" /> : <Shield className="w-6 h-6" />}
                   </div>
                   <div>
-                      <h3 className="font-medium text-stone-800">Two-Factor Authentication</h3>
-                      <p className="text-xs text-stone-500 mt-0.5">
-                          {is2faEnabled ? 'Your account is protected with 2FA.' : 'Add an extra layer of security to your account.'}
-                      </p>
+                    <h3 className="font-medium text-stone-800">Two-Factor Authentication</h3>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      {is2faEnabled ? 'Your account is protected with 2FA.' : 'Add an extra layer of security to your account.'}
+                    </p>
                   </div>
-              </div>
-              
-              <button 
-                  type="button" 
+                </div>
+
+                <button
+                  type="button"
                   onClick={handle2faToggle}
                   disabled={verifying2fa}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${is2faEnabled ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#A67B5B] text-white hover:bg-[#8C6A4D]'}`}
-              >
-                  {verifying2fa ? <Loader2 className="w-4 h-4 animate-spin" /> : (is2faEnabled ? 'Disable 2FA' : 'Enable 2FA')}
-              </button>
-          </div>
-        </div>
-
-        {/* Notifications */}
-        <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100 space-y-6">
-          <h2 className="text-lg font-medium text-stone-800 border-b pb-2">Notifications</h2>
-          
-          <div className="flex items-center gap-3">
-             <input 
-                type="checkbox" 
-                id="emailNotif"
-                className="w-5 h-5 text-[#A67B5B] rounded focus:ring-[#A67B5B]"
-                checked={settings.admin_email_notifications}
-                onChange={(e) => setSettings({...settings, admin_email_notifications: e.target.checked})}
-              />
-              <label htmlFor="emailNotif" className="text-sm font-medium text-stone-700">Email me when a guest RSVPs</label>
-          </div>
-
-          {settings.admin_email_notifications && (
-              <div className="ml-8 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-500">Notification Email Recipient</label>
-                  <input 
-                    type="email" 
-                    placeholder="your-email@example.com"
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] outline-none text-sm"
-                    value={settings.admin_email}
-                    onChange={(e) => setSettings({...settings, admin_email: e.target.value})}
-                  />
-                  <p className="text-[10px] text-stone-400 italic">This is the email address that will receive RSVP alerts.</p>
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${is2faEnabled ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#A67B5B] text-white hover:bg-[#8C6A4D]'}`}
+                >
+                  {verifying2fa ? <Spinner size="sm" /> : (is2faEnabled ? 'Disable 2FA' : 'Enable 2FA')}
+                </button>
               </div>
-          )}
+            </SettingsCard>
 
-          <div className="flex items-center gap-3 pt-4 border-t border-stone-50">
-             <input 
-                type="checkbox" 
+            {/* Notifications */}
+            <SettingsCard icon={Mail} title="Notifications" description="Email alerts and recipients.">
+              <div className="space-y-5">
+                <Toggle
+                  id="emailNotif"
+                  checked={settings.admin_email_notifications}
+                  onChange={(checked) => setSettings({ ...settings, admin_email_notifications: checked })}
+                  label="Email me when a guest RSVPs"
+                />
+
+                {settings.admin_email_notifications && (
+                  <div className="ml-8 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-500">Notification Email Recipient</label>
+                    <AdminInput
+                      type="email"
+                      placeholder="your-email@example.com"
+                      value={settings.admin_email}
+                      onChange={(e) => setSettings({ ...settings, admin_email: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+            </SettingsCard>
+
+            {/* Features */}
+            <SettingsCard icon={Music} title="Features" description="Optional guest-facing modules.">
+              <Toggle
                 id="songLimitToggle"
-                className="w-5 h-5 text-[#A67B5B] rounded focus:ring-[#A67B5B]"
                 checked={settings.song_request_limit_enabled}
-                onChange={(e) => setSettings({...settings, song_request_limit_enabled: e.target.checked})}
+                onChange={(checked) => setSettings({ ...settings, song_request_limit_enabled: checked })}
+                label="Limit Public Song Requests"
+                hint="Guests can submit up to 5 song requests per hour."
               />
-              <label htmlFor="songLimitToggle" className="text-sm font-medium text-stone-700">
-                Limit Public Song Requests (5 per hour)
-              </label>
-          </div>
-        </div>
+            </SettingsCard>
 
-
-        <div className="flex justify-end gap-4">
-            <button 
+            <div className="flex justify-end gap-4 pt-2">
+              <button
                 type="button"
                 className="btn-secondary"
                 disabled={updateSettingsMutation.isPending}
-            >
+              >
                 Cancel
-            </button>
-            <button 
+              </button>
+              <button
                 type="submit"
-                className="btn-primary min-w-[120px] flex items-center justify-center gap-2"
+                className="btn-primary min-w-[140px] flex items-center justify-center gap-2"
                 disabled={updateSettingsMutation.isPending}
-            >
-                {updateSettingsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              >
+                {updateSettingsMutation.isPending ? <Spinner size="sm" /> : <Save className="w-4 h-4" />}
                 {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
 
-      {/* Setup Modal */}
-      {show2faModal && twoFactorData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-              <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-                  <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
-                      <h3 className="text-lg font-semibold text-[#A67B5B]">Setup Two-Factor Authentication</h3>
-                      <button onClick={() => setShow2faModal(false)} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
-                          <X className="w-5 h-5" />
-                      </button>
+        {/* Right Column: Help / Summary */}
+        <div className="space-y-6 lg:sticky lg:top-24">
+          <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100">
+            <h3 className="text-lg font-medium text-stone-800 mb-4 flex items-center gap-2">
+              <Info className="w-5 h-5 text-[#A67B5B]" />
+              Setting Overview
+            </h3>
+            <div className="space-y-4">
+              {settingSections.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <div key={section.id} className="flex gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-stone-50 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4 text-stone-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">{section.label}</p>
+                      <p className="text-xs text-stone-500 leading-relaxed">{section.description}</p>
+                    </div>
                   </div>
-                  
-                  <form onSubmit={handleConfirm2fa} className="p-6 space-y-6">
-                      <div className="text-center space-y-4">
-                          <p className="text-sm text-stone-600">
-                              Scan this QR code with your authenticator app (e.g., Google Authenticator, Authy).
-                          </p>
-                          <div className="inline-block p-4 bg-white border border-stone-200 rounded-2xl shadow-inner" 
-                               dangerouslySetInnerHTML={{ __html: twoFactorData.qr_code_svg }} 
-                          />
-                          <div className="text-xs font-mono bg-stone-100 p-2 rounded select-all">
-                              {twoFactorData.secret}
-                          </div>
-                      </div>
-
-                      <div className="space-y-2">
-                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-500">Verification Code</label>
-                          <input 
-                              type="text"
-                              className="w-full p-3 border rounded-xl text-center text-2xl tracking-[0.5em] font-medium focus:ring-2 focus:ring-[#A67B5B]/20 outline-none"
-                              placeholder="000000"
-                              maxLength={6}
-                              value={verificationCode}
-                              onChange={(e) => setVerificationCode(e.target.value)}
-                              required
-                          />
-                      </div>
-
-                      <button 
-                          type="submit"
-                          disabled={verifying2fa}
-                          className="btn-primary w-full flex items-center justify-center gap-2"
-                      >
-                          {verifying2fa ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                          {verifying2fa ? 'Verifying...' : 'Complete Setup'}
-                      </button>
-                  </form>
-              </div>
+                );
+              })}
+            </div>
           </div>
-      )}
+
+          <div className="p-5 rounded-2xl bg-[#A67B5B]/5 border border-[#A67B5B]/10">
+            <p className="text-sm text-[#4A3F35] font-medium mb-1">Need help?</p>
+            <p className="text-xs text-[#8B7B6B]">
+              Changes are applied immediately after saving. Two-factor authentication cannot be recovered without backup codes.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <AdminModal isOpen={show2faModal && !!twoFactorData} onClose={() => setShow2faModal(false)} title="Setup Two-Factor Authentication" size="md">
+        <form onSubmit={handleConfirm2fa} className="space-y-6">
+          <div className="text-center space-y-4">
+            <p className="text-sm text-stone-600">
+              Scan this QR code with your authenticator app (e.g., Google Authenticator, Authy).
+            </p>
+            <div className="inline-block p-4 bg-white border border-stone-200 rounded-2xl shadow-inner"
+              dangerouslySetInnerHTML={{ __html: twoFactorData?.qr_code_svg }}
+            />
+            <div className="text-xs font-mono bg-stone-100 p-2 rounded select-all">
+              {twoFactorData?.secret}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-500">Verification Code</label>
+            <AdminInput
+              type="text"
+              placeholder="000000"
+              maxLength={6}
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              required
+              className="text-center text-2xl tracking-[0.5em] font-medium"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={verifying2fa}
+            className="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            {verifying2fa ? <Spinner size="sm" /> : <ShieldCheck className="w-4 h-4" />}
+            {verifying2fa ? 'Verifying...' : 'Complete Setup'}
+          </button>
+        </form>
+      </AdminModal>
+    </AdminPageLayout>
+  );
+}
+
+function SettingsCard({ icon: Icon, title, description, children }) {
+  return (
+    <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-[#A67B5B]" />
+        </div>
+        <div>
+          <h2 className="text-lg font-medium text-stone-800">{title}</h2>
+          {description && <p className="text-sm text-stone-500">{description}</p>}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ id, checked, onChange, label, hint }) {
+  return (
+    <div className="flex items-start gap-3">
+      <input
+        type="checkbox"
+        id={id}
+        className="w-5 h-5 mt-0.5 text-[#A67B5B] rounded focus:ring-[#A67B5B] border-stone-300"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <div>
+        <label htmlFor={id} className="text-sm font-medium text-stone-700 cursor-pointer">{label}</label>
+        {hint && <p className="text-xs text-stone-500 mt-0.5">{hint}</p>}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { guestService, tableService } from '../../services/api';
 import { Plus, Users, MoreVertical, Trash2, Check, X, Search, Eye, Armchair } from 'lucide-react';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminToolbar from '../../components/admin/AdminToolbar';
+import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminCard from '../../components/admin/AdminCard';
 import { useSearch } from '../../context/SearchContext';
 
 // Portal for Dropdowns/Modals
@@ -263,7 +267,7 @@ export default function SeatingChart() {
   const [guests, setGuests] = useState([]);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { searchQuery } = useSearch();
+  const { searchQuery, setSearchQuery } = useSearch();
   
   // New Table Form
   const [newTable, setNewTable] = useState({ name: '', capacity: 10, type: 'round' });
@@ -348,20 +352,29 @@ export default function SeatingChart() {
   const activeSelectedTable = selectedTable ? tables.find(t => t.id === selectedTable.id) : null;
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col gap-4">
-       <AdminPageHero
-          title="Seating Chart"
-          description="Organize your guests into tables and manage seating arrangements."
-          breadcrumb={[
-            { label: 'Dashboard', path: '/admin/dashboard' },
-            { label: 'Seating Chart' },
-          ]}
-          icon={<Armchair className="w-5 h-5 text-[#A67B5B]" />}
-       />
+    <>
+      <AdminPageLayout
+        hero={
+          <AdminPageHero
+            title="Seating Chart"
+            description="Organize your guests into tables and manage seating arrangements."
+            breadcrumb="Seating Chart"
+            icon={<Armchair className="w-5 h-5 text-[#A67B5B]" />}
+          />
+        }
+        toolbar={
+          <AdminToolbar
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search unassigned guests..."
+          />
+        }
+      >
+        <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
 
        <div className="flex-1 flex gap-6 overflow-hidden">
-           {/* Sidebar: Unassigned Guests */}
-           <div className="w-80 flex flex-col bg-white rounded-2xl shadow-sm border border-stone-100 h-full relative z-20">
+       {/* Sidebar: Unassigned Guests */}
+       <AdminCard padding={false} className="w-80 flex flex-col h-full relative z-20">
               <div className="p-4 border-b border-stone-100">
                 <h2 className="font-semibold text-lg text-stone-800">Unassigned Guests</h2>
                 <p className="text-xs text-stone-500">{unassignedGuests.length} guests remaining</p>
@@ -381,7 +394,7 @@ export default function SeatingChart() {
                   </div>
               )}
           </div>
-       </div>
+       </AdminCard>
 
        {/* Main Area: Table Grid */}
        <div className="flex-1 bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-200 relative overflow-hidden flex flex-col">
@@ -459,6 +472,19 @@ export default function SeatingChart() {
             )}
        </AnimatePresence>
        </div>
-    </div>
+      </div>
+      </AdminPageLayout>
+      <AdminFloatingToolbar
+        actions={[
+          {
+            id: 'add-table',
+            label: 'Add Table',
+            icon: Plus,
+            variant: 'primary',
+            onClick: () => setIsAdding(true),
+          },
+        ]}
+      />
+    </>
   );
 }

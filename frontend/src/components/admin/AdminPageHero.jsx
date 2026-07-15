@@ -6,18 +6,21 @@ import { ChevronRight } from 'lucide-react';
  *
  * @param {string}   title        - Page title (required)
  * @param {string}   [description] - Optional subtitle / summary text
- * @param {Array}    [breadcrumb]  - Array of { label, path? } objects. Last item has no path.
+ * @param {string|Array} [breadcrumb] - Either just the current page label (string), or full array of { label, path? } objects. Dashboard entry is auto-prepended.
  * @param {ReactNode} [actions]    - Optional action buttons rendered on the right
  * @param {ReactNode} [icon]       - Optional icon element rendered before the title
  */
-export default function AdminPageHero({ title, description, breadcrumb, actions, icon }) {
+export default function AdminPageHero({ title, description, breadcrumb, icon }) {
+  const crumbs = Array.isArray(breadcrumb)
+    ? breadcrumb
+    : [{ label: 'Dashboard', path: '/admin/dashboard' }, { label: breadcrumb || title }];
   return (
     <div className="my-8">
       {/* Breadcrumb */}
-      {breadcrumb && breadcrumb.length > 0 && (
+      {crumbs && crumbs.length > 0 && (
         <nav className="flex items-center gap-1.5 text-sm mb-3">
-          {breadcrumb.map((crumb, idx) => {
-            const isLast = idx === breadcrumb.length - 1;
+          {crumbs.map((crumb, idx) => {
+            const isLast = idx === crumbs.length - 1;
             return (
               <span key={idx} className="flex items-center gap-1.5">
                 {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-stone-300" />}
@@ -65,9 +68,6 @@ export default function AdminPageHero({ title, description, breadcrumb, actions,
           </div>
         </div>
 
-        {actions && (
-          <div className="flex items-center gap-2 flex-wrap">{actions}</div>
-        )}
       </div>
     </div>
   );

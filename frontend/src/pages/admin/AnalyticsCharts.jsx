@@ -1,83 +1,50 @@
-import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp } from 'lucide-react';
-import { Users, UserCheck, Clock, Utensils, BarChart2 } from 'lucide-react';
-import api from '../../services/api';
+import { Users, UserCheck, Clock, BarChart2 } from 'lucide-react';
+import { useAnalytics } from '../../hooks/useApiHooks';
+import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
-import StatCard from '../../components/admin/StatCard';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
+import EmptyState from '../../components/admin/EmptyState';
 
 const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 
 export default function AnalyticsCharts() {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { data, isLoading } = useAnalytics();
 
-    useEffect(() => {
-        fetchAnalytics();
-    }, []);
-
-    const fetchAnalytics = async () => {
-        try {
-            const res = await api.get('/analytics');
-            setData(res.data);
-        } catch (err) {
-            console.error('Failed to load analytics', err);
-        }
-        setLoading(false);
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-pulse text-stone-400">Loading analytics...</div>
-            </div>
-        );
+    if (isLoading) {
+        return <EmptyState loading />;
     }
 
     if (!data) {
-        return <div className="text-center py-8 text-stone-500">No analytics data available</div>;
+        return <EmptyState icon={BarChart2} message="No analytics data available" />;
     }
 
     const { rsvpStatus, groups, summary, timeline } = data;
 
-    return (
-        <div className="space-y-8">
-            <AdminPageHero
-                title="Analytics & Reports"
-                description="Overview of RSVP responses, guest statistics, and more."
-                breadcrumb={[
-                    { label: 'Dashboard', path: '/admin/dashboard' },
-                    { label: 'Analytics' },
-                ]}
-                icon={<BarChart2 className="w-5 h-5 text-[#A67B5B]" />}
-            />
+    const statCards = [
+        { label: 'Total Invited', value: summary.totalGuests, icon: Users, color: '#A67B5B' },
+        { label: 'Confirmed', value: summary.totalConfirmed, icon: UserCheck, color: '#8B9A7D' },
+        { label: 'Pending', value: summary.pendingResponses, icon: Clock, color: '#D4A59A' },
+    ];
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard 
-                    icon={<Users className="w-6 h-6" />}
-                    label="Total Invited"
-                    value={summary.totalGuests}
-                    color="#A67B5B"
+    return (
+        <AdminPageLayout
+            hero={
+                <AdminPageHero
+                    title="Analytics & Reports"
+                    description="Overview of RSVP responses, guest statistics, and more."
+                    breadcrumb="Analytics"
+                    icon={<BarChart2 className="w-5 h-5 text-[#A67B5B]" />}
                 />
-                <StatCard 
-                    icon={<UserCheck className="w-6 h-6" />}
-                    label="Confirmed"
-                    value={summary.totalConfirmed}
-                    color="#8B9A7D"
-                />
-                <StatCard 
-                    icon={<Clock className="w-6 h-6" />}
-                    label="Pending"
-                    value={summary.pendingResponses}
-                    color="#D4A59A"
-                />
-            </div>
+            }
+            summary={<AdminSummaryCards cards={statCards} columns={3} />}
+        >
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* RSVP Status Pie Chart */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+                <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-4">RSVP Status</h3>
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
@@ -97,10 +64,10 @@ export default function AnalyticsCharts() {
                             <Tooltip />
                         </PieChart>
                     </ResponsiveContainer>
-                </div>
+                </AdminCard>
 
                 {/* Group Distribution */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+                <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-4">Guest Groups</h3>
                     {groups.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
@@ -112,14 +79,14 @@ export default function AnalyticsCharts() {
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex items-center justify-center h-[250px] text-stone-400">
+                        <div className="flex items-center justify-center h-[250px] text-stone-400 text-sm">
                             No guest groups found
                         </div>
                     )}
-                </div>
+                </AdminCard>
 
                 {/* RSVP Timeline Graph */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 lg:col-span-2">
+                <AdminCard className="lg:col-span-2">
                     <h3 className="text-lg font-medium text-stone-800 mb-6">RSVP Cumulative Timeline</h3>
                     {timeline && timeline.length > 0 ? (
                         <ResponsiveContainer width="100%" height={300}>
@@ -153,9 +120,9 @@ export default function AnalyticsCharts() {
                             Not enough data for timeline
                         </div>
                     )}
-                </div>
+                </AdminCard>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }
 

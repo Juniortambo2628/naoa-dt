@@ -27,8 +27,8 @@ const gpuAccelStyle = {
 export const PulsingHeartLogo = memo(function PulsingHeartLogo({ size = 80, className = '' }) {
   return (
     <motion.img
-      src={`${ILLUSTRATIONS_PATH}/loader-heart-pulse.png`}
-      alt="Heart"
+      src="/Naoa-logo.png"
+      alt="Logo"
       width={size}
       height={size}
       loading="eager"
@@ -70,12 +70,12 @@ export const LoadingHeart = memo(function LoadingHeart({ size = 100, className =
         }}
       />
       <motion.img
-        src={`${ILLUSTRATIONS_PATH}/loader-heart-pulse.png`}
+        src="/Naoa-logo.png"
         alt="Loading..."
         width={size}
         height={size}
         loading="eager"
-        className="relative z-10"
+        className="relative z-10 rounded-xl"
         animate={{ scale: [1, 1.15, 1] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         style={{ ...gpuAccelStyle, objectFit: 'contain' }}

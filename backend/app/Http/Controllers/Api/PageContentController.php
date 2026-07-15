@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PageContent;
+use App\Traits\ApiResponse;
+use App\Traits\NormalizesUrls;
 use Illuminate\Http\Request;
 
 class PageContentController extends Controller
 {
+    use ApiResponse, NormalizesUrls;
     public function index()
     {
         $query = PageContent::query();
@@ -25,7 +28,7 @@ class PageContentController extends Controller
             return $item;
         });
 
-        return response()->json($items);
+        return $this->successResponse($items);
     }
 
     public function show($key)
@@ -39,7 +42,7 @@ class PageContentController extends Controller
         $item = $query->first();
 
         if (!$item) {
-            return response()->json([
+            return $this->successResponse([
                 'section_key' => $key,
                 'content' => (object)[],
                 'is_visible' => true,
@@ -48,33 +51,7 @@ class PageContentController extends Controller
 
         $item->content = $this->normalizeUrls($item->content);
         
-        return response()->json($item);
-    }
-
-    private function normalizeUrls($data)
-    {
-        if (is_string($data)) {
-            if (str_contains($data, 'localhost') || str_contains($data, '127.0.0.1')) {
-                 $parsed = parse_url($data);
-                 if (isset($parsed['path'])) {
-                     $path = $parsed['path'];
-                     $prefix = '/wed-dt/backend/public';
-                     if (str_starts_with($path, $prefix)) {
-                         $path = substr($path, strlen($prefix));
-                     }
-                     return $path;
-                 }
-            }
-            return $data;
-        }
-
-        if (is_array($data)) {
-            foreach ($data as $key => $value) {
-                $data[$key] = $this->normalizeUrls($value);
-            }
-        }
-
-        return $data;
+        return $this->successResponse($item);
     }
 
     public function update(Request $request, $key)
@@ -99,6 +76,6 @@ class PageContentController extends Controller
             \Log::warning('Broadcast failed for PageContentUpdated: ' . $e->getMessage());
         }
 
-        return response()->json($content);
+        return $this->successResponse($content);
     }
 }

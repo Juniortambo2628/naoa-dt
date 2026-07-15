@@ -3,38 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
-use Illuminate\Http\Request;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 
 class NotificationController extends Controller
 {
-    /**
-     * Get recent notifications
-     */
+    use ApiResponse;
+
     public function index()
     {
-        $notifications = Notification::latest()
-            ->limit(10)
-            ->get()
-            ->map(function ($n) {
-                return [
-                    'id' => $n->id,
-                    'type' => $n->type,
-                    'data' => $n->data,
-                    'read_at' => $n->read_at,
-                    'created_at' => $n->created_at->diffForHumans(),
-                ];
-            });
+        $notifications = Notification::latest()->limit(10)->get();
 
-        return response()->json($notifications);
+        return $this->successResponse(NotificationResource::collection($notifications));
     }
 
-    /**
-     * Mark all notifications as read
-     */
-    public function markAllRead()
+    public function markAllRead(): JsonResponse
     {
         Notification::whereNull('read_at')->update(['read_at' => now()]);
-        return response()->json(['success' => true]);
+
+        return $this->successResponse(null, 'All notifications marked as read');
     }
 }

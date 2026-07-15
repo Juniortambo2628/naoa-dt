@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 class Guest extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -36,17 +38,40 @@ class Guest extends Model
         'checked_in_at' => 'datetime',
     ];
 
-    /**
-     * Get the primary guest this plus-one belongs to.
-     */
+    // --- Query Scopes ---
+
+    public function scopeConfirmed(Builder $query): Builder
+    {
+        return $query->where('rsvp_status', 'confirmed');
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('rsvp_status', 'pending');
+    }
+
+    public function scopeDeclined(Builder $query): Builder
+    {
+        return $query->where('rsvp_status', 'declined');
+    }
+
+    public function scopePrimary(Builder $query): Builder
+    {
+        return $query->whereNull('parent_guest_id');
+    }
+
+    public function scopeCheckedIn(Builder $query): Builder
+    {
+        return $query->whereNotNull('checked_in_at');
+    }
+
+    // --- Relationships ---
+
     public function parentGuest(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Guest::class, 'parent_guest_id');
     }
 
-    /**
-     * Get the plus-ones for this guest.
-     */
     public function plusOnes(): HasMany
     {
         return $this->hasMany(Guest::class, 'parent_guest_id');
@@ -56,6 +81,39 @@ class Guest extends Model
     {
         return $this->belongsTo(Table::class);
     }
+
+    public function invitation(): HasOne
+    {
+        return $this->hasOne(Invitation::class);
+    }
+
+    public function giftClaims(): HasMany
+    {
+        return $this->hasMany(GiftClaim::class);
+    }
+
+    // --- Helper Methods ---
+
+    public function hasResponded(): bool
+    {
+        return $this->rsvp_status !== 'pending';
+    }
+
+    public function isAttending(): bool
+    {
+        return $this->rsvp_status === 'confirmed';
+    }
+
+    public function createPendingInvitation(): Invitation
+    {
+        return $this->invitation ?? Invitation::create([
+            'guest_id' => $this->id,
+            'status'   => 'pending',
+            'token'    => Str::random(32),
+        ]);
+    }
+
+    // --- Boot ---
 
     protected static function boot()
     {
@@ -75,26 +133,5 @@ class Guest extends Model
         } while (self::where('unique_code', $code)->exists());
         
         return $code;
-    }
-
-
-    public function invitation(): HasOne
-    {
-        return $this->hasOne(Invitation::class);
-    }
-
-    public function giftClaims(): HasMany
-    {
-        return $this->hasMany(GiftClaim::class);
-    }
-
-    public function hasResponded(): bool
-    {
-        return $this->rsvp_status !== 'pending';
-    }
-
-    public function isAttending(): bool
-    {
-        return $this->rsvp_status === 'confirmed';
     }
 }

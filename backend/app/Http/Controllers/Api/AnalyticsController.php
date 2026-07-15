@@ -13,42 +13,55 @@ class AnalyticsController extends Controller
      */
     public function getStats()
     {
-        $guests = Guest::all();
-        
-        // RSVP Status breakdown
+        // RSVP Status breakdown via DB aggregation
+        $rsvpCounts = Guest::selectRaw('rsvp_status, COUNT(*) as count')
+            ->groupBy('rsvp_status')
+            ->pluck('count', 'rsvp_status');
+
         $rsvpStatus = [
-            ['name' => 'Confirmed', 'value' => $guests->where('rsvp_status', 'confirmed')->count(), 'color' => '#22c55e'],
-            ['name' => 'Pending', 'value' => $guests->where('rsvp_status', 'pending')->count(), 'color' => '#f59e0b'],
-            ['name' => 'Declined', 'value' => $guests->where('rsvp_status', 'declined')->count(), 'color' => '#ef4444'],
+            ['name' => 'Confirmed', 'value' => $rsvpCounts->get('confirmed', 0), 'color' => '#22c55e'],
+            ['name' => 'Pending', 'value' => $rsvpCounts->get('pending', 0), 'color' => '#f59e0b'],
+            ['name' => 'Declined', 'value' => $rsvpCounts->get('declined', 0), 'color' => '#ef4444'],
         ];
-        
-        
-        // Group breakdown
-        $groups = $guests->groupBy('group')->map(fn($g, $name) => [
-            'name' => $name ?: 'Unassigned',
-            'value' => $g->count()
-        ])->values()->toArray();
-        
-        // Summary stats
-        $summary = [
-            'totalGuests' => $guests->count(),
-            'totalConfirmed' => $guests->where('rsvp_status', 'confirmed')->count(),
-            'totalPlusOnes' => $guests->whereNotNull('parent_guest_id')->count(),
-            'expectedAttendees' => $guests->where('rsvp_status', 'confirmed')->count(),
-            'pendingResponses' => $guests->where('rsvp_status', 'pending')->count(),
-            'checkedIn' => $guests->whereNotNull('checked_in_at')->count(),
-        ];
-        
-        // Timeline of RSVPs (based on updated_at for confirmed guests)
-        // Groups by date (Y-m-d) and counts them to show a line graph
-        $timeline = $guests->where('rsvp_status', 'confirmed')
-            ->groupBy(fn($g) => $g->updated_at->format('Y-m-d'))
-            ->map(fn($g, $date) => [
-                'date' => $date,
-                'count' => $g->count()
+
+        // Group breakdown via DB aggregation
+        $groups = Guest::selectRaw('`group` as grp, COUNT(*) as count')
+            ->groupBy('grp')
+            ->pluck('count', 'grp')
+            ->map(fn($count, $name) => [
+                'name' => $name ?: 'Unassigned',
+                'value' => $count,
             ])
             ->values()
-            ->sortBy('date')
+            ->toArray();
+
+        // Summary stats via DB counts
+        $totalGuests = Guest::count();
+        $totalConfirmed = $rsvpCounts->get('confirmed', 0);
+        $pendingResponses = $rsvpCounts->get('pending', 0);
+        $totalPlusOnes = Guest::whereNotNull('parent_guest_id')->count();
+        $checkedIn = Guest::whereNotNull('checked_in_at')->count();
+
+        $summary = [
+            'totalGuests' => $totalGuests,
+            'totalConfirmed' => $totalConfirmed,
+            'totalPlusOnes' => $totalPlusOnes,
+            'expectedAttendees' => $totalConfirmed,
+            'pendingResponses' => $pendingResponses,
+            'checkedIn' => $checkedIn,
+        ];
+
+        // Timeline of RSVPs via DB aggregation
+        $timeline = Guest::where('rsvp_status', 'confirmed')
+            ->selectRaw('DATE(updated_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->pluck('count', 'date')
+            ->map(fn($count, $date) => [
+                'date' => $date,
+                'count' => $count,
+            ])
+            ->values()
             ->toArray();
 
         // Cumulative sum for the timeline
@@ -62,7 +75,7 @@ class AnalyticsController extends Controller
             'rsvpStatus' => $rsvpStatus,
             'groups' => $groups,
             'summary' => $summary,
-            'timeline' => array_values($timeline)
+            'timeline' => array_values($timeline),
         ]);
     }
 }

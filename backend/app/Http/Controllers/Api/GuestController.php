@@ -5,15 +5,43 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
 use App\Models\Invitation;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\GuestsImport;
+use App\Services\GuestImportService;
 use App\Services\GuestService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Resources\GuestResource;
 
 class GuestController extends Controller
 {
+    use ApiResponse;
+
+    public function __construct(
+        private readonly GuestImportService $importService
+    ) {}
+    /**
+     * Get shared validation rules for guest create/update.
+     */
+    private function guestValidationRules(?Guest $guest = null): array
+    {
+        $uniqueEmail = $guest
+            ? 'nullable|email|unique:guests,email,' . $guest->id
+            : 'nullable|email|unique:guests,email';
+
+        return [
+            'name' => 'required|string|max:255',
+            'email' => $uniqueEmail,
+            'phone' => 'nullable|string|max:20',
+            'group' => 'nullable|string|max:50',
+            'plus_ones_allowed' => 'integer|min:0|max:10',
+            'invitation_via' => 'nullable|string|in:whatsapp,email',
+            'plus_ones_data' => 'nullable|array',
+            'plus_ones_data.*.id' => 'nullable|integer',
+            'plus_ones_data.*.name' => 'required_with:plus_ones_data|string|max:255',
+            'plus_ones_data.*.email' => 'nullable|email',
+        ];
+    }
+
     /**
      * Get all guests (admin only)
      */
@@ -61,7 +89,7 @@ class GuestController extends Controller
             ->first();
 
         if (!$guest) {
-            return response()->json(['message' => 'Guest not found'], 404);
+            return $this->notFoundResponse('Guest not found');
         }
 
         // Update invitation opened status
@@ -74,7 +102,7 @@ class GuestController extends Controller
             ]);
         }
 
-        return response()->json($guest);
+        return $this->successResponse($guest);
     }
 
     /**
@@ -90,19 +118,18 @@ class GuestController extends Controller
         $guest = Guest::where('unique_code', strtoupper($code))->first();
 
         if (!$guest) {
-            return response()->json(['message' => 'Guest not found'], 404);
+            return $this->notFoundResponse('Guest not found');
         }
 
         $result = $guestService->submitRsvp($guest, $request->all());
 
         if (!$result['success']) {
-            return response()->json(['message' => $result['message'], 'error' => $result['error']], 500);
+            return $this->errorResponse($result['message'], 500, ['error' => $result['error']]);
         }
 
-        return response()->json([
-            'message' => $result['message'],
+        return $this->successResponse([
             'guest' => new GuestResource($guest->fresh()),
-        ]);
+        ], $result['message']);
     }
 
     /**
@@ -118,10 +145,9 @@ class GuestController extends Controller
             ]
         );
 
-        return response()->json([
-            'message' => 'Invitation marked as sent via WhatsApp',
+        return $this->successResponse([
             'invitation' => $invitation
-        ]);
+        ], 'Invitation marked as sent via WhatsApp');
     }
 
     /**
@@ -129,17 +155,7 @@ class GuestController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:guests,email',
-            'phone' => 'nullable|string|max:20',
-            'group' => 'nullable|string|max:50',
-            'plus_ones_allowed' => 'integer|min:0|max:10',
-            'invitation_via' => 'nullable|string|in:whatsapp,email',
-            'plus_ones_data' => 'nullable|array',
-            'plus_ones_data.*.name' => 'required_with:plus_ones_data|string|max:255',
-            'plus_ones_data.*.email' => 'nullable|email',
-        ]);
+        $request->validate($this->guestValidationRules());
 
         $guest = Guest::create($request->only([
             'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via'
@@ -172,7 +188,7 @@ class GuestController extends Controller
             }
         }
 
-        return response()->json($guest->load(['invitation', 'plusOnes.invitation']), 201);
+        return $this->createdResponse($guest->load(['invitation', 'plusOnes.invitation']));
     }
 
     /**
@@ -180,18 +196,7 @@ class GuestController extends Controller
      */
     public function update(Request $request, Guest $guest)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:guests,email,' . $guest->id,
-            'phone' => 'nullable|string|max:20',
-            'group' => 'nullable|string|max:50',
-            'plus_ones_allowed' => 'integer|min:0|max:10',
-            'invitation_via' => 'nullable|string|in:whatsapp,email',
-            'plus_ones_data' => 'nullable|array',
-            'plus_ones_data.*.id' => 'nullable|integer',
-            'plus_ones_data.*.name' => 'required_with:plus_ones_data|string|max:255',
-            'plus_ones_data.*.email' => 'nullable|email',
-        ]);
+        $request->validate($this->guestValidationRules($guest));
 
         $guest->update($request->only([
             'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via'
@@ -237,7 +242,7 @@ class GuestController extends Controller
             $guest->plusOnes()->whereNotIn('id', $existingIds)->delete();
         }
 
-        return response()->json($guest->load(['invitation', 'plusOnes.invitation']));
+        return $this->successResponse($guest->load(['invitation', 'plusOnes.invitation']));
     }
 
     /**
@@ -246,7 +251,7 @@ class GuestController extends Controller
     public function destroy(Guest $guest)
     {
         $guest->delete();
-        return response()->json(['message' => 'Guest deleted successfully']);
+        return $this->deletedResponse('Guest deleted successfully');
     }
 
     /**
@@ -275,7 +280,7 @@ class GuestController extends Controller
                 ];
             });
 
-        return response()->json([
+        return $this->successResponse([
             'total' => $total,
             'attending' => $attending,
             'declined' => $declined,
@@ -283,13 +288,6 @@ class GuestController extends Controller
             'total_guests' => $totalGuests,
             'recent' => $recent,
         ]);
-    }
-    /**
-     * Legacy Export (Deprecated) - Replaced by ExportController@exportGuestsExcel
-     */
-    public function export()
-    {
-        return redirect()->action([ExportController::class, 'exportGuestsExcel']);
     }
 
     /**
@@ -302,12 +300,12 @@ class GuestController extends Controller
         ]);
 
         try {
-            Excel::import(new GuestsImport, $request->file('file'));
-            return response()->json(['message' => 'Guests imported successfully'], 200);
+            $this->importService->import($request->file('file'));
+            return $this->successResponse(null, 'Guests imported successfully');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Guest Import Error: ' . $e->getMessage());
-            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
-            return response()->json(['message' => 'Failed to import guests', 'error' => $e->getMessage()], 500);
+            Log::error('Guest Import Error: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return $this->errorResponse('Failed to import guests', 500, ['error' => $e->getMessage()]);
         }
     }
 
@@ -321,76 +319,9 @@ class GuestController extends Controller
         ]);
 
         try {
-            $data = Excel::toArray(new GuestsImport, $request->file('file'));
-            $rows = $data[0] ?? [];
-
-            $conflicts = [];
-            $valid = [];
-            $skippedCount = 0;
-
-            foreach ($rows as $row) {
-                if (empty($row['names']) && empty($row['name'])) {
-                    $skippedCount++;
-                    continue;
-                }
-
-                $name = trim($row['names'] ?? $row['name'] ?? '');
-                $email = !empty($row['email']) ? trim($row['email']) : null;
-                $phone = !empty($row['telphone_number']) ? trim($row['telphone_number']) : null;
-                $method = !empty($row['save_the_date_sent_via_whatsappemail']) ? trim($row['save_the_date_sent_via_whatsappemail']) : null;
-                $invitation_via = !empty($row['invitation_via']) ? trim($row['invitation_via']) : null;
-                $group = !empty($row['group']) ? trim($row['group']) : 'Invited';
-                $plusOnes = max(0, ((int)($row['number_of_invites'] ?? 1)) - 1);
-
-                $existing = null;
-                if ($email) {
-                    $existing = Guest::where('email', $email)->first();
-                }
-                if (!$existing && $name) {
-                    $existing = Guest::where('name', $name)->first();
-                }
-
-                $newGuestData = [
-                    'name' => $name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'plus_ones_allowed' => $plusOnes,
-                    'save_the_date_method' => $method,
-                    'invitation_via' => $invitation_via,
-                    'group' => $group,
-                    'rsvp_status' => 'pending',
-                ];
-
-                if ($existing) {
-                    // Check if data is actually different
-                    $isDifferent = (
-                        $existing->name != $name || 
-                        $existing->email != $email || 
-                        $existing->phone != $phone || 
-                        $existing->plus_ones_allowed != $plusOnes ||
-                        $existing->save_the_date_method != $method
-                    );
-
-                    if ($isDifferent) {
-                        $conflicts[] = [
-                            'existing' => $existing,
-                            'new' => $newGuestData
-                        ];
-                    } else {
-                        $skippedCount++;
-                    }
-                } else {
-                    $valid[] = $newGuestData;
-                }
-            }
-
-            return response()->json([
-                'conflicts' => $conflicts,
-                'valid' => $valid,
-                'skipped_count' => $skippedCount
-            ]);
+            return $this->successResponse($this->importService->validateImport($request->file('file')));
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Validation failed', 'error' => $e->getMessage()], 500);
+            return $this->errorResponse('Validation failed', 500, ['error' => $e->getMessage()]);
         }
     }
 
@@ -404,65 +335,15 @@ class GuestController extends Controller
             'conflicts' => 'array',
         ]);
 
-        $results = ['created' => 0, 'updated' => 0, 'skipped' => 0];
-
         try {
-            DB::transaction(function () use ($request, &$results) {
-                // 1. Process new valid guests
-                if ($request->has('valid')) {
-                    foreach ($request->valid as $data) {
-                        $plusOnesCount = (int)($data['plus_ones_allowed'] ?? 0);
-                        
-                        // Create primary guest
-                        $guest = Guest::create($data + ['plus_ones_allowed' => 0, 'rsvp_status' => 'pending']);
-                        Invitation::create(['guest_id' => $guest->id, 'status' => 'pending']);
-                        $results['created']++;
+            $results = $this->importService->confirmImport(
+                $request->input('valid', []),
+                $request->input('conflicts', [])
+            );
 
-                        // Create dedicated plus-one records
-                        for ($i = 1; $i <= $plusOnesCount; $i++) {
-                            $po = Guest::create([
-                                'name' => $guest->name . " (Plus One " . $i . ")",
-                                'group' => $guest->group,
-                                'parent_guest_id' => $guest->id,
-                                'plus_ones_allowed' => 0,
-                                'rsvp_status' => 'pending',
-                            ]);
-                            Invitation::create(['guest_id' => $po->id, 'status' => 'pending']);
-                            $results['created']++;
-                        }
-                    }
-                }
-
-                // 2. Process conflicts based on user resolution
-                if ($request->has('conflicts')) {
-                    foreach ($request->conflicts as $conflict) {
-                        $resolution = $conflict['resolution'] ?? 'skip';
-                        $existingId = $conflict['existing']['id'] ?? null;
-                        
-                        if (!$existingId) continue;
-
-                        $guest = Guest::find($existingId);
-                        if (!$guest) continue;
-
-                        if ($resolution === 'overwrite') {
-                            $guest->update($conflict['new']);
-                            $results['updated']++;
-                        } elseif ($resolution === 'merge') {
-                            $guest->update(array_filter($conflict['new']));
-                            $results['updated']++;
-                        } else {
-                            $results['skipped']++;
-                        }
-                    }
-                }
-            });
-
-            return response()->json([
-                'message' => 'Import completed',
-                'results' => $results
-            ]);
+            return $this->successResponse($results, 'Import completed');
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Import failed', 'error' => $e->getMessage()], 500);
+            return $this->errorResponse('Import failed', 500, ['error' => $e->getMessage()]);
         }
     }
 
@@ -485,14 +366,12 @@ class GuestController extends Controller
         $updateData = array_intersect_key($data, array_flip($allowedFields));
 
         if (empty($updateData)) {
-            return response()->json(['message' => 'No valid fields provided for update'], 400);
+            return $this->errorResponse('No valid fields provided for update', 400);
         }
 
         Guest::whereIn('id', $ids)->update($updateData);
 
-        return response()->json([
-            'message' => count($ids) . ' guests updated successfully',
-        ]);
+        return $this->successResponse(null, count($ids) . ' guests updated successfully');
     }
 
     /**
@@ -512,10 +391,9 @@ class GuestController extends Controller
             'dietary_notes' => null,
         ]);
 
-        return response()->json([
-            'message' => 'RSVP reset successfully for ' . $guest->name . ' and their plus ones.',
+        return $this->successResponse([
             'guest' => new GuestResource($guest->fresh(['invitation', 'plusOnes']))
-        ]);
+        ], 'RSVP reset successfully for ' . $guest->name . ' and their plus ones.');
     }
 
     /**
@@ -543,8 +421,6 @@ class GuestController extends Controller
             }
         }
 
-        return response()->json([
-            'message' => "Confirmation emails sent to {$count} guests."
-        ]);
+        return $this->successResponse(null, "Confirmation emails sent to {$count} guests.");
     }
 }

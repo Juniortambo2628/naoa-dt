@@ -8,11 +8,13 @@ use App\Models\ScheduleItem;
 use App\Models\LiveUpdate;
 use App\Models\Guest;
 use App\Notifications\ScheduleChangedNotification;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 
 class ScheduleController extends Controller
 {
+    use ApiResponse;
     /**
      * Get the wedding schedule
      */
@@ -22,7 +24,7 @@ class ScheduleController extends Controller
             ->orderBy('event_date')
             ->get();
 
-        return response()->json($events);
+        return $this->successResponse($events);
     }
 
     /**
@@ -31,12 +33,12 @@ class ScheduleController extends Controller
     public function getSchedule(?Event $event = null)
     {
         $query = ScheduleItem::with('liveUpdates');
-        
+
         if ($event) {
             $query->where('event_id', $event->id);
         }
-        
-        return response()->json($query->orderBy('order')->get());
+
+        return $this->successResponse($query->orderBy('order')->get());
     }
 
     /**
@@ -49,7 +51,7 @@ class ScheduleController extends Controller
             ->take(20)
             ->get();
 
-        return response()->json($updates);
+        return $this->successResponse($updates);
     }
 
     /**
@@ -100,7 +102,7 @@ class ScheduleController extends Controller
             ));
         }
 
-        return response()->json($scheduleItem->fresh());
+        return $this->successResponse($scheduleItem->fresh());
     }
 
     /**
@@ -123,7 +125,7 @@ class ScheduleController extends Controller
         // Broadcast live update event here if using Reverb
         // event(new LiveUpdatePosted($update));
 
-        return response()->json($update, 201);
+        return $this->createdResponse($update);
     }
 
     /**
@@ -139,9 +141,11 @@ class ScheduleController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $event = Event::create($request->all());
+        $event = Event::create($request->only([
+            'name', 'event_date', 'event_time', 'venue', 'description',
+        ]));
 
-        return response()->json($event, 201);
+        return $this->createdResponse($event);
     }
 
     /**
@@ -157,9 +161,11 @@ class ScheduleController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $event->update($request->all());
+        $event->update($request->only([
+            'name', 'event_date', 'event_time', 'venue', 'description',
+        ]));
 
-        return response()->json($event);
+        return $this->successResponse($event);
     }
 
     /**
@@ -170,7 +176,7 @@ class ScheduleController extends Controller
         $event->scheduleItems()->delete();
         $event->delete();
 
-        return response()->json(['message' => 'Event deleted successfully']);
+        return $this->deletedResponse('Event deleted successfully');
     }
 
     /**
@@ -194,7 +200,7 @@ class ScheduleController extends Controller
             'order' => $order,
         ]);
 
-        return response()->json($item, 201);
+        return $this->createdResponse($item);
     }
 
     /**
@@ -204,6 +210,6 @@ class ScheduleController extends Controller
     {
         $scheduleItem->delete();
 
-        return response()->json(['message' => 'Item deleted successfully']);
+        return $this->deletedResponse('Item deleted successfully');
     }
 }

@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, MessageSquare, Utensils, Users, Search } from 'lucide-react';
+import { CheckCircle, XCircle, MessageSquare, Utensils, Users, LayoutGrid, List } from 'lucide-react';
 import { useGuests } from '../../hooks/useApiHooks';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
+import AdminToolbar from '../../components/admin/AdminToolbar';
+import AdminCard from '../../components/admin/AdminCard';
+import EmptyState from '../../components/admin/EmptyState';
 import { useSearch } from '../../context/SearchContext';
 import { Skeleton } from '../../components/Skeleton';
 
 export default function AdminRSVPs() {
     const { data: guestsData, isLoading } = useGuests();
-    const { searchQuery } = useSearch();
+    const { searchQuery, setSearchQuery } = useSearch();
     const [rsvps, setRsvps] = useState([]);
-    const [filterWithMessages, setFilterWithMessages] = useState(false);
+    const [filter, setFilter] = useState('all');
+    const [viewMode, setViewMode] = useState('list');
     const [stats, setStats] = useState({ total: 0, attending: 0, declined: 0, withMessage: 0 });
 
     useEffect(() => {
@@ -62,7 +68,7 @@ export default function AdminRSVPs() {
         const matchesQuery = matchesPrimary || matchesPlusOnes;
         if (!matchesQuery) return false;
 
-        if (filterWithMessages) {
+        if (filter === 'with_messages') {
             return !!guest.rsvp_message;
         }
 
@@ -95,67 +101,45 @@ export default function AdminRSVPs() {
     ];
 
     return (
-        <div className="space-y-6">
-            <AdminPageHero
-                title="RSVP Responses & Messages"
-                description="View statistics and messages left by guests on the RSVP form."
-                breadcrumb={[{ label: 'Dashboard', path: '/admin/dashboard' }, { label: 'RSVPs' }]}
-            />
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {statCards.map((stat, index) => (
-                    <motion.div
-                        key={stat.label}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div 
-                                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                                style={{ background: `${stat.color}15` }}
-                            >
-                                <stat.icon className="w-6 h-6" style={{ color: stat.color }} />
-                            </div>
-                        </div>
-                        <p className="text-3xl font-semibold mb-1 text-stone-800">
-                            {stat.value}
-                        </p>
-                        <p className="text-sm text-stone-500">
-                            {stat.label}
-                        </p>
-                    </motion.div>
-                ))}
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-                <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50/50">
+        <AdminPageLayout
+            hero={
+                <AdminPageHero
+                    title="RSVP Responses & Messages"
+                    description="View statistics and messages left by guests on the RSVP form."
+                    breadcrumb="RSVPs"
+                    icon={<MessageSquare className="w-5 h-5 text-[#A67B5B]" />}
+                />
+            }
+            summary={<AdminSummaryCards cards={statCards} columns={4} />}
+            toolbar={
+                <AdminToolbar
+                    filters={[
+                        { id: 'all', label: 'All Responses' },
+                        { id: 'with_messages', label: 'With Messages' },
+                    ]}
+                    activeFilter={filter}
+                    onFilterChange={setFilter}
+                    search={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    searchPlaceholder="Search guests, messages, or dietary notes..."
+                    viewMode={viewMode}
+                    viewOptions={['list', 'grid']}
+                    onViewModeChange={setViewMode}
+                />
+            }
+        >
+                <AdminCard padding={false} className="overflow-hidden">
+                <div className="p-6 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-stone-800">Recent Responses</h2>
-                    
-                    <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-stone-200 w-fit">
-                        <button
-                            onClick={() => setFilterWithMessages(false)}
-                            className={`px-4 py-2 text-sm rounded-lg transition-colors ${!filterWithMessages ? 'bg-[#4A3F35] text-white shadow-sm' : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'}`}
-                        >
-                            All Responses
-                        </button>
-                        <button
-                            onClick={() => setFilterWithMessages(true)}
-                            className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 ${filterWithMessages ? 'bg-[#A67B5B] text-white shadow-sm' : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'}`}
-                        >
-                            <MessageSquare className="w-4 h-4" />
-                            With Messages
-                        </button>
-                    </div>
                 </div>
-                
+
                 {filteredRsvps.length === 0 ? (
-                    <div className="p-12 text-center text-stone-500">
-                        {searchQuery ? 'No responses found matching your search.' : 'No RSVPs have been submitted yet.'}
-                    </div>
-                ) : (
+                    <EmptyState
+                        icon={CheckCircle}
+                        message={searchQuery ? 'No responses found matching your search' : 'No RSVPs have been submitted yet'}
+                        searchQuery={searchQuery}
+                    />
+                ) : viewMode === 'list' ? (
                     <div className="divide-y divide-stone-100">
                         {filteredRsvps.map((guest, index) => {
                             const isAttending = guest.rsvp_status === 'confirmed';
@@ -250,8 +234,72 @@ export default function AdminRSVPs() {
                             );
                         })}
                     </div>
+                ) : (
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredRsvps.map((guest) => (
+                            <RsvpGridCard key={guest.id} guest={guest} />
+                        ))}
+                    </div>
                 )}
+            </AdminCard>
+        </AdminPageLayout>
+    );
+}
+
+function RsvpGridCard({ guest }) {
+    const isAttending = guest.rsvp_status === 'confirmed';
+    return (
+        <div className="p-5 rounded-2xl bg-white border border-stone-100 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isAttending ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>
+                        {isAttending ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-stone-800">{guest.name}</h3>
+                        <p className="text-xs text-stone-500">{guest.group}</p>
+                    </div>
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${isAttending ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {isAttending ? 'Attending' : 'Declined'}
+                </span>
             </div>
+
+            {guest.rsvp_message && (
+                <div className="mb-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1 flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" /> Message
+                    </p>
+                    <p className="text-sm text-stone-700 italic bg-[#FAF8F6] p-3 rounded-xl border border-stone-100">"{guest.rsvp_message}"</p>
+                </div>
+            )}
+
+            {guest.dietary_notes && (
+                <div className="mb-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1 flex items-center gap-1">
+                        <Utensils className="w-3 h-3" /> Dietary
+                    </p>
+                    <p className="text-sm text-stone-700 bg-stone-50 p-3 rounded-xl border border-stone-100">{guest.dietary_notes}</p>
+                </div>
+            )}
+
+            {guest.plus_ones?.length > 0 && (
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#A67B5B] mb-2">Party Members</p>
+                    <div className="flex flex-wrap gap-2">
+                        {guest.plus_ones.map(po => (
+                            <span key={po.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-stone-100 text-stone-700">
+                                {po.rsvp_status === 'confirmed' ? <CheckCircle className="w-3 h-3 text-green-500" /> : <XCircle className="w-3 h-3 text-red-400" />}
+                                {po.name}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <p className="text-xs text-stone-400 mt-4 pt-3 border-t border-stone-100">
+                {new Date(guest.updated_at).toLocaleString()}
+            </p>
         </div>
     );
 }

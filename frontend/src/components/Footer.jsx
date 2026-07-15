@@ -23,7 +23,10 @@ export default function Footer() {
   const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
 
   return (
-    <footer style={{ background: 'linear-gradient(180deg, #F8E8E0 0%, #E8D4C8 100%)' }}>
+    <footer
+      className="sticky top-[100vh]"
+      style={{ background: 'linear-gradient(180deg, #F8E8E0 0%, #E8D4C8 100%)' }}
+    >
       {/* Main Footer */}
       <div className="container-wedding py-16">
         <motion.div

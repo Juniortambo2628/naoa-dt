@@ -1,4 +1,4 @@
-import { Search, List, Grid, LayoutGrid } from 'lucide-react';
+import { Search, List, Grid, LayoutGrid, X } from 'lucide-react';
 
 const viewIcons = {
   list: List,
@@ -49,6 +49,28 @@ export default function AdminToolbar({
 
   return (
     <div className="bg-white p-4 rounded-xl border border-stone-100 flex flex-col md:flex-row gap-4 items-start md:items-center mb-6">
+      {/* Search Input */}
+      {hasSearch && (
+        <div className="relative flex-shrink-0 w-full md:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <input
+            type="text"
+            value={search || ''}
+            onChange={(e) => onSearchChange?.(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full pl-9 pr-8 py-2 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
+          />
+          {search && (
+            <button
+              onClick={() => onSearchChange?.('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Filter Pills */}
       {hasFilters && (
         <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 flex-shrink-0">

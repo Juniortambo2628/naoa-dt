@@ -9,7 +9,6 @@ import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../compon
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
 import { InfinitySign } from '../components/InfinitySign';
 import { 
-  PulsingHeartLogo, 
   MaleIcon, 
   FemaleIcon, 
   MainFlowerTopLeft, 
@@ -119,17 +118,6 @@ function HeroSection({ content, loading }) {
         className="relative z-20 text-center px-4 max-w-6xl mx-auto"
         style={{ y, opacity, scale }}
       >
-        {/* Pulsing Heart Logo */}
-        <motion.div
-          key={`heart-${animationKey}`}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-          transition={{ duration: 0.6, type: "spring" }}
-          className="mb-6"
-        >
-          <PulsingHeartLogo size={60} className="mx-auto" />
-        </motion.div>
-        
         {/* "We're Getting Married" subtitle */}
         <motion.div
           key={`subtitle-${animationKey}`}

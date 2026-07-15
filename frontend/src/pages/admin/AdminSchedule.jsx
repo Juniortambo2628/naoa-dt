@@ -1,39 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save, X, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save } from 'lucide-react';
+import { useSchedule } from '../../hooks/useApiHooks';
 import { scheduleService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminToolbar from '../../components/admin/AdminToolbar';
+import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminModal from '../../components/admin/AdminModal';
+import EmptyState from '../../components/admin/EmptyState';
 import { useSearch } from '../../context/SearchContext';
+import useFilteredItems from '../../hooks/useFilteredItems';
+import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
+import AdminCard from '../../components/admin/AdminCard';
+import SubmitButton from '../../components/admin/SubmitButton';
+import Spinner from '../../components/admin/Spinner';
 
 /* Force refresh: 2026-04-15 06:36 - Critical fix for ReferenceError */
 export default function AdminSchedule() {
   const { t } = useTranslation();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: events = [], isLoading: loading, refetch } = useSchedule();
   const [modalOpen, setModalOpen] = useState(false);
-  const [eventModalOpen, setEventModalOpen] = useState(false); // For creating/editing events
-  const [selectedItem, setSelectedItem] = useState(null); // If editing a schedule item
-  const [selectedEvent, setSelectedEvent] = useState(null); // If editing a main event
-  const [targetEventId, setTargetEventId] = useState(null); // Which event to add item to
-  const { searchQuery } = useSearch();
-
-  const fetchSchedule = async () => {
-    try {
-      const response = await scheduleService.getSchedule();
-      setEvents(response.data || []);
-      // Default to first event for adding items if available
-      if (response.data && response.data.length > 0) {
-        setTargetEventId(response.data[0].id);
-      }
-    } catch (err) {
-      console.error("Error fetching schedule:", err);
-    }
-    setLoading(false);
-  };
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [targetEventId, setTargetEventId] = useState(null);
+  const { searchQuery, setSearchQuery } = useSearch();
 
   useEffect(() => {
-    fetchSchedule();
-  }, []);
+    if (events.length > 0 && !targetEventId) {
+      setTargetEventId(events[0].id);
+    }
+  }, [events, targetEventId]);
 
   const handleAddItem = (eventId) => {
     setSelectedItem(null);
@@ -55,7 +53,7 @@ export default function AdminSchedule() {
       if (window.confirm('Are you sure you want to delete this event? This will also delete all its schedule items.')) {
           try {
               await scheduleService.deleteEvent(eventId);
-              fetchSchedule();
+              refetch();
           } catch (err) {
               console.error(err);
               alert('Failed to delete event');
@@ -73,7 +71,7 @@ export default function AdminSchedule() {
     if (window.confirm('Delete this schedule item?')) {
       try {
         await scheduleService.deleteItem(itemId); 
-        fetchSchedule();
+        refetch();
       } catch (err) {
         console.error(err);
         alert('Failed to delete item');
@@ -87,7 +85,7 @@ export default function AdminSchedule() {
     } else {
         await scheduleService.createItem(targetEventId, data);
     }
-    fetchSchedule();
+    refetch();
   };
 
   const handleSaveEvent = async (data) => {
@@ -97,7 +95,7 @@ export default function AdminSchedule() {
         } else {
             await scheduleService.createEvent(data);
         }
-        fetchSchedule();
+        refetch();
       } catch (e) {
         console.error(e);
         alert('Failed to save event');
@@ -125,40 +123,32 @@ export default function AdminSchedule() {
   }).filter(e => e.visible);
 
   return (
-    <div className="space-y-6">
-      <AdminPageHero
-        title="Schedule Management"
-        description={`${events.length} major events scheduled`}
-        breadcrumb={[
-          { label: 'Dashboard', path: '/admin/dashboard' },
-          { label: 'Schedule' },
-        ]}
-        icon={<Calendar className="w-5 h-5 text-[#A67B5B]" />}
-        actions={
-          <button onClick={handleCreateEvent} className="btn-primary flex items-center gap-2">
-              <Calendar className="w-5 h-5" /> Add Major Event
-          </button>
+    <>
+      <AdminPageLayout
+        hero={
+          <AdminPageHero
+            title="Schedule Management"
+            description={`${events.length} major events scheduled`}
+            breadcrumb="Schedule"
+            icon={<Calendar className="w-5 h-5 text-[#A67B5B]" />}
+          />
         }
-      />
-
-      {loading ? (
-        <p>Loading...</p>
+        toolbar={
+          <AdminToolbar
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search events, venues, or schedule items..."
+          />
+        }
+      >
+        {loading ? (
+        <EmptyState loading />
       ) : filteredEvents.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-2xl border border-stone-100 shadow-sm">
-            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20 text-stone-400" />
-            <p className="text-stone-500 mb-4">
-                {searchQuery ? 'No matching schedule items found.' : 'No events found. Create an event to start building the schedule.'}
-            </p>
-            {!searchQuery && (
-                <button onClick={handleCreateEvent} className="btn-primary inline-flex items-center gap-2">
-                    <Plus className="w-4 h-4" /> Create First Event
-                </button>
-            )}
-        </div>
+        <EmptyState icon={Calendar} message={searchQuery ? 'No matching schedule items found' : 'No events yet'} searchQuery={searchQuery} />
       ) : (
         <div className="space-y-8">
             {filteredEvents.map(event => (
-                <div key={event.id} className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+                <AdminCard key={event.id}>
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
                             <div>
@@ -223,7 +213,7 @@ export default function AdminSchedule() {
                             <p className="text-center text-stone-400 py-4">No matching items in this group.</p>
                         )}
                     </div>
-                </div>
+                </AdminCard>
             ))}
         </div>
       )}
@@ -241,7 +231,19 @@ export default function AdminSchedule() {
         onSave={handleSaveEvent}
         event={selectedEvent}
       />
-    </div>
+      </AdminPageLayout>
+      <AdminFloatingToolbar
+        actions={[
+          {
+            id: 'add-event',
+            label: 'Add Major Event',
+            icon: Calendar,
+            variant: 'primary',
+            onClick: handleCreateEvent,
+          },
+        ]}
+      />
+    </>
   );
 }
 
@@ -249,7 +251,7 @@ function EventModal({ isOpen, onClose, onSave, event }) {
     const [formData, setFormData] = useState({
         name: '',
         event_date: '',
-        event_time: '14:00', // Default start time
+        event_time: '14:00',
         venue: '',
         description: ''
     });
@@ -285,47 +287,19 @@ function EventModal({ isOpen, onClose, onSave, event }) {
         setLoading(false);
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in duration-200">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-medium text-[#4A3F35]">Add Major Event</h2>
-                    <button onClick={onClose}><X className="w-5 h-5 text-stone-400" /></button>
+        <AdminModal isOpen={isOpen} onClose={onClose} title="Add Major Event" size="md">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <AdminInput label="Event Name" required placeholder="e.g. Wedding Day" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <div className="grid grid-cols-2 gap-4">
+                    <AdminInput label="Date" type="date" required value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} />
+                    <AdminInput label="Start Time" type="time" required value={formData.event_time} onChange={e => setFormData({...formData, event_time: e.target.value})} />
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Event Name</label>
-                        <input required placeholder="e.g. Wedding Day" className="input-field w-full p-2 border rounded-lg" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-stone-700 mb-1">Date</label>
-                            <input type="date" required className="input-field w-full p-2 border rounded-lg" value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-stone-700 mb-1">Start Time</label>
-                            <input type="time" required className="input-field w-full p-2 border rounded-lg" value={formData.event_time} onChange={e => setFormData({...formData, event_time: e.target.value})} />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Venue Name</label>
-                        <input required className="input-field w-full p-2 border rounded-lg" value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>
-                        <textarea className="input-field w-full p-2 border rounded-lg" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                    </div>
-                    <div className="flex justify-end pt-4">
-                         <button type="submit" disabled={loading} className="btn-primary w-full flex justify-center items-center gap-2">
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            {event ? 'Update Event' : 'Create Event'}
-                         </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <AdminInput label="Venue Name" required value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
+                <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <SubmitButton loading={loading} icon={<Save className="w-4 h-4" />} label={event ? 'Update Event' : 'Create Event'} />
+            </form>
+        </AdminModal>
     );
 }
 
@@ -372,46 +346,18 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
         setLoading(false);
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in duration-200">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-medium text-[#4A3F35]">{item ? 'Edit Event' : 'Add Event'}</h2>
-                    <button onClick={onClose}><X className="w-5 h-5 text-stone-400" /></button>
+        <AdminModal isOpen={isOpen} onClose={onClose} title={item ? 'Edit Event' : 'Add Event'} size="md">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <AdminInput label="Title" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                <div className="grid grid-cols-2 gap-4">
+                    <AdminInput label="Start Time" type="time" required value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} />
+                    <AdminInput label="End Time" type="time" value={formData.end_time} onChange={e => setFormData({...formData, end_time: e.target.value})} />
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Title</label>
-                        <input required className="input-field w-full p-2 border rounded-lg" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-stone-700 mb-1">Start Time</label>
-                            <input type="time" required className="input-field w-full p-2 border rounded-lg" value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-stone-700 mb-1">End Time</label>
-                            <input type="time" className="input-field w-full p-2 border rounded-lg" value={formData.end_time} onChange={e => setFormData({...formData, end_time: e.target.value})} />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Location</label>
-                        <input className="input-field w-full p-2 border rounded-lg" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>
-                        <textarea className="input-field w-full p-2 border rounded-lg" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                    </div>
-                    <div className="flex justify-end pt-4">
-                         <button type="submit" disabled={loading} className="btn-primary w-full flex justify-center items-center gap-2">
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            Save Event
-                         </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <AdminInput label="Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
+                <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <SubmitButton loading={loading} icon={<Save className="w-4 h-4" />} label="Save Event" />
+            </form>
+        </AdminModal>
     );
 }

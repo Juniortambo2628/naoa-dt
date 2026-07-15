@@ -36,7 +36,6 @@ class GuestsExport implements FromCollection, WithHeadings, WithMapping
             'Table',
             'Checked In',
             'Song Request',
-            'Admin Notes',
         ];
     }
 
@@ -60,7 +59,6 @@ class GuestsExport implements FromCollection, WithHeadings, WithMapping
             $guest->table?->name ?? 'Unassigned',
             $guest->checked_in_at ? 'Yes' : 'No',
             $guest->song_request ?? '',
-            $guest->notes ?? '',
         ];
     }
 }

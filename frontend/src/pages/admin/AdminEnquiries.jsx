@@ -1,36 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Mail, MessageSquare, Trash2, Clock, Loader2, 
-  RefreshCw, Send, CheckCircle, ChevronRight, X 
+  Mail, Clock, 
+  Send, CheckCircle, X, RefreshCw, Trash2
 } from 'lucide-react';
+import { useEnquiries } from '../../hooks/useApiHooks';
 import { enquiryService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminToolbar from '../../components/admin/AdminToolbar';
+import AdminBulkActions from '../../components/admin/AdminBulkActions';
+import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminModal from '../../components/admin/AdminModal';
+import EmptyState from '../../components/admin/EmptyState';
+import Spinner from '../../components/admin/Spinner';
+import DeleteButton from '../../components/admin/DeleteButton';
 import { useSearch } from '../../context/SearchContext';
+import useFilteredItems from '../../hooks/useFilteredItems';
 
 export default function AdminEnquiries() {
-  const [enquiries, setEnquiries] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, refetch } = useEnquiries();
+  const enquiries = data?.data || [];
   const [processing, setProcessing] = useState(null);
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all');
-  const { searchQuery } = useSearch();
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const { searchQuery, setSearchQuery } = useSearch();
 
-  const fetchEnquiries = async () => {
-    try {
-      const res = await enquiryService.getAll();
-      setEnquiries(res.data.data || []);
-    } catch (err) {
-      console.error('Failed to fetch enquiries', err);
-    }
-    setLoading(false);
+  const filteredEnquiries = useFilteredItems(enquiries, searchQuery, (enq, searchLower) => {
+    const matchesSearch = (enq.name || '').toLowerCase().includes(searchLower) || 
+           (enq.email || '').toLowerCase().includes(searchLower) ||
+           (enq.subject || '').toLowerCase().includes(searchLower) ||
+           (enq.message || '').toLowerCase().includes(searchLower);
+    const matchesType = typeFilter === 'all' || (enq.type || 'guest') === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  const toggleSelection = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
   };
 
-  useEffect(() => {
-    fetchEnquiries();
-  }, []);
+  const toggleSelectAll = () => {
+    const visibleIds = filteredEnquiries.map((enq) => enq.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds([]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this enquiry?')) return;
@@ -38,9 +63,25 @@ export default function AdminEnquiries() {
     setProcessing(id);
     try {
       await enquiryService.delete(id);
-      fetchEnquiries();
+      setSelectedIds((prev) => prev.filter((i) => i !== id));
+      refetch();
     } catch (err) {
       console.error('Failed to delete enquiry', err);
+    }
+    setProcessing(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected enquiries?`)) return;
+
+    setProcessing('bulk');
+    try {
+      await Promise.all(selectedIds.map((id) => enquiryService.delete(id)));
+      refetch();
+      clearSelection();
+    } catch (err) {
+      console.error('Failed to delete selected enquiries', err);
     }
     setProcessing(null);
   };
@@ -54,7 +95,7 @@ export default function AdminEnquiries() {
       await enquiryService.reply(selectedEnquiry.id, replyMessage);
       setShowReplyModal(false);
       setReplyMessage('');
-      fetchEnquiries();
+      refetch();
     } catch (err) {
       console.error('Failed to send reply', err);
       alert('Failed to send reply. Please try again.');
@@ -62,178 +103,238 @@ export default function AdminEnquiries() {
     setProcessing(null);
   };
 
-  const filteredEnquiries = enquiries.filter(enq => {
-    const activeSearch = searchQuery || '';
-    const searchLower = activeSearch.toLowerCase();
-    
-    const matchesSearch = (enq.name || '').toLowerCase().includes(searchLower) || 
-           (enq.email || '').toLowerCase().includes(searchLower) ||
-           (enq.subject || '').toLowerCase().includes(searchLower) ||
-           (enq.message || '').toLowerCase().includes(searchLower);
-           
-    const matchesType = typeFilter === 'all' || (enq.type || 'guest') === typeFilter;
-    
-    return matchesSearch && matchesType;
-  });
+  const bulkActions = [
+    {
+      id: 'delete',
+      label: 'Delete Selected',
+      icon: Trash2,
+      variant: 'danger',
+      onClick: handleBulkDelete,
+      disabled: processing === 'bulk',
+    },
+  ];
+
+  const TypeBadge = ({ type }) => (
+    <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
+      type === 'vendor' ? 'bg-purple-50 text-purple-600' :
+      type === 'guest' ? 'bg-blue-50 text-blue-600' :
+      'bg-stone-100 text-stone-600'
+    }`}>
+      {type || 'guest'}
+    </span>
+  );
+
+  const StatusBadge = ({ status }) =>
+    status === 'replied' ? (
+      <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full flex items-center gap-1 uppercase tracking-wider">
+        <CheckCircle className="w-3 h-3" /> Replied
+      </span>
+    ) : (
+      <span className="px-3 py-1 bg-[#A67B5B]/10 text-[#A67B5B] text-xs font-bold rounded-full uppercase tracking-wider">
+        Pending
+      </span>
+    );
 
   return (
-    <div className="space-y-6">
-      <AdminPageHero
-        title="Enquiries"
-        description={`${enquiries.length} enquiries received`}
-        breadcrumb={[
-          { label: 'Dashboard', path: '/admin/dashboard' },
-          { label: 'Enquiries' },
-        ]}
-        icon={<Mail className="w-5 h-5 text-[#A67B5B]" />}
-        actions={
-          <button 
-            onClick={() => { setLoading(true); fetchEnquiries(); }}
-            className="p-2 text-stone-500 hover:bg-stone-100 rounded-full transition-colors"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+    <>
+      <AdminPageLayout
+        hero={
+          <AdminPageHero
+            title="Enquiries"
+            description={`${enquiries.length} enquiries received`}
+            breadcrumb="Enquiries"
+            icon={<Mail className="w-5 h-5 text-[#A67B5B]" />}
+          />
         }
-      />
+        toolbar={
+          <AdminToolbar
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search enquiries..."
+            filters={[
+              { id: 'all', label: 'All Enquiries' },
+              { id: 'guest', label: 'Guests' },
+              { id: 'vendor', label: 'Vendors' },
+              { id: 'other', label: 'Other' },
+            ]}
+            activeFilter={typeFilter}
+            onFilterChange={setTypeFilter}
+            viewMode={viewMode}
+            viewOptions={['list', 'grid']}
+            onViewModeChange={setViewMode}
+          />
+        }
+      >
+        <AnimatePresence>
+          {selectedIds.length > 0 && (
+            <AdminBulkActions
+              selectedCount={selectedIds.length}
+              onClearSelection={clearSelection}
+              actions={bulkActions}
+            />
+          )}
+        </AnimatePresence>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-stone-100 shadow-sm w-fit">
-        <button
-            onClick={() => setTypeFilter('all')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${typeFilter === 'all' ? 'bg-stone-800 text-white shadow-sm' : 'text-stone-500 hover:bg-stone-50'}`}
-        >
-            All Enquiries
-        </button>
-        <button
-            onClick={() => setTypeFilter('guest')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${typeFilter === 'guest' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-stone-500 hover:bg-stone-50'}`}
-        >
-            Guests
-        </button>
-        <button
-            onClick={() => setTypeFilter('vendor')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${typeFilter === 'vendor' ? 'bg-purple-50 text-purple-600 shadow-sm' : 'text-stone-500 hover:bg-stone-50'}`}
-        >
-            Vendors
-        </button>
-        <button
-            onClick={() => setTypeFilter('other')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${typeFilter === 'other' ? 'bg-stone-100 text-stone-600 shadow-sm' : 'text-stone-500 hover:bg-stone-50'}`}
-        >
-            Other
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4">
-        {loading && enquiries.length === 0 ? (
-          <div className="text-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#A67B5B]" />
-          </div>
-        ) : filteredEnquiries.length === 0 ? (
-          <div className="text-center py-12 text-stone-500 bg-white rounded-2xl border border-stone-100">
-            <Mail className="w-12 h-12 mx-auto mb-4 opacity-20" />
-            <p>{searchQuery ? 'No matching enquiries found' : 'No enquiries yet'}</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredEnquiries.map((enq) => (
-              <motion.div
-                key={enq.id}
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className={`bg-white p-6 rounded-2xl border ${enq.status === 'replied' ? 'border-stone-100' : 'border-[#A67B5B]/30 shadow-sm'} flex flex-col md:flex-row gap-6`}
-              >
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <span className="font-bold text-stone-800">{enq.name}</span>
-                    <span className="text-sm text-stone-500 font-medium">{enq.email}</span>
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-                      enq.type === 'vendor' ? 'bg-purple-50 text-purple-600' :
-                      enq.type === 'guest' ? 'bg-blue-50 text-blue-600' :
-                      'bg-stone-100 text-stone-600'
-                    }`}>
-                      {enq.type || 'guest'}
-                    </span>
-                    {enq.status === 'replied' ? (
-                      <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full flex items-center gap-1 uppercase tracking-wider">
-                        <CheckCircle className="w-3 h-3" /> Replied
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 bg-[#A67B5B]/10 text-[#A67B5B] text-xs font-bold rounded-full uppercase tracking-wider">
-                        Pending
-                      </span>
-                    )}
-                    <span className="text-xs text-stone-400 flex items-center gap-1 ml-auto">
-                      <Clock className="w-3 h-3" /> {new Date(enq.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-bold text-stone-800 mb-2">{enq.subject || 'No Subject'}</h3>
-                  <p className="text-stone-600 bg-stone-50 p-4 rounded-xl italic">"{enq.message}"</p>
-                  
-                  {enq.reply_message && (
-                    <div className="mt-4 pl-4 border-l-4 border-green-100">
-                      <p className="text-xs font-bold text-green-600 uppercase mb-1">Your Reply</p>
-                      <p className="text-stone-500 text-sm">{enq.reply_message}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-row md:flex-col items-center gap-3 md:border-l md:border-stone-100 md:pl-6 min-w-[120px]">
-                  {enq.status !== 'replied' && (
-                    <button
-                      onClick={() => { setSelectedEnquiry(enq); setShowReplyModal(true); }}
-                      className="flex-1 md:w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#A67B5B] text-white text-sm font-bold rounded-xl hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
-                    >
-                      <Send className="w-4 h-4" /> Reply
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(enq.id)}
-                    disabled={processing === enq.id}
-                    className="p-2.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                    title="Delete Enquiry"
-                  >
-                    {processing === enq.id ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+        {filteredEnquiries.length > 0 && (
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm text-stone-500">
+              {filteredEnquiries.length} enquiry{filteredEnquiries.length === 1 ? '' : 'ies'}
+            </span>
+            <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={filteredEnquiries.every((enq) => selectedIds.includes(enq.id))}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 accent-[#A67B5B] cursor-pointer"
+              />
+              Select all
+            </label>
           </div>
         )}
-      </div>
 
-      {/* Reply Modal */}
-      <AnimatePresence>
-        {showReplyModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden"
-            >
-              <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-                <div>
-                  <h2 className="text-xl font-bold text-stone-800">Reply to Enquiry</h2>
-                  <p className="text-xs text-stone-500">To: {selectedEnquiry.name} ({selectedEnquiry.email})</p>
-                </div>
-                <button onClick={() => setShowReplyModal(false)} className="p-2 hover:bg-stone-100 rounded-full text-stone-400 transition-all">
-                  <X className="w-5 h-5" />
-                </button>
+        <div className="grid grid-cols-1 gap-4">
+          {loading && enquiries.length === 0 ? (
+            <EmptyState loading />
+          ) : filteredEnquiries.length === 0 ? (
+            <EmptyState icon={Mail} message="No enquiries yet" searchQuery={searchQuery} />
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredEnquiries.map((enq) => (
+                <motion.div
+                  key={enq.id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onClick={() => toggleSelection(enq.id)}
+                  className={`bg-white p-5 rounded-2xl border shadow-sm cursor-pointer transition-all ${
+                    selectedIds.includes(enq.id)
+                      ? 'border-[#A67B5B]/50 ring-1 ring-[#A67B5B]/20'
+                      : 'border-stone-100 hover:border-stone-200'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 mb-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(enq.id)}
+                      onChange={() => toggleSelection(enq.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 w-4 h-4 accent-[#A67B5B] cursor-pointer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-stone-800 truncate">{enq.name}</p>
+                      <p className="text-sm text-stone-500 truncate">{enq.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <TypeBadge type={enq.type} />
+                    <StatusBadge status={enq.status} />
+                  </div>
+
+                  <h3 className="font-bold text-stone-800 mb-2 truncate">{enq.subject || 'No Subject'}</h3>
+                  <p className="text-stone-600 text-sm bg-stone-50 p-3 rounded-xl italic line-clamp-3 mb-4">
+                    "{enq.message}"
+                  </p>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                    <span className="text-xs text-stone-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {new Date(enq.created_at).toLocaleDateString()}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {enq.status !== 'replied' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEnquiry(enq);
+                            setShowReplyModal(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#A67B5B] text-white text-xs font-bold rounded-lg hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
+                        >
+                          <Send className="w-3.5 h-3.5" /> Reply
+                        </button>
+                      )}
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <DeleteButton
+                          onClick={() => handleDelete(enq.id)}
+                          processing={processing === enq.id}
+                          title="Delete Enquiry"
+                        />
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredEnquiries.map((enq) => (
+                <motion.div
+                  key={enq.id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className={`bg-white p-6 rounded-2xl border ${enq.status === 'replied' ? 'border-stone-100' : 'border-[#A67B5B]/30 shadow-sm'} flex flex-col md:flex-row gap-6`}
+                >
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-3 mb-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(enq.id)}
+                        onChange={() => toggleSelection(enq.id)}
+                        className="w-4 h-4 accent-[#A67B5B] cursor-pointer"
+                      />
+                      <span className="font-bold text-stone-800">{enq.name}</span>
+                      <span className="text-sm text-stone-500 font-medium">{enq.email}</span>
+                      <TypeBadge type={enq.type} />
+                      <StatusBadge status={enq.status} />
+                      <span className="text-xs text-stone-400 flex items-center gap-1 ml-auto">
+                        <Clock className="w-3 h-3" /> {new Date(enq.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    
+                    <h3 className="font-bold text-stone-800 mb-2">{enq.subject || 'No Subject'}</h3>
+                    <p className="text-stone-600 bg-stone-50 p-4 rounded-xl italic">"{enq.message}"</p>
+                    
+                    {enq.reply_message && (
+                      <div className="mt-4 pl-4 border-l-4 border-green-100">
+                        <p className="text-xs font-bold text-green-600 uppercase mb-1">Your Reply</p>
+                        <p className="text-stone-500 text-sm">{enq.reply_message}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-row md:flex-col items-center gap-3 md:border-l md:border-stone-100 md:pl-6 min-w-[120px]">
+                    {enq.status !== 'replied' && (
+                      <button
+                        onClick={() => { setSelectedEnquiry(enq); setShowReplyModal(true); }}
+                        className="flex-1 md:w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#A67B5B] text-white text-sm font-bold rounded-xl hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
+                      >
+                        <Send className="w-4 h-4" /> Reply
+                      </button>
+                    )}
+                    <DeleteButton
+                      onClick={() => handleDelete(enq.id)}
+                      processing={processing === enq.id}
+                      title="Delete Enquiry"
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Reply Modal */}
+        <AdminModal isOpen={showReplyModal} onClose={() => setShowReplyModal(false)} title="Reply to Enquiry" size="lg">
+          {selectedEnquiry && (
+            <>
+              <p className="text-xs text-stone-500 mb-4">To: {selectedEnquiry.name} ({selectedEnquiry.email})</p>
+              <div className="bg-stone-50 p-4 rounded-xl mb-4 max-h-32 overflow-y-auto border border-stone-100">
+                  <p className="text-xs font-bold text-stone-400 uppercase mb-1">Original Message</p>
+                  <p className="text-stone-600 text-sm italic">"{selectedEnquiry.message}"</p>
               </div>
               
-              <form onSubmit={handleReply} className="p-6 space-y-4">
-                <div className="bg-stone-50 p-4 rounded-xl mb-4 max-h-32 overflow-y-auto border border-stone-100">
-                    <p className="text-xs font-bold text-stone-400 uppercase mb-1">Original Message</p>
-                    <p className="text-stone-600 text-sm italic">"{selectedEnquiry.message}"</p>
-                </div>
-
+              <form onSubmit={handleReply} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-2">Your Response</label>
                   <textarea
@@ -263,7 +364,7 @@ export default function AdminEnquiries() {
                     className="flex-[2] py-3 bg-[#A67B5B] text-white font-bold rounded-2xl hover:bg-[#8B5E3C] transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {processing === selectedEnquiry.id ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Spinner size="sm" />
                     ) : (
                       <>
                         <Send className="w-4 h-4" /> Send Reply
@@ -272,10 +373,21 @@ export default function AdminEnquiries() {
                   </button>
                 </div>
               </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+            </>
+          )}
+        </AdminModal>
+      </AdminPageLayout>
+      <AdminFloatingToolbar
+        actions={[
+          {
+            id: 'refresh',
+            label: 'Refresh',
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            disabled: loading,
+          },
+        ]}
+      />
+    </>
   );
 }

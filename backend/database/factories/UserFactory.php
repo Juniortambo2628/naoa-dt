@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,6 +30,9 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'two_factor_secret' => null,
+            'two_factor_confirmed_at' => null,
+            'two_factor_recovery_codes' => null,
         ];
     }
 
@@ -39,6 +43,37 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is an admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+        ]);
+    }
+
+    /**
+     * Indicate that the user has two-factor authentication enabled.
+     */
+    public function with2fa(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => encrypt(Str::random(32)),
+            'two_factor_confirmed_at' => now(),
+            'two_factor_recovery_codes' => encrypt(json_encode([
+                Str::random(10),
+                Str::random(10),
+                Str::random(10),
+                Str::random(10),
+                Str::random(10),
+                Str::random(10),
+                Str::random(10),
+                Str::random(10),
+            ])),
         ]);
     }
 }

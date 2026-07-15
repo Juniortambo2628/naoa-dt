@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { contentService } from '../../services/api';
-import { Layout, Check, X, Loader2, Save, Sparkles, Home, Calendar, Users, Image as ImageIcon, Gift, Music, MessageSquare, HelpCircle, FileText, Globe, Clock, Mail, Languages } from 'lucide-react';
+import { Layout, Check, X, Save, Sparkles, Home, Calendar, Users, Image as ImageIcon, Gift, Music, MessageSquare, HelpCircle, FileText, Globe, Clock, Mail, Languages } from 'lucide-react';
+import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import ToggleButton from '../../components/admin/ToggleButton';
 import { toast } from 'react-hot-toast';
 import { useContent } from '../../context/ContentContext';
 
@@ -54,16 +57,16 @@ export default function AdminModules() {
     if (loading) return <div className="p-8 text-center text-stone-500">Loading modules...</div>;
 
     return (
-        <div className="space-y-6 pb-20">
+        <AdminPageLayout
+          hero={
             <AdminPageHero
-                title="Module Management"
-                description="Enable or disable features and pages on your wedding website"
-                breadcrumb={[
-                    { label: 'Dashboard', path: '/admin/dashboard' },
-                    { label: 'Modules' },
-                ]}
-                icon={<Layout className="w-5 h-5 text-[#A67B5B]" />}
+              title="Module Management"
+              description="Enable or disable features and pages on your wedding website"
+              breadcrumb="Modules"
+              icon={<Layout className="w-5 h-5 text-[#A67B5B]" />}
             />
+          }
+        >
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {MODULES.map(module => {
@@ -71,29 +74,19 @@ export default function AdminModules() {
                     const isSaving = saving === module.key;
 
                     return (
-                        <div 
+                        <AdminCard 
                             key={module.key}
-                            className={`bg-white rounded-2xl p-6 border transition-all ${active ? 'border-[#A67B5B]/20 shadow-sm' : 'border-stone-100 opacity-75'}`}
+                            className={`transition-all ${active ? 'border-[#A67B5B]/20' : 'border-stone-100 opacity-75'}`}
                         >
                             <div className="flex items-start justify-between mb-4">
                                 <div className={`p-3 rounded-xl ${active ? 'bg-[#A67B5B]/10 text-[#A67B5B]' : 'bg-stone-100 text-stone-400'}`}>
                                     <module.icon className="w-6 h-6" />
                                 </div>
-                                <button
-                                    onClick={() => toggleModule(module.key, active)}
-                                    disabled={isSaving}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${active ? 'bg-[#A67B5B]' : 'bg-stone-200'}`}
-                                >
-                                    <span className="sr-only">Toggle {module.label}</span>
-                                    <span
-                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${active ? 'translate-x-6' : 'translate-x-1'}`}
-                                    />
-                                    {isSaving && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/5 rounded-full">
-                                            <Loader2 className="w-3 h-3 animate-spin text-white" />
-                                        </div>
-                                    )}
-                                </button>
+                                <ToggleButton
+                                    enabled={active}
+                                    onToggle={() => toggleModule(module.key, active)}
+                                    label={`Toggle ${module.label}`}
+                                />
                             </div>
 
                             <h3 className={`font-semibold mb-1 ${active ? 'text-stone-800' : 'text-stone-400'}`}>{module.label}</h3>
@@ -106,7 +99,7 @@ export default function AdminModules() {
                                     <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400 bg-stone-50 px-2 py-0.5 rounded">Disabled</span>
                                 )}
                             </div>
-                        </div>
+                        </AdminCard>
                     );
                 })}
             </div>
@@ -123,6 +116,6 @@ export default function AdminModules() {
                     </p>
                 </div>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

@@ -24,7 +24,7 @@ class ExportController extends Controller
      */
     public function exportVendorPdf()
     {
-        $guests = Guest::where('rsvp_status', 'confirmed')->get();
+        $guests = Guest::where('rsvp_status', 'confirmed')->with('table')->get();
         
         $data = [
             'title' => 'Wedding Guest Summary - Vendor Copy',

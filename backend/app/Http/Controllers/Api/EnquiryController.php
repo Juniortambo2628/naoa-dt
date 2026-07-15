@@ -6,59 +6,48 @@ use App\Http\Controllers\Controller;
 use App\Models\Enquiry;
 use App\Mail\EnquiryReceived;
 use App\Mail\EnquiryReplied;
-use Illuminate\Support\Facades\Mail;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class EnquiryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
     public function index()
     {
         return Enquiry::orderBy('created_at', 'desc')->paginate(20);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'type' => 'nullable|in:guest,vendor,other',
+            'name'    => 'required|string|max:255',
+            'email'   => 'required|email|max:255',
+            'type'    => 'nullable|in:guest,vendor,other',
             'subject' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
 
         $enquiry = Enquiry::create($validated);
 
-        // Send email to admin
         try {
-            Mail::to('tangtzeren@gmail.com')->send(new EnquiryReceived($enquiry));
+            Mail::to(config('mail.from.address'))->send(new EnquiryReceived($enquiry));
         } catch (\Exception $e) {
-            \Log::error('Failed to send enquiry email: ' . $e->getMessage());
+            Log::error('Failed to send enquiry email: ' . $e->getMessage());
         }
 
-        return response()->json([
-            'message' => 'Your message has been sent successfully!',
-            'enquiry' => $enquiry
-        ], 201);
+        return $this->createdResponse($enquiry, 'Your message has been sent successfully!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         return Enquiry::findOrFail($id);
     }
 
-    /**
-     * Reply to the enquiry.
-     */
-    public function reply(Request $request, string $id)
+    public function reply(Request $request, string $id): JsonResponse
     {
         $enquiry = Enquiry::findOrFail($id);
 
@@ -68,34 +57,27 @@ class EnquiryController extends Controller
 
         $replyMessage = $request->input('message');
 
-        // Send email to user
         try {
             Mail::to($enquiry->email)->send(new EnquiryReplied($enquiry, $replyMessage));
             
             $enquiry->update([
                 'reply_message' => $replyMessage,
-                'replied_at' => now(),
-                'status' => 'replied'
+                'replied_at'    => now(),
+                'status'        => 'replied',
             ]);
 
-            return response()->json([
-                'message' => 'Reply sent successfully!',
-                'enquiry' => $enquiry
-            ]);
+            return $this->successResponse($enquiry, 'Reply sent successfully!');
         } catch (\Exception $e) {
-            \Log::error('Failed to send reply email: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to send email'], 500);
+            Log::error('Failed to send reply email: ' . $e->getMessage());
+            return $this->errorResponse('Failed to send email', 500);
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(string $id): JsonResponse
     {
         $enquiry = Enquiry::findOrFail($id);
         $enquiry->delete();
 
-        return response()->json(['message' => 'Enquiry deleted successfully']);
+        return $this->deletedResponse('Enquiry deleted successfully');
     }
 }

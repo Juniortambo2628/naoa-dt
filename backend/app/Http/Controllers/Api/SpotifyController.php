@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 
 class SpotifyController extends Controller
 {
+    use ApiResponse;
+
     protected $clientId;
     protected $clientSecret;
 
@@ -74,23 +77,13 @@ class SpotifyController extends Controller
                     ];
                 });
 
-                return response()->json([
-                    'success' => true,
-                    'tracks' => $tracks
-                ]);
+                return $this->successResponse(['tracks' => $tracks]);
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to search Spotify'
-            ], 500);
-
+            return $this->errorResponse('Failed to search Spotify', 500);
         } catch (\Exception $e) {
             Log::error('Spotify Search Error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Spotify service unavailable'
-            ], 503);
+            return $this->errorResponse('Spotify service unavailable', 503);
         }
     }
 
@@ -107,24 +100,20 @@ class SpotifyController extends Controller
 
             if ($response->successful()) {
                 $track = $response->json();
-                return response()->json([
-                    'success' => true,
-                    'track' => [
-                        'id' => $track['id'],
-                        'name' => $track['name'],
-                        'artist' => collect($track['artists'])->pluck('name')->join(', '),
-                        'album' => $track['album']['name'],
-                        'image' => $track['album']['images'][1]['url'] ?? null,
-                        'spotify_url' => $track['external_urls']['spotify'],
-                    ]
+                return $this->successResponse([
+                    'id' => $track['id'],
+                    'name' => $track['name'],
+                    'artist' => collect($track['artists'])->pluck('name')->join(', '),
+                    'album' => $track['album']['name'],
+                    'image' => $track['album']['images'][1]['url'] ?? null,
+                    'spotify_url' => $track['external_urls']['spotify'],
                 ]);
             }
 
-            return response()->json(['success' => false], 404);
-
+            return $this->errorResponse('Track not found', 404);
         } catch (\Exception $e) {
             Log::error('Spotify GetTrack Error: ' . $e->getMessage());
-            return response()->json(['success' => false], 503);
+            return $this->errorResponse('Spotify service unavailable', 503);
         }
     }
 }

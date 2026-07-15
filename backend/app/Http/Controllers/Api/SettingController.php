@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Traits\ApiResponse;
+use App\Traits\NormalizesUrls;
 use Illuminate\Http\Request;
-
-use App\Models\PageContent;
 
 class SettingController extends Controller
 {
+    use ApiResponse, NormalizesUrls;
     public function index()
     {
         \Illuminate\Support\Facades\Log::info("Fetching settings. Current root: " . request()->root());
@@ -19,35 +20,7 @@ class SettingController extends Controller
             $val = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $value;
             return $this->normalizeUrls($val);
         });
-        return response()->json($settings);
-    }
-
-    private function normalizeUrls($data)
-    {
-        if (is_string($data)) {
-            // Check if it looks like a local absolute URL
-            if (str_contains($data, 'localhost') || str_contains($data, '127.0.0.1')) {
-                 $parsed = parse_url($data);
-                 if (isset($parsed['path'])) {
-                     $path = $parsed['path'];
-                     // Handle the local path prefix often seen in WAMP
-                     $prefix = '/wed-dt/backend/public';
-                     if (str_starts_with($path, $prefix)) {
-                         $path = substr($path, strlen($prefix));
-                     }
-                     return $path;
-                 }
-            }
-            return $data;
-        }
-
-        if (is_array($data)) {
-            foreach ($data as $key => $value) {
-                $data[$key] = $this->normalizeUrls($value);
-            }
-        }
-
-        return $data;
+        return $this->successResponse($settings);
     }
 
     public function update(Request $request)
@@ -78,9 +51,6 @@ class SettingController extends Controller
             return $this->normalizeUrls($val);
         });
 
-        return response()->json([
-            'message' => 'Settings updated successfully',
-            'settings' => $allSettings
-        ]);
+        return $this->successResponse($allSettings, 'Settings updated successfully');
     }
 }

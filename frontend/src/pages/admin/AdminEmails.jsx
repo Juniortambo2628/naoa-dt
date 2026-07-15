@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Mail, Send, Loader2, CheckCircle, Clock, X, Save } from 'lucide-react';
-import { invitationService, settingService } from '../../services/api';
+import { Mail, Send, CheckCircle, Clock, X, Save } from 'lucide-react';
+import { invitationService, settingService, guestService } from '../../services/api';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminCard from '../../components/admin/AdminCard';
+import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import Spinner from '../../components/admin/Spinner';
+import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 
 const mockGuest = {
     name: "John Doe",
@@ -67,7 +72,7 @@ export default function AdminEmails() {
   };
 
   const handleSaveSettings = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setSavingSettings(true);
     try {
         await settingService.update(emailSettings);
@@ -121,24 +126,19 @@ export default function AdminEmails() {
     loadData();
   }, []);
 
-  const mockGuest = {
-      name: "John Doe",
-      unique_code: "WED-8723",
-      table: { name: "Table 5" }
-  };
-
   return (
-    <div className="space-y-6">
-      <AdminPageHero
-        title="Email Management"
-        description="Configure email templates and send digital invitations"
-        breadcrumb={[
-          { label: 'Dashboard', path: '/admin/dashboard' },
-          { label: 'Emails' },
-        ]}
-        icon={<Mail className="w-5 h-5 text-[#A67B5B]" />}
-      />
-
+    <>
+    <AdminPageLayout
+      hero={
+        <AdminPageHero
+          title="Email Management"
+          description="Configure email templates and send digital invitations"
+          breadcrumb="Emails"
+          icon={<Mail className="w-5 h-5 text-[#A67B5B]" />}
+        />
+      }
+    >
+      <div className="space-y-6">
       <div className="flex gap-4 border-b border-stone-100">
             <button 
                 onClick={() => setActiveTab('compose')}
@@ -159,7 +159,7 @@ export default function AdminEmails() {
       {activeTab === 'compose' ? (
         <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* ... existing compose UI ... */}
-          <div className="md:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+          <AdminCard className="md:col-span-2">
               <h2 className="text-lg font-medium mb-4 text-[#4A3F35]">Send Invitations</h2>
               
               <div className="space-y-4">
@@ -214,15 +214,15 @@ export default function AdminEmails() {
                       disabled={loading}
                       className="btn-primary w-full flex justify-center items-center gap-2"
                   >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                      {loading ? <Spinner size="sm" /> : <Send className="w-5 h-5" />}
                       Send to All Pending Guests
                   </button>
                   <p className="text-center text-xs text-stone-400 mt-2">Will send via email to guests who haven't received an invite yet.</p>
               </div>
-          </div>
+          </AdminCard>
 
           {/* Status Card */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 h-fit">
+          <AdminCard className="h-fit">
               <h2 className="text-lg font-medium mb-4 text-[#4A3F35]">Email Status</h2>
               <div className="space-y-4">
                   <div className="flex justify-between items-center">
@@ -242,116 +242,84 @@ export default function AdminEmails() {
                       <div className="text-xs text-stone-400 italic">No emails sent yet.</div>
                   </div>
               </div>
-          </div>
+          </AdminCard>
         </div>
       ) : (
         <form onSubmit={handleSaveSettings} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Invitation Template */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+            <AdminCard>
                 <h2 className="text-lg font-medium mb-6 text-[#4A3F35] flex items-center gap-2">
                     <Mail className="w-5 h-5" />
                     Invitation Email
                 </h2>
                 <div className="space-y-4">
+                    <AdminInput 
+                        label="Subject Line"
+                        value={emailSettings.email_invitation_subject}
+                        onChange={(e) => setEmailSettings({...emailSettings, email_invitation_subject: e.target.value})}
+                    />
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Subject Line</label>
-                        <input 
-                            type="text" 
-                            className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/10 outline-none"
-                            value={emailSettings.email_invitation_subject}
-                            onChange={(e) => setEmailSettings({...emailSettings, email_invitation_subject: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Message Body</label>
-                        <textarea 
+                        <AdminTextarea 
+                            label="Message Body"
                             rows={4}
-                            className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/10 outline-none"
                             value={emailSettings.email_invitation_message}
                             onChange={(e) => setEmailSettings({...emailSettings, email_invitation_message: e.target.value})}
                         />
-                         <p className="text-[10px] text-stone-400 italic mt-1">Variables: (The template automatically includes "Dear [Guest Name]" at the top)</p>
+                        <p className="text-[10px] text-stone-400 italic mt-1">Variables: (The template automatically includes "Dear [Guest Name]" at the top)</p>
                     </div>
                 </div>
-            </div>
+            </AdminCard>
 
             {/* RSVP Confirmation Templates */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+            <AdminCard>
                 <h2 className="text-lg font-medium mb-6 text-[#4A3F35] flex items-center gap-2">
                     <CheckCircle className="w-5 h-5" />
                     RSVP Confirmation
                 </h2>
                 <div className="space-y-6">
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Subject Line</label>
-                        <input 
-                            type="text" 
-                            className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/10 outline-none"
-                            value={emailSettings.email_rsvp_subject}
-                            onChange={(e) => setEmailSettings({...emailSettings, email_rsvp_subject: e.target.value})}
+                    <AdminInput 
+                        label="Subject Line"
+                        value={emailSettings.email_rsvp_subject}
+                        onChange={(e) => setEmailSettings({...emailSettings, email_rsvp_subject: e.target.value})}
+                    />
+                    <div className="grid grid-cols-2 gap-6">
+                        <AdminTextarea 
+                            label="When Attending"
+                            rows={4}
+                            value={emailSettings.email_rsvp_attending_message}
+                            onChange={(e) => setEmailSettings({...emailSettings, email_rsvp_attending_message: e.target.value})}
+                        />
+                        <AdminTextarea 
+                            label="When Declined"
+                            rows={4}
+                            value={emailSettings.email_rsvp_declined_message}
+                            onChange={(e) => setEmailSettings({...emailSettings, email_rsvp_declined_message: e.target.value})}
                         />
                     </div>
-                    <div className="grid grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">When Attending</label>
-                            <textarea 
-                                rows={4}
-                                className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/10 outline-none"
-                                value={emailSettings.email_rsvp_attending_message}
-                                onChange={(e) => setEmailSettings({...emailSettings, email_rsvp_attending_message: e.target.value})}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">When Declined</label>
-                            <textarea 
-                                rows={4}
-                                className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/10 outline-none"
-                                value={emailSettings.email_rsvp_declined_message}
-                                onChange={(e) => setEmailSettings({...emailSettings, email_rsvp_declined_message: e.target.value})}
-                            />
-                        </div>
-                    </div>
                 </div>
-            </div>
+            </AdminCard>
 
              {/* Gift Registry Thank You */}
-             <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+             <AdminCard>
                 <h2 className="text-lg font-medium mb-6 text-[#4A3F35] flex items-center gap-2">
                     <Send className="w-5 h-5" />
                     Gift Thank You
                 </h2>
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Subject Line</label>
-                        <input 
-                            type="text" 
-                            className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/10 outline-none"
-                            value={emailSettings.email_gift_subject}
-                            onChange={(e) => setEmailSettings({...emailSettings, email_gift_subject: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Message Body</label>
-                        <textarea 
-                            rows={4}
-                            className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/10 outline-none"
-                            value={emailSettings.email_gift_message}
-                            onChange={(e) => setEmailSettings({...emailSettings, email_gift_message: e.target.value})}
-                        />
-                    </div>
+                    <AdminInput 
+                        label="Subject Line"
+                        value={emailSettings.email_gift_subject}
+                        onChange={(e) => setEmailSettings({...emailSettings, email_gift_subject: e.target.value})}
+                    />
+                    <AdminTextarea 
+                        label="Message Body"
+                        rows={4}
+                        value={emailSettings.email_gift_message}
+                        onChange={(e) => setEmailSettings({...emailSettings, email_gift_message: e.target.value})}
+                    />
                 </div>
-            </div>
+            </AdminCard>
 
-            <div className="flex justify-end gap-3 sticky bottom-6 bg-white/80 backdrop-blur p-2 rounded-2xl border border-stone-100 shadow-xl">
-                <button 
-                    type="submit"
-                    disabled={savingSettings}
-                    className="btn-primary min-w-[200px] flex justify-center items-center gap-2"
-                >
-                    {savingSettings ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-4" />}
-                    {savingSettings ? 'Saving...' : 'Save Email Templates'}
-                </button>
-            </div>
         </form>
       )}
 
@@ -382,6 +350,29 @@ export default function AdminEmails() {
               </div>
           </div>
       )}
-    </div>
+      </div>
+    </AdminPageLayout>
+    <AdminFloatingToolbar
+      actions={[
+        activeTab === 'compose'
+          ? {
+              id: 'bulk-send',
+              label: 'Send to All Pending',
+              icon: Send,
+              variant: 'primary',
+              onClick: handleBulkSend,
+              disabled: loading,
+            }
+          : {
+              id: 'save-templates',
+              label: 'Save Templates',
+              icon: Save,
+              variant: 'primary',
+              onClick: handleSaveSettings,
+              disabled: savingSettings,
+            },
+      ]}
+    />
+    </>
   );
 }

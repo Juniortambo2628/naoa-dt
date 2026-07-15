@@ -655,6 +655,21 @@ p {
   scrollbar-width: none;
 }
 
+/* Admin sidebar scrollbar */
+.admin-sidebar ::-webkit-scrollbar {
+  width: 6px;
+}
+.admin-sidebar ::-webkit-scrollbar-track {
+  background: #4A3F35;
+}
+.admin-sidebar ::-webkit-scrollbar-thumb {
+  background: #6B5D4F;
+  border-radius: 3px;
+}
+.admin-sidebar ::-webkit-scrollbar-thumb:hover {
+  background: #8B7D6B;
+}
+
 /* FAQ Answer Prose - Word wrap, bullet points, tables */
 .faq-answer-prose,
 .faq-answer-prose p,
@@ -737,6 +752,40 @@ p {
 
 .faq-answer-prose tr:nth-child(even) {
   background-color: rgba(255, 249, 245, 0.8);
+}
+
+/* Mobile: compact tables */
+@media (max-width: 768px) {
+  .faq-answer-prose table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    border: 1px solid #d6d3d1;
+  }
+
+  .faq-answer-prose th {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .faq-answer-prose td {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .faq-answer-prose p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .faq-answer-prose {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
 }
 
 /* Responsive Design */

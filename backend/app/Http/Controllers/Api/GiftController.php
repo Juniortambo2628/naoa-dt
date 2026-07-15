@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Gift;
 use App\Models\GiftClaim;
+use App\Traits\AdminNotifiable;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Mail;
 
 class GiftController extends Controller
 {
-    /**
-     * Get all gifts (public)
-     */
+    use AdminNotifiable, ApiResponse;
+
     public function index()
     {
         $gifts = Gift::where('is_available', true)
@@ -21,127 +24,103 @@ class GiftController extends Controller
         return response()->json($gifts);
     }
 
-    /**
-     * Claim a gift (public)
-     */
-    public function claim(Request $request, Gift $gift)
+    public function claim(Request $request, Gift $gift): JsonResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'amount' => 'nullable|numeric|min:1',
+            'name'    => 'required|string|max:255',
+            'email'   => 'nullable|email|max:255',
+            'amount'  => 'nullable|numeric|min:1',
             'message' => 'nullable|string|max:500',
         ]);
 
-        // Check if non-cash gift is already claimed
         if (!$gift->is_cash_fund && $gift->claims()->exists()) {
-            return response()->json([
-                'message' => 'This gift has already been reserved'
-            ], 422);
+            return $this->errorResponse('This gift has already been reserved', 422);
         }
 
         $claim = GiftClaim::create([
-            'gift_id' => $gift->id,
-            'claimer_name' => $request->name,
-            'claimer_email' => $request->email,
-            'amount' => $gift->is_cash_fund ? $request->amount : $gift->price,
-            'message' => $request->message,
+            'gift_id'        => $gift->id,
+            'claimer_name'   => $request->name,
+            'claimer_email'  => $request->email,
+            'amount'         => $gift->is_cash_fund ? $request->amount : $gift->price,
+            'message'        => $request->message,
         ]);
 
-        // Send thank you email if claimer provided an email
         if ($claim->claimer_email) {
-            \Illuminate\Support\Facades\Mail::to($claim->claimer_email)->send(new \App\Mail\GiftThankYou($claim->load('gift')));
+            Mail::to($claim->claimer_email)->send(new \App\Mail\GiftThankYou($claim->load('gift')));
         }
 
-        // Record notification for admin
-        \App\Models\Notification::create([
-            'id' => \Illuminate\Support\Str::uuid(),
-            'type' => 'GiftClaimed',
-            'notifiable_type' => 'App\Models\User',
-            'notifiable_id' => 1,
-            'data' => [
-                'title' => 'New Gift Contribution',
-                'message' => "{$claim->claimer_name} contributed to {$gift->name}",
-                'icon' => 'gift'
-            ]
-        ]);
+        $this->notifyAdmin(
+            'GiftClaimed',
+            'New Gift Contribution',
+            "{$claim->claimer_name} contributed to {$gift->name}",
+            'gift'
+        );
 
-        return response()->json([
-            'message' => $gift->is_cash_fund 
-                ? 'Thank you for your contribution!' 
-                : 'Gift reserved successfully!',
-            'claim' => $claim,
-        ], 201);
+        return $this->createdResponse(
+            $claim,
+            $gift->is_cash_fund ? 'Thank you for your contribution!' : 'Gift reserved successfully!'
+        );
     }
 
-    /**
-     * Create a gift (admin)
-     */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'nullable|numeric|min:0',
-            'image_url' => 'nullable|url',
-            'category' => 'nullable|string|max:50',
+            'name'         => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'price'        => 'nullable|numeric|min:0',
+            'image_url'    => 'nullable|url',
+            'category'     => 'nullable|string|max:50',
             'is_cash_fund' => 'boolean',
         ]);
 
-        $gift = Gift::create($request->all());
+        $gift = Gift::create($request->only([
+            'name', 'description', 'price', 'image_url', 'category', 'is_cash_fund',
+        ]));
 
-        return response()->json($gift, 201);
+        return $this->createdResponse($gift);
     }
 
-    /**
-     * Update a gift (admin)
-     */
-    public function update(Request $request, Gift $gift)
+    public function update(Request $request, Gift $gift): JsonResponse
     {
         $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'nullable|numeric|min:0',
-            'image_url' => 'nullable|url',
-            'product_link' => 'nullable|url',
-            'category' => 'nullable|string|max:50',
-            'is_cash_fund' => 'boolean',
-            'is_available' => 'boolean',
+            'name'          => 'sometimes|string|max:255',
+            'description'   => 'nullable|string',
+            'price'         => 'nullable|numeric|min:0',
+            'image_url'     => 'nullable|url',
+            'product_link'  => 'nullable|url',
+            'category'      => 'nullable|string|max:50',
+            'is_cash_fund'  => 'boolean',
+            'is_available'  => 'boolean',
         ]);
 
-        $gift->update($request->all());
+        $gift->update($request->only([
+            'name', 'description', 'price', 'image_url', 'product_link', 'category', 'is_cash_fund', 'is_available',
+        ]));
 
-        return response()->json($gift);
+        return $this->successResponse($gift);
     }
 
-    /**
-     * Delete a gift (admin)
-     */
-    public function destroy(Gift $gift)
+    public function destroy(Gift $gift): JsonResponse
     {
         $gift->delete();
-        return response()->json(['message' => 'Gift deleted successfully']);
+
+        return $this->deletedResponse('Gift deleted successfully');
     }
 
-    /**
-     * Get gift statistics (admin)
-     */
-    public function statistics()
+    public function statistics(): JsonResponse
     {
         $totalGifts = Gift::count();
         $claimedGifts = Gift::whereHas('claims')
             ->where('is_cash_fund', false)
             ->count();
         $totalValue = GiftClaim::sum('amount');
-        $cashFundTotal = Gift::where('is_cash_fund', true)
-            ->withSum('claims', 'amount')
-            ->get()
-            ->sum('claims_sum_amount');
+        $cashFundTotal = GiftClaim::whereHas('gift', fn($q) => $q->where('is_cash_fund', true))
+            ->sum('amount');
 
-        return response()->json([
-            'total_gifts' => $totalGifts,
-            'claimed_gifts' => $claimedGifts,
-            'total_value' => $totalValue,
+        return $this->successResponse([
+            'total_gifts'     => $totalGifts,
+            'claimed_gifts'   => $claimedGifts,
+            'total_value'     => $totalValue,
             'cash_fund_total' => $cashFundTotal,
         ]);
     }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAssetUrl } from '../utils/assetUrl';
 
 let baseURL = import.meta.env.VITE_API_URL || '/api';
 
@@ -27,9 +28,20 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling errors
+// Response interceptor: unwrap ApiResponse envelope { success, data } -> data
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const payload = response.data;
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'success' in payload &&
+      'data' in payload
+    ) {
+      response.data = payload.data;
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
@@ -42,68 +54,8 @@ api.interceptors.response.use(
   }
 );
 
-export const getAssetUrl = (path) => {
-  if (!path) return '';
-  
-  let cleanPath = path;
-  
-  // Handle absolute paths by extracting the pathname if they are from local/production backends
-  if (path.startsWith('http')) {
-    try {
-      const urlObj = new URL(path);
-      // If it's the same origin or a known API base, we just want the path
-      if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1' || urlObj.hostname.includes('okjtech.co.ke')) {
-        cleanPath = urlObj.pathname;
-      } else {
-        return path; // Truly external absolute URL
-      }
-    } catch (e) {
-      return path;
-    }
-  }
-
-  // Remove confusing prefixes that might come from older DB entries or misconfiguration
-  const prefixesToRemove = ['/wed-dt/backend/public', '/backend/public'];
-  for (const prefix of prefixesToRemove) {
-    if (cleanPath.startsWith(prefix)) {
-      cleanPath = cleanPath.substring(prefix.length);
-      break;
-    }
-  }
-
-  if (!cleanPath.startsWith('/')) cleanPath = `/${cleanPath}`;
-
-  // In development, Vite proxies /uploads, /storage, and /illustrations directly to Laravel
-  // We should NOT prepend /api for these, as they are static files in public/
-  const staticAssetPrefixes = ['/uploads', '/storage', '/illustrations'];
-  const isStaticAsset = staticAssetPrefixes.some(p => cleanPath.startsWith(p));
-
-  if (import.meta.env.DEV) {
-    if (isStaticAsset) {
-      return cleanPath; // Becomes /uploads/... which Vite proxies to 8008/uploads/...
-    }
-    // For other API-related relative paths, we use the baseURL origin if it exists, or just prepend /api
-    const base = baseURL.startsWith('http') ? new URL(baseURL).origin : '';
-    const prefix = baseURL.startsWith('http') ? '' : (baseURL === '/api' ? '/api' : baseURL);
-    
-    // Final check: if it somehow still contains /api/illustrations or /api/uploads, strip the /api
-    let finalUrl = `${base}${prefix}${cleanPath}`;
-    if (finalUrl.includes('/api/uploads') || finalUrl.includes('/api/illustrations') || finalUrl.includes('/api/storage')) {
-        return finalUrl.replace('/api/', '/');
-    }
-    return finalUrl;
-  }
-
-  // Production
-  // Derive the API origin from the configured baseURL
-  let productionBase = 'https://api-dntwed.okjtech.co.ke';
-  try {
-    if (baseURL && baseURL.startsWith('http')) {
-      productionBase = new URL(baseURL).origin;
-    }
-  } catch (e) { /* use default */ }
-  return `${productionBase}${cleanPath}`;
-};
+// Re-export for backward compatibility with existing imports
+export { getAssetUrl };
 
 export default api;
 
@@ -313,9 +265,6 @@ export const faqService = {
   update: (id, data) => api.put(`/faqs/${id}`, data),
   delete: (id) => api.delete(`/faqs/${id}`),
   reorder: (faqs) => api.post('/faqs/reorder', { faqs }),
-  uploadMedia: (formData) => api.post('/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-  })
 };
 
 // Polaroid services
@@ -342,4 +291,16 @@ export const enquiryService = {
   
   // Delete enquiry (admin)
   delete: (id) => api.delete(`/enquiries/${id}`),
+};
+
+// Analytics services
+export const analyticsService = {
+  getStats: () => api.get('/analytics'),
+};
+
+// Check-in services
+export const checkinService = {
+  getStats: () => api.get('/checkin/stats'),
+  scan: (data) => api.post('/checkin/scan', data),
+  generateQR: (guestId) => api.post(`/checkin/guests/${guestId}/generate-qr`),
 };

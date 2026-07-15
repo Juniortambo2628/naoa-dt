@@ -62,15 +62,12 @@ export default function Navbar() {
         <div className="container-wedding flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <span 
-              className="text-2xl transition-colors"
-              style={{ 
-                fontFamily: "'Great Vibes', cursive",
-                color: '#A67B5B',
-              }}
-            >
-              D&T
-            </span>
+            <img 
+              src="/Naoa-logo.png" 
+              alt="Logo" 
+              className="h-14 w-auto rounded-lg"
+              style={{ boxShadow: '0 4px 12px rgba(166, 123, 91, 0.3)' }}
+            />
           </Link>
 
           {/* Desktop Navigation */}

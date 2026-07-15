@@ -8,12 +8,14 @@ use App\Models\Notification;
 use App\Models\Setting;
 use App\Mail\RSVPConfirmation;
 use App\Mail\AdminRSVPNotification;
+use App\Traits\AdminNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class GuestService
 {
+    use AdminNotifiable;
     /**
      * Submit an RSVP for a given guest
      * 
@@ -58,7 +60,6 @@ class GuestService
                 if ($guest->invitation) {
                     $guest->invitation->update([
                         'status' => 'responded',
-                        'responded_at' => now(),
                     ]);
                 }
 
@@ -114,32 +115,18 @@ class GuestService
         }
 
         // Record notification for admin in database
-        try {
-            Notification::create([
-                'id' => \Illuminate\Support\Str::uuid(),
-                'type' => 'App\Notifications\RSVPReceived',
-                'notifiable_type' => 'App\Models\User',
-                'notifiable_id' => 1, // Default admin
-                'data' => [
-                    'title' => 'New RSVP: ' . $guest->name,
-                    'message' => $guest->name . ' has ' . ($data['attending'] ? 'confirmed their attendance.' : 'respectfully declined.'),
-                    'guest_id' => $guest->id,
-                    'attending' => $data['attending'],
-                    'plus_ones' => $plusOnes,
-                ]
-            ]);
-        } catch (\Exception $e) {
-            Log::warning('Failed to create RSVP notification record: ' . $e->getMessage());
-        }
+        $this->notifyAdmin(
+            'App\Notifications\RSVPReceived',
+            'New RSVP: ' . $guest->name,
+            $guest->name . ' has ' . ($data['attending'] ? 'confirmed their attendance.' : 'respectfully declined.'),
+            'rsvp',
+            [
+                'guest_id' => $guest->id,
+                'attending' => $data['attending'],
+                'plus_ones' => $plusOnes,
+            ]
+        );
 
         return ['success' => true, 'message' => 'RSVP submitted successfully'];
-    }
-
-    /**
-     * Bulk update guests
-     */
-    public function bulkUpdate(array $guestIds, array $data): void
-    {
-        Guest::whereIn('id', $guestIds)->update($data);
     }
 }

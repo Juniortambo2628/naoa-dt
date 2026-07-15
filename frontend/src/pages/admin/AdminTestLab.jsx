@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Mail, QrCode, Send, RefreshCw, CheckCircle, AlertCircle, FlaskConical } from 'lucide-react';
+import { Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical } from 'lucide-react';
 import api, { guestService } from '../../services/api';
+import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import { AdminInput } from '../../components/admin/AdminInput';
 
 export default function AdminTestLab() {
   const [testEmail, setTestEmail] = useState('');
@@ -57,25 +60,20 @@ export default function AdminTestLab() {
   };
 
   return (
-    <div className="space-y-6">
-      <AdminPageHero
-        title="Test Lab"
-        description="Development and testing utilities"
-        icon={<FlaskConical className="w-5 h-5 text-[#A67B5B]" />}
-        breadcrumb={[
-          { label: 'Dashboard', path: '/admin/dashboard' },
-          { label: 'Test Lab' },
-        ]}
-        actions={
-          <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium border border-orange-200">
-            Development Mode
-          </span>
-        }
-      />
+    <AdminPageLayout
+      hero={
+        <AdminPageHero
+          title="Test Lab"
+          description="Development and testing utilities"
+          icon={<FlaskConical className="w-5 h-5 text-[#A67B5B]" />}
+          breadcrumb="Test Lab"
+        />
+      }
+    >
 
       <div className="grid md:grid-cols-2 gap-6">
           {/* Email Testing */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+          <AdminCard>
               <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
                       <Mail className="w-5 h-5 text-[#A67B5B]" />
@@ -84,16 +82,13 @@ export default function AdminTestLab() {
               </div>
 
               <div className="space-y-4">
-                  <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">Recipient Address</label>
-                      <input 
-                        type="email" 
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                        className="w-full p-2 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-[#A67B5B]/20"
-                        placeholder="kanye@west.com"
-                      />
-                  </div>
+                  <AdminInput 
+                    label="Recipient Address"
+                    type="email" 
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="kanye@west.com"
+                  />
 
                   <div className="grid grid-cols-2 gap-3">
                       <button 
@@ -112,10 +107,10 @@ export default function AdminTestLab() {
                       </button>
                   </div>
               </div>
-          </div>
+          </AdminCard>
 
           {/* Code Generation */}
-           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+           <AdminCard>
               <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
                       <QrCode className="w-5 h-5 text-[#A67B5B]" />
@@ -157,7 +152,7 @@ export default function AdminTestLab() {
                       <p className="text-center text-xs text-stone-400">Scan or click verify to test code validity</p>
                   </div>
               </div>
-          </div>
+          </AdminCard>
       </div>
 
       {/* Logs */}
@@ -175,6 +170,6 @@ export default function AdminTestLab() {
               ))}
           </div>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 }

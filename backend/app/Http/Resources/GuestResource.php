@@ -26,12 +26,11 @@ class GuestResource extends JsonResource
             'song_request' => $this->song_request,
             'qr_code' => $this->qr_code,
             'checked_in_at' => $this->checked_in_at,
-            'dietary_preference' => $this->dietary_preference,
             'rsvp_status' => $this->rsvp_status,
             'rsvp_message' => $this->rsvp_message,
             'dietary_notes' => $this->dietary_notes,
             'invitation_via' => $this->invitation_via,
-            'notes' => $this->notes,
+            'save_the_date_method' => $this->save_the_date_method,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             

@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Traits\ApiResponse;
+use App\Traits\NormalizesUrls;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class MediaController extends Controller
 {
+    use ApiResponse, NormalizesUrls;
     public function upload(Request $request)
     {
         $request->validate([
@@ -23,28 +26,11 @@ class MediaController extends Controller
 
             $url = '/uploads/' . $filename;
 
-            return response()->json([
+            return $this->successResponse([
                 'url' => $url,
-                'message' => 'Image uploaded successfully'
-            ]);
+            ], 'Image uploaded successfully');
         }
 
-        return response()->json(['message' => 'No image uploaded'], 400);
-    }
-
-    private function normalizeUrls($url)
-    {
-        if (str_contains($url, 'localhost') || str_contains($url, '127.0.0.1')) {
-            $parsed = parse_url($url);
-            if (isset($parsed['path'])) {
-                $path = $parsed['path'];
-                $prefix = '/wed-dt/backend/public';
-                if (str_starts_with($path, $prefix)) {
-                    $path = substr($path, strlen($prefix));
-                }
-                return $path;
-            }
-        }
-        return $url;
+        return $this->errorResponse('No image uploaded', 400);
     }
 }

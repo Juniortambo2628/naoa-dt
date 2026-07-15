@@ -1,29 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { QrCode, UserCheck, Users, AlertCircle, CheckCircle } from 'lucide-react';
-import api from '../../services/api';
+import { useCheckinStats } from '../../hooks/useApiHooks';
+import { checkinService } from '../../services/api';
+import AdminCard from '../../components/admin/AdminCard';
+import EmptyState from '../../components/admin/EmptyState';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminPageHero from '../../components/admin/AdminPageHero';
-import StatCard from '../../components/admin/StatCard';
+import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 
 export default function CheckInScanner() {
+    const { data: statsData, refetch: refetchStats } = useCheckinStats();
     const [scanning, setScanning] = useState(false);
     const [result, setResult] = useState(null);
-    const [stats, setStats] = useState({ total_expected: 0, checked_in: 0, remaining: 0, percentage: 0 });
     const [recentCheckIns, setRecentCheckIns] = useState([]);
     const scannerRef = useRef(null);
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
-        try {
-            const res = await api.get('/checkin/stats');
-            setStats(res.data);
-        } catch (err) {
-            console.error('Failed to load stats', err);
-        }
-    };
+    const stats = statsData || { total_expected: 0, checked_in: 0, remaining: 0, percentage: 0 };
 
     const startScanning = () => {
         setScanning(true);
@@ -52,7 +45,7 @@ export default function CheckInScanner() {
         stopScanning();
         
         try {
-            const res = await api.post('/checkin/scan', { qr_code: decodedText });
+            const res = await checkinService.scan({ qr_code: decodedText });
             setResult({
                 success: res.data.success,
                 message: res.data.message,
@@ -61,7 +54,7 @@ export default function CheckInScanner() {
             
             if (res.data.success) {
                 setRecentCheckIns(prev => [res.data.guest, ...prev.slice(0, 4)]);
-                fetchStats();
+                refetchStats();
             }
         } catch (err) {
             setResult({
@@ -76,49 +69,29 @@ export default function CheckInScanner() {
         // Ignore scan errors (continuous scanning)
     };
 
+    const summaryCards = [
+        { label: 'Expected', value: stats.total_expected, icon: Users, color: '#A67B5B' },
+        { label: 'Checked In', value: stats.checked_in, icon: UserCheck, color: '#8B9A7D' },
+        { label: 'Remaining', value: stats.remaining, icon: AlertCircle, color: '#D4A59A' },
+        { label: 'Progress', value: `${stats.percentage}%`, icon: CheckCircle, color: '#C8A68E' },
+    ];
+
     return (
-        <div className="space-y-6">
-            <AdminPageHero
-                title="Guest Check-In"
-                description={`Total checked in: ${stats.checked_in} / ${stats.total_expected}`}
-                breadcrumb={[
-                    { label: 'Dashboard', path: '/admin/dashboard' },
-                    { label: 'Check-In' },
-                ]}
-                icon={<QrCode className="w-5 h-5 text-[#A67B5B]" />}
-            />
+        <AdminPageLayout
+            hero={
+                <AdminPageHero
+                    title="Guest Check-In"
+                    description={`Total checked in: ${stats.checked_in} / ${stats.total_expected}`}
+                    breadcrumb="Check-In"
+                    icon={<QrCode className="w-5 h-5 text-[#A67B5B]" />}
+                />
+            }
+            summary={<AdminSummaryCards cards={summaryCards} columns={4} />}
+        >
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <StatCard 
-                    icon={<Users className="w-6 h-6" />}
-                    label="Expected"
-                    value={stats.total_expected}
-                    color="#A67B5B"
-                />
-                <StatCard 
-                    icon={<UserCheck className="w-6 h-6" />}
-                    label="Checked In"
-                    value={stats.checked_in}
-                    color="#8B9A7D"
-                />
-                <StatCard 
-                    icon={<AlertCircle className="w-6 h-6" />}
-                    label="Remaining"
-                    value={stats.remaining}
-                    color="#D4A59A"
-                />
-                <StatCard 
-                    icon={<CheckCircle className="w-6 h-6" />}
-                    label="Progress"
-                    value={`${stats.percentage}%`}
-                    color="#C8A68E"
-                />
-            </div>
-
-            {/* Scanner Section */}
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+                {/* Scanner Section */}
+                <div className="grid md:grid-cols-2 gap-6">
+                <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-4">QR Scanner</h3>
                     
                     {!scanning ? (
@@ -172,13 +145,13 @@ export default function CheckInScanner() {
                             </button>
                         </div>
                     )}
-                </div>
+                </AdminCard>
 
                 {/* Recent Check-ins */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
+                <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-4">Recent Check-Ins</h3>
                     {recentCheckIns.length === 0 ? (
-                        <p className="text-center py-8 text-stone-400">No check-ins yet</p>
+                        <EmptyState icon={CheckCircle} message="No check-ins yet" />
                     ) : (
                         <div className="space-y-3">
                             {recentCheckIns.map((guest, idx) => (
@@ -194,8 +167,8 @@ export default function CheckInScanner() {
                             ))}
                         </div>
                     )}
-                </div>
+                </AdminCard>
             </div>
-        </div>
+        </AdminPageLayout>
     );
 }

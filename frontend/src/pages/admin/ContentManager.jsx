@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import { contentService } from '../../services/api';
-import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Languages, Sparkles, Loader2, Edit } from 'lucide-react';
+import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Languages, Sparkles, Edit } from 'lucide-react';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminToolbar from '../../components/admin/AdminToolbar';
+import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import ToggleButton from '../../components/admin/ToggleButton';
+import Spinner from '../../components/admin/Spinner';
 import { useContent } from '../../context/ContentContext';
 import { toast } from 'react-hot-toast';
 
@@ -318,33 +323,39 @@ export default function ContentManager() {
   if (loading) return <div className="p-8 text-center text-stone-500">Loading content...</div>;
 
   return (
-    <div className="space-y-6">
-       <AdminPageHero
-            title="CMS - Content Management"
-            description={`Editing: ${PAGES.find(p => p.id === activePage)?.label}`}
-            breadcrumb={[
-                { label: 'Dashboard', path: '/admin/dashboard' },
-                { label: 'CMS' },
-            ]}
-            icon={<Edit className="w-5 h-5 text-[#A67B5B]" />}
-            actions={
-                <div className="flex bg-white rounded-lg p-1 shadow-sm border border-stone-200">
-                    {LANGUAGES.map(lang => (
-                        <button
-                            key={lang.code}
-                            onClick={() => setActiveLang(lang.code)}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                                activeLang === lang.code 
-                                    ? 'bg-[#A67B5B] text-white shadow-md' 
-                                    : 'text-stone-500 hover:bg-stone-50'
-                            }`}
-                        >
-                            {lang.label}
-                        </button>
-                    ))}
-                </div>
-            }
-       />        <div className="space-y-4 pb-32">
+    <>
+    <AdminPageLayout
+      hero={
+        <AdminPageHero
+          title="CMS - Content Management"
+          description={`Editing: ${PAGES.find(p => p.id === activePage)?.label}`}
+          breadcrumb="CMS"
+          icon={<Edit className="w-5 h-5 text-[#A67B5B]" />}
+        />
+      }
+      toolbar={
+        <AdminToolbar
+          children={
+            <div className="flex bg-white rounded-lg p-1 shadow-sm border border-stone-200">
+              {LANGUAGES.map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => setActiveLang(lang.code)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeLang === lang.code
+                      ? 'bg-[#A67B5B] text-white shadow-md'
+                      : 'text-stone-500 hover:bg-stone-50'
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+          }
+        />
+      }
+    >
+       <div className="space-y-4">
            {SECTIONS.filter(s => PAGES.find(p => p.id === activePage)?.sections.includes(s.key)).map(section => {
                const isExpanded = expandedSection === section.key;
                const sectionData = contents[section.key] || { content: {} };
@@ -367,12 +378,11 @@ export default function ContentManager() {
                            <div className="flex items-center gap-6">
                                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                                    <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Visible</span>
-                                   <button 
-                                        onClick={() => handleToggleVisibility(section.key)}
-                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${sectionData.is_visible !== false ? 'bg-[#A67B5B]' : 'bg-stone-300'}`}
-                                   >
-                                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${sectionData.is_visible !== false ? 'translate-x-5' : 'translate-x-1'}`} />
-                                   </button>
+                                    <ToggleButton
+                                        enabled={sectionData.is_visible !== false}
+                                        onToggle={() => handleToggleVisibility(section.key)}
+                                        label={`Toggle ${section.label} visibility`}
+                                    />
                                </div>
                                {isExpanded ? <ChevronDown className="w-5 h-5 text-stone-400" /> : <ChevronRight className="w-5 h-5 text-stone-400" />}
                            </div>
@@ -465,7 +475,7 @@ export default function ContentManager() {
                                                             title="Auto-translate to all other languages"
                                                         >
                                                             {translating?.section === section.key && translating?.field === field.key ? (
-                                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                                <Spinner size="sm" />
                                                             ) : (
                                                                 <Sparkles className="w-3 h-3" />
                                                             )}
@@ -520,25 +530,18 @@ export default function ContentManager() {
             })}
         </div>
 
-        {/* Page Context Switcher Toolbar */}
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white p-1.5 rounded-2xl shadow-2xl z-50 flex items-center gap-1 border border-stone-800">
-            {PAGES.map(page => (
-                <button
-                    key={page.id}
-                    onClick={() => {
-                        setActivePage(page.id);
-                        setExpandedSection(page.sections[0]);
-                    }}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                        activePage === page.id 
-                            ? 'bg-[#A67B5B] text-white shadow-lg' 
-                            : 'text-stone-400 hover:text-white hover:bg-stone-800'
-                    }`}
-                >
-                    {page.label}
-                </button>
-            ))}
-        </div>
-    </div>
+    </AdminPageLayout>
+    <AdminFloatingToolbar
+      actions={PAGES.map(page => ({
+        id: page.id,
+        label: page.label,
+        variant: activePage === page.id ? 'primary' : 'secondary',
+        onClick: () => {
+          setActivePage(page.id);
+          setExpandedSection(page.sections[0]);
+        },
+      }))}
+    />
+    </>
   );
 }

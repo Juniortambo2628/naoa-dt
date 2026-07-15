@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Search, Filter, Plus, Edit, Trash2, Check, Download, Loader2, Mail, Send, FileImage, FileText, Package, List, Grid, Upload, MessageCircle, X, ChevronDown, RotateCcw, ArrowUpDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService, settingService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
@@ -8,7 +7,12 @@ import ImportConflictModal from '../../components/admin/ImportConflictModal';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
 import InvitationActionModal from '../../components/admin/InvitationActionModal';
 import AdminPageHero from '../../components/admin/AdminPageHero';
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminToolbar from '../../components/admin/AdminToolbar';
+import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import Spinner from '../../components/admin/Spinner';
+import GuestList from '../../components/admin/GuestList';
+import GuestBulkActions from '../../components/admin/GuestBulkActions';
 import { useGuests, useSettings, useContent } from '../../hooks/useApiHooks';
 import { useSearch } from '../../context/SearchContext';
 import JSZip from 'jszip';
@@ -23,7 +27,7 @@ export default function AdminGuests() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { searchQuery } = useSearch();
+  const { searchQuery, setSearchQuery } = useSearch();
   const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'alpha'
   const [filter, setFilter] = useState('all'); // all, confirmed, pending, declined
   const [currentPage, setCurrentPage] = useState(1);
@@ -525,603 +529,141 @@ export default function AdminGuests() {
 
   const pagedGuests = filteredGuests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const toolbarActions = [
+    {
+      id: 'add-guest',
+      label: 'Add Guest',
+      icon: Plus,
+      variant: 'primary',
+      onClick: handleAdd,
+    },
+    {
+      id: 'import-excel',
+      label: 'Import Excel',
+      icon: Upload,
+      onClick: () => fileInputRef.current?.click(),
+      disabled: isImporting,
+    },
+    {
+      id: 'export-images',
+      label: 'Export Images',
+      icon: FileImage,
+      onClick: () => exportBulk('png'),
+      disabled: isBulkExporting,
+    },
+    {
+      id: 'export-pdfs',
+      label: 'Export PDFs',
+      icon: FileText,
+      onClick: () => exportBulk('pdf'),
+      disabled: isBulkExporting,
+    },
+    {
+      id: 'reset-rsvps',
+      label: 'Reset RSVPs',
+      icon: Trash2,
+      variant: 'danger',
+      onClick: handleResetAllRSVPs,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <AdminPageHero
-        title="Guest List"
-        description={`${guests.length} total guests`}
-        breadcrumb={[
-          { label: 'Dashboard', path: '/admin/dashboard' },
-          { label: 'Guests' },
-        ]}
-        icon={<Users className="w-5 h-5 text-[#A67B5B]" />}
-        actions={
-          <div className="flex items-center gap-3">
-            <div className="bg-white rounded-lg border border-stone-200 p-1 flex">
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-stone-100 text-stone-800' : 'text-stone-400 hover:text-stone-600'}`}
-                  title="List View"
-                >
-                  <List className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => setViewMode('spreadsheet')}
-                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'spreadsheet' ? 'bg-stone-100 text-stone-800' : 'text-stone-400 hover:text-stone-600'}`}
-                  title="Spreadsheet View"
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-            </div>
-
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept=".xlsx, .xls, .csv" 
-              onChange={handleImport} 
-            />
-
-            <div className="relative group">
-                <button className="btn-secondary flex items-center gap-2">
-                    Actions <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-stone-100 rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                    <button 
-                        onClick={handleAdd}
-                        className="w-full text-left px-4 py-2 hover:bg-[#A67B5B]/10 text-sm flex items-center gap-2 text-[#A67B5B] font-semibold border-b border-stone-50"
-                    >
-                        <Plus className="w-4 h-4" /> Add Guest
-                    </button>
-                    <button 
-                        onClick={() => fileInputRef.current?.click()} 
-                        disabled={isImporting}
-                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
-                    >
-                        {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Import Excel
-                    </button>
-                    <button 
-                        onClick={() => exportBulk('png')} 
-                        disabled={isBulkExporting}
-                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
-                    >
-                        <FileImage className="w-4 h-4" /> Export Images
-                    </button>
-                    <button 
-                        onClick={() => exportBulk('pdf')} 
-                        disabled={isBulkExporting}
-                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-sm flex items-center gap-2 text-stone-600"
-                    >
-                        <FileText className="w-4 h-4" /> Export PDFs
-                    </button>
-                    <button 
-                        onClick={handleResetAllRSVPs} 
-                        className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm flex items-center gap-2 text-red-600"
-                    >
-                        <Trash2 className="w-4 h-4" /> Reset RSVPs
-                    </button>
-                </div>
-            </div>
-
-          </div>
+    <>
+      <AdminPageLayout
+        hero={
+          <AdminPageHero
+            title="Guest List"
+            description={`${guests.length} total guests`}
+            breadcrumb="Guests"
+            icon={<Users className="w-5 h-5 text-[#A67B5B]" />}
+          />
         }
+        toolbar={
+          <AdminToolbar
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search guests by name, email, group..."
+            filters={[
+              { id: 'all', label: 'All' },
+              { id: 'confirmed', label: 'Confirmed' },
+              { id: 'pending', label: 'Pending' },
+              { id: 'declined', label: 'Declined' },
+            ]}
+            activeFilter={filter}
+            onFilterChange={(f) => { setFilter(f); setCurrentPage(1); setSelectedIds([]); }}
+            viewMode={viewMode}
+            viewOptions={['list', 'spreadsheet']}
+            onViewModeChange={setViewMode}
+            sortOptions={[
+              { id: 'latest', label: 'Latest Added' },
+              { id: 'alpha', label: 'A → Z' },
+            ]}
+            activeSort={sortBy}
+            onSortChange={setSortBy}
+          />
+        }
+      >
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept=".xlsx, .xls, .csv" 
+          onChange={handleImport} 
+        />
+
+        <GuestBulkActions
+        selectedIds={selectedIds}
+        showBulkMenu={showBulkMenu}
+        setShowBulkMenu={setShowBulkMenu}
+        isBulkExporting={isBulkExporting}
+        loading={loading}
+        onBulkUpdate={handleBulkUpdate}
+        onBulkWhatsApp={handleBulkWhatsApp}
+        onBulkSendInvite={handleBulkSendInvite}
+        onBulkResendConfirmation={handleBulkResendConfirmation}
+        onExportBulk={exportBulk}
+        onBulkDelete={handleBulkDelete}
+        onClearSelection={() => { setSelectedIds([]); setShowBulkMenu(null); }}
       />
-
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-2">
-          {['all', 'confirmed', 'pending', 'declined'].map(f => (
-             <button 
-               key={f}
-               onClick={() => { setFilter(f); setCurrentPage(1); setSelectedIds([]); }}
-               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-white border text-stone-600 hover:bg-stone-50'}`}
-             >
-               {f.charAt(0).toUpperCase() + f.slice(1)}
-             </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setSortBy(prev => prev === 'latest' ? 'alpha' : 'latest')}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white border text-stone-600 hover:bg-stone-50 transition-colors"
-        >
-          <ArrowUpDown className="w-4 h-4" />
-          {sortBy === 'latest' ? 'Latest Added' : 'A → Z'}
-        </button>
-      </div>
-
-      {/* Bulk Actions Bar */}
-      <AnimatePresence>
-        {selectedIds.length > 0 && (
-          <motion.div 
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-[100] flex items-center flex-nowrap overflow-visible no-scrollbar gap-6 border border-stone-800 max-w-[95vw]"
-          >
-            <div className="flex items-center gap-2 pr-6 border-r border-stone-800 shrink-0">
-              <div className="w-6 h-6 rounded-full bg-[#A67B5B] flex items-center justify-center text-[10px] font-bold">
-                {selectedIds.length}
-              </div>
-              <span className="text-sm font-medium whitespace-nowrap">Selected</span>
-            </div>
-            
-            <div className="flex items-center gap-3 overflow-visible no-scrollbar py-1">
-              <div className="flex items-center gap-3 border-r border-stone-800 pr-4 shrink-0">
-                <select 
-                  className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-3 py-2 w-36"
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleBulkUpdate({ group: e.target.value });
-                      e.target.value = '';
-                    }
-                  }}
-                >
-                  <option value="">Set Group...</option>
-                  <option value="family">Family</option>
-                  <option value="friends">Friends</option>
-                  <option value="work">Work</option>
-                  <option value="other">Other</option>
-                </select>
-
-                {/* Invite Via — click-toggle submenu */}
-                <div className="relative shrink-0">
-                    <button 
-                        onClick={() => setShowBulkMenu(prev => prev === 'invite' ? null : 'invite')}
-                        className="flex items-center gap-2 bg-stone-800 text-white text-xs px-4 py-2 rounded border border-stone-700 hover:bg-stone-700 transition-colors w-36 justify-between"
-                    >
-                        Invite Via <ChevronDown className={`w-3 h-3 transition-transform ${showBulkMenu === 'invite' ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showBulkMenu === 'invite' && (
-                        <div className="absolute bottom-full left-0 mb-2 w-40 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 z-[110]">
-                            <button 
-                                onClick={() => { handleBulkWhatsApp(); setShowBulkMenu(null); }}
-                                className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
-                            >
-                                <MessageCircle className="w-3.5 h-3.5 text-green-500" /> WhatsApp
-                            </button>
-                            <button 
-                                onClick={() => { handleBulkSendInvite(); setShowBulkMenu(null); }}
-                                className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
-                                disabled={isBulkExporting}
-                            >
-                                <Mail className="w-3.5 h-3.5 text-blue-400" /> Email
-                            </button>
-                            <button 
-                                onClick={() => { handleBulkResendConfirmation(); setShowBulkMenu(null); }}
-                                className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
-                                disabled={loading}
-                            >
-                                <Send className="w-3.5 h-3.5 text-emerald-400" /> Resend Confirmation
-                            </button>
-                        </div>
-                    )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                  {/* Export — click-toggle submenu */}
-                  <div className="relative shrink-0">
-                      <button 
-                          onClick={() => setShowBulkMenu(prev => prev === 'export' ? null : 'export')}
-                          className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-between"
-                      >
-                          <Download className="w-4 h-4" /> Export <ChevronDown className={`w-3 h-3 transition-transform ${showBulkMenu === 'export' ? 'rotate-180' : ''}`} />
-                      </button>
-                      {showBulkMenu === 'export' && (
-                          <div className="absolute bottom-full left-0 mb-2 w-40 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 z-[110]">
-                              <button 
-                                  onClick={() => { exportBulk('png'); setShowBulkMenu(null); }}
-                                  className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
-                                  disabled={isBulkExporting}
-                              >
-                                  <FileImage className="w-3.5 h-3.5 text-emerald-400" /> Export PNG
-                              </button>
-                              <button 
-                                  onClick={() => { exportBulk('pdf'); setShowBulkMenu(null); }}
-                                  className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
-                                  disabled={isBulkExporting}
-                              >
-                                  <FileText className="w-3.5 h-3.5 text-blue-400" /> Export PDF
-                              </button>
-                          </div>
-                      )}
-                  </div>
-                  
-                  <button 
-                    onClick={() => {
-                        if (window.confirm(`Reset RSVP status for ${selectedIds.length} selected guests?`)) {
-                            handleBulkUpdate({ rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
-                        }
-                    }}
-                    className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
-                  >
-                    <RotateCcw className="w-4 h-4" /> Reset RSVP
-                  </button>
-
-                  <button 
-                    onClick={handleBulkDelete}
-                    className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
-                  >
-                    <Trash2 className="w-4 h-4" /> Delete
-                  </button>
-              </div>
-            </div>
-            
-            <button 
-              onClick={() => { setSelectedIds([]); setShowBulkMenu(null); }}
-              className="ml-2 p-1 hover:bg-stone-800 rounded-lg transition-colors border-l border-stone-800 pl-4 shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {isBulkExporting && (
           <div className="bg-[#A67B5B]/10 border border-[#A67B5B]/20 p-4 rounded-xl flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 animate-spin text-[#A67B5B]" />
+                  <Spinner size="sm" className="text-[#A67B5B]" />
                   <div>
                       <p className="text-sm font-medium text-stone-800">Generating Bulk Invitations...</p>
                       <p className="text-xs text-stone-500">Processing guest {bulkProgress.current} of {bulkProgress.total}: {exportingGuest?.name}</p>
                   </div>
               </div>
               <div className="w-48 bg-stone-200 h-2 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-[#A67B5B] h-full transition-all duration-300" 
+                  <div
+                    className="bg-[#A67B5B] h-full transition-all duration-300"
                     style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
                   />
               </div>
           </div>
       )}
 
-      {/* List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-          {guestsLoading ? (
-              <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-[#A67B5B]" /></div>
-          ) : filteredGuests.length === 0 ? (
-              <div className="p-12 text-center text-stone-500">No guests found.</div>
-          ) : viewMode === 'spreadsheet' ? (
-              <div className="overflow-x-auto relative" style={{ maxHeight: '70vh' }}>
-                  <table className="w-full text-sm border-collapse border-stone-200">
-                      <thead className="sticky top-0 bg-stone-50 z-10 shadow-sm border-b border-stone-200">
-                          <tr>
-                              <th className="px-2 py-3 w-10 text-center border-r border-stone-200 bg-stone-100">
-                                  {/* Empty header for the select checkbox */}
-                              </th>
-                              <th className="px-2 py-3 text-center font-mono text-stone-500 w-12 border-r border-stone-200 bg-stone-100">#</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">A - Name</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">B - Email</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">C - Phone</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">D - Group</th>
-                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">E - Invitation Via</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">F - Extra Plus Ones Allowed</th>
-                               <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">G - RSVP Code</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100 text-center">H - Invite</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">I - RSVP Status</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">J - Message</th>
-                              <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider bg-stone-100">K - Dietary</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-200">
-                          {pagedGuests.map((guest, index) => (
-                              <tr key={guest.id} className={`hover:bg-blue-50/30 group ${selectedIds.includes(guest.id) ? 'bg-blue-50/50' : ''}`}>
-                                  <td className="px-2 py-2 text-center border-r border-stone-200">
-                                      <input 
-                                        type="checkbox" 
-                                        className="w-3.5 h-3.5 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]"
-                                        checked={selectedIds.includes(guest.id)}
-                                        onChange={() => toggleSelect(guest.id)}
-                                      />
-                                  </td>
-                                  <td className="px-2 py-2 text-center text-stone-400 bg-stone-50 border-r border-stone-200 select-none">
-                                      {index + 1}
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <div className="relative flex items-center">
-                                          <input 
-                                            type="text" 
-                                            defaultValue={guest.name} 
-                                            onBlur={(e) => handleInlineSave(guest, 'name', e.target.value)}
-                                            className={`w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all font-medium text-stone-800 ${guest.parent_guest_id ? 'pl-8' : ''}`}
-                                            placeholder="Name"
-                                          />
-                                          {guest.parent_guest_id && (
-                                              <div className="absolute left-2 text-purple-400 pointer-events-none" title="Plus One">
-                                                  <Users className="w-4 h-4" />
-                                              </div>
-                                          )}
-                                      </div>
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <input 
-                                        type="email" 
-                                        defaultValue={guest.email || ''} 
-                                        onBlur={(e) => handleInlineSave(guest, 'email', e.target.value)}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600"
-                                        placeholder="Email"
-                                      />
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <input 
-                                        type="text" 
-                                        defaultValue={guest.phone || ''} 
-                                        onBlur={(e) => handleInlineSave(guest, 'phone', e.target.value)}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600"
-                                        placeholder="Phone"
-                                      />
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <input 
-                                        type="text" 
-                                        defaultValue={guest.group || ''} 
-                                        onBlur={(e) => handleInlineSave(guest, 'group', e.target.value)}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 capitalize"
-                                        placeholder="Group"
-                                      />
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <select 
-                                        value={guest.invitation_via || 'whatsapp'} 
-                                        onChange={(e) => handleInlineSave(guest, 'invitation_via', e.target.value)}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 appearance-none"
-                                      >
-                                          <option value="whatsapp">WhatsApp</option>
-                                          <option value="email">Email</option>
-                                      </select>
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <input 
-                                        type="number" 
-                                        defaultValue={guest.plus_ones_allowed || 0} 
-                                        min="0"
-                                        onBlur={(e) => handleInlineSave(guest, 'plus_ones_allowed', e.target.value)}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all font-mono text-stone-600"
-                                      />
-                                  </td>
-                                  <td className="px-3 py-2 text-stone-600 border-r border-stone-200 font-mono text-xs">
-                                      {guest.unique_code || '—'}
-                                  </td>
-                                  <td className="px-3 py-2 border-r border-stone-200 text-center">
-                                      <button 
-                                        onClick={() => handleInviteRequest(guest)}
-                                        className={`p-1 rounded-md transition-all ${guest.invitation?.status === 'sent' || guest.invitation?.status === 'responded' ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400 hover:bg-[#A67B5B]/10 hover:text-[#A67B5B]'}`}
-                                        title="Invite guest"
-                                      >
-                                          <Send className="w-4 h-4" />
-                                      </button>
-                                  </td>
-                                  <td className="px-3 py-2 text-xs">
-                                      <span className={`px-2 py-1 rounded-full flex items-center justify-center gap-1 w-fit whitespace-nowrap
-                                          ${guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                          guest.rsvp_status === 'declined' ? 'bg-red-100 text-red-700' :
-                                          'bg-orange-100 text-orange-700'}
-                                      `}>
-                                          {guest.rsvp_status === 'confirmed' && <Check className="w-2.5 h-2.5" />}
-                                          {guest.rsvp_status === 'confirmed' ? 'Confirmed' : 
-                                           guest.rsvp_status === 'declined' ? 'Declined' : 'Pending'}
-                                      </span>
-                                  </td>
-                                  <td className="px-3 py-2 text-center border-r border-stone-200">
-                                      <button 
-                                        onClick={() => {
-                                          if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
-                                            handleInlineSave(guest, 'rsvp_status', 'pending');
-                                          }
-                                        }}
-                                        className="p-1 text-stone-400 hover:text-orange-500"
-                                        title="Reset RSVP"
-                                      >
-                                          <RotateCcw className="w-4 h-4" />
-                                      </button>
-                                  </td>
-                              </tr>
-                          ))}
-                          
-                          {/* Extra empty rows for quick adding */}
-                          {[...Array(5)].map((_, index) => (
-                              <tr key={`empty-${index}`} className="hover:bg-green-50/30 group">
-                                  <td className="px-2 py-2 text-center text-stone-300 bg-stone-50 border-r border-stone-200 select-none text-xs italic">
-                                      New
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <input 
-                                        type="text" 
-                                        onBlur={(e) => {
-                                            if (e.target.value.trim()) {
-                                                handleInlineCreate(index, 'name', e.target.value);
-                                                e.target.value = '';
-                                            }
-                                        }}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all font-medium text-stone-800 placeholder-stone-300"
-                                        placeholder="+ Add Name..."
-                                      />
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <input 
-                                        type="email" 
-                                        onBlur={(e) => {
-                                            if (e.target.value.trim()) {
-                                                handleInlineCreate(index, 'email', e.target.value);
-                                                e.target.value = '';
-                                            }
-                                        }}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 placeholder-stone-300"
-                                        placeholder="Email..."
-                                      />
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative">
-                                      <input 
-                                        type="text" 
-                                        onBlur={(e) => {
-                                            if (e.target.value.trim()) {
-                                                handleInlineCreate(index, 'phone', e.target.value);
-                                                e.target.value = '';
-                                            }
-                                        }}
-                                        className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 placeholder-stone-300"
-                                        placeholder="Phone..."
-                                      />
-                                  </td>
-                                  <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
-                                  <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
-                                  <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
-                                  <td className="px-3 py-2 text-stone-400 border-r border-stone-200 font-mono text-xs bg-stone-50/50"></td>
-                                  <td className="px-3 py-2 text-stone-400 border-r border-stone-200 font-mono text-xs bg-stone-50/50"></td>
-                                  <td className="px-3 py-2 text-xs bg-stone-50/50"></td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          ) : (
-              <div className="overflow-x-auto">
-                  <table className="w-full">
-                      <thead className="bg-stone-50 border-b border-stone-100">
-                          <tr>
-                              <th className="px-6 py-4 text-left">
-                                <input 
-                                  type="checkbox" 
-                                  className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]"
-                                  checked={selectedIds.length === filteredGuests.length && filteredGuests.length > 0}
-                                  onChange={toggleSelectAll}
-                                />
-                              </th>
-                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Name</th>
-                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Contact</th>
-                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Group</th>
-                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Plus Ones</th>
-                               <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">RSVP Status</th>
-                               <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Actions</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-100">
-                          {pagedGuests.map(guest => (
-                              <tr key={guest.id} className={`hover:bg-stone-50/50 ${selectedIds.includes(guest.id) ? 'bg-stone-50' : ''}`}>
-                                  <td className="px-6 py-4">
-                                      <input 
-                                        type="checkbox" 
-                                        className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]"
-                                        checked={selectedIds.includes(guest.id)}
-                                        onChange={() => toggleSelect(guest.id)}
-                                      />
-                                  </td>
-                                  <td className="px-6 py-4">
-                                       <div className="flex items-center gap-2">
-                                           <div className="font-medium text-stone-800">{guest.name}</div>
-                                           {guest.parent_guest_id && (
-                                               <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] uppercase font-bold rounded">Plus One</span>
-                                           )}
-                                       </div>
-                                       <div className="text-[10px] font-mono text-stone-400 mt-0.5 uppercase tracking-wider">Code: {guest.unique_code || '—'}</div>
-                                       {guest.parent_guest_id && guest.parent_guest && (
-                                           <div className="text-[10px] text-stone-400 italic">Guest of: {guest.parent_guest.name}</div>
-                                       )}
-                                   </td>
-                                   <td className="px-6 py-4">
-                                       <div className="space-y-1">
-                                           {guest.email && (
-                                               <div className="flex items-center gap-1.5 text-xs text-stone-500">
-                                                   <Mail className="w-2.5 h-2.5 text-stone-400" />
-                                                   {guest.email}
-                                               </div>
-                                           )}
-                                           {guest.phone && (
-                                               <div className="flex items-center gap-1.5 text-xs text-stone-600 font-medium">
-                                                   <MessageCircle className="w-2.5 h-2.5 text-green-500" />
-                                                   {guest.phone}
-                                               </div>
-                                           )}
-                                           {!guest.email && !guest.phone && <span className="text-[10px] text-stone-300 italic">No contact info</span>}
-                                       </div>
-                                   </td>
-                                   <td className="px-6 py-4">
-                                       <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-600 capitalize">
-                                           {guest.group}
-                                       </span>
-                                   </td>
-                                  <td className="px-6 py-4">
-                                      {guest.plus_ones && guest.plus_ones.length > 0 ? (
-                                          <div>
-                                              <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700">
-                                                  +{guest.plus_ones.length}
-                                              </span>
-                                              <div className="text-xs text-stone-500 mt-1">
-                                                  {guest.plus_ones.map(po => po.name).join(', ')}
-                                              </div>
-                                          </div>
-                                      ) : (
-                                          <span className="text-xs text-stone-400">None</span>
-                                      )}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex w-fit whitespace-nowrap items-center gap-1 ${
-                                          guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                          guest.rsvp_status === 'declined' ? 'bg-red-100 text-red-700' :
-                                          'bg-orange-100 text-orange-700'
-                                      }`}>
-                                          {guest.rsvp_status === 'confirmed' && <Check className="w-2.5 h-2.5" />}
-                                          {guest.rsvp_status === 'confirmed' ? 'Confirmed' : 
-                                           guest.rsvp_status === 'declined' ? 'Declined' : 'Pending'}
-                                      </span>
-                                  </td>
-                                  <td className="px-6 py-4 text-right">
-                                      <div className="flex justify-end gap-2">
-                                          <button 
-                                            onClick={() => { setInviteGuest(guest); setIsInviteModalOpen(true); }}
-                                            className="p-1 text-stone-400 hover:text-[#A67B5B]"
-                                            title="Manage Invitation"
-                                          >
-                                            <Send className="w-4 h-4" />
-                                          </button>
-                                          <button onClick={() => handleEdit(guest)} className="p-1 text-stone-400 hover:text-[#A67B5B]"><Edit className="w-4 h-4" /></button>
-                                          <button 
-                                              onClick={() => {
-                                                if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
-                                                  handleUpdateGuest(guest, { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
-                                                }
-                                              }}
-                                              className="p-1 text-stone-400 hover:text-orange-500"
-                                              title="Reset RSVP"
-                                            >
-                                              <RotateCcw className="w-4 h-4" />
-                                            </button>
-                                            <button onClick={() => handleDelete(guest.id)} className="p-1 text-stone-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                                      </div>
-                                  </td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-stone-100 bg-white px-4 py-3 sm:px-6 rounded-b-2xl">
-              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-stone-700">
-                    Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredGuests.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredGuests.length)}</span> of <span className="font-medium">{filteredGuests.length}</span> results
-                  </p>
-                </div>
-                <div>
-                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="relative inline-flex items-center rounded-l-md px-2 py-2 text-stone-400 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                      <span className="sr-only">Previous</span>
-                      &larr;
-                    </button>
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === i + 1 ? 'z-10 bg-[#A67B5B] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A67B5B]' : 'text-stone-900 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0'}`}> {i + 1} </button>
-                    ))}
-                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="relative inline-flex items-center rounded-r-md px-2 py-2 text-stone-400 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                      <span className="sr-only">Next</span>
-                      &rarr;
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            </div>
-          )}
-      </div>
+      <GuestList
+        guestsLoading={guestsLoading}
+        filteredGuests={filteredGuests}
+        pagedGuests={pagedGuests}
+        viewMode={viewMode}
+        selectedIds={selectedIds}
+        searchQuery={searchQuery}
+        totalPages={totalPages}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onToggleSelect={toggleSelect}
+        onToggleSelectAll={toggleSelectAll}
+        onInlineSave={handleInlineSave}
+        onInlineCreate={handleInlineCreate}
+        onInviteRequest={handleInviteRequest}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onUpdateGuest={handleUpdateGuest}
+        onSetCurrentPage={setCurrentPage}
+      />
 
       <InvitationActionModal 
         isOpen={isInviteModalOpen}
@@ -1162,6 +704,8 @@ export default function AdminGuests() {
             onConfirm={handleConfirmImport}
           />
       )}
-    </div>
+      </AdminPageLayout>
+      <AdminFloatingToolbar actions={toolbarActions} />
+    </>
   );
 }
