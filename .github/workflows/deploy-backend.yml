@@ -93,16 +93,30 @@ jobs:
           # Ensure storage symlink
           ln -sf "$CORE/storage/app/public" "$PUBLIC/storage"
 
-          # Clear Laravel caches (use php from cPanel)
+          # Diagnostics: verify deployment state
+          echo "--- Deployment Diagnostics ---"
+          echo ".env exists: $([ -f "$CORE/.env" ] && echo YES || echo NO)"
+          echo ".env size: $(wc -c < "$CORE/.env" 2>/dev/null || echo 'N/A')"
+          echo "vendor/autoload.php exists: $([ -f "$CORE/vendor/autoload.php" ] && echo YES || echo NO)"
+          echo "bootstrap/app.php exists: $([ -f "$CORE/bootstrap/app.php" ] && echo YES || echo NO)"
+          echo "bootstrap/cache dir exists: $([ -d "$CORE/bootstrap/cache" ] && echo YES || echo NO)"
+          echo "PHP version: $(php -v 2>&1 | head -1)"
+          echo "--- End Diagnostics ---"
+
+          # Clear Laravel caches
           cd "$CORE"
-          php artisan config:clear 2>/dev/null || true
-          php artisan cache:clear 2>/dev/null || true
-          php artisan route:clear 2>/dev/null || true
-          php artisan view:clear 2>/dev/null || true
+          php artisan config:clear || true
+          php artisan cache:clear || true
+          php artisan route:clear || true
+          php artisan view:clear || true
 
           # Rebuild config cache for production performance
-          php artisan config:cache 2>/dev/null || true
-          php artisan route:cache 2>/dev/null || true
+          php artisan config:cache || true
+          php artisan route:cache || true
+
+          # Quick smoke test
+          echo "--- Smoke Test ---"
+          php artisan --version || echo "ERROR: artisan failed to run"
 
           # Clean up archive
           rm -f "$ARCHIVE"
