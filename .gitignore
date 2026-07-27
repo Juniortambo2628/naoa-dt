@@ -8,6 +8,8 @@ build/
 production.env
 *.env
 *.sql
+github-actions-naoa
+github-actions-naoa.pub
 
 # Backend (Laravel)
 backend/.env
