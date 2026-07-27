@@ -22,6 +22,7 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
         REMOTE_HOST: ${{ secrets.SFTP_HOST }}
         REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
+        REMOTE_PORT: 1624
         SOURCE: 'backend/'
         TARGET: '/home/zhpebukm/naoa-core'
         ARGS: '-rlgoDzvc -i --delete'
@@ -34,6 +35,7 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
         REMOTE_HOST: ${{ secrets.SFTP_HOST }}
         REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
+        REMOTE_PORT: 1624
         SOURCE: 'backend/public/'
         TARGET: '/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public'
         ARGS: '-rlgoDzvc -i --delete'
