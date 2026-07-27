@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
 
 jobs:
   deploy:
@@ -15,30 +16,70 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # Step 1: Deploy Core Files (excluding public/ and uploaded content)
-    - name: Deploy Core to /naoa-core
-      uses: easingthemes/ssh-deploy@v5.1.0
-      with:
-        SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.SFTP_HOST }}
-        REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
-        REMOTE_PORT: 1624
-        SOURCE: 'backend/'
-        TARGET: '/home/zhpebukm/naoa-core'
-        ARGS: '-rlgoDzvc -i --delete'
-        EXCLUDE: "/.env, /public/, /storage/app/public/uploads/*, /storage/app/public/illustrations/*, /storage/framework/cache/*, /storage/framework/sessions/*, /storage/framework/views/*, /storage/logs/*"
+    # Package backend into a tarball, excluding .env
+    - name: Create deployment archive
+      run: |
+        tar -czf backend-deploy.tar.gz \
+          --exclude='.env' \
+          -C backend .
 
-    # Step 2: Deploy Public Files (index.php, .htaccess, etc.) to the API web root
-    - name: Deploy Public assets to Web Root
-      uses: easingthemes/ssh-deploy@v5.1.0
+    # Upload the archive to the server via SCP
+    - name: Upload archive to server
+      uses: appleboy/scp-action@v0.1.7
       with:
-        SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.SFTP_HOST }}
-        REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
-        REMOTE_PORT: 1624
-        SOURCE: 'backend/public/'
-        TARGET: '/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public'
-        ARGS: '-rlgoDzvc -i --delete'
+        host: ${{ secrets.SFTP_HOST }}
+        username: ${{ secrets.SFTP_USERNAME }}
+        key: ${{ secrets.SFTP_SSH_KEY }}
+        port: 1624
+        source: "backend-deploy.tar.gz"
+        target: "/home/zhpebukm/"
+
+    # SSH in and deploy the files
+    - name: Deploy on server
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.SFTP_HOST }}
+        username: ${{ secrets.SFTP_USERNAME }}
+        key: ${{ secrets.SFTP_SSH_KEY }}
+        port: 1624
+        script: |
+          set -e
+          CORE="/home/zhpebukm/naoa-core"
+          PUBLIC="/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public"
+          ARCHIVE="/home/zhpebukm/backend-deploy.tar.gz"
+
+          # Ensure directories exist
+          mkdir -p "$CORE" "$PUBLIC"
+          mkdir -p "$CORE/storage/app/public/uploads"
+          mkdir -p "$CORE/storage/app/public/illustrations"
+
+          # Backup .env if it exists
+          [ -f "$CORE/.env" ] && cp "$CORE/.env" /tmp/.env.deploy.bak
+
+          # Clean core directory (preserve storage dir and .env)
+          cd "$CORE"
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name 'storage' \
+            ! -name '.env' \
+            -exec rm -rf {} +
+
+          # Extract new code
+          tar -xzf "$ARCHIVE" -C "$CORE"
+
+          # Restore .env
+          [ -f /tmp/.env.deploy.bak ] && mv /tmp/.env.deploy.bak "$CORE/.env"
+
+          # Deploy public assets to web root
+          cp -R "$CORE/public/." "$PUBLIC/"
+          [ -f "$CORE/public/.htaccess" ] && cp "$CORE/public/.htaccess" "$PUBLIC/"
+
+          # Ensure storage symlink
+          ln -sf "$CORE/storage/app/public" "$PUBLIC/storage"
+
+          # Clean up archive
+          rm -f "$ARCHIVE"
+
+          echo "✅ Backend deployment complete!"
 
     # NOTE: Storage symlink must exist on server:
     # ln -s /home/zhpebukm/naoa-core/storage/app/public /home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/storage
