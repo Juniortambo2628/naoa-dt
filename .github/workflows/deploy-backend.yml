@@ -16,6 +16,17 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        tools: composer
+
+    - name: Install Composer Dependencies
+      run: |
+        cd backend
+        composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
     # Package backend into a tarball, excluding .env
     - name: Create deployment archive
       run: |
