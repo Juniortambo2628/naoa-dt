@@ -3,6 +3,11 @@ node_modules/
 dist/
 build/
 .DS_Store
+.env
+.env.*
+production.env
+*.env
+*.sql
 
 # Backend (Laravel)
 backend/.env
