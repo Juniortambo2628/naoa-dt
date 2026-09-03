@@ -84,7 +84,7 @@ class GuestController extends Controller
      */
     public function getByCode(string $code)
     {
-        $guest = Guest::with(['invitation', 'plusOnes'])
+        $guest = Guest::with(['invitation', 'plusOnes', 'table.guests'])
             ->where('unique_code', strtoupper($code))
             ->first();
 

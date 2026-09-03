@@ -16,6 +16,8 @@ class SettingsSeeder extends Seeder
             ['key' => 'admin_email', 'value' => 'admin@wedding.com', 'group' => 'notifications'],
             ['key' => 'venue_name', 'value' => 'Rosewood Manor', 'group' => 'general'],
             ['key' => 'venue_address', 'value' => 'Karen, Nairobi', 'group' => 'general'],
+            ['key' => 'venue_lat', 'value' => '-1.2921', 'group' => 'general'],
+            ['key' => 'venue_lng', 'value' => '36.8219', 'group' => 'general'],
             ['key' => 'public_url', 'value' => 'http://localhost/wed-dt/backend/public', 'group' => 'general'],
             
             // Email Template Settings

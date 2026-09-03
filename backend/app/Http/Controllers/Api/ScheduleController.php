@@ -122,8 +122,7 @@ class ScheduleController extends Controller
             'type' => $request->type ?? 'normal',
         ]);
 
-        // Broadcast live update event here if using Reverb
-        // event(new LiveUpdatePosted($update));
+        event(new \App\Events\LiveUpdatePosted($update));
 
         return $this->createdResponse($update);
     }

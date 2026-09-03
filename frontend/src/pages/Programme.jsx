@@ -6,9 +6,11 @@ import {
   Music, GlassWater, Utensils, Camera, Heart, Bell
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { contentService, scheduleService } from '../services/api';
+import { scheduleService } from '../services/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PolaroidFeed from '../components/PolaroidFeed';
+import { useSmartPolling } from '../hooks/useSmartPolling';
 import { 
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
@@ -64,16 +66,6 @@ export default function Programme() {
     }
   }, [contentLoading, isVisible, navigate]);
 
-  if (contentLoading) {
-    return <Loader />;
-  }
-
-  if (!isVisible('programme_page')) {
-    return null;
-  }
-
-  const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback, t);
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -84,7 +76,6 @@ export default function Programme() {
         ]);
         
         if (scheduleRes.data?.length) {
-          // Flatten items from all events
           const allItems = scheduleRes.data.flatMap(event => {
             const items = event.schedule_items || event.scheduleItems || [];
             return items.map(item => ({
@@ -95,7 +86,6 @@ export default function Programme() {
           });
           
           if (allItems.length) {
-            // Sort by start_time
             const sorted = allItems.sort((a, b) => a.start_time.localeCompare(b.start_time));
             setSchedule(sorted);
           }
@@ -103,14 +93,46 @@ export default function Programme() {
         if (updatesRes.data?.length) setUpdates(updatesRes.data);
       } catch (err) {
         console.error('Failed to fetch programme data', err);
-        // Fallback to demo data handled by initial state if needed, 
-        // but let's keep it clean
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  // Smart polling for live updates
+  const fetchUpdates = async () => {
+    try {
+      const res = await scheduleService.getLiveUpdates();
+      if (res.data?.length) setUpdates(res.data);
+      return res.data || [];
+    } catch {
+      return [];
+    }
+  };
+
+  const { hasNewItems } = useSmartPolling(fetchUpdates, {
+    fastInterval: 5000,
+    slowInterval: 20000,
+    idleAfterMs: 60000,
+    onNewItems: (newItems) => {
+      setUpdates(prev => {
+        const existingIds = new Set(prev.map(u => u.id));
+        const fresh = newItems.filter(u => !existingIds.has(u.id));
+        return fresh.length ? [...fresh, ...prev] : prev;
+      });
+    },
+  });
+
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('programme_page')) {
+    return null;
+  }
+
+  const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback, t);
 
   return (
     <motion.div
@@ -311,6 +333,9 @@ export default function Programme() {
                         <span className="text-xs" style={{ color: '#8B7B6B' }}>
                           {t('programme.real_time')}
                         </span>
+                        {hasNewItems && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse ml-1" />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -375,6 +400,10 @@ export default function Programme() {
               </motion.div>
             </div>
           </div>
+        </div>
+
+        <div className="container-wedding relative z-10">
+          <PolaroidFeed />
         </div>
       </main>
       

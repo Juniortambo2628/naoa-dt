@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\TestController;
 use App\Http\Controllers\Api\PolaroidImageController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\EnquiryController;
+use App\Http\Controllers\Api\WeatherController;
 
 /*
 |--------------------------------------------------------------------------
@@ -107,6 +108,12 @@ Route::get('/schedule/full', [ScheduleController::class, 'index']);
 
 // Public Polaroid Images
 Route::get('/polaroid-images', [PolaroidImageController::class, 'index']);
+
+// Public Tables (for seating chart visualization)
+Route::get('/tables/public', [TableController::class, 'publicIndex']);
+
+// Public Weather
+Route::get('/weather', [WeatherController::class, 'forecast']);
 
 // Public Calendar Routes
 Route::get('/calendar/ics', [CalendarController::class, 'downloadIcs'])->name('calendar.ics');
@@ -200,6 +207,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Polaroid Images (Admin)
     Route::post('/polaroid-images', [PolaroidImageController::class, 'store']);
+    Route::post('/polaroid-images/live', [PolaroidImageController::class, 'storeLive']);
     Route::match(['put', 'patch'], '/polaroid-images/{id}', [PolaroidImageController::class, 'update']);
     Route::delete('/polaroid-images/{id}', [PolaroidImageController::class, 'destroy']);
 

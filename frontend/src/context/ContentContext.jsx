@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api, { contentService } from '../services/api';
+import api from '../services/api';
 import './../echo'; // Ensure Echo is initialized
 
 const ContentContext = createContext();
@@ -30,12 +30,10 @@ export const ContentProvider = ({ children }) => {
     useEffect(() => {
         fetchContents();
 
-        // Listen for real-time updates
+        // Listen for real-time updates via Echo/Pusher if available
         if (window.Echo) {
-            console.log('Listening for content updates...');
             window.Echo.channel('content-updates')
                 .listen('.content.updated', (e) => {
-                    console.log('Content update received:', e.content);
                     setContents(prev => ({
                         ...prev,
                         [e.content.section_key]: e.content
@@ -46,6 +44,10 @@ export const ContentProvider = ({ children }) => {
                 window.Echo.leave('content-updates');
             };
         }
+
+        // Fallback: poll for content changes when Echo is unavailable
+        const interval = setInterval(fetchContents, 30000);
+        return () => clearInterval(interval);
     }, [fetchContents]);
 
     const getContent = useCallback((section, field, lang = 'en', fallback = '') => {

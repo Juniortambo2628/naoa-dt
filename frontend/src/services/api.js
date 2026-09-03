@@ -176,6 +176,7 @@ export const giftService = {
 // Table services (Seating Chart)
 export const tableService = {
   getAll: () => api.get('/tables'),
+  getPublic: () => api.get('/tables/public'),
   create: (data) => api.post('/tables', data),
   update: (id, data) => api.put(`/tables/${id}`, data),
   delete: (id) => api.delete(`/tables/${id}`),
@@ -269,8 +270,12 @@ export const faqService = {
 
 // Polaroid services
 export const polaroidService = {
-  getAll: () => api.get('/polaroid-images'),
+  getAll: (params) => api.get('/polaroid-images', { params }),
+  getByDate: (date) => api.get('/polaroid-images', { params: { date } }),
   create: (data) => api.post('/polaroid-images', data),
+  uploadLive: (formData) => api.post('/polaroid-images/live', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
   update: (id, data) => api.put(`/polaroid-images/${id}`, data),
   delete: (id) => api.delete(`/polaroid-images/${id}`),
 };
@@ -303,4 +308,9 @@ export const checkinService = {
   getStats: () => api.get('/checkin/stats'),
   scan: (data) => api.post('/checkin/scan', data),
   generateQR: (guestId) => api.post(`/checkin/guests/${guestId}/generate-qr`),
+};
+
+// Weather services
+export const weatherService = {
+  getForecast: () => api.get('/weather'),
 };

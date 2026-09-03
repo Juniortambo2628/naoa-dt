@@ -1,9 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Calendar, MapPin, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Mail, Calendar, MapPin, CheckCircle2, ChevronRight } from 'lucide-react';
+import { useEffect } from 'react';
 import { useGuestByCode, useSettings, useContent } from '../hooks/useApiHooks';
 import InvitationCanvas from '../components/admin/InvitationCanvas';
+import PublicSeatingChart from '../components/PublicSeatingChart';
+import WeatherWidget from '../components/WeatherWidget';
+import MapsETA from '../components/MapsETA';
 import Loader from '../components/Loader';
 
 export default function DigitalInvitation() {
@@ -25,6 +28,9 @@ export default function DigitalInvitation() {
 
     const weddingDate = content?.countdown?.content?.wedding_date || '2026-11-14';
     const venueName = content?.home_hero?.content?.venue?.en || content?.home_hero?.content?.venue || 'The Grand Estate';
+    const venueAddress = settings?.venue_address || 'Kenya';
+    const venueLat = settings?.venue_lat || '-1.2921';
+    const venueLng = settings?.venue_lng || '36.8219';
     
     const formattedDate = new Date(weddingDate).toLocaleDateString('en-US', {
         weekday: 'long',
@@ -44,7 +50,6 @@ export default function DigitalInvitation() {
     };
 
     const weddingDateText = getTxt('home_hero', 'date_text', formattedDate);
-    const eventTimeText = getTxt('event_details', 'time', eventTime);
 
     const getEventDetails = () => {
         // Parse wedding date (YYYY-MM-DD)
@@ -83,15 +88,6 @@ export default function DigitalInvitation() {
             location: venueName,
             description: "We are so happy to share our special day with you! Please join us for our wedding celebration."
         };
-    };
-
-    const getGoogleCalendarUrl = () => {
-        const details = getEventDetails();
-        const title = encodeURIComponent(details.title);
-        const loc = encodeURIComponent(details.location);
-        const desc = encodeURIComponent(details.description);
-        
-        return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${details.start}/${details.end}&details=${desc}&location=${loc}&sf=true&output=xml`;
     };
 
     const downloadIcs = () => {
@@ -249,6 +245,20 @@ export default function DigitalInvitation() {
                             Status: You have already {guest.rsvp_status === 'confirmed' ? 'confirmed' : 'declined'} this invitation.
                          </motion.div>
                     )}
+
+                    {/* Guest Info Panel: Maps + Weather */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <MapsETA 
+                            venueName={venueName}
+                            venueAddress={venueAddress}
+                            venueLat={venueLat}
+                            venueLng={venueLng}
+                        />
+                        <WeatherWidget weddingDate={weddingDate} />
+                    </div>
+
+                    {/* Seating Chart */}
+                    <PublicSeatingChart guestCode={code} />
 
                     <div className="pt-8 border-t border-stone-200/60">
                         <p className="text-stone-400 text-sm text-center lg:text-left italic">

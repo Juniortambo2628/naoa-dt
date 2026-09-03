@@ -3,7 +3,9 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-// Reverb takes priority (our broadcasting driver)
+// Initialize Echo only if broadcasting keys are configured.
+// Smart polling is the primary real-time mechanism (works on shared hosting).
+// Echo is optional and used as an enhancement when available.
 if (import.meta.env.VITE_REVERB_APP_KEY) {
     const scheme = import.meta.env.VITE_REVERB_SCHEME ?? 'http';
     const wsPort = Number(import.meta.env.VITE_REVERB_PORT) || (scheme === 'https' ? 443 : 80);
@@ -26,6 +28,5 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
         forceTLS: true,
         enabledTransports: ['ws', 'wss'],
     });
-} else {
-    console.warn('Real-time updates disabled: Pusher/Reverb keys are not defined.');
 }
+// No warning — smart polling handles real-time without WebSockets

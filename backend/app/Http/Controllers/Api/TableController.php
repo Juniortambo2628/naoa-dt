@@ -77,4 +77,11 @@ class TableController extends Controller
 
         return $this->successResponse(null, 'Guest unassigned');
     }
+
+    public function publicIndex()
+    {
+        return response()->json(
+            Table::with(['guests' => fn($q) => $q->select('id', 'name', 'table_id')])->get()
+        );
+    }
 }

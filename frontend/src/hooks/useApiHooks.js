@@ -4,6 +4,7 @@ import {
   giftService, guestbookService, faqService, enquiryService,
   songRequestService, scheduleService, tableService,
   notificationService, analyticsService, checkinService,
+  polaroidService, weatherService,
 } from '../services/api';
 import usePolling from './usePolling';
 
@@ -236,6 +237,33 @@ export const useCheckinStats = () => {
       const { data } = await checkinService.getStats();
       return data;
     },
+  });
+};
+
+// --- Polaroid Feed ---
+export const usePolaroidFeed = () => {
+  const query = useQuery({
+    queryKey: ['polaroidFeed'],
+    queryFn: async () => {
+      const { data } = await polaroidService.getAll();
+      return data;
+    },
+  });
+
+  usePolling(query.refetch, 15000);
+
+  return query;
+};
+
+// --- Weather ---
+export const useWeather = () => {
+  return useQuery({
+    queryKey: ['weather'],
+    queryFn: async () => {
+      const { data } = await weatherService.getForecast();
+      return data;
+    },
+    staleTime: 30 * 60 * 1000,
   });
 };
 

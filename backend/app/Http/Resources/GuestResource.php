@@ -38,6 +38,7 @@ class GuestResource extends JsonResource
             'invitation' => $this->whenLoaded('invitation'),
             'plus_ones' => $this->whenLoaded('plusOnes'),
             'parent_guest' => $this->whenLoaded('parentGuest'),
+            'table' => $this->whenLoaded('table'),
         ];
     }
 }
