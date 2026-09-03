@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowRight, Users, UtensilsCrossed, MessageSquare, 
-  CheckCircle2, Heart, Loader2, AlertCircle, HelpCircle, UserCheck 
+  CheckCircle2, Heart, Loader2, AlertCircle, HelpCircle, UserCheck, Mail
 } from 'lucide-react';
 import { guestService, contentService } from '../services/api';
 import { 
@@ -336,7 +336,10 @@ export default function RSVP() {
                         </div>
 
                         <div className="flex flex-col gap-3 pt-4 border-t border-stone-100">
-                            <Link to="/faq" className="w-full btn-primary flex justify-center items-center gap-2">
+                            <Link to={`/invitation/${guestData?.unique_code}`} className="w-full btn-primary flex justify-center items-center gap-2">
+                                <Mail className="w-5 h-5" /> View Invitation Details
+                            </Link>
+                            <Link to="/faq" className="w-full btn-secondary flex justify-center items-center gap-2">
                                 <HelpCircle className="w-5 h-5" /> Visit FAQ for More Details
                             </Link>
                             <button 
@@ -569,11 +572,11 @@ export default function RSVP() {
                     {t('rsvp.success_message')}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link to="/" className="btn-primary">
-                      Return Home
+                    <Link to={`/invitation/${guestData?.unique_code}`} className="btn-primary flex items-center justify-center gap-2">
+                      <Mail className="w-4 h-4" /> View Invitation Details
                     </Link>
-                    <Link to="/faq" className="btn-secondary">
-                      View FAQs
+                    <Link to="/" className="btn-secondary">
+                      Return Home
                     </Link>
                   </div>
                 </div>

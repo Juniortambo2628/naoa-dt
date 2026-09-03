@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical, 
   Radio, Camera, Wifi, Database, HardDrive, Server, Bell,
-  AlertTriangle, Check, X, Activity, Zap, BarChart3
+  AlertTriangle, Check, X, Activity, Zap, BarChart3,
+  Cloud, Map, ExternalLink
 } from 'lucide-react';
-import api, { guestService, testLabService } from '../../services/api';
+import api, { guestService, testLabService, weatherService, tableService, settingService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -38,9 +40,14 @@ export default function AdminTestLab() {
 
   // Simulation states
   const [liveMsg, setLiveMsg] = useState('');
-  const [liveType, setLiveType] = useState('info');
+  const [liveType, setLiveType] = useState('normal');
   const [polaroidCaption, setPolaroidCaption] = useState('');
   const [polaroidLocation, setPolaroidLocation] = useState('');
+
+  // API test states
+  const [weatherResult, setWeatherResult] = useState(null);
+  const [seatingResult, setSeatingResult] = useState(null);
+  const [settingsResult, setSettingsResult] = useState(null);
 
   // API Health states
   const [health, setHealth] = useState(null);
@@ -120,7 +127,7 @@ export default function AdminTestLab() {
     addLog('Simulating polaroid image...', 'info');
     try {
       await testLabService.simulatePolaroid({
-        caption: polaroidCaption || 'Test polaroid from admin',
+        note: polaroidCaption || 'Test polaroid from admin',
         location: polaroidLocation || 'Test Lab',
       });
       addLog('Polaroid simulated! Check Digital Invitation page.', 'success');
@@ -166,6 +173,49 @@ export default function AdminTestLab() {
     for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
     setTestCode(result);
     addLog(`Generated code: ${result}`, 'info');
+  };
+
+  // --- Test Weather API ---
+  const handleTestWeather = async () => {
+    setLoading(true);
+    addLog('Fetching weather forecast...', 'info');
+    try {
+      const res = await weatherService.getForecast();
+      setWeatherResult(res.data);
+      addLog(`Weather loaded: ${res.data?.daily?.time?.length || 0} days`, 'success');
+    } catch (err) {
+      addLog(`Weather failed: ${err.response?.data?.message || err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  // --- Test Seating API ---
+  const handleTestSeating = async () => {
+    setLoading(true);
+    addLog('Fetching public seating chart...', 'info');
+    try {
+      const res = await tableService.getPublic();
+      const tables = res.data || [];
+      setSeatingResult(tables);
+      addLog(`Seating loaded: ${tables.length} tables`, 'success');
+    } catch (err) {
+      addLog(`Seating failed: ${err.response?.data?.message || err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  // --- Test Settings API ---
+  const handleTestSettings = async () => {
+    setLoading(true);
+    addLog('Fetching venue settings...', 'info');
+    try {
+      const res = await settingService.getAll();
+      setSettingsResult(res.data);
+      addLog(`Settings loaded: lat=${res.data?.venue_lat}, lng=${res.data?.venue_lng}`, 'success');
+    } catch (err) {
+      addLog(`Settings failed: ${err.response?.data?.message || err.message}`, 'error');
+    }
+    setLoading(false);
   };
 
   return (
@@ -266,7 +316,7 @@ export default function AdminTestLab() {
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
               <div className="flex gap-2">
-                {['info', 'warning', 'success'].map(t => (
+                {['normal', 'important', 'alert'].map(t => (
                   <button
                     key={t}
                     onClick={() => setLiveType(t)}
@@ -323,6 +373,103 @@ export default function AdminTestLab() {
             <p className="text-xs text-stone-400 text-center">Creates a placeholder entry on Digital Invitation page</p>
           </div>
         </AdminCard>
+      </div>
+
+      {/* API Endpoint Testing */}
+      <div className="grid md:grid-cols-3 gap-6 mb-6">
+        {/* Weather API Test */}
+        <AdminCard>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Cloud className="w-5 h-5 text-blue-500" />
+            </div>
+            <h2 className="text-lg font-medium text-stone-800">Weather API</h2>
+          </div>
+          <p className="text-xs text-stone-500 mb-4">Test the Open-Meteo weather proxy for venue forecast.</p>
+          <button
+            onClick={handleTestWeather}
+            disabled={loading}
+            className="w-full py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Cloud className="w-4 h-4" /> Test Weather Endpoint
+          </button>
+          {weatherResult && (
+            <div className="mt-3 p-3 bg-stone-50 rounded-lg text-xs">
+              <p className="font-medium text-stone-700">{weatherResult.location || 'Venue'}</p>
+              <p className="text-stone-500">{weatherResult.daily?.time?.length || 0} day forecast</p>
+              {weatherResult.current && <p className="text-stone-500">Current: {weatherResult.current.temperature}°C</p>}
+            </div>
+          )}
+        </AdminCard>
+
+        {/* Seating API Test */}
+        <AdminCard>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <Map className="w-5 h-5 text-purple-500" />
+            </div>
+            <h2 className="text-lg font-medium text-stone-800">Seating API</h2>
+          </div>
+          <p className="text-xs text-stone-500 mb-4">Test the public seating chart endpoint.</p>
+          <button
+            onClick={handleTestSeating}
+            disabled={loading}
+            className="w-full py-2.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-all text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Map className="w-4 h-4" /> Test Seating Endpoint
+          </button>
+          {seatingResult && (
+            <div className="mt-3 p-3 bg-stone-50 rounded-lg text-xs">
+              <p className="font-medium text-stone-700">{seatingResult.length} tables found</p>
+              {seatingResult.slice(0, 3).map((t, i) => (
+                <p key={i} className="text-stone-500">{t.name} — {t.guests?.length || 0} guests</p>
+              ))}
+            </div>
+          )}
+        </AdminCard>
+
+        {/* Settings API Test */}
+        <AdminCard>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <Settings className="w-5 h-5 text-amber-500" />
+            </div>
+            <h2 className="text-lg font-medium text-stone-800">Settings API</h2>
+          </div>
+          <p className="text-xs text-stone-500 mb-4">Verify venue coordinates and site settings.</p>
+          <button
+            onClick={handleTestSettings}
+            disabled={loading}
+            className="w-full py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-all text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Settings className="w-4 h-4" /> Test Settings Endpoint
+          </button>
+          {settingsResult && (
+            <div className="mt-3 p-3 bg-stone-50 rounded-lg text-xs">
+              <p className="font-medium text-stone-700">Venue Location</p>
+              <p className="text-stone-500">Lat: {settingsResult.venue_lat || 'Not set'}</p>
+              <p className="text-stone-500">Lng: {settingsResult.venue_lng || 'Not set'}</p>
+            </div>
+          )}
+        </AdminCard>
+      </div>
+
+      {/* Quick Links */}
+      <div className="flex gap-3 mb-6">
+        <Link
+          to="/invitation/LO2J85UX"
+          target="_blank"
+          className="flex items-center gap-2 px-4 py-2 bg-[#A67B5B]/10 text-[#A67B5B] rounded-lg hover:bg-[#A67B5B]/20 transition-all text-sm font-medium"
+        >
+          <ExternalLink className="w-4 h-4" /> Preview Digital Invitation
+        </Link>
+        <Link
+          to="/programme"
+          target="_blank"
+          className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-all text-sm font-medium"
+        >
+          <ExternalLink className="w-4 h-4" /> Preview Programme Page
+        </Link>
       </div>
 
       {/* Email & Code Testing */}

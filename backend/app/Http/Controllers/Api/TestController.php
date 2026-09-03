@@ -8,10 +8,9 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Guest;
-use App\Models\Invitation;
 use App\Models\Table;
 use App\Models\PolaroidImage;
-use App\Models\ScheduleEvent;
+use App\Models\Event;
 use App\Models\LiveUpdate;
 
 class TestController extends Controller
@@ -23,7 +22,6 @@ class TestController extends Controller
     {
         $checks = [];
 
-        // Database
         try {
             DB::connection()->getPdo();
             $checks['database'] = ['status' => 'ok', 'message' => 'Connected'];
@@ -31,7 +29,6 @@ class TestController extends Controller
             $checks['database'] = ['status' => 'error', 'message' => $e->getMessage()];
         }
 
-        // Cache
         try {
             Cache::put('health_check', true, 10);
             $checks['cache'] = ['status' => 'ok', 'message' => 'Working'];
@@ -39,7 +36,6 @@ class TestController extends Controller
             $checks['cache'] = ['status' => 'error', 'message' => $e->getMessage()];
         }
 
-        // Pusher/Broadcasting
         try {
             $driver = config('broadcasting.default');
             $checks['broadcasting'] = [
@@ -50,23 +46,20 @@ class TestController extends Controller
             $checks['broadcasting'] = ['status' => 'error', 'message' => $e->getMessage()];
         }
 
-        // Mail
         try {
-            config(['mail.default' => config('mail.mailer')]);
+            $host = config('mail.mailers.smtp.host');
+            $port = config('mail.mailers.smtp.port');
             $checks['mail'] = [
-                'status' => 'ok',
-                'message' => config('mail.mailers.smtp.host') . ':' . config('mail.mailers.smtp.port'),
+                'status' => $host ? 'ok' : 'warning',
+                'message' => $host ? "{$host}:{$port}" : 'Not configured',
             ];
         } catch (\Exception $e) {
             $checks['mail'] = ['status' => 'error', 'message' => $e->getMessage()];
         }
 
-        // Storage
         try {
-            $checks['storage'] = [
-                'status' => 'ok',
-                'message' => config('filesystems.default') . ' — ' . config('filesystems.disks.public.root'),
-            ];
+            $disk = config('filesystems.default');
+            $checks['storage'] = ['status' => 'ok', 'message' => "Driver: {$disk}"];
         } catch (\Exception $e) {
             $checks['storage'] = ['status' => 'error', 'message' => $e->getMessage()];
         }
@@ -89,27 +82,26 @@ class TestController extends Controller
             'guests' => Guest::count(),
             'tables' => Table::count(),
             'polaroid_images' => PolaroidImage::count(),
-            'schedule_events' => ScheduleEvent::count(),
+            'schedule_events' => Event::count(),
             'live_updates' => LiveUpdate::count(),
         ]);
     }
 
     /**
-     * Simulate a live update broadcast (for testing without full event flow).
+     * Simulate a live update broadcast.
      */
     public function simulateLiveUpdate(Request $request)
     {
         $request->validate([
             'message' => 'required|string|max:500',
-            'type' => 'nullable|in:info,warning,success',
+            'type' => 'nullable|in:normal,important,alert',
         ]);
 
         $update = LiveUpdate::create([
             'message' => $request->message,
-            'type' => $request->type ?? 'info',
+            'type' => $request->type ?? 'normal',
         ]);
 
-        // Broadcast if possible
         if (class_exists(\App\Events\LiveUpdatePosted::class)) {
             event(new \App\Events\LiveUpdatePosted($update));
         }
@@ -118,23 +110,21 @@ class TestController extends Controller
     }
 
     /**
-     * Simulate a polaroid image upload (creates a placeholder entry for testing).
+     * Simulate a polaroid image upload.
      */
     public function simulatePolaroid(Request $request)
     {
         $request->validate([
-            'caption' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255',
         ]);
 
         $image = PolaroidImage::create([
             'image_path' => '/uploads/polaroids/placeholder-' . time() . '.jpg',
-            'caption' => $request->caption ?? 'Test polaroid from admin',
+            'note' => $request->note ?? 'Test polaroid from admin',
             'location' => $request->location ?? 'Test Lab',
-            'is_live' => true,
         ]);
 
-        // Broadcast if possible
         if (class_exists(\App\Events\PolaroidImageCreated::class)) {
             event(new \App\Events\PolaroidImageCreated($image));
         }
@@ -156,14 +146,6 @@ class TestController extends Controller
         $type = $request->type;
 
         try {
-            $mockGuest = new Guest([
-                'name' => 'Test Guest',
-                'email' => $email,
-                'unique_code' => 'TEST-CODE-123',
-                'group' => 'Family',
-                'plus_ones_allowed' => 1
-            ]);
-            
             Mail::send([], [], function ($message) use ($email, $type) {
                 $message->to($email)
                         ->subject('Test Email: ' . ucfirst(str_replace('_', ' ', $type)))
@@ -171,7 +153,6 @@ class TestController extends Controller
             });
 
             return response()->json(['message' => 'Test email sent successfully!']);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to send email',

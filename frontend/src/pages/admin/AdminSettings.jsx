@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock } from 'lucide-react';
+import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -44,6 +44,8 @@ export default function AdminSettings() {
     admin_email: '',
     public_url: '',
     song_request_limit_enabled: true,
+    venue_lat: '',
+    venue_lng: '',
   });
 
   const { data: settingsData, isLoading } = useSettings();
@@ -70,6 +72,8 @@ export default function AdminSettings() {
           admin_email: settingsData.admin_email || '',
           public_url: settingsData.public_url || '',
           song_request_limit_enabled: String(settingsData.song_request_limit_enabled) !== 'false',
+          venue_lat: settingsData.venue_lat || '',
+          venue_lng: settingsData.venue_lng || '',
         });
     }
   }, [settingsData]);
@@ -170,6 +174,32 @@ export default function AdminSettings() {
                   <p className="mt-1.5 text-xs text-stone-400">Used for absolute links in generated PDFs and emails.</p>
                 </div>
               </div>
+            </SettingsCard>
+
+            {/* Venue Location */}
+            <SettingsCard icon={MapPin} title="Venue Location" description="GPS coordinates for the map on guest invitations.">
+              <div className="grid grid-cols-2 gap-4">
+                <AdminInput
+                  label="Latitude"
+                  type="number"
+                  step="any"
+                  placeholder="-1.2921"
+                  value={settings.venue_lat}
+                  onChange={(e) => setSettings({ ...settings, venue_lat: e.target.value })}
+                />
+                <AdminInput
+                  label="Longitude"
+                  type="number"
+                  step="any"
+                  placeholder="36.8219"
+                  value={settings.venue_lng}
+                  onChange={(e) => setSettings({ ...settings, venue_lng: e.target.value })}
+                />
+              </div>
+              <p className="mt-2 text-xs text-stone-400">
+                Used by the map and weather widget on the Digital Invitation page. 
+                {' '}<a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="text-[#A67B5B] underline">Find coordinates on Google Maps</a>
+              </p>
             </SettingsCard>
 
             {/* Security */}
