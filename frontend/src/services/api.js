@@ -314,3 +314,11 @@ export const checkinService = {
 export const weatherService = {
   getForecast: () => api.get('/weather'),
 };
+
+// Test Lab services
+export const testLabService = {
+  healthCheck: () => api.get('/test/health'),
+  getStats: () => api.get('/test/stats'),
+  simulateLiveUpdate: (data) => api.post('/test/simulate/live-update', data),
+  simulatePolaroid: (data) => api.post('/test/simulate/polaroid', data),
+};

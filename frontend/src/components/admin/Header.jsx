@@ -1,20 +1,50 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, Search, FlaskConical, Info } from 'lucide-react';
+import { Menu, Bell, Search, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings } from 'lucide-react';
 import { useSearch } from '../../context/SearchContext';
 import { notificationService } from '../../services/api';
+
+const ICON_MAP = {
+  bell: BellRing,
+  user_plus: UserPlus,
+  gift: Gift,
+  mail: Mail,
+  calendar: Calendar,
+  check: CheckCircle,
+  settings: Settings,
+};
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const now = new Date();
+  const then = new Date(dateStr);
+  const seconds = Math.floor((now - then) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function NotificationIcon({ icon }) {
+  const IconComp = ICON_MAP[icon] || BellRing;
+  return <IconComp className="w-4 h-4 text-[#A67B5B]" />;
+}
 
 export default function Header({ onMenuClick, onRestartTutorial }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { searchQuery, setSearchQuery } = useSearch();
+  const fetchedRef = useRef(false);
 
   const fetchNotifications = async () => {
     try {
       const res = await notificationService.getRecent();
-      // Support both ApiResponse wrapper ({ data: [...] }) and raw array
       const payload = res.data;
       const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
       setNotifications(items);
@@ -25,9 +55,25 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    let cancelled = false;
+    const init = async () => {
+      if (!fetchedRef.current) {
+        fetchedRef.current = true;
+        try {
+          const res = await notificationService.getRecent();
+          if (cancelled) return;
+          const payload = res.data;
+          const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+          setNotifications(items);
+          setUnreadCount(items.filter(n => !n.read_at).length);
+        } catch (e) {
+          console.error("Failed to fetch notifications", e);
+        }
+      }
+    };
+    init();
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   const handleMarkAllRead = async () => {
@@ -114,12 +160,25 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
                     <button onClick={handleMarkAllRead} className="text-xs text-[#A67B5B] hover:text-[#8B5E3C]">Mark all read</button>
                  </div>
                  <div className="max-h-[300px] overflow-y-auto">
-                    {notifications.length > 0 ? notifications.map(n => (
-                      <div key={n.id} className="px-4 py-3 hover:bg-[#FAF7F2] border-b border-stone-50 last:border-0 cursor-pointer transition-colors" onClick={() => setShowNotifications(false)}>
-                        <p className={`text-sm ${!n.read_at ? 'text-stone-900 font-bold' : 'text-stone-700 font-medium'}`}>{n.data?.message}</p>
-                        <p className="text-xs text-stone-400 mt-1">{n.created_at}</p>
-                      </div>
-                    )) : (
+                    {notifications.length > 0 ? notifications.map(n => {
+                      const title = n.title || 'Notification';
+                      const message = n.message || '';
+                      return (
+                        <div key={n.id} className="px-4 py-3 hover:bg-[#FAF7F2] border-b border-stone-50 last:border-0 cursor-pointer transition-colors" onClick={() => setShowNotifications(false)}>
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 p-1.5 rounded-lg bg-[#A67B5B]/10 shrink-0">
+                              <NotificationIcon icon={n.icon} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${!n.read_at ? 'font-bold text-stone-900' : 'font-medium text-stone-700'}`}>{title}</p>
+                              {message && <p className="text-xs text-stone-500 mt-0.5 truncate">{message}</p>}
+                              <p className="text-xs text-stone-400 mt-1">{timeAgo(n.created_at)}</p>
+                            </div>
+                            {!n.read_at && <span className="w-2 h-2 rounded-full bg-[#A67B5B] shrink-0 mt-1.5" />}
+                          </div>
+                        </div>
+                      );
+                    }) : (
                       <div className="px-4 py-8 text-center text-xs text-stone-400 italic">No notifications yet</div>
                     )}
                  </div>

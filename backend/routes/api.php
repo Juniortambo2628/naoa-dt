@@ -259,5 +259,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Test Routes (Admin)
     Route::post('/test/email', [TestController::class, 'sendTestEmail']);
+    Route::get('/test/health', [TestController::class, 'healthCheck']);
+    Route::get('/test/stats', [TestController::class, 'stats']);
+    Route::post('/test/simulate/live-update', [TestController::class, 'simulateLiveUpdate']);
+    Route::post('/test/simulate/polaroid', [TestController::class, 'simulatePolaroid']);
 });
 
