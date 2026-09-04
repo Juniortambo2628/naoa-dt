@@ -9,6 +9,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminModal from '../../components/admin/AdminModal';
 import { AdminInput } from '../../components/admin/AdminInput';
 import Spinner from '../../components/admin/Spinner';
+import LocationPicker from '../../components/LocationPicker';
 
 const settingSections = [
   {
@@ -178,28 +179,11 @@ export default function AdminSettings() {
 
             {/* Venue Location */}
             <SettingsCard icon={MapPin} title="Venue Location" description="GPS coordinates for the map on guest invitations.">
-              <div className="grid grid-cols-2 gap-4">
-                <AdminInput
-                  label="Latitude"
-                  type="number"
-                  step="any"
-                  placeholder="-1.2921"
-                  value={settings.venue_lat}
-                  onChange={(e) => setSettings({ ...settings, venue_lat: e.target.value })}
-                />
-                <AdminInput
-                  label="Longitude"
-                  type="number"
-                  step="any"
-                  placeholder="36.8219"
-                  value={settings.venue_lng}
-                  onChange={(e) => setSettings({ ...settings, venue_lng: e.target.value })}
-                />
-              </div>
-              <p className="mt-2 text-xs text-stone-400">
-                Used by the map and weather widget on the Digital Invitation page. 
-                {' '}<a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="text-[#A67B5B] underline">Find coordinates on Google Maps</a>
-              </p>
+              <LocationPicker
+                lat={settings.venue_lat}
+                lng={settings.venue_lng}
+                onChange={(lat, lng) => setSettings({ ...settings, venue_lat: lat, venue_lng: lng })}
+              />
             </SettingsCard>
 
             {/* Security */}
