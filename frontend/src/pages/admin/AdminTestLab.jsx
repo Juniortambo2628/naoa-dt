@@ -4,7 +4,7 @@ import {
   Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical, 
   Radio, Camera, Wifi, Database, HardDrive, Server, Bell,
   AlertTriangle, Check, X, Activity, Zap, BarChart3,
-  Cloud, Map, ExternalLink
+  Cloud, Map, ExternalLink, Settings
 } from 'lucide-react';
 import api, { guestService, testLabService, weatherService, tableService, settingService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
