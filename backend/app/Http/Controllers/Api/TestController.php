@@ -120,9 +120,10 @@ class TestController extends Controller
         ]);
 
         $image = PolaroidImage::create([
-            'image_path' => '/uploads/polaroids/placeholder-' . time() . '.jpg',
+            'image_path' => '/storage/polaroids/placeholder.svg',
             'note' => $request->note ?? 'Test polaroid from admin',
             'location' => $request->location ?? 'Test Lab',
+            'taken_at' => now(),
         ]);
 
         if (class_exists(\App\Events\PolaroidImageCreated::class)) {

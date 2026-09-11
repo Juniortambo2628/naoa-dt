@@ -106,6 +106,62 @@ class GuestController extends Controller
     }
 
     /**
+     * Update guest location (public - guest self-reporting)
+     */
+    public function updateLocation(Request $request, string $code)
+    {
+        $guest = Guest::where('unique_code', strtoupper($code))->first();
+
+        if (!$guest) {
+            return $this->notFoundResponse('Guest not found');
+        }
+
+        $request->validate([
+            'location_zone' => 'nullable|string|max:100',
+            'location_lat' => 'nullable|numeric|between:-90,90',
+            'location_lng' => 'nullable|numeric|between:-180,180',
+        ]);
+
+        $guest->update([
+            'location_zone' => $request->location_zone,
+            'location_lat' => $request->location_lat,
+            'location_lng' => $request->location_lng,
+            'location_updated_at' => now(),
+        ]);
+
+        return $this->successResponse([
+            'location_zone' => $guest->location_zone,
+            'location_lat' => $guest->location_lat,
+            'location_lng' => $guest->location_lng,
+            'location_updated_at' => $guest->location_updated_at,
+        ], 'Location updated');
+    }
+
+    /**
+     * Get all guests with locations (for live map - admin)
+     */
+    public function getLocations()
+    {
+        $guests = Guest::whereNotNull('location_updated_at')
+            ->where('location_updated_at', '>=', now()->subHours(24))
+            ->get()
+            ->map(function ($guest) {
+                return [
+                    'id' => $guest->id,
+                    'name' => $guest->name,
+                    'group' => $guest->group,
+                    'location_zone' => $guest->location_zone,
+                    'location_lat' => $guest->location_lat,
+                    'location_lng' => $guest->location_lng,
+                    'location_updated_at' => $guest->location_updated_at?->toISOString(),
+                    'table_name' => $guest->table?->name,
+                ];
+            });
+
+        return $this->successResponse($guests);
+    }
+
+    /**
      * Submit RSVP response (public)
      */
     public function submitRsvp(Request $request, string $code, GuestService $guestService)

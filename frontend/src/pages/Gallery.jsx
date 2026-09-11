@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Loader2, Check } from 'lucide-react';
+import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Loader2, Check, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { galleryService, contentService, getAssetUrl } from '../services/api';
 import api from '../services/api';
@@ -16,6 +16,7 @@ import Loader from '../components/Loader';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
+import CameraCapture from '../components/CameraCapture';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -64,6 +65,9 @@ export default function Gallery() {
   const [guestName, setGuestName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  
+  // Camera capture state
+  const [showCamera, setShowCamera] = useState(false);
   const { contents: content, loading: contentLoading, isVisible } = useContent();
   
   // Slideshow state
@@ -142,6 +146,17 @@ export default function Gallery() {
     }
   };
 
+  // Camera capture handling
+  const handleCameraCapture = (file) => {
+    setUploadFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUploadPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    setShowCamera(false);
+  };
+
   if (contentLoading) {
     return <Loader />;
   }
@@ -215,8 +230,7 @@ export default function Gallery() {
               {getContent(content, 'gallery', 'subtitle', i18n, 'Cherished moments from our journey together')}
             </p>
 
-            {/* Action Buttons hidden as per request */}
-            {/* <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-4">
               <button
                 onClick={() => setShowUploadModal(true)}
                 className="btn-primary flex items-center gap-2"
@@ -242,7 +256,7 @@ export default function Gallery() {
                   )}
                 </button>
               )}
-            </div> */}
+            </div>
           </motion.div>
 
           {loading ? (
@@ -439,18 +453,48 @@ export default function Gallery() {
                         </button>
                       </div>
                     ) : (
-                      <label className="block border-2 border-dashed border-stone-300 rounded-xl p-8 text-center cursor-pointer hover:border-[#A67B5B] transition-colors">
-                        <Camera className="w-12 h-12 mx-auto mb-4 opacity-30" style={{ color: '#A67B5B' }} />
-                        <p style={{ color: '#6B5D52' }}>
-                          {t('gallery.tap_to_upload') || 'Tap to select a photo'}
-                        </p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileSelect}
-                          className="hidden"
-                        />
-                      </label>
+                      <div className="space-y-3">
+                        {/* Camera capture button */}
+                        <button
+                          type="button"
+                          onClick={() => setShowCamera(true)}
+                          className="w-full flex items-center justify-center gap-3 border-2 border-dashed border-stone-300 rounded-xl p-6 text-center cursor-pointer hover:border-[#A67B5B] hover:bg-stone-50 transition-colors"
+                        >
+                          <Smartphone className="w-8 h-8" style={{ color: '#A67B5B' }} />
+                          <div className="text-left">
+                            <p className="font-medium" style={{ color: '#6B5D52' }}>
+                              {t('gallery.take_photo') || 'Take a Photo'}
+                            </p>
+                            <p className="text-xs text-stone-400">
+                              {t('gallery.use_camera') || 'Use your device camera'}
+                            </p>
+                          </div>
+                        </button>
+                        
+                        {/* Divider */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 border-t border-stone-200" />
+                          <span className="text-xs text-stone-400">{t('gallery.or') || 'or'}</span>
+                          <div className="flex-1 border-t border-stone-200" />
+                        </div>
+                        
+                        {/* File upload button */}
+                        <label className="block border-2 border-dashed border-stone-300 rounded-xl p-6 text-center cursor-pointer hover:border-[#A67B5B] hover:bg-stone-50 transition-colors">
+                          <Camera className="w-8 h-8 mx-auto mb-2 opacity-50" style={{ color: '#A67B5B' }} />
+                          <p className="font-medium" style={{ color: '#6B5D52' }}>
+                            {t('gallery.choose_from_gallery') || 'Choose from Gallery'}
+                          </p>
+                          <p className="text-xs text-stone-400">
+                            {t('gallery.select_existing') || 'Select an existing photo'}
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
                     )}
                   </div>
 
@@ -489,6 +533,17 @@ export default function Gallery() {
               )}
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Camera Capture Modal */}
+      <AnimatePresence>
+        {showCamera && (
+          <CameraCapture
+            onCapture={handleCameraCapture}
+            onClose={() => setShowCamera(false)}
+            aspectRatio="4:3"
+          />
         )}
       </AnimatePresence>
 

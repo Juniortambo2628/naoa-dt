@@ -32,10 +32,17 @@ class Guest extends Model
         'parent_guest_id',
         'save_the_date_method',
         'invitation_via',
+        'location_zone',
+        'location_lat',
+        'location_lng',
+        'location_updated_at',
     ];
 
     protected $casts = [
         'checked_in_at' => 'datetime',
+        'location_updated_at' => 'datetime',
+        'location_lat' => 'float',
+        'location_lng' => 'float',
     ];
 
     // --- Query Scopes ---

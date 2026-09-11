@@ -46,6 +46,7 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::group(['prefix' => 'guests'], function () {
         Route::get('/code/{code}', [GuestController::class, 'getByCode']);
         Route::post('/code/{code}/rsvp', [GuestController::class, 'submitRsvp']);
+        Route::post('/code/{code}/location', [GuestController::class, 'updateLocation']);
     });
 });
 
@@ -128,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'guests'], function () {
         Route::get('/', [GuestController::class, 'index']);
         Route::get('/statistics', [GuestController::class, 'statistics']);
+        Route::get('/locations', [GuestController::class, 'getLocations']);
         Route::post('/import', [GuestController::class, 'import']);
         Route::post('/validate-import', [GuestController::class, 'validateImport']);
         Route::post('/import-confirm', [GuestController::class, 'importConfirm']);
@@ -226,6 +228,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/guests/{guest}/generate-qr', [CheckInController::class, 'generateQR']);
         Route::post('/scan', [CheckInController::class, 'checkIn']);
         Route::get('/stats', [CheckInController::class, 'getStats']);
+        Route::get('/guests', [CheckInController::class, 'getCheckedInGuests']);
     });
 
     // Song Requests (Admin Management)

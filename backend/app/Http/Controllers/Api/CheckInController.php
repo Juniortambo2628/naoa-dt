@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
+use App\Events\GuestCheckedIn;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -56,6 +57,12 @@ class CheckInController extends Controller
         $guest->checked_in_at = now();
         $guest->save();
 
+        // Load table relationship for broadcasting
+        $guest->load('table');
+
+        // Broadcast the check-in event
+        event(new GuestCheckedIn($guest));
+
         return $this->successResponse(
             ['guest' => $guest],
             'Welcome, ' . $guest->name . '!'
@@ -73,5 +80,25 @@ class CheckInController extends Controller
             'remaining'      => $total - $checkedIn,
             'percentage'     => $total > 0 ? round(($checkedIn / $total) * 100) : 0,
         ]);
+    }
+
+    public function getCheckedInGuests(): JsonResponse
+    {
+        $guests = Guest::checkedIn()
+            ->with('table:id,name')
+            ->orderBy('checked_in_at', 'desc')
+            ->get()
+            ->map(function ($guest) {
+                return [
+                    'id' => $guest->id,
+                    'name' => $guest->name,
+                    'group' => $guest->group,
+                    'table_id' => $guest->table_id,
+                    'table_name' => $guest->table?->name,
+                    'checked_in_at' => $guest->checked_in_at,
+                ];
+            });
+
+        return $this->successResponse($guests);
     }
 }

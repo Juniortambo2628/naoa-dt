@@ -67,6 +67,12 @@ export const guestService = {
   // Submit RSVP
   submitRSVP: (code, data) => api.post(`/guests/code/${code}/rsvp`, data),
   
+  // Update guest location (public - guest self-reporting)
+  updateLocation: (code, data) => api.post(`/guests/code/${code}/location`, data),
+  
+  // Get all guest locations (admin)
+  getLocations: () => api.get('/guests/locations'),
+  
   // Get all guests (admin)
   getAll: (params) => api.get('/guests', { params }),
   
@@ -308,6 +314,7 @@ export const checkinService = {
   getStats: () => api.get('/checkin/stats'),
   scan: (data) => api.post('/checkin/scan', data),
   generateQR: (guestId) => api.post(`/checkin/guests/${guestId}/generate-qr`),
+  getCheckedInGuests: () => api.get('/checkin/guests'),
 };
 
 // Weather services
