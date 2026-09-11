@@ -130,7 +130,7 @@ export default function AdminTestLab() {
         note: polaroidCaption || 'Test polaroid from admin',
         location: polaroidLocation || 'Test Lab',
       });
-      addLog('Polaroid simulated! Check Digital Invitation page.', 'success');
+      addLog('Polaroid simulated! Check Programme page.', 'success');
       setPolaroidCaption('');
       setPolaroidLocation('');
     } catch (err) {

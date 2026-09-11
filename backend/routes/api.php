@@ -66,6 +66,9 @@ Route::middleware('throttle:60,1')->group(function () {
 
     // Public FAQ Routes
     Route::get('/faqs', [FaqController::class, 'index']);
+
+    // Public Guest Locations (for live map)
+    Route::get('/guests/locations', [GuestController::class, 'getLocations']);
 });
 
 // Public Transactional Routes (Throttled)

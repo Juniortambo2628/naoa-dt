@@ -43,10 +43,10 @@ function TableShape({ table, isGuestsTable, guestCount, onClick, isSelected }) {
           relative flex items-center justify-center transition-all duration-300
           ${isRound ? 'rounded-full' : 'rounded-2xl'}
           ${isGuestsTable 
-            ? 'w-28 h-28 md:w-32 md:h-32 border-[3px]' 
+            ? 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 border-[3px]' 
             : isSelected
-              ? 'w-26 h-26 md:w-28 md:h-28 border-2'
-              : 'w-22 h-22 md:w-24 md:h-24 border-2'}
+              ? 'w-18 h-18 sm:w-20 sm:h-20 md:w-24 md:h-24 border-2'
+              : 'w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 border-2'}
         `}
         style={{
           background: isGuestsTable 
@@ -350,47 +350,49 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
   );
 
   const headerContent = (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#A67B5B] to-[#C8A68E] flex items-center justify-center shadow-lg">
-          <Armchair className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-stone-800 text-lg">Seating Arrangement</h3>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-[#A67B5B]" />
-              <p className="text-xs text-stone-400">{filledSeats} of {totalSeats} seats filled</p>
-            </div>
-            <span className="text-stone-300">•</span>
-            <p className="text-xs text-stone-400">{tables.length} tables</p>
+    <div className="mb-4 md:mb-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-[#A67B5B] to-[#C8A68E] flex items-center justify-center shadow-lg">
+            <Armchair className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </div>
+          <div>
+            <h3 className="font-semibold text-stone-800 text-base md:text-lg">Seating Arrangement</h3>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#A67B5B]" />
+                <p className="text-[10px] md:text-xs text-stone-400">{filledSeats} of {totalSeats} seats filled</p>
+              </div>
+              <span className="text-stone-300">•</span>
+              <p className="text-[10px] md:text-xs text-stone-400">{tables.length} tables</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* Expand button */}
+          {embedded && (
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="p-2 hover:bg-stone-100 rounded-lg transition-colors group"
+              title="Expand to full view"
+            >
+              <Maximize2 className="w-4 h-4 text-stone-400 group-hover:text-[#A67B5B]" />
+            </button>
+          )}
         </div>
       </div>
       
-      <div className="flex items-center gap-2">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Find table or guest..."
-            className="pl-9 pr-3 py-2 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B] w-40 md:w-48"
-          />
-        </div>
-        
-        {/* Expand button */}
-        {embedded && (
-          <button
-            onClick={() => setIsExpanded(true)}
-            className="p-2 hover:bg-stone-100 rounded-lg transition-colors group"
-            title="Expand to full view"
-          >
-            <Maximize2 className="w-4 h-4 text-stone-400 group-hover:text-[#A67B5B]" />
-          </button>
-        )}
+      {/* Search - shown below header on mobile */}
+      <div className="relative mt-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Find table or guest..."
+          className="pl-9 pr-3 py-2 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B] w-full md:w-48"
+        />
       </div>
     </div>
   );
@@ -442,7 +444,8 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          style={{ zIndex: 9999 }}
           onClick={() => setIsExpanded(false)}
         >
           <motion.div
@@ -451,17 +454,18 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+            style={{ zIndex: 10000 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Dialog header */}
-            <div className="flex items-center justify-between p-6 border-b border-stone-100">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#A67B5B] to-[#C8A68E] flex items-center justify-center">
                   <Armchair className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-stone-800">Seating Arrangement</h2>
-                  <p className="text-sm text-stone-400">{filledSeats} of {totalSeats} seats filled • {tables.length} tables</p>
+                  <h2 className="text-lg md:text-xl font-semibold text-stone-800">Seating Arrangement</h2>
+                  <p className="text-xs md:text-sm text-stone-400">{filledSeats} of {totalSeats} seats filled • {tables.length} tables</p>
                 </div>
               </div>
               <button
@@ -473,10 +477,10 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
             </div>
 
             {/* Dialog content */}
-            <div className="flex-1 overflow-auto p-6">
-              <div className="flex gap-6">
+            <div className="flex-1 overflow-auto p-4 md:p-6">
+              <div className="flex flex-col lg:flex-row gap-6">
                 {/* Chart area */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {/* Search */}
                   <div className="relative mb-4">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
@@ -490,12 +494,12 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
                   </div>
 
                   {/* Chart */}
-                  <div className="bg-gradient-to-br from-[#FAF7F2] to-[#F5EDE6] rounded-2xl p-6 min-h-[400px]">
-                    <div className="flex flex-wrap items-center justify-center gap-10">
+                  <div className="bg-gradient-to-br from-[#FAF7F2] to-[#F5EDE6] rounded-2xl p-4 md:p-6 min-h-[300px] md:min-h-[400px]">
+                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
                       {filteredTables.map((table, index) => (
                         <motion.div 
                           key={table.id} 
-                          className="flex flex-col items-center gap-3"
+                          className="flex flex-col items-center gap-2"
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
@@ -526,14 +530,14 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
                   )}
                 </div>
 
-                {/* Detail panel */}
+                {/* Detail panel - hidden on mobile, shown on desktop */}
                 <AnimatePresence>
                   {selectedTable && (
                     <motion.div
                       initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: 320 }}
+                      animate={{ opacity: 1, width: 'auto' }}
                       exit={{ opacity: 0, width: 0 }}
-                      className="flex-shrink-0 overflow-hidden"
+                      className="flex-shrink-0 overflow-hidden hidden lg:block"
                     >
                       <TableDetailPanel
                         table={selectedTable}
@@ -544,6 +548,24 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Mobile detail panel - shown below chart on mobile */}
+              <AnimatePresence>
+                {selectedTable && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 overflow-hidden lg:hidden"
+                  >
+                    <TableDetailPanel
+                      table={selectedTable}
+                      guestTableId={guestTableId}
+                      onClose={() => setSelectedTable(null)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         </motion.div>
