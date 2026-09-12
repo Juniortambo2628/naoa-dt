@@ -8,6 +8,9 @@ import PublicSeatingChart from '../components/PublicSeatingChart';
 import WeatherWidget from '../components/WeatherWidget';
 import MapsETA from '../components/MapsETA';
 import Loader from '../components/Loader';
+import EmergencyNumbers from '../components/EmergencyNumbers';
+import GuestLocationPicker from '../components/GuestLocationPicker';
+import GuestTravelForm from '../components/GuestTravelForm';
 
 export default function DigitalInvitation() {
     const { code } = useParams();
@@ -256,6 +259,15 @@ export default function DigitalInvitation() {
                         />
                         <WeatherWidget weddingDate={weddingDate} />
                     </div>
+
+                    {/* Location Tracking */}
+                    <GuestLocationPicker guestCode={code} />
+
+                    {/* Travel & Accommodation Details */}
+                    <GuestTravelForm guestCode={code} />
+
+                    {/* Emergency Numbers */}
+                    <EmergencyNumbers compact={true} />
 
                     {/* Seating Chart */}
                     <PublicSeatingChart guestCode={code} />
