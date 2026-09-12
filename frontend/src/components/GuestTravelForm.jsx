@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Hotel, Plane, Car, FileText, Upload, Download, Trash2, 
-  Check, Loader2, ChevronDown, ChevronUp, Calendar, MapPin 
+  Check, Loader2, ChevronDown, ChevronUp, Calendar, MapPin, Phone 
 } from 'lucide-react';
 import { guestService } from '../services/api';
 import { getAssetUrl } from '../utils/assetUrl';
@@ -88,6 +88,12 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
     notes: '',
   });
 
+  // Local phone state
+  const [localPhone, setLocalPhone] = useState({
+    number: '',
+    carrier: '',
+  });
+
   // Ticket state
   const [ticket, setTicket] = useState(null);
   const [uploadingTicket, setUploadingTicket] = useState(false);
@@ -126,6 +132,11 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
           setTransport({
             method: data.transport_method || '',
             notes: data.transport_notes || '',
+          });
+
+          setLocalPhone({
+            number: data.local_phone_number || '',
+            carrier: data.local_phone_carrier || '',
           });
 
           if (data.ticket_file_path) {
@@ -171,6 +182,9 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
         // Transport
         transport_method: transport.method || null,
         transport_notes: transport.notes || null,
+        // Local contact
+        local_phone_number: localPhone.number || null,
+        local_phone_carrier: localPhone.carrier || null,
       };
 
       await guestService.saveTravel(guestCode, data);
@@ -449,6 +463,39 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               rows={2}
               className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
             />
+          </div>
+        </CollapsibleSection>
+
+        {/* Local Phone Section */}
+        <CollapsibleSection 
+          title="Local Phone Number" 
+          icon={Phone}
+          defaultOpen={!!localPhone.number}
+        >
+          <p className="text-xs text-stone-400 mb-3">
+            Save a local SIM card number you'll use during your trip for easy reference
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">Phone Number</label>
+              <input
+                type="tel"
+                value={localPhone.number}
+                onChange={(e) => setLocalPhone({ ...localPhone, number: e.target.value })}
+                placeholder="e.g. +254 712 345678"
+                className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">Carrier / Provider</label>
+              <input
+                type="text"
+                value={localPhone.carrier}
+                onChange={(e) => setLocalPhone({ ...localPhone, carrier: e.target.value })}
+                placeholder="e.g. Safaricom, Airtel"
+                className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
+              />
+            </div>
           </div>
         </CollapsibleSection>
 

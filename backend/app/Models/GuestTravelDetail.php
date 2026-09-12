@@ -31,6 +31,8 @@ class GuestTravelDetail extends Model
         'ticket_file_type',
         'transport_method',
         'transport_notes',
+        'local_phone_number',
+        'local_phone_carrier',
     ];
 
     protected $casts = [

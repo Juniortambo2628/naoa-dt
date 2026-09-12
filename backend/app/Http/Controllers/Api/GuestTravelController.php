@@ -67,6 +67,9 @@ class GuestTravelController extends Controller
             // Transport
             'transport_method' => 'nullable|string|in:rental-car,taxi,rideshare,public,shuttle,other',
             'transport_notes' => 'nullable|string|max:500',
+            // Local contact
+            'local_phone_number' => 'nullable|string|max:20',
+            'local_phone_carrier' => 'nullable|string|max:100',
         ]);
 
         $travelDetail = $guest->travelDetail;
@@ -78,6 +81,7 @@ class GuestTravelController extends Controller
                 'airline', 'flight_number', 'flight_departure', 'flight_arrival',
                 'flight_departure_airport', 'flight_arrival_airport', 'flight_confirmation', 'flight_notes',
                 'transport_method', 'transport_notes',
+                'local_phone_number', 'local_phone_carrier',
             ]));
         } else {
             $travelDetail = $guest->travelDetail()->create($request->only([
@@ -86,6 +90,7 @@ class GuestTravelController extends Controller
                 'airline', 'flight_number', 'flight_departure', 'flight_arrival',
                 'flight_departure_airport', 'flight_arrival_airport', 'flight_confirmation', 'flight_notes',
                 'transport_method', 'transport_notes',
+                'local_phone_number', 'local_phone_carrier',
             ]));
         }
 

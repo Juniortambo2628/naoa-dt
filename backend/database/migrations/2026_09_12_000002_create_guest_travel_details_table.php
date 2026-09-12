@@ -39,6 +39,10 @@ return new class extends Migration
             $table->string('transport_method')->nullable();
             $table->text('transport_notes')->nullable();
             
+            // Local contact
+            $table->string('local_phone_number')->nullable();
+            $table->string('local_phone_carrier')->nullable();
+            
             $table->timestamps();
             
             $table->index('guest_id');
