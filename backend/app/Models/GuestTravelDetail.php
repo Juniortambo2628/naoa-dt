@@ -33,6 +33,8 @@ class GuestTravelDetail extends Model
         'transport_notes',
         'local_phone_number',
         'local_phone_carrier',
+        'flight_status_snapshot',
+        'last_flight_check_at',
     ];
 
     protected $casts = [
@@ -40,6 +42,8 @@ class GuestTravelDetail extends Model
         'hotel_check_out' => 'date',
         'flight_departure' => 'datetime',
         'flight_arrival' => 'datetime',
+        'flight_status_snapshot' => 'array',
+        'last_flight_check_at' => 'datetime',
     ];
 
     public function guest(): BelongsTo
