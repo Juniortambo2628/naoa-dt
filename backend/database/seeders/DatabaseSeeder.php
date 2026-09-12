@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\ScheduleItem;
 use App\Models\Gift;
 use App\Models\Invitation;
+use Database\Seeders\EmergencyNumberSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -173,6 +174,9 @@ class DatabaseSeeder extends Seeder
         foreach ($gifts as $gift) {
             Gift::create($gift);
         }
+
+        // Seed emergency numbers
+        $this->call(EmergencyNumberSeeder::class);
 
         $this->command->info('Database seeded successfully!');
         $this->command->info('Admin login: admin@wedding.com / password123');

@@ -341,3 +341,12 @@ export const testLabService = {
   simulateLiveUpdate: (data) => api.post('/test/simulate/live-update', data),
   simulatePolaroid: (data) => api.post('/test/simulate/polaroid', data),
 };
+
+// Emergency Numbers services
+export const emergencyNumberService = {
+  getAll: () => api.get('/emergency-numbers'),
+  get: (id) => api.get(`/emergency-numbers/${id}`),
+  create: (data) => api.post('/emergency-numbers', data),
+  update: (id, data) => api.put(`/emergency-numbers/${id}`, data),
+  delete: (id) => api.delete(`/emergency-numbers/${id}`),
+};

@@ -13,5 +13,41 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Restore viewport zoom after pinch gesture on mobile
+      (function() {
+        let lastTouchEnd = 0;
+        let viewportMeta = document.querySelector('meta[name="viewport"]');
+        
+        document.addEventListener('touchstart', function(e) {
+          if (e.touches.length > 1) {
+            // Multi-touch detected (pinch gesture starting)
+            lastTouchEnd = Date.now();
+          }
+        }, { passive: true });
+        
+        document.addEventListener('touchend', function(e) {
+          const now = Date.now();
+          if (now - lastTouchEnd < 300) {
+            // Pinch gesture just ended, reset viewport
+            setTimeout(function() {
+              if (viewportMeta) {
+                viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+              }
+            }, 100);
+          }
+          lastTouchEnd = now;
+        }, { passive: true });
+        
+        // Also handle orientation change
+        window.addEventListener('orientationchange', function() {
+          setTimeout(function() {
+            if (viewportMeta) {
+              viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+            }
+          }, 500);
+        });
+      })();
+    </script>
   </body>
 </html>

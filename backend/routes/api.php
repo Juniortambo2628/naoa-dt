@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\PolaroidImageController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\WeatherController;
+use App\Http\Controllers\Api\EmergencyNumberController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,6 +77,9 @@ Route::middleware('throttle:60,1')->group(function () {
 
     // Public Guest Locations (for live map)
     Route::get('/guests/locations', [GuestController::class, 'getLocations']);
+
+    // Public Emergency Numbers
+    Route::get('/emergency-numbers', [EmergencyNumberController::class, 'index']);
 });
 
 // Public Transactional Routes (Throttled)
@@ -208,6 +212,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/reorder', [FaqController::class, 'reorder']);
         Route::put('/{faq}', [FaqController::class, 'update']);
         Route::delete('/{faq}', [FaqController::class, 'destroy']);
+    });
+
+    // Emergency Numbers Management (admin)
+    Route::group(['prefix' => 'emergency-numbers'], function () {
+        Route::post('/', [EmergencyNumberController::class, 'store']);
+        Route::put('/{id}', [EmergencyNumberController::class, 'update']);
+        Route::delete('/{id}', [EmergencyNumberController::class, 'destroy']);
     });
     
     // Media Upload

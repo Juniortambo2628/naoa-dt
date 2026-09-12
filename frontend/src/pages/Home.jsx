@@ -90,7 +90,6 @@ function HeroSection({ content, loading }) {
   
   const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
 
   // Animation key to force replay when returning to view
   const [animationKey, setAnimationKey] = useState(0);
@@ -116,7 +115,7 @@ function HeroSection({ content, loading }) {
       {/* Hero Content */}
       <motion.div 
         className="relative z-20 text-center px-4 max-w-6xl mx-auto"
-        style={{ y, opacity, scale }}
+        style={{ y, opacity }}
       >
         {/* "We're Getting Married" subtitle */}
         <motion.div
