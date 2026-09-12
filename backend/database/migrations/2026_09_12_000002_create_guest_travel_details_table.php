@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('guest_travel_details', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('guest_id')->constrained()->onDelete('cascade');
-            
+            $table->unsignedBigInteger('guest_id');
+            $table->index('guest_id');            
             // Accommodation
             $table->string('hotel_name')->nullable();
             $table->text('hotel_address')->nullable();
@@ -44,8 +44,6 @@ return new class extends Migration
             $table->string('local_phone_carrier')->nullable();
             
             $table->timestamps();
-            
-            $table->index('guest_id');
         });
     }
 

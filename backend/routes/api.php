@@ -89,6 +89,11 @@ Route::middleware('throttle:60,1')->group(function () {
     });
 });
 
+// Test endpoints (admin only)
+Route::middleware(['auth:sanctum'])->prefix('test')->group(function () {
+    Route::post('/flight-notification', [TestController::class, 'sendTestFlightNotification']);
+});
+
 // Public Transactional Routes (Throttled)
 Route::middleware('throttle:30,1')->group(function () {
     // Public Gallery Routes

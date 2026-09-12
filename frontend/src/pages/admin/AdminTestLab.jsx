@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical, 
+import {
+  Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical,
   Radio, Camera, Wifi, Database, HardDrive, Server, Bell,
   AlertTriangle, Check, X, Activity, Zap, BarChart3,
-  Cloud, Map, ExternalLink, Settings
+  Cloud, Map, ExternalLink, Settings, Plane
 } from 'lucide-react';
 import api, { guestService, testLabService, weatherService, tableService, settingService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
@@ -147,6 +147,20 @@ export default function AdminTestLab() {
     try {
       await api.post('/test/email', { email: testEmail, type });
       addLog(`${type} email sent!`, 'success');
+    } catch (err) {
+      addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  // --- Flight Notification Test ---
+  const handleSendTestFlightNotification = async (type) => {
+    if (!testEmail) return alert('Enter an email in the Email System card first');
+    setLoading(true);
+    addLog(`Sending test flight notification (${type}) to ${testEmail}...`, 'info');
+    try {
+      await api.post('/test/flight-notification', { email: testEmail, type });
+      addLog(`Flight notification (${type}) sent! Check your inbox.`, 'success');
     } catch (err) {
       addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
     }
@@ -508,6 +522,40 @@ export default function AdminTestLab() {
           </div>
         </AdminCard>
 
+        <AdminCard>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Plane className="w-5 h-5 text-blue-500" />
+            </div>
+            <h2 className="text-lg font-medium text-stone-800">Flight Notifications</h2>
+          </div>
+          <p className="text-xs text-stone-500 mb-4">Send test flight status emails to verify notification system.</p>
+          <div className="space-y-3">
+            {[
+              { type: 'delayed', label: 'Delayed (+45min)', color: 'amber' },
+              { type: 'cancelled', label: 'Cancelled', color: 'red' },
+              { type: 'gate_change', label: 'Gate Change', color: 'blue' },
+              { type: 'diverted', label: 'Diverted', color: 'purple' },
+              { type: 'status_change', label: 'Landed', color: 'green' },
+            ].map((item) => (
+              <button
+                key={item.type}
+                onClick={() => handleSendTestFlightNotification(item.type)}
+                disabled={loading || !testEmail}
+                className={`w-full flex items-center justify-center gap-2 p-3 bg-${item.color}-50 border border-${item.color}-200 rounded-lg hover:border-${item.color}-400 hover:bg-white transition-all text-sm font-medium text-${item.color}-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <Plane className="w-4 h-4" /> {item.label}
+              </button>
+            ))}
+          </div>
+          {!testEmail && (
+            <p className="text-xs text-amber-600 mt-2 text-center">Enter an email in the Email System card first</p>
+          )}
+        </AdminCard>
+      </div>
+
+      {/* Code & QR */}
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-[#A67B5B]/10 rounded-lg">

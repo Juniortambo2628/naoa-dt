@@ -12,6 +12,7 @@ use App\Models\Table;
 use App\Models\PolaroidImage;
 use App\Models\Event;
 use App\Models\LiveUpdate;
+use App\Mail\FlightStatusNotification;
 
 class TestController extends Controller
 {
@@ -157,6 +158,130 @@ class TestController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to send email',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Send a test flight notification email.
+     */
+    public function sendTestFlightNotification(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'type' => 'required|in:delayed,cancelled,gate_change,diverted,status_change',
+        ]);
+
+        $testFlights = [
+            'delayed' => [
+                'flight_number' => 'KQ 100',
+                'status' => 'active',
+                'airline' => 'Kenya Airways',
+                'departure_iata' => 'NBO',
+                'departure_airport' => 'Jomo Kenyatta International',
+                'arrival_iata' => 'MBA',
+                'arrival_airport' => 'Moi International Airport',
+                'departure_scheduled' => '2026-09-15T08:00:00',
+                'arrival_scheduled' => '2026-09-15T09:30:00',
+                'arrival_estimated' => '2026-09-15T10:15:00',
+                'delay_arrival' => 45,
+                'arrival_gate' => 'B12',
+                'arrival_terminal' => '1A',
+            ],
+            'cancelled' => [
+                'flight_number' => 'BA 274',
+                'status' => 'cancelled',
+                'airline' => 'British Airways',
+                'departure_iata' => 'LHR',
+                'departure_airport' => 'Heathrow',
+                'arrival_iata' => 'NBO',
+                'arrival_airport' => 'Jomo Kenyatta International',
+                'departure_scheduled' => '2026-09-14T20:00:00',
+                'arrival_scheduled' => '2026-09-15T06:00:00',
+                'arrival_estimated' => null,
+                'delay_arrival' => 0,
+                'arrival_gate' => null,
+                'arrival_terminal' => '5',
+            ],
+            'gate_change' => [
+                'flight_number' => 'ET 302',
+                'status' => 'active',
+                'airline' => 'Ethiopian Airlines',
+                'departure_iata' => 'ADD',
+                'departure_airport' => 'Bole International',
+                'arrival_iata' => 'NBO',
+                'arrival_airport' => 'Jomo Kenyatta International',
+                'departure_scheduled' => '2026-09-15T06:00:00',
+                'arrival_scheduled' => '2026-09-15T08:30:00',
+                'arrival_estimated' => '2026-09-15T08:25:00',
+                'delay_arrival' => 0,
+                'arrival_gate' => 'C23',
+                'arrival_terminal' => '1A',
+            ],
+            'diverted' => [
+                'flight_number' => 'QK 401',
+                'status' => 'diverted',
+                'airline' => 'Kenya Airways',
+                'departure_iata' => 'MBA',
+                'departure_airport' => 'Moi International',
+                'arrival_iata' => 'NBO',
+                'arrival_airport' => 'Jomo Kenyatta International',
+                'departure_scheduled' => '2026-09-15T10:00:00',
+                'arrival_scheduled' => '2026-09-15T11:30:00',
+                'arrival_estimated' => '2026-09-15T12:00:00',
+                'delay_arrival' => 30,
+                'arrival_gate' => null,
+                'arrival_terminal' => '1A',
+            ],
+            'status_change' => [
+                'flight_number' => 'PW 310',
+                'status' => 'landed',
+                'airline' => 'Precision Air',
+                'departure_iata' => 'DAR',
+                'departure_airport' => 'Julius Nyerere International',
+                'arrival_iata' => 'NBO',
+                'arrival_airport' => 'Jomo Kenyatta International',
+                'departure_scheduled' => '2026-09-15T07:00:00',
+                'arrival_scheduled' => '2026-09-15T09:00:00',
+                'arrival_estimated' => '2026-09-15T08:55:00',
+                'delay_arrival' => 0,
+                'arrival_gate' => 'A08',
+                'arrival_terminal' => '1A',
+            ],
+        ];
+
+        $type = $request->type;
+        $flightData = $testFlights[$type];
+        $guestName = 'Test Guest';
+        $flightNumber = $flightData['flight_number'];
+
+        $previousStatus = match($type) {
+            'delayed' => ['status' => 'active', 'delay_arrival' => 15],
+            'cancelled' => ['status' => 'scheduled', 'delay_arrival' => 0],
+            'gate_change' => ['status' => 'active', 'arrival_gate' => 'B15'],
+            'diverted' => ['status' => 'active', 'arrival_gate' => 'A10'],
+            default => null,
+        };
+
+        try {
+            Mail::to($request->email)->send(
+                new FlightStatusNotification(
+                    guestName: $guestName,
+                    flightNumber: $flightNumber,
+                    status: $flightData['status'],
+                    flightData: $flightData,
+                    previousStatus: $previousStatus,
+                    changeType: $type,
+                )
+            );
+
+            return response()->json([
+                'message' => "Test flight notification ({$type}) sent to {$request->email}",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to send flight notification',
                 'error' => $e->getMessage()
             ], 500);
         }
