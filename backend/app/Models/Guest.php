@@ -99,6 +99,11 @@ class Guest extends Model
         return $this->hasMany(GiftClaim::class);
     }
 
+    public function travelDetail(): HasOne
+    {
+        return $this->hasOne(GuestTravelDetail::class);
+    }
+
     // --- Helper Methods ---
 
     public function hasResponded(): bool

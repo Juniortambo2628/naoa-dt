@@ -73,6 +73,18 @@ export const guestService = {
   // Get all guest locations (admin)
   getLocations: () => api.get('/guests/locations'),
   
+  // Travel details
+  getTravel: (code) => api.get(`/guests/code/${code}/travel`),
+  saveTravel: (code, data) => api.post(`/guests/code/${code}/travel`, data),
+  uploadTicket: (code, file) => {
+    const formData = new FormData();
+    formData.append('ticket', file);
+    return api.post(`/guests/code/${code}/travel/ticket`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  deleteTicket: (code) => api.delete(`/guests/code/${code}/travel/ticket`),
+  
   // Get all guests (admin)
   getAll: (params) => api.get('/guests', { params }),
   

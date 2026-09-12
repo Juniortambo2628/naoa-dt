@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TestController;
+use App\Http\Controllers\Api\GuestTravelController;
 use App\Http\Controllers\Api\PolaroidImageController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\EnquiryController;
@@ -47,6 +48,12 @@ Route::middleware('throttle:30,1')->group(function () {
         Route::get('/code/{code}', [GuestController::class, 'getByCode']);
         Route::post('/code/{code}/rsvp', [GuestController::class, 'submitRsvp']);
         Route::post('/code/{code}/location', [GuestController::class, 'updateLocation']);
+        
+        // Travel details
+        Route::get('/code/{code}/travel', [GuestTravelController::class, 'show']);
+        Route::post('/code/{code}/travel', [GuestTravelController::class, 'store']);
+        Route::post('/code/{code}/travel/ticket', [GuestTravelController::class, 'uploadTicket']);
+        Route::delete('/code/{code}/travel/ticket', [GuestTravelController::class, 'deleteTicket']);
     });
 });
 
