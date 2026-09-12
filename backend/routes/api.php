@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\WeatherController;
 use App\Http\Controllers\Api\EmergencyNumberController;
+use App\Http\Controllers\Api\FlightController;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +81,12 @@ Route::middleware('throttle:60,1')->group(function () {
 
     // Public Emergency Numbers
     Route::get('/emergency-numbers', [EmergencyNumberController::class, 'index']);
+
+    // Flight Lookup (throttled to protect API quota)
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/flights/lookup', [FlightController::class, 'lookup']);
+        Route::post('/flights/status', [FlightController::class, 'status']);
+    });
 });
 
 // Public Transactional Routes (Throttled)

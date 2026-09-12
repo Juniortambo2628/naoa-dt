@@ -350,3 +350,10 @@ export const emergencyNumberService = {
   update: (id, data) => api.put(`/emergency-numbers/${id}`, data),
   delete: (id) => api.delete(`/emergency-numbers/${id}`),
 };
+
+// Flight Tracking services
+export const flightService = {
+  lookup: (flightNumber, date) => api.post('/flights/lookup', { flight_number: flightNumber, date }),
+  getStatus: (flightNumber, date) => api.post('/flights/status', { flight_number: flightNumber, date }),
+  search: (query) => api.post('/flights/search', { query }),
+};

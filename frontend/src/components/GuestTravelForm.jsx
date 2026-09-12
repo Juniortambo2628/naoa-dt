@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Hotel, Plane, Car, FileText, Upload, Download, Trash2, 
-  Check, Loader2, ChevronDown, ChevronUp, Calendar, MapPin, Phone 
+import {
+  Hotel, Plane, Car, FileText, Upload, Download, Trash2,
+  Check, Loader2, ChevronDown, ChevronUp, Calendar, MapPin, Phone,
+  Search, Clock, AlertCircle, RefreshCw
 } from 'lucide-react';
-import { guestService } from '../services/api';
+import { guestService, flightService } from '../services/api';
 import { getAssetUrl } from '../utils/assetUrl';
 
 const TRANSPORT_OPTIONS = [
@@ -97,6 +98,14 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
   // Ticket state
   const [ticket, setTicket] = useState(null);
   const [uploadingTicket, setUploadingTicket] = useState(false);
+
+  // Flight lookup state
+  const [lookingUpFlight, setLookingUpFlight] = useState(false);
+  const [flightLookupError, setFlightLookupError] = useState(null);
+  const [flightStatus, setFlightStatus] = useState(null);
+  const [flightETA, setFlightETA] = useState(null);
+  const [refreshingFlight, setRefreshingFlight] = useState(false);
+  const flightLookupTimeout = useRef(null);
 
   // Fetch existing travel data
   useEffect(() => {
@@ -228,6 +237,78 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
     }
   };
 
+  // Flight lookup function
+  const handleFlightLookup = async (flightNumber, date) => {
+    if (!flightNumber || flightNumber.length < 3) return;
+    
+    setLookingUpFlight(true);
+    setFlightLookupError(null);
+    
+    try {
+      const res = await flightService.lookup(flightNumber, date || undefined);
+      const data = res.data?.data;
+      
+      if (data?.flight) {
+        const f = data.flight;
+        setFlight({
+          airline: f.airline || flight.airline,
+          number: f.flight_number || flight.number,
+          departure: f.departure_scheduled ? f.departure_scheduled.replace('Z', '').slice(0, 16) : flight.departure,
+          arrival: f.arrival_scheduled ? f.arrival_scheduled.replace('Z', '').slice(0, 16) : flight.arrival,
+          departure_airport: f.departure_iata || flight.departure_airport,
+          arrival_airport: f.arrival_iata || flight.arrival_airport,
+          confirmation: flight.confirmation,
+          notes: flight.notes,
+        });
+        
+        setFlightStatus(f);
+        setFlightETA(data.eta);
+      }
+    } catch (err) {
+      setFlightLookupError(err.response?.data?.message || 'Flight not found. You can still enter details manually.');
+    } finally {
+      setLookingUpFlight(false);
+    }
+  };
+
+  // Refresh flight status
+  const handleRefreshFlightStatus = async () => {
+    if (!flight.number) return;
+    
+    setRefreshingFlight(true);
+    try {
+      const res = await flightService.getStatus(flight.number, flight.departure?.split('T')[0]);
+      const data = res.data?.data;
+      if (data?.flight) {
+        setFlightStatus(data.flight);
+        setFlightETA(data.eta);
+      }
+    } catch (err) {
+      console.error('Failed to refresh flight status');
+    } finally {
+      setRefreshingFlight(false);
+    }
+  };
+
+  // Auto-lookup when flight number changes (debounced)
+  useEffect(() => {
+    if (flightLookupTimeout.current) {
+      clearTimeout(flightLookupTimeout.current);
+    }
+    
+    if (flight.number && flight.number.length >= 3 && !flight.airline) {
+      flightLookupTimeout.current = setTimeout(() => {
+        handleFlightLookup(flight.number);
+      }, 800);
+    }
+    
+    return () => {
+      if (flightLookupTimeout.current) {
+        clearTimeout(flightLookupTimeout.current);
+      }
+    };
+  }, [flight.number]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -333,11 +414,79 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
         </CollapsibleSection>
 
         {/* Flight Section */}
-        <CollapsibleSection 
-          title="Flight Details" 
+        <CollapsibleSection
+          title="Flight Details"
           icon={Plane}
           defaultOpen={!!flight.airline}
         >
+          {/* Flight Status Card */}
+          {flightStatus && (
+            <div className={`p-4 rounded-xl border ${
+              flightStatus.status === 'cancelled' ? 'bg-red-50 border-red-200' :
+              (flightETA?.delay_minutes > 0) ? 'bg-amber-50 border-amber-200' :
+              'bg-green-50 border-green-200'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    flightStatus.status === 'cancelled' ? 'bg-red-500' :
+                    flightStatus.status === 'landed' ? 'bg-green-500' :
+                    (flightETA?.delay_minutes > 0) ? 'bg-amber-500' :
+                    'bg-blue-500 animate-pulse'
+                  }`} />
+                  <span className="text-sm font-medium capitalize">{flightStatus.status || 'Unknown'}</span>
+                </div>
+                <button
+                  onClick={handleRefreshFlightStatus}
+                  disabled={refreshingFlight}
+                  className="p-1.5 rounded-lg hover:bg-white/50 transition-colors"
+                >
+                  <RefreshCw className={`w-4 h-4 text-stone-500 ${refreshingFlight ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-xs text-stone-500">From</p>
+                  <p className="font-bold text-stone-800">{flightStatus.departure_iata}</p>
+                  <p className="text-xs text-stone-400">{flightStatus.departure_airport}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500">Status</p>
+                  {flightETA?.delay_minutes > 0 ? (
+                    <p className="font-bold text-amber-600">+{flightETA.delay_minutes}min</p>
+                  ) : flightETA?.is_landed ? (
+                    <p className="font-bold text-green-600">Landed</p>
+                  ) : (
+                    <p className="font-bold text-blue-600">On Time</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500">To</p>
+                  <p className="font-bold text-stone-800">{flightStatus.arrival_iata}</p>
+                  <p className="text-xs text-stone-400">{flightStatus.arrival_airport}</p>
+                </div>
+              </div>
+
+              {flightETA && !flightETA.is_past && !flightETA.is_landed && (
+                <div className="mt-3 pt-3 border-t border-stone-200/50 text-center">
+                  <p className="text-xs text-stone-500">Estimated arrival</p>
+                  <p className="text-lg font-bold text-stone-800">{flightETA.arrival_time}</p>
+                  <p className="text-xs text-stone-400">
+                    {flightETA.hours_until > 0 && `${flightETA.hours_until}h `}
+                    {flightETA.minutes_until}min remaining
+                  </p>
+                </div>
+              )}
+
+              {flightStatus.status === 'cancelled' && (
+                <p className="mt-2 text-xs text-red-600 text-center">
+                  This flight has been cancelled. Please update your travel details.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Airline</label>
@@ -351,13 +500,34 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Flight Number</label>
-              <input
-                type="text"
-                value={flight.number}
-                onChange={(e) => setFlight({ ...flight, number: e.target.value })}
-                placeholder="e.g. KQ 100"
-                className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={flight.number}
+                  onChange={(e) => setFlight({ ...flight, number: e.target.value.toUpperCase() })}
+                  placeholder="e.g. KQ 100"
+                  className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleFlightLookup(flight.number)}
+                  disabled={lookingUpFlight || !flight.number || flight.number.length < 3}
+                  className="px-3 py-2 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6B4B] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                >
+                  {lookingUpFlight ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  <span className="text-xs hidden sm:inline">Lookup</span>
+                </button>
+              </div>
+              {flightLookupError && (
+                <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {flightLookupError}
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
