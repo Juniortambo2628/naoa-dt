@@ -9,10 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('polaroid_images', function (Blueprint $table) {
-            $table->string('title')->nullable()->after('image_path');
-            $table->string('caption')->nullable()->after('title');
-            $table->string('location')->nullable()->after('caption');
-            $table->timestamp('taken_at')->nullable()->after('location');
+            if (!Schema::hasColumn('polaroid_images', 'title')) {
+                $table->string('title')->nullable()->after('image_path');
+            }
+            if (!Schema::hasColumn('polaroid_images', 'caption')) {
+                $table->string('caption')->nullable()->after('title');
+            }
+            if (!Schema::hasColumn('polaroid_images', 'location')) {
+                $table->string('location')->nullable()->after('caption');
+            }
+            if (!Schema::hasColumn('polaroid_images', 'taken_at')) {
+                $table->timestamp('taken_at')->nullable()->after('location');
+            }
         });
     }
 
