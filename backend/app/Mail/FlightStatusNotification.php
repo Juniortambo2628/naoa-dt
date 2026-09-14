@@ -37,9 +37,7 @@ class FlightStatusNotification extends Mailable
 
     public function content(): Content
     {
-        return new Content(
-            htmlString: $this->buildHtml()
-        );
+        return new Content(htmlString: $this->buildHtml());
     }
 
     private function buildHtml(): string
@@ -65,102 +63,66 @@ class FlightStatusNotification extends Mailable
         $delay = $this->flightData['delay_arrival'] ?? 0;
         $gate = $this->flightData['arrival_gate'] ?? 'TBA';
         $terminal = $this->flightData['arrival_terminal'] ?? 'TBA';
+        $depIata = $this->flightData['departure_iata'] ?? 'N/A';
+        $arrIata = $this->flightData['arrival_iata'] ?? 'N/A';
+        $depAirport = $this->flightData['departure_airport'] ?? '';
+        $arrAirport = $this->flightData['arrival_airport'] ?? '';
 
-        return "
+        $delayRow = '';
+        if ($delay > 0) {
+            $delayRow = "<tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Delay</td><td style='padding: 8px 0; color: #D97706; font-size: 14px; font-weight: 600; text-align: right;'>+{$delay} minutes</td></tr>";
+        }
+
+        $gateRow = '';
+        if ($gate !== 'TBA') {
+            $gateRow = "<tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Gate</td><td style='padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;'>{$gate}</td></tr>";
+        }
+
+        $terminalRow = '';
+        if ($terminal !== 'TBA') {
+            $terminalRow = "<tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Terminal</td><td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$terminal}</td></tr>";
+        }
+
+        return <<<HTML
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset='utf-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         </head>
-        <body style='margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;'>
+        <body style='margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;'>
             <div style='max-width: 500px; margin: 0 auto; padding: 20px;'>
                 <div style='background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);'>
-                    <!-- Header -->
                     <div style='background: linear-gradient(135deg, #A67B5B 0%, #8C6A4D 100%); padding: 30px; text-align: center;'>
                         <div style='font-size: 40px; margin-bottom: 10px;'>{$statusIcon}</div>
                         <h1 style='color: white; margin: 0; font-size: 22px; font-weight: 600;'>Flight Status Update</h1>
-                        <p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>Dinah & Tze Ren's Wedding</p>
+                        <p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>Dinah &amp; Tze Ren's Wedding</p>
                     </div>
-
-                    <!-- Status Banner -->
                     <div style='background: {$statusColor}; padding: 16px; text-align: center;'>
-                        <p style='color: white; margin: 0; font-size: 16px; font-weight: 600; text-transform: uppercase;'>
-                            Flight {$this->flightNumber} — {$this->status}
-                        </p>
+                        <p style='color: white; margin: 0; font-size: 16px; font-weight: 600; text-transform: uppercase;'>Flight {$this->flightNumber} &mdash; {$this->status}</p>
                     </div>
-
-                    <!-- Content -->
                     <div style='padding: 30px;'>
-                        <p style='color: #374151; margin: 0 0 20px; font-size: 15px;'>
-                            Hi {$this->guestName},
-                        </p>
-                        <p style='color: #374151; margin: 0 0 20px; font-size: 15px;'>
-                            There's been a change to your flight <strong>{$this->flightNumber}</strong>.
-                        </p>
-
-                        <!-- Flight Details -->
+                        <p style='color: #374151; margin: 0 0 20px; font-size: 15px;'>Hi {$this->guestName},</p>
+                        <p style='color: #374151; margin: 0 0 20px; font-size: 15px;'>There's been a change to your flight <strong>{$this->flightNumber}</strong>.</p>
                         <div style='background: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 20px;'>
                             <table style='width: 100%; border-collapse: collapse;'>
-                                <tr>
-                                    <td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Route</td>
-                                    <td style='padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;'>
-                                        {$this->flightData['departure_iata'] ?? 'N/A'} → {$this->flightData['arrival_iata'] ?? 'N/A'}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Departure</td>
-                                    <td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$departure}</td>
-                                </tr>
-                                <tr>
-                                    <td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Arrival</td>
-                                    <td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$arrival}</td>
-                                </tr>";
-
-        if ($delay > 0) {
-            $html .= "
-                                <tr>
-                                    <td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Delay</td>
-                                    <td style='padding: 8px 0; color: #D97706; font-size: 14px; font-weight: 600; text-align: right;'>+{$delay} minutes</td>
-                                </tr>";
-        }
-
-        if ($gate !== 'TBA') {
-            $html .= "
-                                <tr>
-                                    <td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Gate</td>
-                                    <td style='padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;'>{$gate}</td>
-                                </tr>";
-        }
-
-        if ($terminal !== 'TBA') {
-            $html .= "
-                                <tr>
-                                    <td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Terminal</td>
-                                    <td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$terminal}</td>
-                                </tr>";
-        }
-
-        $html .= "
+                                <tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Route</td><td style='padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;'>{$depIata} &rarr; {$arrIata}</td></tr>
+                                <tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Departure</td><td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$departure}</td></tr>
+                                <tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Arrival</td><td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$arrival}</td></tr>
+                                {$delayRow}
+                                {$gateRow}
+                                {$terminalRow}
                             </table>
                         </div>
-
-                        <p style='color: #6b7280; font-size: 13px; margin: 0; text-align: center;'>
-                            You can update your travel details anytime from your digital invitation.
-                        </p>
+                        <p style='color: #6b7280; font-size: 13px; margin: 0; text-align: center;'>You can update your travel details anytime from your digital invitation.</p>
                     </div>
-
-                    <!-- Footer -->
                     <div style='background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;'>
-                        <p style='color: #9ca3af; margin: 0; font-size: 12px;'>
-                            Sent with love from Dinah & Tze Ren's Wedding 💕
-                        </p>
+                        <p style='color: #9ca3af; margin: 0; font-size: 12px;'>Sent with love from Dinah &amp; Tze Ren's Wedding</p>
                     </div>
                 </div>
             </div>
         </body>
-        </html>";
-
-        return $html;
+        </html>
+        HTML;
     }
 }
