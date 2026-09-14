@@ -9,7 +9,7 @@ class PolaroidImage extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['image_path', 'note', 'custom_size', 'offset_x', 'offset_y', 'rotation', 'location'];
+    protected $fillable = ['image_path', 'title', 'caption', 'note', 'custom_size', 'offset_x', 'offset_y', 'rotation', 'location', 'taken_at'];
 
     protected $appends = ['full_image_url'];
 
