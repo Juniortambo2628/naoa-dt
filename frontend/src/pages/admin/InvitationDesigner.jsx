@@ -197,24 +197,16 @@ export default function InvitationDesigner() {
       }
   };
 
-  const handleSave = async () => {
-      await performSilentSave();
-      if (saveStatus === 'error') {
-          alert('Failed to save design.');
-      } else {
-          alert(`${designType === 'invitation' ? 'Invitation' : 'Save the Date'} design saved successfully!`);
-      }
-  };
-
-  // Autosave effect
+  // Autosave effect — debounced, intentionally keyed only on `design`.
   useEffect(() => {
       if (loading) return; // Don't autosave while initial loading
-      
+
       const timer = setTimeout(() => {
           performSilentSave();
       }, 2000); // 2 second debounce
 
       return () => clearTimeout(timer);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [design]);
 
   const handleTestExport = async (format = 'png') => {

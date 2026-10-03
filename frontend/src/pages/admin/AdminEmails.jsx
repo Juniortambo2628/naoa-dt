@@ -78,7 +78,7 @@ export default function AdminEmails() {
     try {
         await settingService.update(emailSettings);
         alert('Email templates saved successfully!');
-    } catch (e) {
+    } catch {
         alert('Failed to save email templates');
     }
     setSavingSettings(false);
