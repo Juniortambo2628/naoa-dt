@@ -136,6 +136,7 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
           cancelAnimationFrame(timer);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recompute coords only when visibility or step changes
   }, [isVisible, currentStep]);
 
   const updateCoords = () => {

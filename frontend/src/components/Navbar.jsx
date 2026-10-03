@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Heart } from 'lucide-react';
-import api from '../services/api';
 
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +12,7 @@ export default function Navbar() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { contents, isVisible } = useContent();
+  const { isVisible } = useContent();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,7 +72,7 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8 relative">
             <div className="flex gap-8">
-              {filteredLinks.map((link, index) => (
+              {filteredLinks.map((link, _index) => (
                 <Link
                     key={link.path + link.name}
                     to={link.path}

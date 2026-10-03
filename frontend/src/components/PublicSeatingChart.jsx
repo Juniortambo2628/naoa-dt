@@ -18,7 +18,6 @@ function getGroupColor(group) {
 function TableShape({ table, isGuestsTable, guestCount, onClick, isSelected }) {
   const isRound = table.type === 'round';
   const isFull = guestCount >= table.capacity;
-  const isEmpty = guestCount === 0;
   const fillPercent = Math.round((guestCount / table.capacity) * 100);
 
   return (

@@ -266,7 +266,7 @@ function TableDetailsModal({ table, onClose, onUnassign }) {
 export default function SeatingChart() {
   const [guests, setGuests] = useState([]);
   const [tables, setTables] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const { searchQuery, setSearchQuery } = useSearch();
   
   // New Table Form
@@ -318,7 +318,7 @@ export default function SeatingChart() {
           // Or update guest setting table_id = null
           await tableService.unassignGuest(guestId); // Check api.js for correct method
           fetchData();
-      } catch (err) {
+      } catch {
            alert('Failed to unassign guest');
       }
   };
@@ -331,7 +331,7 @@ export default function SeatingChart() {
           setNewTable({ name: '', capacity: 10, type: 'round' });
           setIsAdding(false);
           fetchData();
-      } catch (err) {
+      } catch {
           alert('Failed to add table');
       }
   };

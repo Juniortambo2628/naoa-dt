@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, ChevronRight, X, ArrowLeft } from 'lucide-react';
-import { faqService, contentService } from '../services/api';
+import { faqService } from '../services/api';
 import Navbar from '../components/Navbar';
 import { useTranslation } from 'react-i18next';
 import { Navigate, Link } from 'react-router-dom';
@@ -21,7 +21,7 @@ const getContent = (content, section, field, i18n, fallback) => {
 };
 
 export default function Faq() {
-    const { t, i18n } = useTranslation();
+    const { i18n } = useTranslation();
     const { contents: content, loading: contentLoading } = useContent();
     const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback);
     const [faqs, setFaqs] = useState([]);

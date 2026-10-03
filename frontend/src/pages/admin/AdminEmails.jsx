@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Mail, Send, CheckCircle, Clock, X, Save } from 'lucide-react';
 import { invitationService, settingService, guestService } from '../../services/api';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
+import { normalizePages } from '../../utils/invitationPages';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminCard from '../../components/admin/AdminCard';
@@ -77,7 +78,7 @@ export default function AdminEmails() {
     try {
         await settingService.update(emailSettings);
         alert('Email templates saved successfully!');
-    } catch (e) {
+    } catch {
         alert('Failed to save email templates');
     }
     setSavingSettings(false);
@@ -333,14 +334,16 @@ export default function AdminEmails() {
                           <X className="w-5 h-5" />
                       </button>
                   </div>
-                  <div className="flex-1 overflow-auto bg-stone-800/50 p-8 flex items-center justify-center">
-                      <div className="bg-white p-2 rounded shadow-xl scale-90 origin-center">
-                        <InvitationCanvas 
-                            design={design} 
-                            mode="preview" 
-                            guest={mockGuest}
-                        />
-                      </div>
+                  <div className="flex-1 overflow-auto bg-stone-800/50 p-8 flex flex-wrap items-start justify-center gap-6">
+                      {normalizePages(design).map((pageDesign, idx) => (
+                        <div key={pageDesign.id || idx} className="bg-white p-2 rounded shadow-xl scale-90 origin-top">
+                          <InvitationCanvas
+                              design={pageDesign}
+                              mode="preview"
+                              guest={mockGuest}
+                          />
+                        </div>
+                      ))}
                   </div>
                   <div className="p-4 border-t border-stone-100 bg-white">
                       <p className="text-sm text-stone-500 text-center">

@@ -104,10 +104,10 @@ export function HorizontalScrollSection({ children, className = '' }) {
  * Parallax Image with smooth movement
  */
 export function ParallaxImage({ 
-  src, 
-  alt = '', 
+  src,
+  alt = '',
   className = '',
-  speed = 0.5,
+  _speed = 0.5,
   scale = 1.2,
 }) {
   const ref = useRef(null);
@@ -189,7 +189,7 @@ export function TimelineIllustration({ items = [] }) {
   );
 }
 
-function TimelineItem({ item, index, isLeft }) {
+function TimelineItem({ item, _index, isLeft }) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -280,10 +280,10 @@ export function FloatingElement({
  * Reveal on Scroll with custom animation
  */
 export function RevealOnScroll({ 
-  children, 
-  direction = 'up', 
-  delay = 0,
-  duration = 0.8,
+  children,
+  direction = 'up',
+  _delay = 0,
+  _duration = 0.8,
   className = '',
   as = 'div'
 }) {
@@ -303,12 +303,21 @@ export function RevealOnScroll({
   };
   
   const animation = directionMap[direction] || directionMap.up;
+
+  // Hooks must run unconditionally and in a stable order, so compute a
+  // transform for every possible animatable property, then pick the ones this
+  // direction actually uses.
+  const transforms = {
+    x: useTransform(scrollYProgress, [0, 0.6], animation.x || [0, 0]),
+    y: useTransform(scrollYProgress, [0, 0.6], animation.y || [0, 0]),
+    scale: useTransform(scrollYProgress, [0, 0.6], animation.scale || [1, 1]),
+    rotate: useTransform(scrollYProgress, [0, 0.6], animation.rotate || [0, 0]),
+  };
   const animatedValues = {};
-  
   Object.keys(animation).forEach(key => {
-    animatedValues[key] = useTransform(scrollYProgress, [0, 0.6], animation[key]);
+    animatedValues[key] = transforms[key];
   });
-  
+
   const opacity = useTransform(scrollYProgress, [0, 0.4], [0, 1]);
   const Component = motion[as];
   

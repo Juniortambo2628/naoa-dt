@@ -50,7 +50,7 @@ export default function GalleryManager() {
       });
       setEditingItem(null);
       fetchGallery();
-    } catch (err) {
+    } catch {
       alert('Failed to update photo');
     }
   };
@@ -90,7 +90,7 @@ export default function GalleryManager() {
       await galleryService.reorder(reorderedItems);
       setIsReordering(false);
       fetchGallery();
-    } catch (err) {
+    } catch {
       alert('Failed to save order');
     }
   };

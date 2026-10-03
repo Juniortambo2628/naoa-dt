@@ -55,14 +55,6 @@ export default function AdminGifts() {
     );
   };
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredGifts.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredGifts.map(g => g.id));
-    }
-  };
-
   const handleBulkDelete = async () => {
     if (!confirm(`Delete ${selectedIds.length} selected gifts?`)) return;
     try {
@@ -70,7 +62,7 @@ export default function AdminGifts() {
       toast.success(`${selectedIds.length} gifts deleted`);
       setSelectedIds([]);
       refetch();
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete some gifts');
     }
   };
@@ -84,7 +76,7 @@ export default function AdminGifts() {
       toast.success('Availability updated');
       setSelectedIds([]);
       refetch();
-    } catch (err) {
+    } catch {
       toast.error('Failed to update availability');
     }
   };

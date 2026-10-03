@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { contentService } from '../../services/api';
 import { Layout, Check, X, Save, Sparkles, Home, Calendar, Users, Image as ImageIcon, Gift, Music, MessageSquare, HelpCircle, FileText, Globe, Clock, Mail, Languages } from 'lucide-react';
 import AdminCard from '../../components/admin/AdminCard';
@@ -29,7 +29,7 @@ const MODULES = [
 
 export default function AdminModules() {
     const { contents, loading, isVisible, updateLocalContent } = useContent();
-    const [saving, setSaving] = useState(null);
+    const [, setSaving] = useState(null);
 
     const toggleModule = async (key, currentStatus) => {
         const newStatus = !currentStatus;
@@ -71,7 +71,6 @@ export default function AdminModules() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {MODULES.map(module => {
                     const active = isVisible(module.key);
-                    const isSaving = saving === module.key;
 
                     return (
                         <AdminCard 

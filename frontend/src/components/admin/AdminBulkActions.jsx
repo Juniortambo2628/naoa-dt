@@ -135,6 +135,7 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
 }
 
 // Preset bulk action sets for common use cases
+// eslint-disable-next-line react-refresh/only-export-components
 export const bulkActionPresets = {
   guests: ({ onDelete, onExport, onEmail, onWhatsApp, onConfirm }) => [
     { id: 'confirm', label: 'Confirm RSVP', icon: CheckCircle, variant: 'primary', onClick: onConfirm },

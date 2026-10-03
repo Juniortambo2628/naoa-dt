@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Loader2, Check, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { galleryService, contentService, getAssetUrl } from '../services/api';
+import { galleryService, getAssetUrl } from '../services/api';
 import api from '../services/api';
 import { 
   MainFlowerTopLeft, 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Save, UserPlus } from 'lucide-react';
 
 export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests = [] }) {

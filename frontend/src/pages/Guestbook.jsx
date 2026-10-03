@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageSquare, User, Send, Loader2, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { contentService } from '../services/api';
 import api from '../services/api';
 import { 
   MainFlowerTopLeft, 
@@ -26,15 +25,6 @@ const fadeInUp = {
   },
 };
 
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { 
-    opacity: 1, 
-    scale: 1,
-    transition: { duration: 0.4 }
-  },
-};
-
 export default function Guestbook() {
   const { t } = useTranslation();
   const [guestName, setGuestName] = useState('');
@@ -43,7 +33,7 @@ export default function Guestbook() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { contents: content, loading: contentLoading, isVisible } = useContent();
+  const { loading: contentLoading, isVisible } = useContent();
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -98,15 +88,6 @@ export default function Guestbook() {
     }
     setSubmitting(false);
   };
-
-  // Color palette for message cards
-  const colors = [
-    'from-pink-50 to-rose-50 border-pink-200',
-    'from-amber-50 to-orange-50 border-amber-200',
-    'from-emerald-50 to-teal-50 border-emerald-200',
-    'from-violet-50 to-purple-50 border-violet-200',
-    'from-sky-50 to-cyan-50 border-sky-200',
-  ];
 
   return (
     <motion.div

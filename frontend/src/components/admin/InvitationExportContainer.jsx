@@ -1,11 +1,21 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import InvitationCanvas from './InvitationCanvas';
+import { normalizePages } from '../../utils/invitationPages';
 
 export default function InvitationExportContainer({ design, guest, weddingSettings, onReady }) {
     const exportRef = useRef(null);
     const [fontBase64, setFontBase64] = useState({ cursive: '', sans: '', serif: '' });
+
+    // Flatten the theme into one flat design per page (backward compatible with
+    // legacy single-page themes).
+    const pages = useMemo(() => normalizePages(design), [design]);
+    const [renderIndex, setRenderIndex] = useState(0);
+
+    const isLandscape = (design?.orientation) === 'landscape';
+    const CANVAS_WIDTH = isLandscape ? 625 : 500;
+    const CANVAS_HEIGHT = isLandscape ? 500 : 625;
 
     useEffect(() => {
         const fetchAsBase64 = async (url) => {
@@ -35,10 +45,20 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
         loadFonts();
     }, []);
 
-    const generateImage = async () => {
+    // Swap the hidden canvas to a specific page and wait for React to commit it.
+    const renderPage = async (index) => {
+        setRenderIndex(index);
+        // Wait two animation frames so the DOM reflects the new page, plus a
+        // small settle buffer for layout.
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        await new Promise(resolve => setTimeout(resolve, 150));
+    };
+
+    // Capture whatever page is currently mounted in the hidden container.
+    const captureCurrent = async () => {
         if (!exportRef.current) return null;
-        
-        // Wait active images to load
+
+        // Wait for active images to load
         const images = exportRef.current.querySelectorAll('img');
         const promises = Array.from(images).map(img => {
             if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
@@ -48,7 +68,7 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
             });
         });
         await Promise.all(promises);
-        
+
         // Final delay for layout stabilization
         await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -99,113 +119,114 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
         }
     };
 
+    // Generate a PNG for a single page (defaults to the first/primary page, used
+    // for the email attachment and PNG exports).
+    const generateImage = async (pageIndex = 0) => {
+        await renderPage(Math.max(0, Math.min(pageIndex, pages.length - 1)));
+        const dataUrl = await captureCurrent();
+        // Reset back to the first page for subsequent single captures.
+        setRenderIndex(0);
+        return dataUrl;
+    };
+
     const generatePdf = async () => {
         // Ensure fonts are actually available before starting
         if (!fontBase64.cursive && !fontBase64.sans && !fontBase64.serif) {
             console.warn("Fonts not fully loaded yet, attempting anyway...");
-            // Small extra wait
             await new Promise(r => setTimeout(r, 1000));
         }
 
-        const dataUrl = await generateImage();
-        if (!dataUrl) return null;
-
-        const isLandscape = design.orientation === 'landscape';
-        
         const pdf = new jsPDF({
             orientation: isLandscape ? 'landscape' : 'portrait',
             unit: 'mm',
             format: isLandscape ? [185, 148] : [148, 185]
         });
 
-        // A5 dimensions: 148 x 210 mm
-        // We need to fit our 4:5 or 5:4 aspect ratio into A5
-        let imgWidth, imgHeight;
-        if (isLandscape) {
-            // Landscape A5 is 210 x 148
-            // Our landscape is 625x500 (5:4)
-            // 148 * (5/4) = 185mm. So width 185, height 148 fits.
-            imgWidth = 185;
-            imgHeight = 148;
-        } else {
-            // Portrait A5 is 148 x 210
-            // Our portrait is 500x625 (4:5)
-            // 148 * (5/4) = 185mm. So width 148, height 185 fits.
-            imgWidth = 148;
-            imgHeight = 185; 
+        // A5-ish page sized to our 4:5 / 5:4 aspect ratio.
+        const imgWidth = isLandscape ? 185 : 148;
+        const imgHeight = isLandscape ? 148 : 185;
+
+        for (let i = 0; i < pages.length; i++) {
+            await renderPage(i);
+            const dataUrl = await captureCurrent();
+            if (!dataUrl) continue;
+
+            if (i > 0) {
+                pdf.addPage(isLandscape ? [185, 148] : [148, 185], isLandscape ? 'landscape' : 'portrait');
+            }
+            pdf.addImage(dataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
+
+            // Add clickable calendar links for this page.
+            const pageDesign = pages[i];
+            if (pageDesign?.items) {
+                const currentLang = pageDesign.editorLang || 'en';
+                const content = pageDesign.content?.[currentLang] || {};
+
+                pageDesign.items.forEach(item => {
+                    if (item.type === 'calendar_link') {
+                        const x = (item.x / CANVAS_WIDTH) * imgWidth;
+                        const y = (item.y / CANVAS_HEIGHT) * imgHeight;
+                        const w = (item.width / CANVAS_WIDTH) * imgWidth;
+                        const h = (item.height / CANVAS_HEIGHT) * imgHeight;
+
+                        const title = encodeURIComponent(content.title || "Our Wedding");
+                        const location = encodeURIComponent(weddingSettings?.venue_name || "Wedding Venue");
+                        const dateStr = weddingSettings?.wedding_date || "2026-11-14";
+                        const baseUrl = weddingSettings?.public_url || window.location.origin;
+                        const calendarUrl = `${baseUrl}/calendar?date=${dateStr}&venue=${location}&title=${title}`;
+
+                        pdf.link(x, y, w, h, { url: calendarUrl });
+                    }
+                });
+            }
         }
-        
-        pdf.addImage(dataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
 
-        // Add clickable links to the PDF for calendar items
-        if (design.items) {
-            const currentLang = design.editorLang || 'en';
-            const content = design.content?.[currentLang] || {};
-
-            design.items.forEach(item => {
-                if (item.type === 'calendar_link') {
-                    const x = (item.x / CANVAS_WIDTH) * imgWidth;
-                    const y = (item.y / CANVAS_HEIGHT) * imgHeight;
-                    const w = (item.width / CANVAS_WIDTH) * imgWidth;
-                    const h = (item.height / CANVAS_HEIGHT) * imgHeight;
-
-                    const title = encodeURIComponent(content.title || "Our Wedding");
-                    const location = encodeURIComponent(weddingSettings?.venue_name || "Wedding Venue");
-                    const dateStr = weddingSettings?.wedding_date || "2026-11-14";
-                    
-                    // Construct robust public URL
-                    // Use configured public_url from settings, with fallback to current origin
-                    const baseUrl = weddingSettings?.public_url || window.location.origin;
-                    
-                    // Point to the new selection landing page instead of direct ICS
-                    const calendarUrl = `${baseUrl}/calendar?date=${dateStr}&venue=${location}&title=${title}`;
-
-                    pdf.link(x, y, w, h, { url: calendarUrl });
-                }
-            });
-        }
+        // Reset back to the first page.
+        setRenderIndex(0);
 
         return pdf.output('blob');
     };
 
-    if (onReady) {
-        onReady({ generateImage, generatePdf });
-    }
+    // Expose capture methods to the parent after each commit (never during
+    // render) so the latest closures — fonts, pages, render index — are used.
+    useEffect(() => {
+        if (onReady) {
+            onReady({ generateImage, generatePdf });
+        }
+    });
 
-    const isLandscape = design.orientation === 'landscape';
-    const CANVAS_WIDTH = isLandscape ? 625 : 500;
-    const CANVAS_HEIGHT = isLandscape ? 500 : 625;
+    const currentPageDesign = pages[Math.min(renderIndex, pages.length - 1)] || pages[0];
 
     return (
-        <div style={{ 
-            position: 'fixed', 
-            left: '0px', 
-            top: '0px', 
+        <div style={{
+            position: 'fixed',
+            left: '0px',
+            top: '0px',
             width: `${CANVAS_WIDTH}px`,
             height: `${CANVAS_HEIGHT}px`,
             overflow: 'hidden',
-            zIndex: -100, 
-            opacity: 0, 
+            zIndex: -100,
+            opacity: 0,
             pointerEvents: 'none',
             margin: 0,
             padding: 0,
             backgroundColor: 'transparent'
         }}>
-            <div 
-                ref={exportRef} 
-                style={{ 
-                    width: `${CANVAS_WIDTH}px`, 
-                    height: `${CANVAS_HEIGHT}px`, 
-                    background: 'transparent', 
-                    position: 'relative', 
+            <div
+                ref={exportRef}
+                style={{
+                    width: `${CANVAS_WIDTH}px`,
+                    height: `${CANVAS_HEIGHT}px`,
+                    background: 'transparent',
+                    position: 'relative',
                     display: 'block',
                     margin: 0,
                     padding: 0
                 }}
             >
-                <InvitationCanvas 
-                    design={design} 
-                    mode="preview" 
+                <InvitationCanvas
+                    design={currentPageDesign}
+                    mode="preview"
                     guest={guest}
                     isExport={true}
                     weddingSettings={weddingSettings}

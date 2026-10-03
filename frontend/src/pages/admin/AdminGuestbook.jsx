@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Clock, RefreshCw, CheckCircle, Trash2 } from 'lucide-react';
 import { useGuestbook } from '../../hooks/useApiHooks';
@@ -17,7 +16,6 @@ import useCrudHandlers from '../../hooks/useCrudHandlers';
 import { toast } from 'react-hot-toast';
 
 export default function AdminGuestbook() {
-  const { t } = useTranslation();
   const { data, isLoading: loading, refetch } = useGuestbook();
   const entries = data?.entries || [];
   const { searchQuery, setSearchQuery } = useSearch();
@@ -39,14 +37,6 @@ export default function AdminGuestbook() {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredEntries.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredEntries.map((entry) => entry.id));
-    }
   };
 
   const clearSelection = () => setSelectedIds([]);

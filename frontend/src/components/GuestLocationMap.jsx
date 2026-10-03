@@ -137,7 +137,7 @@ export default function GuestLocationMap({ embedded = false }) {
   }, []);
 
   // Smart polling for real-time updates
-  const { hasNewItems } = useSmartPolling(fetchLocations, {
+  useSmartPolling(fetchLocations, {
     fastInterval: 15000,
     slowInterval: 30000,
     idleAfterMs: 120000,

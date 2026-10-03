@@ -1,25 +1,14 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Heart, Instagram, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { FlowerDivider } from './CustomIllustrations';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
 
-// Helper to resolve dynamic content
-const getContent = (content, section, field, i18n, fallback) => {
-  const val = content?.[section]?.content?.[field];
-  if (!val) return fallback;
-  if (typeof val === 'object') {
-    return val[i18n.language] || val['en'] || fallback;
-  }
-  return val;
-};
-
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const { i18n } = useTranslation();
-  const { contents, isVisible, getContent: getFromContext } = useContent();
-  const location = useLocation();
+  const { isVisible, getContent: getFromContext } = useContent();
   const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
 
   return (

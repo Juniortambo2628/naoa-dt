@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { guestService, invitationService, settingService } from '../../services/api';
+import { guestService, invitationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
 import ImportConflictModal from '../../components/admin/ImportConflictModal';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
@@ -20,7 +20,7 @@ import { saveAs } from 'file-saver';
 
 export default function AdminGuests() {
   const { data: guestsData, isLoading: guestsLoading, refetch: refetchGuests } = useGuests();
-  const { data: settingsData, isLoading: settingsLoading } = useSettings();
+  const { data: settingsData } = useSettings();
   const { data: contentData } = useContent();
 
   const [guests, setGuests] = useState([]);
@@ -32,7 +32,7 @@ export default function AdminGuests() {
   const [filter, setFilter] = useState('all'); // all, confirmed, pending, declined
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
-  const [sendingId, setSendingId] = useState(null);
+  const [, setSendingId] = useState(null);
   const [design, setDesign] = useState(null);
   const [exportingGuest, setExportingGuest] = useState(null);
   const [isBulkExporting, setIsBulkExporting] = useState(false);
@@ -51,31 +51,6 @@ export default function AdminGuests() {
   
   // Hover/Menu Persistence States
   const [showBulkMenu, setShowBulkMenu] = useState(null);
-  const [hoveredGuestId, setHoveredGuestId] = useState(null);
-  const bulkMenuTimer = useRef(null);
-  const guestMenuTimer = useRef(null);
-
-  const handleMouseEnterBulk = () => {
-      if (bulkMenuTimer.current) clearTimeout(bulkMenuTimer.current);
-      setShowBulkMenu(true);
-  };
-
-  const handleMouseLeaveBulk = () => {
-      bulkMenuTimer.current = setTimeout(() => {
-          setShowBulkMenu(false);
-      }, 300); // 300ms persistence delay
-  };
-
-  const handleMouseEnterGuest = (id) => {
-      if (guestMenuTimer.current) clearTimeout(guestMenuTimer.current);
-      setHoveredGuestId(id);
-  };
-
-  const handleMouseLeaveGuest = () => {
-      guestMenuTimer.current = setTimeout(() => {
-          setHoveredGuestId(null);
-      }, 300); // 300ms persistence delay
-  };
 
   useEffect(() => {
     if (guestsData) {
@@ -97,31 +72,6 @@ export default function AdminGuests() {
         setDesign(loaded);
     }
   }, [settingsData]);
-
-  const exportSingle = async (guest, format = 'png') => {
-      setExportingGuest(guest);
-      // Wait for React to render the exporter with the new guest
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      try {
-          if (format === 'png') {
-              const dataUrl = await exporterRef.current.generateImage();
-              if (dataUrl) {
-                  saveAs(dataUrl, `Invitation_${guest.name.replace(/\s+/g, '_')}.png`);
-              }
-          } else {
-              const blob = await exporterRef.current.generatePdf();
-              if (blob) {
-                  saveAs(blob, `Invitation_${guest.name.replace(/\s+/g, '_')}.pdf`);
-              }
-          }
-      } catch (err) {
-          console.error("Export failed", err);
-          alert("Failed to export invitation.");
-      } finally {
-          setExportingGuest(null);
-      }
-  };
 
   const exportBulk = async (format = 'png') => {
       const targets = selectedIds.length > 0 
@@ -473,19 +423,6 @@ export default function AdminGuests() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to update guest details");
-    }
-  };
-
-  const handleResetRSVP = async (guest) => {
-    if (!window.confirm(`Reset RSVP status for ${guest.name}? This will remove their current response.`)) return;
-    
-    try {
-        await guestService.resetRSVP(guest.id);
-        toast.success(`RSVP reset for ${guest.name}`);
-        refetchGuests();
-    } catch (err) {
-        console.error(err);
-        toast.error("Failed to reset RSVP");
     }
   };
 

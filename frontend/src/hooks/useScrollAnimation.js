@@ -108,7 +108,6 @@ export function useCountUp(end, options = {}) {
     if (!isInView) return;
     
     const timeout = setTimeout(() => {
-      let start = 0;
       const startTime = Date.now();
       
       const animate = () => {

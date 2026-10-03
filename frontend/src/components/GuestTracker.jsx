@@ -62,7 +62,7 @@ function GuestListItem({ guest, index }) {
   );
 }
 
-export default function GuestTracker({ embedded = false, guestCode }) {
+export default function GuestTracker({ embedded = false, _guestCode }) {
   const [guests, setGuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,7 +88,7 @@ export default function GuestTracker({ embedded = false, guestCode }) {
   }, [fetchCheckedInGuests]);
 
   // Smart polling for real-time updates
-  const { hasNewItems } = useSmartPolling(fetchCheckedInGuests, {
+  useSmartPolling(fetchCheckedInGuests, {
     fastInterval: 10000,  // Check every 10 seconds
     slowInterval: 30000,  // Then every 30 seconds
     idleAfterMs: 120000,  // Stop after 2 minutes idle
@@ -222,7 +222,7 @@ export default function GuestTracker({ embedded = false, guestCode }) {
       ) : viewMode === 'badges' ? (
         <div className="flex flex-wrap gap-4 justify-center">
           <AnimatePresence>
-            {filteredGuests.map((guest, i) => (
+            {filteredGuests.map((guest, _i) => (
               <NameBadge 
                 key={guest.id} 
                 guest={{ ...guest, table_name: guest.table_name }} 

@@ -4,6 +4,7 @@ import { Mail, Calendar, MapPin, CheckCircle2, ChevronRight } from 'lucide-react
 import { useEffect } from 'react';
 import { useGuestByCode, useSettings, useContent } from '../hooks/useApiHooks';
 import InvitationCanvas from '../components/admin/InvitationCanvas';
+import { normalizePages } from '../utils/invitationPages';
 import PublicSeatingChart from '../components/PublicSeatingChart';
 import WeatherWidget from '../components/WeatherWidget';
 import MapsETA from '../components/MapsETA';
@@ -28,6 +29,10 @@ export default function DigitalInvitation() {
         orientation: 'portrait',
         items: []
     };
+
+    // Every page of the invitation, flattened for rendering (backward compatible
+    // with legacy single-page themes).
+    const invitationPages = normalizePages(design);
 
     const weddingDate = content?.countdown?.content?.wedding_date || '2026-11-14';
     const venueName = content?.home_hero?.content?.venue?.en || content?.home_hero?.content?.venue || 'The Grand Estate';
@@ -159,26 +164,29 @@ export default function DigitalInvitation() {
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="hidden lg:flex w-full max-w-[625px] flex-col items-center"
+                    className="hidden lg:flex w-full max-w-[625px] flex-col items-center gap-6"
                 >
-                    <div 
-                        className="w-full relative shadow-2xl rounded-lg overflow-hidden border border-stone-200"
-                        style={{ 
-                            aspectRatio: design.orientation === 'landscape' ? '625/500' : '500/625',
-                            backgroundColor: design.backgroundColor || '#ffffff'
-                        }}
-                    >
-                        <InvitationCanvas 
-                            design={design} 
-                            mode="view" 
-                            guest={guest} 
-                            weddingSettings={{ wedding_date: weddingDate, venue_name: venueName }}
-                        />
-                    </div>
-                    
-                    <p className="text-center text-stone-400 text-xs mt-6 font-medium uppercase tracking-[0.2em] animate-pulse">
-                        Invitation Card
-                    </p>
+                    {invitationPages.map((pageDesign, idx) => (
+                        <div key={pageDesign.id || idx} className="w-full flex flex-col items-center">
+                            <div
+                                className="w-full relative shadow-2xl rounded-lg overflow-hidden border border-stone-200"
+                                style={{
+                                    aspectRatio: pageDesign.orientation === 'landscape' ? '625/500' : '500/625',
+                                    backgroundColor: pageDesign.backgroundColor || '#ffffff'
+                                }}
+                            >
+                                <InvitationCanvas
+                                    design={pageDesign}
+                                    mode="view"
+                                    guest={guest}
+                                    weddingSettings={{ wedding_date: weddingDate, venue_name: venueName }}
+                                />
+                            </div>
+                            <p className="text-center text-stone-400 text-xs mt-3 font-medium uppercase tracking-[0.2em]">
+                                {invitationPages.length > 1 ? `Invitation Card — Page ${idx + 1} of ${invitationPages.length}` : 'Invitation Card'}
+                            </p>
+                        </div>
+                    ))}
                 </motion.div>
 
                 {/* Right Side: Welcome & Actions */}

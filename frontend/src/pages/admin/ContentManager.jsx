@@ -253,7 +253,7 @@ export default function ContentManager() {
               is_visible: newVisibility
           });
           toast.success(`${sectionKey.replace('_', ' ')} is now ${newVisibility ? 'enabled' : 'disabled'}`);
-      } catch (err) {
+      } catch {
           toast.error('Failed to update visibility');
           // Revert on failure
           updateLocalContent(sectionKey, { is_visible: !newVisibility });
@@ -314,7 +314,7 @@ export default function ContentManager() {
               is_visible: sectionData.is_visible ?? true
           });
           setTimeout(() => setSaving(null), 1000);
-      } catch (err) {
+      } catch {
           alert('Failed to save.');
           setSaving(null);
       }

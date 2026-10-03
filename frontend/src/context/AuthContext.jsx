@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
         const response = await api.get('/user');
         setUser(response.data);
         setIsAuthenticated(true);
-      } catch (error) {
+      } catch {
         localStorage.removeItem('auth_token');
         setUser(null);
         setIsAuthenticated(false);
@@ -98,6 +98,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

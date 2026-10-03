@@ -41,7 +41,7 @@ function DashboardOverview() {
     giftsReserved: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -59,7 +59,7 @@ function DashboardOverview() {
         });
         
         setRecentActivity(guestStats.data?.recent || []);
-      } catch (err) {
+      } catch {
         setStats({ totalGuests: 150, confirmed: 98, pending: 52, giftsReserved: 24 });
       }
       setLoading(false);
