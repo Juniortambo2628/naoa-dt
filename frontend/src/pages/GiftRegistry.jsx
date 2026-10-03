@@ -14,8 +14,6 @@ import {
   FloatingFlower, 
   FlowerDivider,
 } from '../components/CustomIllustrations';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import Loader from '../components/Loader';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
@@ -348,7 +346,6 @@ export default function GiftRegistry() {
       exit={{ opacity: 0 }}
       style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)', minHeight: '100vh' }}
     >
-      <Navbar />
       
       <main className="pt-32 pb-20 relative overflow-hidden">
         {/* Custom flower decorations */}
@@ -579,7 +576,6 @@ export default function GiftRegistry() {
         )}
       </AnimatePresence>
       
-      <Footer />
     </motion.div>
   );
 }

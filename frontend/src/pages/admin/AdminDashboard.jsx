@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { Link, Routes, Route, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import AdminTestLab from './AdminTestLab';
 import {
   LayoutDashboard, Users, Calendar, Gift, Mail, Settings, Image,
   ChevronRight, Check, Clock, TrendingUp, PieChart, UserCheck, Music, MessageSquare, HelpCircle, CheckCircle
@@ -11,26 +10,31 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 import AdminShell from '../../components/admin/AdminShell';
+import Spinner from '../../components/admin/Spinner';
 
 import { useAuth } from '../../context/AuthContext';
 import { guestService, giftService } from '../../services/api';
-import SeatingChart from './SeatingChart';
-import InvitationDesigner from './InvitationDesigner';
-import GalleryManager from './GalleryManager';
-import ContentManager from './ContentManager';
-import AnalyticsCharts from './AnalyticsCharts';
-import CheckInScanner from './CheckInScanner';
-import AdminSongRequests from './AdminSongRequests';
-import AdminGuestbook from './AdminGuestbook';
-import AdminSchedule from './AdminSchedule';
-import AdminGifts from './AdminGifts';
-import AdminEmails from './AdminEmails';
-import AdminSettings from './AdminSettings';
-import AdminGuests from './AdminGuests';
-import AdminFAQ from './AdminFAQ';
-import AdminModules from './AdminModules';
-import AdminEnquiries from './AdminEnquiries';
-import AdminRSVPs from './AdminRSVPs';
+
+// Admin sub-pages are lazy-loaded so each becomes its own chunk, keeping the
+// initial admin bundle small instead of shipping every screen at once.
+const AdminTestLab = lazy(() => import('./AdminTestLab'));
+const SeatingChart = lazy(() => import('./SeatingChart'));
+const InvitationDesigner = lazy(() => import('./InvitationDesigner'));
+const GalleryManager = lazy(() => import('./GalleryManager'));
+const ContentManager = lazy(() => import('./ContentManager'));
+const AnalyticsCharts = lazy(() => import('./AnalyticsCharts'));
+const CheckInScanner = lazy(() => import('./CheckInScanner'));
+const AdminSongRequests = lazy(() => import('./AdminSongRequests'));
+const AdminGuestbook = lazy(() => import('./AdminGuestbook'));
+const AdminSchedule = lazy(() => import('./AdminSchedule'));
+const AdminGifts = lazy(() => import('./AdminGifts'));
+const AdminEmails = lazy(() => import('./AdminEmails'));
+const AdminSettings = lazy(() => import('./AdminSettings'));
+const AdminGuests = lazy(() => import('./AdminGuests'));
+const AdminFAQ = lazy(() => import('./AdminFAQ'));
+const AdminModules = lazy(() => import('./AdminModules'));
+const AdminEnquiries = lazy(() => import('./AdminEnquiries'));
+const AdminRSVPs = lazy(() => import('./AdminRSVPs'));
 
 // Dashboard Overview Component
 function DashboardOverview() {
@@ -211,7 +215,6 @@ function DashboardOverview() {
 export default function AdminDashboard() {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -240,33 +243,33 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) return null;
 
-  const getContent = () => {
-    const path = location.pathname;
-    if (path === '/admin/dashboard') return <DashboardOverview />;
-    if (path.includes('/analytics')) return <AnalyticsCharts />;
-    if (path.includes('/checkin')) return <CheckInScanner />;
-    if (path.includes('/guests')) return <AdminGuests />;
-    if (path.includes('/rsvps')) return <AdminRSVPs />;
-    if (path.includes('/seating')) return <SeatingChart />;
-    if (path.includes('/design')) return <InvitationDesigner />;
-    if (path.includes('/gallery')) return <GalleryManager />;
-    if (path.includes('/content')) return <ContentManager />;
-    if (path.includes('/modules')) return <AdminModules />;
-    if (path.includes('/schedule')) return <AdminSchedule />;
-    if (path.includes('/gifts')) return <AdminGifts />;
-    if (path.includes('/emails')) return <AdminEmails />;
-    if (path.includes('/settings')) return <AdminSettings />;
-    if (path.includes('/songs')) return <AdminSongRequests />;
-    if (path.includes('/guestbook')) return <AdminGuestbook />;
-    if (path.includes('/enquiries')) return <AdminEnquiries />;
-    if (path.includes('/faqs')) return <AdminFAQ />;
-    if (path.includes('/test')) return <AdminTestLab />;
-    return <DashboardOverview />;
-  };
-
   return (
     <AdminShell>
-      {getContent()}
+      <Suspense fallback={<div className="flex justify-center py-20"><Spinner /></div>}>
+        <Routes>
+          <Route index element={<DashboardOverview />} />
+          <Route path="analytics" element={<AnalyticsCharts />} />
+          <Route path="checkin" element={<CheckInScanner />} />
+          <Route path="guests" element={<AdminGuests />} />
+          <Route path="rsvps" element={<AdminRSVPs />} />
+          <Route path="seating" element={<SeatingChart />} />
+          <Route path="design" element={<InvitationDesigner />} />
+          <Route path="gallery" element={<GalleryManager />} />
+          <Route path="content" element={<ContentManager />} />
+          <Route path="modules" element={<AdminModules />} />
+          <Route path="schedule" element={<AdminSchedule />} />
+          <Route path="gifts" element={<AdminGifts />} />
+          <Route path="emails" element={<AdminEmails />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="songs" element={<AdminSongRequests />} />
+          <Route path="guestbook" element={<AdminGuestbook />} />
+          <Route path="enquiries" element={<AdminEnquiries />} />
+          <Route path="faqs" element={<AdminFAQ />} />
+          <Route path="test" element={<AdminTestLab />} />
+          {/* Unknown admin sub-paths fall back to the overview, as before */}
+          <Route path="*" element={<DashboardOverview />} />
+        </Routes>
+      </Suspense>
     </AdminShell>
   );
 }

@@ -20,8 +20,6 @@ import {
   FlowerDivider,
 } from '../components/CustomIllustrations';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useScrollAnimation';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { Skeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 
@@ -945,7 +943,6 @@ export default function Home() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <Navbar />
       <main>
         {isVisible('home_hero') && <HeroSection content={content} loading={contentLoading} />}
         {isVisible('countdown') && <CountdownSection content={content} loading={contentLoading} />}
@@ -954,7 +951,6 @@ export default function Home() {
         {isVisible('gallery') && <GallerySection content={content} loading={contentLoading} />}
         {isVisible('rsvp') && <CTASection content={content} loading={contentLoading} />}
       </main>
-      <Footer />
     </motion.div>
   );
 }
