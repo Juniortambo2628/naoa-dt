@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useGuestByCode, useSettings, useContent } from '../hooks/useApiHooks';
 import InvitationCanvas from '../components/admin/InvitationCanvas';
 import { normalizePages } from '../utils/invitationPages';
+import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
 import PublicSeatingChart from '../components/PublicSeatingChart';
 import WeatherWidget from '../components/WeatherWidget';
 import MapsETA from '../components/MapsETA';
@@ -34,7 +35,7 @@ export default function DigitalInvitation() {
     // with legacy single-page themes).
     const invitationPages = normalizePages(design);
 
-    const weddingDate = content?.countdown?.content?.wedding_date || '2026-11-14';
+    const weddingDate = content?.countdown?.content?.wedding_date || WEDDING_DEFAULTS.weddingDate;
     const venueName = content?.home_hero?.content?.venue?.en || content?.home_hero?.content?.venue || 'The Grand Estate';
     const venueAddress = settings?.venue_address || 'Kenya';
     const venueLat = settings?.venue_lat || '-1.2921';
@@ -58,6 +59,7 @@ export default function DigitalInvitation() {
     };
 
     const weddingDateText = getTxt('home_hero', 'date_text', formattedDate);
+    const coupleNames = getTxt('footer', 'couple_names', WEDDING_DEFAULTS.coupleNames);
 
     const getEventDetails = () => {
         // Parse wedding date (YYYY-MM-DD)
@@ -92,7 +94,7 @@ export default function DigitalInvitation() {
         return {
             start: startStr,
             end: endStr,
-            title: "Dinah & Tze Ren's Wedding",
+            title: `${coupleNames}'s Wedding`,
             location: venueName,
             description: "We are so happy to share our special day with you! Please join us for our wedding celebration."
         };
@@ -283,7 +285,7 @@ export default function DigitalInvitation() {
                     <div className="pt-8 border-t border-stone-200/60">
                         <p className="text-stone-400 text-sm text-center lg:text-left italic">
                             With love, <br />
-                            <span className="font-serif text-stone-600 not-italic">Dinah & Tze Ren</span>
+                            <span className="font-serif text-stone-600 not-italic">{coupleNames}</span>
                         </p>
                     </div>
                 </motion.div>
@@ -291,7 +293,7 @@ export default function DigitalInvitation() {
 
             <footer className="py-12 border-t border-stone-100 mt-20 text-center">
                 <p className="text-stone-400 text-xs uppercase tracking-widest font-medium">
-                    Dinah & Tze Ren Wedding 2026
+                    {coupleNames} Wedding {new Date(weddingDate).getFullYear()}
                 </p>
             </footer>
         </div>

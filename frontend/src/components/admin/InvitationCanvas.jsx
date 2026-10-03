@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import Moveable from 'react-moveable';
 import { getAssetUrl } from '../../services/api';
 import { getMapUrl } from '../../utils/weddingInfo';
+import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 
 export default function InvitationCanvas({ 
   design, 
@@ -97,7 +98,7 @@ export default function InvitationCanvas({
           // Robust date handling to avoid timezone shifts. The configured value
           // may be a date ("YYYY-MM-DD") or datetime ("YYYY-MM-DDTHH:MM"); use
           // only the date part so UTC formatting never shifts the day.
-          let weddingDate = (weddingSettings?.wedding_date || '2026-11-14').split('T')[0];
+          let weddingDate = (weddingSettings?.wedding_date || WEDDING_DEFAULTS.weddingDate).split('T')[0];
           const dateObj = new Date(weddingDate);
           
           // If we have a YYYY-MM-DD string, let's use it directly to avoid UTC issues

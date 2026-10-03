@@ -22,6 +22,7 @@ import {
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useScrollAnimation';
 import { Skeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
+import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
 
 // Polaroid Floating Image Component
 function PolaroidFloatingImage({ src, size = 160, duration = 10, delay = 0, rotate = 0, note = '', customSize, offsetX, offsetY, customRotation }) {
@@ -155,7 +156,7 @@ function HeroSection({ content, loading }) {
                 lineHeight: 1.1,
               }}
             >
-              {loading ? <Skeleton variant="text" width="150px" height="60px" as="span" /> : getStoryTxt('bride_name', 'Dinah')}
+              {loading ? <Skeleton variant="text" width="150px" height="60px" as="span" /> : getStoryTxt('bride_name', WEDDING_DEFAULTS.brideName)}
             </motion.h1>
           </div>
           
@@ -191,7 +192,7 @@ function HeroSection({ content, loading }) {
                 lineHeight: 1.1,
               }}
             >
-              {loading ? <Skeleton variant="text" width="200px" height="60px" as="span" /> : getStoryTxt('groom_name', 'Tze Ren')}
+              {loading ? <Skeleton variant="text" width="200px" height="60px" as="span" /> : getStoryTxt('groom_name', WEDDING_DEFAULTS.groomName)}
             </motion.h1>
             <motion.div
               key={`male-icon-${animationKey}`}
@@ -271,7 +272,7 @@ function CountdownSection({ content, loading: cmsLoading }) {
   const getTxt = (field, fallback) => getContent(content, 'countdown', field, i18n, fallback, t);
   
   // Get wedding date from CMS or use fallback
-  const weddingDateStr = content?.countdown?.content?.wedding_date || '2025-06-15T14:00:00';
+  const weddingDateStr = content?.countdown?.content?.wedding_date || WEDDING_DEFAULTS.weddingDate;
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
   // Safe parsing
@@ -452,7 +453,7 @@ function StorySection({ content, loading: cmsLoading }) {
                 className="text-4xl mb-1"
                 style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
               >
-                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('bride_name', 'Dinah')}
+                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('bride_name', WEDDING_DEFAULTS.brideName)}
               </h3>
               {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.bride_role && (
                 <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
@@ -512,7 +513,7 @@ function StorySection({ content, loading: cmsLoading }) {
                 className="text-4xl mb-1"
                 style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
               >
-                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('groom_name', 'Tze Ren')}
+                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('groom_name', WEDDING_DEFAULTS.groomName)}
               </h3>
               {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.groom_role && (
                 <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FlowerDivider } from './CustomIllustrations';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
+import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -30,13 +31,13 @@ export default function Footer() {
             className="text-4xl mb-4"
             style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
           >
-            {getTxt('couple_names', 'Dinah & Tze Ren')}
+            {getTxt('couple_names', WEDDING_DEFAULTS.coupleNames)}
           </h3>
           <p 
             className="text-lg"
             style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
           >
-             {getFromContext('home_hero', 'date_text', i18n.language, 'June 15th, 2025')}
+             {getFromContext('home_hero', 'date_text', i18n.language, WEDDING_DEFAULTS.dateText)}
           </p>
         </motion.div>
 
@@ -127,7 +128,7 @@ export default function Footer() {
               className="mt-4 text-sm"
               style={{ color: '#8B7B6B' }}
             >
-              {getTxt('hashtag', '#DinahAndTzeRen2025')}
+              {getTxt('hashtag', WEDDING_DEFAULTS.hashtag)}
             </p>
           </div>
         </div>
@@ -156,7 +157,7 @@ export default function Footer() {
             className="font-script text-lg ml-auto"
             style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
           >
-             {getTxt('message', 'Forever & Always')}
+             {getTxt('message', WEDDING_DEFAULTS.message)}
           </p>
         </div>
       </div>

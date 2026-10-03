@@ -29,7 +29,7 @@ const SECTIONS = [
         label: 'Home Hero',
         fields: [
             { key: 'subtitle', label: 'Top Label (e.g. We\'re Getting Married)', type: 'text' },
-            { key: 'date_text', label: 'Wedding Date (e.g. Saturday, June 15th, 2025)', type: 'text' },
+            { key: 'date_text', label: 'Wedding Date (e.g. Saturday, November 14th, 2026)', type: 'text' },
             { key: 'location', label: 'Location Text (e.g. Nairobi)', type: 'text' },
             { key: 'venue', label: 'Venue (e.g. Rosewood Manor)', type: 'text' }
         ]
