@@ -4,8 +4,9 @@ import { settingService } from '../../services/api';
 import {
     Palette, Sliders, Undo2, Redo2,
     Maximize, Minimize, GripHorizontal, Eye, EyeOff,
-    FileImage, FileText
+    FileImage, FileText, Plus, Copy, Trash2, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
 import InvitationToolbar from '../../components/admin/InvitationToolbar';
@@ -28,6 +29,7 @@ export default function InvitationDesigner() {
   const [designType, setDesignType] = useState('invitation'); // invitation, save_the_date
   const [editorLang, setEditorLang] = useState('en');
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
   const exporterRef = useRef(null);
   const titleRef = useRef(null);
   const messageRef = useRef(null);
@@ -44,42 +46,52 @@ export default function InvitationDesigner() {
   };
   
   const [design, setDesign] = useState({
-    bgImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+    // Shared document-level settings
     accentColor: '#A67B5B',
-    
-    // Multi-language Content (Shared by all text items)
-    content: {
-        en: { title: 'Dinah & Tze Ren', message: 'We invite you to celebrate our wedding' },
-        zh: { title: 'Dinah & Tze Ren', message: '我们诚挚地邀请您参加我们的婚礼' },
-        ms: { title: 'Dinah & Tze Ren', message: 'Kami menjemput anda untuk meraikan perkahwinan kami' },
-        luo: { title: 'Dinah & Tze Ren', message: 'Wakwayi mondo ibe kodo e harus' } 
-    },
-    
-    // Advanced Settings
-    showIllustrations: true,
-    overlayOpacity: 10,
-    showBorder: true,
     orientation: 'portrait', // portrait or landscape
-    frame: {
-        visible: true,
-        color: '#A67B5B',
-        thickness: 1,
-        padding: 20
-    },
-    showOuterOutline: false,
-    
-    // Items Layer (Now includes Title and Message for 100% position accuracy)
-    items: [
-        { id: 'title_1', type: 'text', textKey: 'title', x: 25, y: 180, width: 450, height: 120, fontStyle: 'cursive', fontSize: 52, zIndex: 50 },
-        { id: 'message_1', type: 'text', textKey: 'message', x: 25, y: 320, width: 450, height: 160, fontStyle: 'serif', fontSize: 17, letterSpacing: 0, zIndex: 25 },
-        { id: 'frame_1', type: 'frame', x: 20, y: 20, width: 460, height: 585, color: '#A67B5B', thickness: 2, zIndex: 10 }
-    ],
-    
-    // Editor State
     showGrid: true,
     snapToGrid: true,
-    editorLang: 'en'
+    editorLang: 'en',
+
+    // One entry per page. Each page carries its own content, items & styling.
+    pages: [
+      {
+        id: 'page_default',
+        bgImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+
+        // Multi-language Content (scoped to this page)
+        content: {
+            en: { title: 'Dinah & Tze Ren', message: 'We invite you to celebrate our wedding' },
+            zh: { title: 'Dinah & Tze Ren', message: '我们诚挚地邀请您参加我们的婚礼' },
+            ms: { title: 'Dinah & Tze Ren', message: 'Kami menjemput anda untuk meraikan perkahwinan kami' },
+            luo: { title: 'Dinah & Tze Ren', message: 'Wakwayi mondo ibe kodo e harus' }
+        },
+
+        // Advanced Settings
+        showIllustrations: true,
+        overlayOpacity: 10,
+        showBorder: true,
+        frame: {
+            visible: true,
+            color: '#A67B5B',
+            thickness: 1,
+            padding: 20
+        },
+        showOuterOutline: false,
+
+        // Items Layer (includes Title and Message for 100% position accuracy)
+        items: [
+            { id: 'title_1', type: 'text', textKey: 'title', x: 25, y: 180, width: 450, height: 120, fontStyle: 'cursive', fontSize: 52, zIndex: 50 },
+            { id: 'message_1', type: 'text', textKey: 'message', x: 25, y: 320, width: 450, height: 160, fontStyle: 'serif', fontSize: 17, letterSpacing: 0, zIndex: 25 },
+            { id: 'frame_1', type: 'frame', x: 20, y: 20, width: 460, height: 585, color: '#A67B5B', thickness: 2, zIndex: 10 }
+        ]
+      }
+    ]
   });
+
+  // Flattened design for the currently-active page (what the canvas & sidebar consume).
+  const activePageDesign = getPageDesign(design, currentPage);
+  const totalPages = design.pages?.length || 1;
 
   useEffect(() => {
     const loadDesign = async () => {
@@ -129,9 +141,12 @@ export default function InvitationDesigner() {
                 }
 
                 setSettings(res.data);
-                const finalDesign = { ...design, ...loaded };
+                // Normalize into a multi-page document (backward compatible).
+                const finalDesign = toDocument(loaded);
                 setDesign(finalDesign);
-                
+                setCurrentPage(0);
+                setSelectedItemId(null);
+
                 // Initialize history with loaded state
                 setHistory([JSON.parse(JSON.stringify(finalDesign))]);
                 setHistoryIndex(0);
@@ -153,8 +168,11 @@ export default function InvitationDesigner() {
                     ],
                     orientation: 'portrait'
                 };
-                setDesign(defaultDesign);
-                setHistory([JSON.parse(JSON.stringify(defaultDesign))]);
+                const finalDefault = toDocument(defaultDesign);
+                setDesign(finalDefault);
+                setCurrentPage(0);
+                setSelectedItemId(null);
+                setHistory([JSON.parse(JSON.stringify(finalDefault))]);
                 setHistoryIndex(0);
             }
         } catch (err) {
@@ -247,6 +265,8 @@ export default function InvitationDesigner() {
           setIsUpdatingFromHistory(true);
           const prevState = history[historyIndex - 1];
           setDesign(prevState);
+          setCurrentPage(c => Math.min(c, (prevState.pages?.length || 1) - 1));
+          setSelectedItemId(null);
           setHistoryIndex(historyIndex - 1);
           setTimeout(() => setIsUpdatingFromHistory(false), 0);
       }
@@ -257,36 +277,54 @@ export default function InvitationDesigner() {
           setIsUpdatingFromHistory(true);
           const nextState = history[historyIndex + 1];
           setDesign(nextState);
+          setCurrentPage(c => Math.min(c, (nextState.pages?.length || 1) - 1));
+          setSelectedItemId(null);
           setHistoryIndex(historyIndex + 1);
           setTimeout(() => setIsUpdatingFromHistory(false), 0);
       }
   };
 
+  // Replace the active page inside the document.
+  const replaceActivePage = (prev, updater) => ({
+      ...prev,
+      pages: prev.pages.map((p, i) => (i === currentPage ? updater(p) : p)),
+  });
+
   const updateDesign = (key, value) => {
       setDesign(prev => {
-          const newState = { ...prev, [key]: value };
-          
-          // Sync global frame to interactive frame
-          if (key === 'frame' || key === 'accentColor') {
-              const frameItem = newState.items.find(i => i.type === 'frame');
+          let newState;
+          if (SHARED_KEYS.includes(key)) {
+              newState = { ...prev, [key]: value };
+          } else {
+              newState = replaceActivePage(prev, p => ({ ...p, [key]: value }));
+          }
+
+          // Keep the interactive frame element in sync with frame/orientation/accent changes.
+          if (key === 'frame' || key === 'accentColor' || key === 'orientation') {
+              const page = newState.pages[currentPage];
+              const frameItem = page?.items?.find(i => i.type === 'frame');
               if (frameItem) {
-                  const padding = newState.frame?.padding ?? 20;
-                  const thickness = newState.frame?.thickness ?? 1;
-                  const color = newState.frame?.color ?? newState.accentColor;
-                  
+                  const padding = page.frame?.padding ?? 20;
+                  const thickness = page.frame?.thickness ?? 1;
+                  const color = page.frame?.color ?? newState.accentColor;
+
                   const isLandscape = newState.orientation === 'landscape';
                   const canvasW = isLandscape ? 625 : 500;
                   const canvasH = isLandscape ? 500 : 625;
-                  
-                  frameItem.x = padding;
-                  frameItem.y = padding;
-                  frameItem.width = canvasW - (padding * 2);
-                  frameItem.height = canvasH - (padding * 2);
-                  frameItem.thickness = thickness;
-                  frameItem.color = color;
+
+                  const newItems = page.items.map(it => it.id === frameItem.id ? {
+                      ...it,
+                      x: padding,
+                      y: padding,
+                      width: canvasW - (padding * 2),
+                      height: canvasH - (padding * 2),
+                      thickness,
+                      color,
+                  } : it);
+                  newState = replaceActivePage(newState, p => ({ ...p, items: newItems }));
               }
           }
-          
+
           addToHistory(newState);
           return newState;
       });
@@ -296,41 +334,41 @@ export default function InvitationDesigner() {
     if (type === 'update_item') {
       const { id, ...updates } = payload;
       setDesign(prev => {
-          const newState = {
-            ...prev,
-            items: prev.items.map(item => 
+          const page = prev.pages[currentPage];
+          const newItems = page.items.map(item =>
               item.id === id ? { ...item, ...updates } : item
-            )
-          };
+          );
+          let newPage = { ...page, items: newItems };
 
-          // Sync interactive frame back to global frame
-          const updatedItem = newState.items.find(i => i.id === id);
+          // Sync interactive frame back to the page's frame settings
+          const updatedItem = newItems.find(i => i.id === id);
           if (updatedItem && updatedItem.type === 'frame') {
-              newState.frame = {
-                  ...newState.frame,
-                  thickness: updatedItem.thickness || newState.frame?.thickness,
-                  color: updatedItem.color || newState.frame?.color,
+              newPage.frame = {
+                  ...newPage.frame,
+                  thickness: updatedItem.thickness || newPage.frame?.thickness,
+                  color: updatedItem.color || newPage.frame?.color,
                   // Padding is harder to sync back precisely because it's x/y but we can try
                   padding: Math.round(updatedItem.x)
               };
           }
 
+          const newState = { ...prev, pages: prev.pages.map((p, i) => i === currentPage ? newPage : p) };
           addToHistory(newState);
           return newState;
       });
     } else if (type === 'move_item') {
         setDesign(prev => {
             const { id, direction } = payload;
-            const items = [...prev.items];
+            const page = prev.pages[currentPage];
+            const items = [...page.items];
             const index = items.findIndex(i => i.id === id);
             if (index === -1) return prev;
-            
-            const item = items[index];
+
             const sortedItems = [...items].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
             const currentOrderIndex = sortedItems.findIndex(i => i.id === id);
-            
+
             let newItems = [...items];
-            
+
             if (direction === 'to_front') {
                 const maxZ = Math.max(...items.map(i => i.zIndex || 0), 10);
                 newItems = items.map(i => i.id === id ? { ...i, zIndex: maxZ + 1 } : i);
@@ -350,7 +388,7 @@ export default function InvitationDesigner() {
                     newItems = items.map(i => i.id === id ? { ...i, zIndex: Math.max(1, targetZ - 1) } : i);
                 }
             }
-            const finalState = { ...prev, items: newItems };
+            const finalState = { ...prev, pages: prev.pages.map((p, i) => i === currentPage ? { ...p, items: newItems } : p) };
             addToHistory(finalState);
             return finalState;
         });
@@ -361,7 +399,7 @@ export default function InvitationDesigner() {
 
   const insertPlaceholder = (field, tag) => {
       const ref = field === 'title' ? titleRef : messageRef;
-      const currentValue = design.content?.[editorLang]?.[field] || '';
+      const currentValue = activePageDesign.content?.[editorLang]?.[field] || '';
       const input = ref.current;
       
       if (!input) return;
@@ -381,20 +419,21 @@ export default function InvitationDesigner() {
   
 
   const addItem = (type, extra = {}) => {
-            const newItem = {
-                id: Date.now().toString(),
-                type,
-                x: 50,
-                y: 50,
-                width: 100,
-                height: 100,
-                zIndex: design.items.length > 0 ? Math.max(...design.items.map(i => i.zIndex || 0)) + 1 : 10,
-                ...extra
-            };
             setDesign(prev => {
+                const page = prev.pages[currentPage];
+                const newItem = {
+                    id: Date.now().toString(),
+                    type,
+                    x: 50,
+                    y: 50,
+                    width: 100,
+                    height: 100,
+                    zIndex: page.items.length > 0 ? Math.max(...page.items.map(i => i.zIndex || 0)) + 1 : 10,
+                    ...extra
+                };
                 const newState = {
                     ...prev,
-                    items: [...prev.items, newItem]
+                    pages: prev.pages.map((p, i) => i === currentPage ? { ...p, items: [...p.items, newItem] } : p)
                 };
                 addToHistory(newState);
                 return newState;
@@ -405,7 +444,7 @@ export default function InvitationDesigner() {
       setDesign(prev => {
           const newState = {
               ...prev,
-              items: prev.items.filter(item => item.id !== id)
+              pages: prev.pages.map((p, i) => i === currentPage ? { ...p, items: p.items.filter(item => item.id !== id) } : p)
           };
           addToHistory(newState);
           return newState;
@@ -417,18 +456,85 @@ export default function InvitationDesigner() {
       setDesign(prev => {
           const newState = {
               ...prev,
-              editorLang: lang, // Sync active lang on change
-              content: {
-                  ...prev.content,
-                  [lang]: {
-                      ...prev.content?.[lang],
-                      [key]: value
+              editorLang: lang, // Sync active lang on change (document-level)
+              pages: prev.pages.map((p, i) => i === currentPage ? {
+                  ...p,
+                  content: {
+                      ...p.content,
+                      [lang]: {
+                          ...p.content?.[lang],
+                          [key]: value
+                      }
                   }
-              }
+              } : p)
           };
           addToHistory(newState);
           return newState;
       });
+  };
+
+  // ----- Page management -----
+  const goToPage = (index) => {
+      if (index < 0 || index >= (design.pages?.length || 1)) return;
+      setCurrentPage(index);
+      setSelectedItemId(null);
+  };
+
+  const addPage = () => {
+      setDesign(prev => {
+          const newPage = createBlankPage({ accentColor: prev.accentColor, orientation: prev.orientation });
+          const newState = { ...prev, pages: [...prev.pages, newPage] };
+          addToHistory(newState);
+          return newState;
+      });
+      setCurrentPage(() => (design.pages?.length || 1)); // move to the new last page
+      setSelectedItemId(null);
+  };
+
+  const duplicatePage = (index) => {
+      setDesign(prev => {
+          const source = prev.pages[index];
+          if (!source) return prev;
+          const copy = clonePage(source);
+          const pages = [...prev.pages];
+          pages.splice(index + 1, 0, copy);
+          const newState = { ...prev, pages };
+          addToHistory(newState);
+          return newState;
+      });
+      setCurrentPage(index + 1);
+      setSelectedItemId(null);
+  };
+
+  const deletePage = (index) => {
+      if ((design.pages?.length || 1) <= 1) return; // keep at least one page
+      if (!window.confirm(`Delete page ${index + 1}? This cannot be undone with the page bar (use Undo).`)) return;
+      setDesign(prev => {
+          if (prev.pages.length <= 1) return prev;
+          const pages = prev.pages.filter((_, i) => i !== index);
+          const newState = { ...prev, pages };
+          addToHistory(newState);
+          return newState;
+      });
+      setCurrentPage(c => Math.max(0, Math.min(c, (design.pages?.length || 2) - 2)));
+      setSelectedItemId(null);
+  };
+
+  const movePage = (index, direction) => {
+      const target = index + direction;
+      setDesign(prev => {
+          if (target < 0 || target >= prev.pages.length) return prev;
+          const pages = [...prev.pages];
+          const [moved] = pages.splice(index, 1);
+          pages.splice(target, 0, moved);
+          const newState = { ...prev, pages };
+          addToHistory(newState);
+          return newState;
+      });
+      if (target >= 0 && target < (design.pages?.length || 1)) {
+          setCurrentPage(target);
+          setSelectedItemId(null);
+      }
   };
 
   const languages = [
@@ -470,7 +576,7 @@ export default function InvitationDesigner() {
             loading={loading}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            design={design}
+            design={activePageDesign}
             editorLang={editorLang}
             setEditorLang={setEditorLang}
             selectedItemId={selectedItemId}
@@ -499,15 +605,93 @@ export default function InvitationDesigner() {
             }`}
         >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
-            
+
+            {/* Page Navigator */}
+            {!loading && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-stone-200 p-1.5 max-w-[90%]">
+                    <button
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage <= 0}
+                        className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+                        title="Previous Page"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide max-w-[280px] px-0.5">
+                        {design.pages.map((pg, idx) => (
+                            <button
+                                key={pg.id || idx}
+                                onClick={() => goToPage(idx)}
+                                className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all ${currentPage === idx ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
+                                title={`Go to page ${idx + 1}`}
+                            >
+                                {idx + 1}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage >= totalPages - 1}
+                        className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+                        title="Next Page"
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <div className="w-px h-6 bg-stone-200 mx-0.5" />
+
+                    <button
+                        onClick={addPage}
+                        className="p-2 rounded-xl text-[#A67B5B] hover:bg-[#A67B5B]/10 transition-all flex items-center gap-1"
+                        title="Add a new page"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Add Page</span>
+                    </button>
+                    <button
+                        onClick={() => duplicatePage(currentPage)}
+                        className="p-2 rounded-xl text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B] transition-all"
+                        title="Duplicate current page"
+                    >
+                        <Copy className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => movePage(currentPage, -1)}
+                        disabled={currentPage <= 0}
+                        className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
+                        title="Move page left"
+                    >
+                        <ChevronLeft className="w-4 h-4" strokeWidth={3} />
+                    </button>
+                    <button
+                        onClick={() => movePage(currentPage, 1)}
+                        disabled={currentPage >= totalPages - 1}
+                        className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
+                        title="Move page right"
+                    >
+                        <ChevronRight className="w-4 h-4" strokeWidth={3} />
+                    </button>
+                    <button
+                        onClick={() => deletePage(currentPage)}
+                        disabled={totalPages <= 1}
+                        className={`p-2 rounded-xl transition-all ${totalPages > 1 ? 'text-stone-400 hover:bg-red-50 hover:text-red-500' : 'text-stone-200 cursor-not-allowed'}`}
+                        title="Delete current page"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
             {loading ? (
                  <div className="flex-1 flex items-center justify-center p-8 z-10">
                      <Skeleton variant="image" width="400px" height="600px" className="rounded-2xl shadow-xl max-w-full" />
                  </div>
             ) : (
-                <InvitationCanvas 
-                    design={design} 
-                    onUpdateDesign={(type, payload) => updateDesign(type, payload)} 
+                <InvitationCanvas
+                    design={activePageDesign}
+                    onUpdateDesign={(type, payload) => handleDesignUpdate(type, payload)}
                     selectedId={selectedItemId}
                     onSelectExclusively={setSelectedItemId}
                     mode="edit" 
@@ -558,14 +742,14 @@ export default function InvitationDesigner() {
                             <>
                                 <div className="flex items-center gap-2 px-2" title="Element Opacity">
                                     <Sliders className="w-4 h-4 text-[#A67B5B]" />
-                                    <input 
-                                        type="range" 
-                                        min="0" max="100" 
-                                        value={design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
+                                    <input
+                                        type="range"
+                                        min="0" max="100"
+                                        value={activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
                                         onChange={(e) => handleDesignUpdate('update_item', { id: selectedItemId, opacity: parseInt(e.target.value) })}
                                         className="w-20 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#A67B5B]"
                                     />
-                                    <span className="text-[10px] font-bold text-stone-500 w-6">{design.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
+                                    <span className="text-[10px] font-bold text-stone-500 w-6">{activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
                                 </div>
                                 <div className="w-px h-6 bg-stone-200 mx-1" />
                             </>
