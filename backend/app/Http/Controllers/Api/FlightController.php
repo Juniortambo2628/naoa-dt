@@ -77,21 +77,4 @@ class FlightController extends Controller
             ],
         ]);
     }
-
-    /**
-     * Search flights (autocomplete)
-     */
-    public function search(Request $request)
-    {
-        $request->validate([
-            'query' => 'required|string|min:2|max:10',
-        ]);
-
-        $results = $this->flightService->searchFlights($request->query);
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ]);
-    }
 }

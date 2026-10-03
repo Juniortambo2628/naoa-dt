@@ -17,7 +17,6 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import { saveAs } from 'file-saver';
 import { Skeleton } from '../../components/Skeleton';
-/* Force refresh: 2026-04-15 07:02 - Syntax fix complete. Component should now reload. */
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);

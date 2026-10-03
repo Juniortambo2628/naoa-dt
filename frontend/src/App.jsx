@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 
 // Lazy load Pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -43,20 +43,6 @@ const queryClient = new QueryClient({
 
  
 function App() {
-  const [initialLoading, setInitialLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate initial loading for the "Wow" factor
-    const timer = setTimeout(() => {
-      setInitialLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (initialLoading) {
-    return <Loader />;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
