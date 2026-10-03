@@ -3,6 +3,7 @@ import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import InvitationCanvas from './InvitationCanvas';
 import { normalizePages } from '../../utils/invitationPages';
+import { getMapUrl } from '../../utils/weddingInfo';
 
 export default function InvitationExportContainer({ design, guest, weddingSettings, onReady }) {
     const exportRef = useRef(null);
@@ -163,12 +164,12 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
                 const content = pageDesign.content?.[currentLang] || {};
 
                 pageDesign.items.forEach(item => {
-                    if (item.type === 'calendar_link') {
-                        const x = (item.x / CANVAS_WIDTH) * imgWidth;
-                        const y = (item.y / CANVAS_HEIGHT) * imgHeight;
-                        const w = (item.width / CANVAS_WIDTH) * imgWidth;
-                        const h = (item.height / CANVAS_HEIGHT) * imgHeight;
+                    const x = (item.x / CANVAS_WIDTH) * imgWidth;
+                    const y = (item.y / CANVAS_HEIGHT) * imgHeight;
+                    const w = (item.width / CANVAS_WIDTH) * imgWidth;
+                    const h = (item.height / CANVAS_HEIGHT) * imgHeight;
 
+                    if (item.type === 'calendar_link') {
                         const title = encodeURIComponent(content.title || "Our Wedding");
                         const location = encodeURIComponent(weddingSettings?.venue_name || "Wedding Venue");
                         const dateStr = weddingSettings?.wedding_date || "2026-11-14";
@@ -176,6 +177,11 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
                         const calendarUrl = `${baseUrl}/calendar?date=${dateStr}&venue=${location}&title=${title}`;
 
                         pdf.link(x, y, w, h, { url: calendarUrl });
+                    } else if (item.type === 'venue_location') {
+                        const mapUrl = getMapUrl(weddingSettings || {});
+                        if (mapUrl) {
+                            pdf.link(x, y, w, h, { url: mapUrl });
+                        }
                     }
                 });
             }

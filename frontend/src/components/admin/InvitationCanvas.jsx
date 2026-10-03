@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Moveable from 'react-moveable';
 import { getAssetUrl } from '../../services/api';
+import { getMapUrl } from '../../utils/weddingInfo';
 
 export default function InvitationCanvas({ 
   design, 
@@ -93,8 +94,10 @@ export default function InvitationCanvas({
               </div>
           );
       } else if (item.type === 'calendar_link') {
-          // Robust date handling to avoid timezone shifts
-          let weddingDate = weddingSettings?.wedding_date || '2026-11-14';
+          // Robust date handling to avoid timezone shifts. The configured value
+          // may be a date ("YYYY-MM-DD") or datetime ("YYYY-MM-DDTHH:MM"); use
+          // only the date part so UTC formatting never shifts the day.
+          let weddingDate = (weddingSettings?.wedding_date || '2026-11-14').split('T')[0];
           const dateObj = new Date(weddingDate);
           
           // If we have a YYYY-MM-DD string, let's use it directly to avoid UTC issues
@@ -112,6 +115,40 @@ export default function InvitationCanvas({
                   <span style={{ fontSize: '10px', color: '#737373', textTransform: 'uppercase', letterSpacing: '0.1em', borderTop: '1px solid #e7e5e4', display: 'block', margin: '4px 8px 0 8px', paddingTop: '6px', whiteSpace: 'nowrap', lineHeight: 1 }}>Add to Calendar</span>
               </div>
           );
+      } else if (item.type === 'venue_location') {
+          const venueName = weddingSettings?.venue_name || 'Our Venue';
+          const venueAddress = weddingSettings?.venue_address || '';
+          const mapUrl = getMapUrl(weddingSettings || {});
+          const accent = item.color || design.accentColor || '#A67B5B';
+
+          const inner = (
+              <div className="w-full h-full px-3 py-2 text-center overflow-hidden flex flex-col items-center justify-center gap-0.5">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center', maxWidth: '100%' }}>
+                      {/* Inline map-pin icon (reliable for html-to-image export) */}
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                          <circle cx="12" cy="10" r="3" />
+                      </svg>
+                      <span style={{ fontSize: `${(item.fontSize || 15)}px`, fontFamily: 'serif', fontWeight: 'bold', color: '#292524', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venueName}</span>
+                  </div>
+                  {venueAddress && (
+                      <span style={{ fontSize: '10px', color: '#737373', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{venueAddress}</span>
+                  )}
+                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.15em', color: accent, fontWeight: 'bold', marginTop: '2px', whiteSpace: 'nowrap' }}>View on Map</span>
+              </div>
+          );
+
+          // In the public (view) mode the pin is a real link to the configured
+          // coordinates. In edit/preview it is static (the PDF export adds a
+          // clickable link overlay separately).
+          if (mode === 'view' && mapUrl) {
+              return (
+                  <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="w-full h-full block no-underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+                      {inner}
+                  </a>
+              );
+          }
+          return inner;
       } else if (item.type === 'text') {
           const textValue = content[item.textKey] || (item.textKey === 'title' ? 'Wedding Invitation' : 'Please join us');
           const isCursive = item.fontStyle === 'cursive' || (!item.fontStyle && item.textKey === 'title');

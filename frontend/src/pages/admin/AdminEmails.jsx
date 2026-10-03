@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Mail, Send, CheckCircle, Clock, X, Save } from 'lucide-react';
-import { invitationService, settingService, guestService } from '../../services/api';
+import { invitationService, settingService, guestService, contentService } from '../../services/api';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
+import { getWeddingInfo } from '../../utils/weddingInfo';
 import { normalizePages } from '../../utils/invitationPages';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -24,6 +25,7 @@ export default function AdminEmails() {
   const [invitationDesign, setInvitationDesign] = useState(null);
   const [saveTheDateDesign, setSaveTheDateDesign] = useState(null);
   const [previewType, setPreviewType] = useState('invitation'); // invitation or save_the_date
+  const [weddingInfo, setWeddingInfo] = useState(null);
   const [emailSettings, setEmailSettings] = useState({
     email_invitation_subject: '',
     email_invitation_message: '',
@@ -87,8 +89,12 @@ export default function AdminEmails() {
   useEffect(() => {
     const loadData = async () => {
         try {
-            const res = await settingService.getAll();
-            
+            const [res, contentRes] = await Promise.all([
+                settingService.getAll(),
+                contentService.getAll().catch(() => ({ data: {} })),
+            ]);
+            setWeddingInfo(getWeddingInfo(res.data, contentRes.data));
+
             // Load Invitation Design
             if (res.data.invitation_theme) {
                 let loaded = res.data.invitation_theme;
@@ -341,6 +347,7 @@ export default function AdminEmails() {
                               design={pageDesign}
                               mode="preview"
                               guest={mockGuest}
+                              weddingSettings={weddingInfo}
                           />
                         </div>
                       ))}

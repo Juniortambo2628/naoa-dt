@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { settingService } from '../../services/api';
+import { settingService, contentService } from '../../services/api';
+import { getWeddingInfo } from '../../utils/weddingInfo';
 import {
     Palette, Sliders, Undo2, Redo2,
     Maximize, Minimize, GripHorizontal, Eye, EyeOff,
@@ -24,7 +25,10 @@ export default function InvitationDesigner() {
   const [isUpdatingFromHistory, setIsUpdatingFromHistory] = useState(false);
 
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState(null);
+  // Dynamic wedding details (date/venue/coordinates) sourced from the same
+  // configuration the public site uses, so the designer preview and exports
+  // always reflect the real configured values rather than stale defaults.
+  const [weddingInfo, setWeddingInfo] = useState(null);
   const [activeTab, setActiveTab] = useState('style'); // style, text, layout, items
   const [designType, setDesignType] = useState('invitation'); // invitation, save_the_date
   const [editorLang, setEditorLang] = useState('en');
@@ -140,7 +144,6 @@ export default function InvitationDesigner() {
                     };
                 }
 
-                setSettings(res.data);
                 // Normalize into a multi-page document (backward compatible).
                 const finalDesign = toDocument(loaded);
                 setDesign(finalDesign);
@@ -182,6 +185,26 @@ export default function InvitationDesigner() {
     };
     loadDesign();
   }, [designType]);
+
+  // Load the dynamic wedding details once so the Save-the-Date and Location
+  // elements render the real configured date/venue/coordinates.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [settingsRes, contentRes] = await Promise.all([
+          settingService.getAll(),
+          contentService.getAll(),
+        ]);
+        if (!cancelled) {
+          setWeddingInfo(getWeddingInfo(settingsRes.data, contentRes.data));
+        }
+      } catch (err) {
+        console.error('Failed to load wedding info', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const performSilentSave = async (designToSave = design) => {
       setSaveStatus('saving');
@@ -690,7 +713,7 @@ export default function InvitationDesigner() {
                     guest={dummyGuest}
                     showGrid={design.showGrid}
                     snapToGrid={design.snapToGrid}
-                    weddingSettings={settings}
+                    weddingSettings={weddingInfo}
                 />
             )}
 
@@ -782,7 +805,7 @@ export default function InvitationDesigner() {
                 ref={exporterRef} 
                 design={design} 
                 guest={dummyGuest} 
-                weddingSettings={settings}
+                weddingSettings={weddingInfo}
                 onReady={(methods) => {
                     exporterRef.current = methods;
                 }}

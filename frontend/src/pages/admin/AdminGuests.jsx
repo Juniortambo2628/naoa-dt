@@ -14,6 +14,7 @@ import Spinner from '../../components/admin/Spinner';
 import GuestList from '../../components/admin/GuestList';
 import GuestBulkActions from '../../components/admin/GuestBulkActions';
 import { useGuests, useSettings, useContent } from '../../hooks/useApiHooks';
+import { getWeddingInfo } from '../../utils/weddingInfo';
 import { useSearch } from '../../context/SearchContext';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -620,13 +621,10 @@ export default function AdminGuests() {
       />
       
       {design && (
-          <InvitationExportContainer 
-              design={design} 
-              guest={exportingGuest} 
-              weddingSettings={{
-                  wedding_date: contentData?.countdown?.content?.wedding_date || '2026-11-14',
-                  venue_name: contentData?.home_hero?.content?.venue?.en || contentData?.home_hero?.content?.venue || 'The Grand Estate'
-              }}
+          <InvitationExportContainer
+              design={design}
+              guest={exportingGuest}
+              weddingSettings={getWeddingInfo(settingsData, contentData)}
               onReady={(methods) => {
                   exporterRef.current = methods;
               }}
