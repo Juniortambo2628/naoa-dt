@@ -82,11 +82,7 @@ export default function InvitationSidebar({
                         <Calendar className="w-5 h-5" /> Save Date
                       </button>
                       <button
-                        onClick={() => {
-                          const newId = `loc_${Date.now()}`;
-                          addItem('text', { id: newId, textKey: newId, width: 300, height: 40, fontStyle: 'serif', fontSize: 18, x: 100, y: 250 });
-                          updateContent(editorLang, newId, 'Nairobi, Kenya');
-                        }}
+                        onClick={() => addItem('venue_location', { width: 220, height: 72, x: 140, y: 250 })}
                         className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
                       >
                         <MapPin className="w-5 h-5" /> Location
@@ -138,14 +134,17 @@ export default function InvitationSidebar({
                             {item.type === 'text' ? <FileText className="w-4 h-4" /> :
                               item.type === 'image' ? <FileImage className="w-4 h-4" /> :
                                 item.type === 'frame' ? <SquareDashedMousePointer className="w-4 h-4" /> :
-                                  <Move className="w-4 h-4" />}
+                                  item.type === 'venue_location' ? <MapPin className="w-4 h-4" /> :
+                                    item.type === 'calendar_link' ? <Calendar className="w-4 h-4" /> :
+                                      <Move className="w-4 h-4" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-stone-700 truncate font-sans">
                               {item.type === 'text' ? (item.textKey === 'title' ? 'Main Title' : item.textKey === 'message' ? 'Message Text' : 'Custom Text') :
                                 item.type === 'rsvp_code' ? 'RSVP Code' :
                                   item.type === 'frame' ? 'Interactive Frame' :
-                                    item.type === 'calendar_link' ? 'Save the Date' : 'Image ' + item.id.split('_')[1]}
+                                    item.type === 'calendar_link' ? 'Save the Date' :
+                                      item.type === 'venue_location' ? 'Venue Location' : 'Image ' + item.id.split('_')[1]}
                             </p>
                           </div>
                           <button
