@@ -86,7 +86,7 @@ function GetCurrentLocationButton({ onLocate }) {
     map.on('locationfound', (e) => {
       onLocate([e.latlng.lat, e.latlng.lng]);
     });
-    map.on('locationerror', (e) => {
+    map.on('locationerror', (_e) => {
       alert('Unable to get your location. Please ensure GPS is enabled.');
     });
   };
@@ -162,7 +162,7 @@ export default function GuestLocationPicker({ guestCode, onSuccess }) {
             setGpsPosition(pos);
             setUseGps(true);
           },
-          (err) => {
+          (_err) => {
             setError('Unable to get your location. Please ensure GPS is enabled.');
             setTimeout(() => setError(null), 3000);
           },

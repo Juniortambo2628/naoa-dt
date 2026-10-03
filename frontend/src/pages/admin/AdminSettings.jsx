@@ -104,7 +104,7 @@ export default function AdminSettings() {
                 await twoFactorService.disable();
                 await checkAuth();
                 alert('2FA disabled');
-            } catch (e) {
+            } catch {
                 alert('Failed to disable 2FA');
             }
         }
@@ -114,7 +114,7 @@ export default function AdminSettings() {
             const res = await twoFactorService.setup();
             setTwoFactorData(res.data);
             setShow2faModal(true);
-        } catch (e) {
+        } catch {
             alert('Failed to initiate 2FA setup');
         }
         setVerifying2fa(false);
@@ -342,7 +342,7 @@ export default function AdminSettings() {
   );
 }
 
-function SettingsCard({ icon: Icon, title, description, children }) {
+function SettingsCard({ icon: _Icon, title, description, children }) {
   return (
     <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100">
       <div className="flex items-start gap-3 mb-5">

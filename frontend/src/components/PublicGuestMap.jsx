@@ -86,7 +86,7 @@ export default function PublicGuestMap({ venueCoords = [-1.2921, 36.8219] }) {
   }, [fetchLocations]);
 
   // Smart polling for real-time updates
-  const { hasNewItems } = useSmartPolling(fetchLocations, {
+  useSmartPolling(fetchLocations, {
     fastInterval: 15000,
     slowInterval: 30000,
     idleAfterMs: 120000,

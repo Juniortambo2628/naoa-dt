@@ -7,7 +7,7 @@ import {
   DollarSign, ShoppingBag, Sparkles, ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { giftService, contentService, getAssetUrl } from '../services/api';
+import { giftService, getAssetUrl } from '../services/api';
 import { 
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
@@ -139,7 +139,7 @@ function ClaimModal({ gift, onClose, onSubmit }) {
         onSubmit();
         onClose();
       }, 2000);
-    } catch (err) {
+    } catch {
       // Handle error
     }
     setLoading(false);
@@ -302,17 +302,6 @@ export default function GiftRegistry() {
     }
   }, [contentLoading, isVisible, navigate]);
 
-  if (contentLoading) {
-    return <Loader />;
-  }
-
-  if (!isVisible('gifts')) {
-    return null;
-  }
-
-  const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback, t);
-
-
   useEffect(() => {
     const fetchGifts = async () => {
       setLoading(true);
@@ -327,6 +316,16 @@ export default function GiftRegistry() {
     };
     fetchGifts();
   }, []);
+
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('gifts')) {
+    return null;
+  }
+
+  const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback, t);
 
   const filteredGifts = gifts.filter((gift) => {
     const matchesSearch = gift.name.toLowerCase().includes(search.toLowerCase());

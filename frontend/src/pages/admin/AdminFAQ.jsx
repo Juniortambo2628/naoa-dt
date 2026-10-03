@@ -120,7 +120,7 @@ export default function AdminFAQ() {
     const { searchQuery, setSearchQuery } = useSearch();
     const quillRef = useRef(null);
     const [reorderableFaqs, setReorderableFaqs] = useState([]);
-    const [order, setOrder] = useState(0);
+    const [, setOrder] = useState(0);
     const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
     const [tableModalOpen, setTableModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState('list');
@@ -137,7 +137,7 @@ export default function AdminFAQ() {
             toast.success(`${selectedIds.length} FAQs deleted`);
             setSelectedIds([]);
             refetch();
-        } catch (err) {
+        } catch {
             toast.error('Failed to delete some FAQs');
         }
     };
@@ -340,14 +340,14 @@ export default function AdminFAQ() {
                                     <div className="bg-stone-50 rounded-xl border border-stone-200 p-2">
                                         <FilePond
                                             server={{
-                                                process: async (fieldName, file, metadata, load, error, progress) => {
+                                                process: async (fieldName, file, metadata, load, error, _progress) => {
                                                     const formData = new FormData();
                                                     formData.append('image', file, file.name);
                                                     try {
                                                         const res = await contentService.uploadMedia(formData);
                                                         setUploadedFileUrl(res.data.url);
                                                         load(res.data.url);
-                                                    } catch (err) {
+                                                    } catch {
                                                         error('Upload failed');
                                                     }
                                                 }

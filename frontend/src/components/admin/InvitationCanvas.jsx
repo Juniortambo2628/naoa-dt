@@ -10,7 +10,7 @@ export default function InvitationCanvas({
   mode = 'edit', 
   guest = null, 
   showGrid = false, 
-  snapToGrid = false,
+  _snapToGrid = false,
   isExport = false,
   weddingSettings = null
 }) {
@@ -154,7 +154,6 @@ export default function InvitationCanvas({
       return null;
   };
 
-  const frame = design.frame || { visible: design.showBorder, color: design.accentColor, thickness: 1, padding: 20 };
 
   const [scale, setScale] = useState(1);
   const outerRef = useRef(null);

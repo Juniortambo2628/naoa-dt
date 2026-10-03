@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music, Check, Clock,
   PlayCircle, RefreshCw, CheckCircle, Trash2
@@ -22,7 +21,6 @@ import useCrudHandlers from '../../hooks/useCrudHandlers';
 import usePolling from '../../hooks/usePolling';
 
 export default function AdminSongRequests() {
-  const { t } = useTranslation();
   const { data, isLoading: loading, refetch } = useSongRequests();
   const songs = data?.songs || [];
   const stats = data?.stats || { total: 0, played: 0, pending: 0 };

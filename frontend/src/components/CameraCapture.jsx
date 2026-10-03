@@ -43,6 +43,7 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
       setError(err.message || 'Unable to access camera');
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-create only when the camera facing mode changes
   }, [facingMode]);
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
         stream.getTracks().forEach(track => track.stop());
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restart the camera only when facing mode changes
   }, [facingMode]);
 
   const capturePhoto = useCallback(() => {

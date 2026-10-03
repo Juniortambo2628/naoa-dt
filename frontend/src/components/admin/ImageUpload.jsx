@@ -22,7 +22,7 @@ export default function ImageUpload({
 }) {
     const [files, setFiles] = useState([]);
 
-    const handleProcessFile = async (fieldName, file, metadata, load, error, progress, abort, transfer, options) => {
+    const handleProcessFile = async (fieldName, file, metadata, load, error, _progress, _abort, _transfer, _options) => {
         // We need to find the FilePond item id. 
         // FilePond doesn't passing it directly to process, but we can match by file name and size
         const item = files.find(f => f.file.name === file.name && f.file.size === file.size);

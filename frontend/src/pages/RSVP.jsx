@@ -86,7 +86,7 @@ export default function RSVP() {
   const [songRequest, setSongRequest] = useState('');
   const [attending, setAttending] = useState(null);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
   // Step 0: Find guest by invitation code
   const onCodeSubmit = async (data) => {
@@ -103,7 +103,7 @@ export default function RSVP() {
       } else {
           setStep(1);
       }
-    } catch (err) {
+    } catch {
       setError('Invitation code not found. Please check and try again.');
     }
     setLoading(false);

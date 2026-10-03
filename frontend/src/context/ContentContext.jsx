@@ -4,6 +4,7 @@ import './../echo'; // Ensure Echo is initialized
 
 const ContentContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useContent = () => {
     const context = useContext(ContentContext);
     if (!context) {

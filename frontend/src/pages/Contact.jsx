@@ -12,7 +12,7 @@ import {
   CenteredFlower
 } from '../components/CustomIllustrations';
 import { useContent } from '../context/ContentContext';
-import { fadeInUp, staggerContainer, staggerItem } from '../hooks/useScrollAnimation';
+import { fadeInUp, staggerContainer } from '../hooks/useScrollAnimation';
 import Loader from '../components/Loader';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,7 +29,7 @@ const getContent = (content, section, field, i18n, fallback) => {
 };
 
 export default function Contact() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { contents: content, loading: contentLoading } = useContent();
   const [formData, setFormData] = useState({
     name: '',

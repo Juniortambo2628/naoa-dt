@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { QrCode, UserCheck, Users, AlertCircle, CheckCircle } from 'lucide-react';
 import { useCheckinStats } from '../../hooks/useApiHooks';
@@ -65,7 +65,7 @@ export default function CheckInScanner() {
         }
     };
 
-    const onScanError = (error) => {
+    const onScanError = (_error) => {
         // Ignore scan errors (continuous scanning)
     };
 

@@ -1,9 +1,9 @@
-import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles } from 'lucide-react';
-import { contentService, getAssetUrl, polaroidService, galleryService } from '../services/api';
+import { getAssetUrl, polaroidService, galleryService } from '../services/api';
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
@@ -19,7 +19,7 @@ import {
   FlowerColorCircles,
   FlowerDivider,
 } from '../components/CustomIllustrations';
-import { useCountUp, fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useScrollAnimation';
+import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useScrollAnimation';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Skeleton } from '../components/Skeleton';
@@ -303,6 +303,7 @@ function CountdownSection({ content, loading: cmsLoading }) {
     }, 1000);
     
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restart the countdown only when the wedding date changes
   }, [weddingDateStr]);
 
 
@@ -349,7 +350,7 @@ function CountdownSection({ content, loading: cmsLoading }) {
             variants={staggerContainer}
             className="flex justify-center gap-4 md:gap-10 flex-wrap"
           >
-            {countdownItems.map((item, index) => (
+            {countdownItems.map((item, _index) => (
               <motion.div 
                 key={item.label}
                 variants={scaleIn}
@@ -387,8 +388,7 @@ function StorySection({ content, loading: cmsLoading }) {
   const getTxt = (field, fallback) => getContent(content, 'our_story', field, i18n, fallback, t);
 
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: false, amount: 0.3 });
-  
+
   return (
     <section ref={ref} className="section relative" style={{ background: '#FFFEF8', zIndex: 30 }}>
       <div className="container-wedding relative z-10">

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save } from 'lucide-react';
 import { useSchedule } from '../../hooks/useApiHooks';
 import { scheduleService } from '../../services/api';
@@ -10,7 +9,6 @@ import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import { useSearch } from '../../context/SearchContext';
-import useFilteredItems from '../../hooks/useFilteredItems';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import AdminCard from '../../components/admin/AdminCard';
 import SubmitButton from '../../components/admin/SubmitButton';
@@ -18,7 +16,6 @@ import Spinner from '../../components/admin/Spinner';
 
 /* Force refresh: 2026-04-15 06:36 - Critical fix for ReferenceError */
 export default function AdminSchedule() {
-  const { t } = useTranslation();
   const { data: events = [], isLoading: loading, refetch } = useSchedule();
   const [modalOpen, setModalOpen] = useState(false);
   const [eventModalOpen, setEventModalOpen] = useState(false);

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music, Play, Check, User, Clock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { contentService } from '../services/api';
 import api from '../services/api';
 import SpotifySongSearch from '../components/SpotifySongSearch';
 import { 
@@ -38,7 +37,7 @@ export default function SongRequests() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
-  const { contents: content, loading: contentLoading, isVisible } = useContent();
+  const { loading: contentLoading, isVisible } = useContent();
 
   const fetchSongs = useCallback(async () => {
     try {
@@ -66,14 +65,6 @@ export default function SongRequests() {
     }
   }, [contentLoading, isVisible, navigate]);
 
-  if (contentLoading) {
-    return <Loader />;
-  }
-
-  if (!isVisible('songs_page')) {
-    return null;
-  }
-
   useEffect(() => {
     if (timeLeft > 0) {
         const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -82,6 +73,14 @@ export default function SongRequests() {
         setError(null);
     }
   }, [timeLeft]);
+
+  if (contentLoading) {
+    return <Loader />;
+  }
+
+  if (!isVisible('songs_page')) {
+    return null;
+  }
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);

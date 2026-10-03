@@ -18,10 +18,11 @@ export default function SpotifySongSearch({ value, onChange, placeholder = "Sear
             const trackData = value.replace('spotify:', '');
             try {
                 setSelectedTrack(JSON.parse(trackData));
-            } catch (e) {
+            } catch {
                 // If not JSON, treat as plain text
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- parse the initial value once on mount
     }, []);
 
     const searchSpotify = async (searchQuery) => {

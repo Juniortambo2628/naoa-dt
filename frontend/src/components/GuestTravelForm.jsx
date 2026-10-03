@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Hotel, Plane, Car, FileText, Upload, Download, Trash2,
@@ -17,7 +17,7 @@ const TRANSPORT_OPTIONS = [
   { value: 'other', label: 'Other', icon: '🚗' },
 ];
 
-function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }) {
+function CollapsibleSection({ title, icon: _Icon, children, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
@@ -55,7 +55,7 @@ function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }
 }
 
 export default function GuestTravelForm({ guestCode, onSuccess }) {
-  const [travelData, setTravelData] = useState(null);
+  const [, setTravelData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -220,7 +220,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
         name: res.data?.ticket_file_name || file.name,
         type: res.data?.ticket_file_type || file.name.split('.').pop(),
       });
-    } catch (err) {
+    } catch {
       setError('Failed to upload ticket');
     } finally {
       setUploadingTicket(false);
@@ -232,7 +232,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
     try {
       await guestService.deleteTicket(guestCode);
       setTicket(null);
-    } catch (err) {
+    } catch {
       setError('Failed to delete ticket');
     }
   };
@@ -283,7 +283,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
         setFlightStatus(data.flight);
         setFlightETA(data.eta);
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to refresh flight status');
     } finally {
       setRefreshingFlight(false);
@@ -307,6 +307,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
         clearTimeout(flightLookupTimeout.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce the lookup on flight number changes only
   }, [flight.number]);
 
   if (loading) {

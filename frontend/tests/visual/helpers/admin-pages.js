@@ -346,7 +346,7 @@ export async function assertAdminPageLayout(page) {
  * Assert that AdminPageHero is present.
  * Note: title matching is lenient because some sub-routes fall through to the dashboard default.
  */
-export async function assertAdminPageHero(page, expectedTitle) {
+export async function assertAdminPageHero(page, _expectedTitle) {
   const heading = page.locator('h1');
   await expect(heading.first()).toBeVisible();
 }
