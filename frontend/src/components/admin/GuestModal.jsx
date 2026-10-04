@@ -149,15 +149,16 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
           <h2 className="text-xl font-medium text-stone-800" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
             {guest ? 'Edit Guest' : 'Add New Guest'}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
+          <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
             <X className="w-5 h-5 text-stone-500" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Full Name</label>
+            <label htmlFor="gm-name" className="block text-sm font-medium text-stone-700 mb-1">Full Name</label>
             <input
+              id="gm-name"
               type="text"
               required
               className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
@@ -167,8 +168,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Email Address</label>
+            <label htmlFor="gm-email" className="block text-sm font-medium text-stone-700 mb-1">Email Address</label>
             <input
+              id="gm-email"
               type="email"
               className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
               value={formData.email}
@@ -178,8 +180,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Group</label>
+              <label htmlFor="gm-group" className="block text-sm font-medium text-stone-700 mb-1">Group</label>
               <select
+                id="gm-group"
                 className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
                 value={formData.group}
                 onChange={(e) => setFormData({ ...formData, group: e.target.value })}
@@ -191,8 +194,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Plus Ones</label>
+              <label htmlFor="gm-plus-ones" className="block text-sm font-medium text-stone-700 mb-1">Plus Ones</label>
               <input
+                id="gm-plus-ones"
                 type="number"
                 min="0"
                 max="5"
@@ -202,8 +206,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Invitation Via</label>
+              <label htmlFor="gm-invitation-via" className="block text-sm font-medium text-stone-700 mb-1">Invitation Via</label>
               <select
+                id="gm-invitation-via"
                 className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
                 value={formData.invitation_via}
                 onChange={(e) => setFormData({ ...formData, invitation_via: e.target.value })}
@@ -215,8 +220,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
+            <label htmlFor="gm-phone" className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
             <input
+              id="gm-phone"
               type="tel"
               className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -225,8 +231,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">RSVP Message</label>
+              <label htmlFor="gm-rsvp-message" className="block text-sm font-medium text-stone-700 mb-1">RSVP Message</label>
               <textarea
+                id="gm-rsvp-message"
                 className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] text-sm resize-none"
                 rows={2}
                 value={formData.rsvp_message}
@@ -235,8 +242,9 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Dietary Notes</label>
+              <label htmlFor="gm-dietary-notes" className="block text-sm font-medium text-stone-700 mb-1">Dietary Notes</label>
               <textarea
+                id="gm-dietary-notes"
                 className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] text-sm resize-none"
                 rows={2}
                 value={formData.dietary_notes}
@@ -267,6 +275,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
                     <div className="relative">
                       <input
                         type="text"
+                        aria-label={`Plus one ${index + 1} name`}
                         placeholder="Name (type to search existing guests)"
                         className="w-full px-3 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] text-sm"
                         value={plusOne.name}
@@ -293,6 +302,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
                     </div>
                     <input
                       type="email"
+                      aria-label={`Plus one ${index + 1} email`}
                       placeholder="Email (optional)"
                       className="w-full px-3 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] text-sm"
                       value={plusOne.email}

@@ -351,6 +351,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="text"
                 value={hotel.name}
+                aria-label="Hotel name"
                 onChange={(e) => setHotel({ ...hotel, name: e.target.value })}
                 placeholder="e.g. Hilton Nairobi"
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -361,6 +362,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="text"
                 value={hotel.confirmation}
+                aria-label="Hotel confirmation number"
                 onChange={(e) => setHotel({ ...hotel, confirmation: e.target.value })}
                 placeholder="Booking reference"
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -372,6 +374,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
             <input
               type="text"
               value={hotel.address}
+              aria-label="Hotel address"
               onChange={(e) => setHotel({ ...hotel, address: e.target.value })}
               placeholder="Hotel address"
               className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -386,6 +389,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="date"
                 value={hotel.check_in}
+                aria-label="Hotel check-in date"
                 onChange={(e) => setHotel({ ...hotel, check_in: e.target.value })}
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
               />
@@ -398,6 +402,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="date"
                 value={hotel.check_out}
+                aria-label="Hotel check-out date"
                 onChange={(e) => setHotel({ ...hotel, check_out: e.target.value })}
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
               />
@@ -407,6 +412,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
             <label className="block text-xs font-medium text-stone-500 mb-1">Notes</label>
             <textarea
               value={hotel.notes}
+              aria-label="Hotel notes"
               onChange={(e) => setHotel({ ...hotel, notes: e.target.value })}
               placeholder="Any additional details..."
               rows={2}
@@ -495,6 +501,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="text"
                 value={flight.airline}
+                aria-label="Airline"
                 onChange={(e) => setFlight({ ...flight, airline: e.target.value })}
                 placeholder="e.g. Kenya Airways"
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -506,6 +513,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
                 <input
                   type="text"
                   value={flight.number}
+                  aria-label="Flight number"
                   onChange={(e) => setFlight({ ...flight, number: e.target.value.toUpperCase() })}
                   placeholder="e.g. KQ 100"
                   className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -538,6 +546,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="text"
                 value={flight.departure_airport}
+                aria-label="Departure airport (IATA code)"
                 onChange={(e) => setFlight({ ...flight, departure_airport: e.target.value.toUpperCase() })}
                 placeholder="e.g. NBO"
                 maxLength={3}
@@ -549,6 +558,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="text"
                 value={flight.arrival_airport}
+                aria-label="Arrival airport (IATA code)"
                 onChange={(e) => setFlight({ ...flight, arrival_airport: e.target.value.toUpperCase() })}
                 placeholder="e.g. MBA"
                 maxLength={3}
@@ -562,6 +572,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="datetime-local"
                 value={flight.departure}
+                aria-label="Flight departure date and time"
                 onChange={(e) => setFlight({ ...flight, departure: e.target.value })}
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
               />
@@ -571,6 +582,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="datetime-local"
                 value={flight.arrival}
+                aria-label="Flight arrival date and time"
                 onChange={(e) => setFlight({ ...flight, arrival: e.target.value })}
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
               />
@@ -581,6 +593,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
             <input
               type="text"
               value={flight.confirmation}
+              aria-label="Flight booking reference"
               onChange={(e) => setFlight({ ...flight, confirmation: e.target.value })}
               placeholder="PNR or confirmation code"
               className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -590,6 +603,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
             <label className="block text-xs font-medium text-stone-500 mb-1">Notes</label>
             <textarea
               value={flight.notes}
+              aria-label="Flight notes"
               onChange={(e) => setFlight({ ...flight, notes: e.target.value })}
               placeholder="Layovers, special requirements..."
               rows={2}
@@ -630,6 +644,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
             <label className="block text-xs font-medium text-stone-500 mb-1">Notes</label>
             <textarea
               value={transport.notes}
+              aria-label="Transport notes"
               onChange={(e) => setTransport({ ...transport, notes: e.target.value })}
               placeholder="Car rental details, pickup time..."
               rows={2}
@@ -653,6 +668,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="tel"
                 value={localPhone.number}
+                aria-label="Local phone number"
                 onChange={(e) => setLocalPhone({ ...localPhone, number: e.target.value })}
                 placeholder="e.g. +254 712 345678"
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -663,6 +679,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="text"
                 value={localPhone.carrier}
+                aria-label="Phone carrier or provider"
                 onChange={(e) => setLocalPhone({ ...localPhone, carrier: e.target.value })}
                 placeholder="e.g. Safaricom, Airtel"
                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
@@ -693,12 +710,14 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
                   href={getAssetUrl(`/storage/${ticket.path}`)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Download ticket"
                   className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
                 >
                   <Download className="w-4 h-4 text-stone-600" />
                 </a>
                 <button
                   onClick={handleTicketDelete}
+                  aria-label="Delete ticket"
                   className="p-2 hover:bg-red-100 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4 text-red-500" />
@@ -719,6 +738,7 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
               <input
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
+                aria-label="Upload boarding pass or ticket"
                 onChange={handleTicketUpload}
                 className="hidden"
                 disabled={uploadingTicket}

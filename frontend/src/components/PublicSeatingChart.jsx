@@ -210,6 +210,7 @@ function TableDetailPanel({ table, guestTableId, onClose }) {
           </div>
         </div>
         <button
+          aria-label="Close"
           onClick={onClose}
           className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
         >
@@ -468,6 +469,7 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
                 </div>
               </div>
               <button
+                aria-label="Collapse"
                 onClick={() => setIsExpanded(false)}
                 className="p-2 hover:bg-stone-100 rounded-xl transition-colors"
               >

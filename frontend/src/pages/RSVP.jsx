@@ -291,7 +291,7 @@ export default function RSVP() {
                                     <UserCheck className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Status</span>
+                                    <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Status</span>
                                     <span className={`text-sm font-bold uppercase tracking-wider ${guestData?.rsvp_status === 'confirmed' ? 'text-green-600' : 'text-red-500'}`}>
                                         {guestData?.rsvp_status === 'confirmed' ? 'Attending' : 'Declined'}
                                     </span>
@@ -303,7 +303,7 @@ export default function RSVP() {
                                     <Users className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Plus Ones</span>
+                                    <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Plus Ones</span>
                                     <span className="text-sm font-medium text-stone-700">{(guestData?.plus_ones?.length || 0)} extra people</span>
                                 </div>
                             </div>
@@ -314,7 +314,7 @@ export default function RSVP() {
                                         <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-[#A67B5B]">
                                             <MessageSquare className="w-4 h-4" />
                                         </div>
-                                    <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Your Message</span>
+                                    <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Your Message</span>
                                     </div>
                                     <p className="text-sm text-stone-700 italic">"{guestData.rsvp_message}"</p>
                                 </div>
@@ -326,7 +326,7 @@ export default function RSVP() {
                                         <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-[#A67B5B]">
                                             <UtensilsCrossed className="w-4 h-4" />
                                         </div>
-                                        <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Dietary Notes</span>
+                                        <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Dietary Notes</span>
                                     </div>
                                     <p className="text-sm text-stone-700">{guestData.dietary_notes}</p>
                                 </div>
@@ -425,7 +425,7 @@ export default function RSVP() {
                                   aria-label={t('rsvp.plus_one_placeholder', `Plus One ${idx + 1} Name`)}
                                   placeholder={t('rsvp.plus_one_placeholder', `Plus One ${idx + 1} Name`)}
                                 />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-stone-300 uppercase tracking-wider font-bold">
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-stone-500 uppercase tracking-wider font-bold">
                                   Guest {idx + 1}
                                 </div>
                               </div>

@@ -172,7 +172,8 @@ function ClaimModal({ gift, onClose, onSubmit }) {
                 </h3>
                 <p style={{ color: '#6B5D52' }}>{gift.name}</p>
               </div>
-              <button 
+              <button
+                aria-label="Close"
                 onClick={onClose}
                 className="p-2 rounded-full hover:bg-gray-100"
               >

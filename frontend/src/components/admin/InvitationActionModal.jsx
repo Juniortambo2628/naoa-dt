@@ -75,7 +75,7 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
                                 </div>
                                 <p className="text-sm text-stone-500 mt-1">Select your preferred invitation channel</p>
                             </div>
-                            <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors text-stone-400">
+                            <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors text-stone-400">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>

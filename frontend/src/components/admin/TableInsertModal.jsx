@@ -112,7 +112,7 @@ export default function TableInsertModal({ isOpen, onClose, onInsert }) {
                         <TableIcon className="w-6 h-6 text-[#A67B5B]" />
                         <h2 className="text-xl font-semibold text-stone-800">Table Builder</h2>
                     </div>
-                    <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors">
+                    <button aria-label="Close" onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
