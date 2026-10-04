@@ -145,13 +145,13 @@ export default function AdminSchedule() {
         <div className="space-y-8">
             {filteredEvents.map(event => (
                 <AdminCard key={event.id}>
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                            <div>
-                                <h2 className="text-xl font-medium text-[#4A3F35]">{event.name}</h2>
-                                <p className="text-stone-500">{new Date(event.event_date).toLocaleDateString()} • {event.venue}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="min-w-0">
+                                <h2 className="text-xl font-medium text-[#4A3F35] break-words">{event.name}</h2>
+                                <p className="text-stone-500 text-sm break-words">{new Date(event.event_date).toLocaleDateString()} • {event.venue}</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-shrink-0">
                                 <button 
                                     onClick={() => handleEditEvent(event)}
                                     className="p-2 text-stone-400 hover:text-[#A67B5B] rounded-lg transition-colors"
@@ -168,9 +168,9 @@ export default function AdminSchedule() {
                                 </button>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={() => handleAddItem(event.id)}
-                            className="btn-secondary flex items-center gap-2 text-sm"
+                            className="btn-secondary flex items-center justify-center gap-2 text-sm self-start sm:self-auto flex-shrink-0 whitespace-nowrap"
                         >
                             <Plus className="w-4 h-4" /> Add Item
                         </button>
@@ -178,18 +178,18 @@ export default function AdminSchedule() {
 
                     <div className="space-y-3">
                         {event.display_items.map(item => (
-                            <div key={item.id} className="flex items-center gap-4 p-4 rounded-xl bg-stone-50 hover:bg-stone-100 transition-colors">
-                                <div className="w-16 text-center">
+                            <div key={item.id} className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-stone-50 hover:bg-stone-100 transition-colors">
+                                <div className="w-14 sm:w-16 text-center flex-shrink-0">
                                     <p className="font-bold text-[#A67B5B]">{item.start_time.slice(0,5)}</p>
                                     <p className="text-xs text-stone-400">{item.end_time?.slice(0,5)}</p>
                                 </div>
-                                <div className="flex-1">
-                                    <h3 className="font-medium text-stone-800">{item.title}</h3>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-stone-800 break-words">{item.title}</h3>
                                     <p className="text-sm text-stone-500 flex items-center gap-1">
-                                        <MapPin className="w-3 h-3" /> {item.location}
+                                        <MapPin className="w-3 h-3 flex-shrink-0" /> <span className="break-words min-w-0">{item.location}</span>
                                     </p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                                     <button 
                                         onClick={() => handleEditItem(item, event.id)}
                                         className="p-2 text-stone-400 hover:text-[#A67B5B] rounded-lg"

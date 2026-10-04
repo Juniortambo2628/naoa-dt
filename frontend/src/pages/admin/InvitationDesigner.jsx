@@ -593,14 +593,14 @@ export default function InvitationDesigner() {
           />
         }
       >
-        <div className="flex flex-col gap-4 h-[calc(100vh-140px)]">
+        <div className="flex flex-col gap-4 lg:h-[calc(100vh-140px)]">
           <InvitationToolbar
             saveStatus={saveStatus}
             isExporting={isExporting}
             onTestExport={handleTestExport}
           />
 
-        <div className="flex-1 flex gap-6 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:overflow-hidden">
          <InvitationSidebar
             loading={loading}
             activeTab={activeTab}
@@ -628,9 +628,9 @@ export default function InvitationDesigner() {
         <div 
             ref={previewContainerRef}
             className={`transition-all duration-300 flex items-center justify-center relative overflow-hidden ${
-                isFullscreen 
-                    ? 'fixed inset-0 z-[100] bg-stone-100/95 backdrop-blur-md p-8' 
-                    : 'flex-1 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
+                isFullscreen
+                    ? 'fixed inset-0 z-[100] bg-stone-100/95 backdrop-blur-md p-8'
+                    : 'order-1 lg:order-2 flex-1 min-h-[55vh] lg:min-h-0 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
             }`}
         >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />

@@ -49,10 +49,10 @@ export default function AdminFloatingToolbar({ actions = [] }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.96 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-1.5rem)]"
         >
           <div
-            className="flex items-center gap-2 px-2 py-2 rounded-2xl border border-white/40 shadow-2xl backdrop-blur-md"
+            className="flex flex-wrap items-center justify-center gap-2 px-2 py-2 rounded-2xl border border-white/40 shadow-2xl backdrop-blur-md"
             style={{
               background: 'rgba(255, 249, 245, 0.92)',
               boxShadow: '0 12px 40px rgba(74, 63, 53, 0.18)',

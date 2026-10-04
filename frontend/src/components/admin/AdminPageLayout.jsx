@@ -20,7 +20,9 @@ export default function AdminPageLayout({ hero, summary, toolbar, children }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-8 pb-8"
+      /* Extra bottom padding so content never hides behind the fixed
+         floating action toolbar (bottom-center), especially on mobile. */
+      className="space-y-8 pb-28 lg:pb-16"
     >
       {hero}
 

@@ -17,7 +17,8 @@ const TRANSPORT_OPTIONS = [
   { value: 'other', label: 'Other', icon: '🚗' },
 ];
 
-function CollapsibleSection({ title, icon: _Icon, children, defaultOpen = false }) {
+function CollapsibleSection({ title, icon, children, defaultOpen = false }) {
+  const Icon = icon;
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (

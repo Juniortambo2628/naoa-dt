@@ -32,7 +32,7 @@ export default function InvitationSidebar({
   fonts,
 }) {
   return (
-    <div className="w-96 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col overflow-hidden">
+    <div className="order-2 lg:order-1 w-full lg:w-96 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col lg:overflow-hidden">
       {loading ? (
         <div className="p-6 space-y-6">
           <Skeleton variant="text" width="100%" height="40px" className="rounded-xl" />
@@ -40,7 +40,7 @@ export default function InvitationSidebar({
           <Skeleton variant="image" width="100%" height="150px" className="rounded-xl" />
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto font-sans">
+        <div className="flex-1 lg:overflow-y-auto font-sans">
           <div className="p-6 space-y-8">
             {/* Tabs Navigation */}
             <div className="flex p-1 bg-stone-100/50 rounded-xl mb-6">
