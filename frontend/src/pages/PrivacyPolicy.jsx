@@ -1,8 +1,6 @@
 import { motion } from 'framer-motion';
 import { Shield, Lock, Eye, Mail, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 
 export default function PrivacyPolicy() {
     const sections = [
@@ -35,7 +33,6 @@ export default function PrivacyPolicy() {
             exit={{ opacity: 0 }}
             className="min-h-screen bg-[#FFF9F5]"
         >
-            <Navbar />
 
             <main className="pt-32 pb-20 container-wedding max-w-4xl">
                 <Link 
@@ -80,7 +77,6 @@ export default function PrivacyPolicy() {
                 </div>
             </main>
 
-            <Footer />
         </motion.div>
     );
 }

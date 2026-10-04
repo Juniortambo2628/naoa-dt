@@ -15,8 +15,6 @@ import {
   FlowerDivider,
   PulsingHeartLogo,
 } from '../components/CustomIllustrations';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import Loader from '../components/Loader';
 import { Skeleton } from '../components/Skeleton';
 import SpotifySongSearch from '../components/SpotifySongSearch';
@@ -147,7 +145,6 @@ export default function RSVP() {
       exit={{ opacity: 0 }}
       style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)', minHeight: '100vh' }}
     >
-      <Navbar />
       
       <main className="pt-32 pb-20 relative overflow-hidden">
         {/* Custom flower decorations */}
@@ -586,7 +583,6 @@ export default function RSVP() {
         </div>
       </main>
       
-      <Footer content={content} />
     </motion.div>
   );
 }

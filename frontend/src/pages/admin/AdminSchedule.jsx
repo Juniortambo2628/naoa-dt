@@ -14,7 +14,6 @@ import AdminCard from '../../components/admin/AdminCard';
 import SubmitButton from '../../components/admin/SubmitButton';
 import Spinner from '../../components/admin/Spinner';
 
-/* Force refresh: 2026-04-15 06:36 - Critical fix for ReferenceError */
 export default function AdminSchedule() {
   const { data: events = [], isLoading: loading, refetch } = useSchedule();
   const [modalOpen, setModalOpen] = useState(false);

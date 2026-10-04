@@ -355,5 +355,4 @@ export const emergencyNumberService = {
 export const flightService = {
   lookup: (flightNumber, date) => api.post('/flights/lookup', { flight_number: flightNumber, date }),
   getStatus: (flightNumber, date) => api.post('/flights/status', { flight_number: flightNumber, date }),
-  search: (query) => api.post('/flights/search', { query }),
 };

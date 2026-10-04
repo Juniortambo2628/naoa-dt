@@ -21,7 +21,7 @@ class GiftController extends Controller
             ->with('claims')
             ->get();
 
-        return response()->json($gifts);
+        return $this->successResponse($gifts);
     }
 
     public function claim(Request $request, Gift $gift): JsonResponse

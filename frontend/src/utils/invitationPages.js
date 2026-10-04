@@ -21,6 +21,8 @@
  */
 
 // Fields that live on the document and are shared by all pages.
+import { WEDDING_DEFAULTS } from './weddingDefaults';
+
 export const SHARED_KEYS = ['accentColor', 'orientation', 'showGrid', 'snapToGrid', 'editorLang'];
 
 const pickShared = (design = {}) => ({
@@ -109,7 +111,7 @@ export function createBlankPage(shared = {}, { withDefaults = false } = {}) {
   const messageId = freshId('message');
   const frameId = freshId('frame');
 
-  const heading = withDefaults ? 'Dinah & Tze Ren' : 'More Information';
+  const heading = withDefaults ? WEDDING_DEFAULTS.coupleNames : 'More Information';
   const body = withDefaults ? 'We invite you to celebrate our wedding' : 'Add your extra details here — directions, schedule, gifts, dress code…';
 
   return {

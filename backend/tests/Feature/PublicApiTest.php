@@ -30,7 +30,7 @@ class PublicApiTest extends TestCase
         $response = $this->getJson('/api/tables/public');
 
         $response->assertOk()
-            ->assertJsonCount(1)
+            ->assertJsonCount(1, 'data')
             ->assertJsonFragment(['name' => 'Family Table']);
     }
 
@@ -85,9 +85,11 @@ class PublicApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                'status',
-                'checks' => ['database', 'cache'],
-                'timestamp',
+                'data' => [
+                    'status',
+                    'checks' => ['database', 'cache'],
+                    'timestamp',
+                ],
             ]);
     }
 
@@ -99,7 +101,7 @@ class PublicApiTest extends TestCase
             ->getJson('/api/test/stats');
 
         $response->assertOk()
-            ->assertJsonStructure(['guests', 'tables', 'polaroid_images', 'schedule_events', 'live_updates']);
+            ->assertJsonStructure(['data' => ['guests', 'tables', 'polaroid_images', 'schedule_events', 'live_updates']]);
     }
 
     public function test_simulate_live_update_requires_message(): void

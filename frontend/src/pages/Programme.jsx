@@ -7,8 +7,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { scheduleService } from '../services/api';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import PolaroidFeed from '../components/PolaroidFeed';
 import { useSmartPolling } from '../hooks/useSmartPolling';
 import { 
@@ -141,7 +139,6 @@ export default function Programme() {
       exit={{ opacity: 0 }}
       style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)', minHeight: '100vh' }}
     >
-      <Navbar />
       
       <main className="pt-32 pb-20 relative overflow-hidden">
         {/* Custom flower decorations */}
@@ -407,7 +404,6 @@ export default function Programme() {
         </div>
       </main>
       
-      <Footer />
     </motion.div>
   );
 }

@@ -112,45 +112,6 @@ class FlightService
     }
 
     /**
-     * Search flights by route (for autocomplete)
-     */
-    public function searchFlights(string $query): array
-    {
-        if (empty($this->apiKey)) {
-            return [];
-        }
-
-        try {
-            $response = Http::timeout(10)
-                ->get("{$this->baseUrl}/flights", [
-                    'access_key' => $this->apiKey,
-                    'flight_iata' => $query,
-                    'limit' => 5,
-                ]);
-
-            if ($response->failed()) {
-                return [];
-            }
-
-            $data = $response->json();
-            
-            return collect($data['data'] ?? [])->map(function ($flight) {
-                return [
-                    'flight_number' => $flight['flight']['iata'] ?? null,
-                    'airline' => $flight['airline']['name'] ?? null,
-                    'departure' => $flight['departure']['iata'] ?? null,
-                    'arrival' => $flight['arrival']['iata'] ?? null,
-                    'status' => $flight['flight_status'] ?? null,
-                ];
-            })->toArray();
-
-        } catch (\Exception $e) {
-            Log::error('Flight search failed', ['query' => $query, 'error' => $e->getMessage()]);
-            return [];
-        }
-    }
-
-    /**
      * Calculate ETA based on flight data
      */
     public function calculateETA(array $flightData): ?array

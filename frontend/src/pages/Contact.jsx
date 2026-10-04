@@ -3,8 +3,6 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Mail, User, Send, CheckCircle, MessageSquare } from 'lucide-react';
 import { enquiryService } from '../services/api';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { 
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
@@ -80,7 +78,6 @@ export default function Contact() {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-[#FFF9F5] flex flex-col"
     >
-      <Navbar />
 
       <main className="flex-grow pt-32 pb-20 relative overflow-hidden">
         <MainFlowerTopLeft size={300} className="opacity-40" />
@@ -249,7 +246,6 @@ export default function Contact() {
         </div>
       </main>
 
-      <Footer content={content} />
     </motion.div>
   );
 }
