@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
-use Illuminate\Http\Request;
+use App\Traits\ApiResponse;
 
 class AnalyticsController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Get RSVP statistics for dashboard
      */
@@ -71,7 +73,7 @@ class AnalyticsController extends Controller
             $point['total'] = $cumulative;
         }
 
-        return response()->json([
+        return $this->successResponse([
             'rsvpStatus' => $rsvpStatus,
             'groups' => $groups,
             'summary' => $summary,

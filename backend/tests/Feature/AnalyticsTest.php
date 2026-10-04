@@ -30,13 +30,15 @@ class AnalyticsTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                'rsvpStatus',
-                'groups',
-                'summary',
-                'timeline',
+                'data' => [
+                    'rsvpStatus',
+                    'groups',
+                    'summary',
+                    'timeline',
+                ],
             ]);
 
-        $summary = $response->json('summary');
+        $summary = $response->json('data.summary');
         $this->assertEquals(10, $summary['totalGuests']);
         $this->assertEquals(5, $summary['totalConfirmed']);
         $this->assertEquals(3, $summary['pendingResponses']);
@@ -51,7 +53,7 @@ class AnalyticsTest extends TestCase
             ->getJson('/api/analytics');
 
         $response->assertOk();
-        $rsvpStatus = $response->json('rsvpStatus');
+        $rsvpStatus = $response->json('data.rsvpStatus');
 
         $confirmed = collect($rsvpStatus)->firstWhere('name', 'Confirmed');
         $this->assertEquals(4, $confirmed['value']);
@@ -69,7 +71,7 @@ class AnalyticsTest extends TestCase
             ->getJson('/api/analytics');
 
         $response->assertOk();
-        $groups = $response->json('groups');
+        $groups = $response->json('data.groups');
 
         $family = collect($groups)->firstWhere('name', 'family');
         $this->assertEquals(3, $family['value']);
@@ -85,7 +87,7 @@ class AnalyticsTest extends TestCase
 
         $response->assertOk();
 
-        $summary = $response->json('summary');
+        $summary = $response->json('data.summary');
         $this->assertEquals(0, $summary['totalGuests']);
         $this->assertEquals(0, $summary['totalConfirmed']);
     }
@@ -106,7 +108,7 @@ class AnalyticsTest extends TestCase
             ->getJson('/api/analytics');
 
         $response->assertOk();
-        $summary = $response->json('summary');
+        $summary = $response->json('data.summary');
         $this->assertEquals(3, $summary['totalPlusOnes']);
     }
 }

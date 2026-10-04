@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,8 @@ use App\Mail\FlightStatusNotification;
 
 class TestController extends Controller
 {
+    use ApiResponse;
+
     /**
      * API health check — returns status of all critical services.
      */
@@ -67,7 +70,7 @@ class TestController extends Controller
 
         $allOk = !collect($checks)->contains('status', 'error');
 
-        return response()->json([
+        return $this->successResponse([
             'status' => $allOk ? 'healthy' : 'degraded',
             'checks' => $checks,
             'timestamp' => now()->toISOString(),
@@ -79,7 +82,7 @@ class TestController extends Controller
      */
     public function stats()
     {
-        return response()->json([
+        return $this->successResponse([
             'guests' => Guest::count(),
             'tables' => Table::count(),
             'polaroid_images' => PolaroidImage::count(),
@@ -107,7 +110,7 @@ class TestController extends Controller
             event(new \App\Events\LiveUpdatePosted($update));
         }
 
-        return response()->json(['message' => 'Live update posted', 'update' => $update]);
+        return $this->successResponse($update, 'Live update posted');
     }
 
     /**
@@ -131,7 +134,7 @@ class TestController extends Controller
             event(new \App\Events\PolaroidImageCreated($image));
         }
 
-        return response()->json(['message' => 'Polaroid simulated', 'image' => $image]);
+        return $this->successResponse($image, 'Polaroid simulated');
     }
 
     /**
@@ -154,12 +157,9 @@ class TestController extends Controller
                         ->html("<h1>This is a test email</h1><p>Type: $type</p><p>If you see this, email sending is configured correctly!</p>");
             });
 
-            return response()->json(['message' => 'Test email sent successfully!']);
+            return $this->successResponse(null, 'Test email sent successfully!');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to send email',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to send email', 500, $e->getMessage());
         }
     }
 
@@ -276,14 +276,9 @@ class TestController extends Controller
                 )
             );
 
-            return response()->json([
-                'message' => "Test flight notification ({$type}) sent to {$request->email}",
-            ]);
+            return $this->successResponse(null, "Test flight notification ({$type}) sent to {$request->email}");
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to send flight notification',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to send flight notification', 500, $e->getMessage());
         }
     }
 }

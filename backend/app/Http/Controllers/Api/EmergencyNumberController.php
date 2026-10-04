@@ -4,18 +4,21 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmergencyNumber;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class EmergencyNumberController extends Controller
 {
+    use ApiResponse;
+
     public function index()
     {
-        return EmergencyNumber::active()->ordered()->get();
+        return $this->successResponse(EmergencyNumber::active()->ordered()->get());
     }
 
     public function show($id)
     {
-        return EmergencyNumber::findOrFail($id);
+        return $this->successResponse(EmergencyNumber::findOrFail($id));
     }
 
     public function store(Request $request)
@@ -30,7 +33,7 @@ class EmergencyNumberController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        return EmergencyNumber::create($validated);
+        return $this->createdResponse(EmergencyNumber::create($validated));
     }
 
     public function update(Request $request, $id)
@@ -49,13 +52,13 @@ class EmergencyNumberController extends Controller
 
         $emergencyNumber->update($validated);
 
-        return $emergencyNumber;
+        return $this->successResponse($emergencyNumber);
     }
 
     public function destroy($id)
     {
         EmergencyNumber::findOrFail($id)->delete();
 
-        return response()->json(['message' => 'Emergency number deleted']);
+        return $this->deletedResponse('Emergency number deleted');
     }
 }

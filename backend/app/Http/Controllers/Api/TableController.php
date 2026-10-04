@@ -15,7 +15,7 @@ class TableController extends Controller
 
     public function index()
     {
-        return response()->json(Table::with('guests')->get());
+        return $this->successResponse(Table::with('guests')->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -80,7 +80,7 @@ class TableController extends Controller
 
     public function publicIndex()
     {
-        return response()->json(
+        return $this->successResponse(
             Table::with(['guests' => fn($q) => $q->select('id', 'name', 'table_id')])->get()
         );
     }

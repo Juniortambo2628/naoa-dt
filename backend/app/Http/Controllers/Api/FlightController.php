@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\FlightService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class FlightController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private FlightService $flightService
     ) {}
@@ -28,20 +31,14 @@ class FlightController extends Controller
         $flightData = $this->flightService->lookupFlight($flightNumber, $date);
 
         if (!$flightData) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Flight not found. Please check the flight number and try again.',
-            ], 404);
+            return $this->notFoundResponse('Flight not found. Please check the flight number and try again.');
         }
 
         $eta = $this->flightService->calculateETA($flightData);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'flight' => $flightData,
-                'eta' => $eta,
-            ],
+        return $this->successResponse([
+            'flight' => $flightData,
+            'eta' => $eta,
         ]);
     }
 
@@ -61,20 +58,14 @@ class FlightController extends Controller
         $flightData = $this->flightService->getFlightStatus($flightNumber, $date);
 
         if (!$flightData) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to fetch flight status.',
-            ], 404);
+            return $this->notFoundResponse('Unable to fetch flight status.');
         }
 
         $eta = $this->flightService->calculateETA($flightData);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'flight' => $flightData,
-                'eta' => $eta,
-            ],
+        return $this->successResponse([
+            'flight' => $flightData,
+            'eta' => $eta,
         ]);
     }
 }
