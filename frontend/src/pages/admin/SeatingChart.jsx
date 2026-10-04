@@ -219,7 +219,7 @@ function TableDetailsModal({ table, onClose, onUnassign }) {
                                 <p className="text-xs text-stone-500">Capacity: {table.guests?.length || 0}/{table.capacity}</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-stone-100 rounded-full text-stone-400 hover:text-stone-600 transition-colors">
+                        <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-stone-100 rounded-full text-stone-400 hover:text-stone-600 transition-colors">
                             <X className="w-5 h-5" />
                         </button>
                     </div>

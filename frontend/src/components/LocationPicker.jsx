@@ -148,11 +148,13 @@ export default function LocationPicker({ lat, lng, onChange }) {
               setSelectedLabel('');
             }}
             onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+            aria-label="Search venue location"
             placeholder="Search venue location (e.g. 'Karen Nairobi' or 'Uhuru Gardens')"
             className="w-full pl-10 pr-10 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
           />
           {query && (
             <button
+              aria-label="Clear search"
               onClick={handleClear}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
             >

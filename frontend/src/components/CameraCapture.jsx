@@ -150,6 +150,7 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
         <button
+          aria-label="Close camera"
           onClick={handleClose}
           className="p-2 text-white hover:bg-white/20 rounded-full transition-colors"
         >
@@ -157,6 +158,7 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
         </button>
         <h3 className="text-white font-medium">Take Photo</h3>
         <button
+          aria-label="Switch camera"
           onClick={toggleCamera}
           className="p-2 text-white hover:bg-white/20 rounded-full transition-colors"
         >
@@ -210,12 +212,14 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
           {capturedImage ? (
             <>
               <button
+                aria-label="Retake photo"
                 onClick={retakePhoto}
                 className="p-4 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
               >
                 <RotateCcw className="w-6 h-6 text-white" />
               </button>
               <button
+                aria-label="Use photo"
                 onClick={confirmCapture}
                 className="p-4 bg-[#A67B5B] hover:bg-[#8B6A4E] rounded-full transition-colors"
               >
@@ -224,6 +228,7 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
             </>
           ) : (
             <button
+              aria-label="Take photo"
               onClick={capturePhoto}
               disabled={loading || !!error}
               className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors disabled:opacity-50"

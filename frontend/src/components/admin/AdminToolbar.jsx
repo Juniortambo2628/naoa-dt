@@ -58,10 +58,12 @@ export default function AdminToolbar({
             value={search || ''}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder || 'Search'}
             className="w-full pl-9 pr-8 py-2 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
           />
           {search && (
             <button
+              aria-label="Clear search"
               onClick={() => onSearchChange?.('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
             >

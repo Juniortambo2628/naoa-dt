@@ -151,11 +151,12 @@ export default function Guestbook() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="input-label flex items-center gap-2">
+                  <label htmlFor="guestbook-name" className="input-label flex items-center gap-2">
                     <User className="w-4 h-4" style={{ color: '#A67B5B' }} />
                     {t('guestbook.your_name') || 'Your Name'}
                   </label>
                   <input
+                    id="guestbook-name"
                     type="text"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
@@ -166,11 +167,12 @@ export default function Guestbook() {
                 </div>
 
                 <div>
-                  <label className="input-label flex items-center gap-2">
+                  <label htmlFor="guestbook-message" className="input-label flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" style={{ color: '#A67B5B' }} />
                     {t('guestbook.your_message') || 'Your Message'}
                   </label>
                   <textarea
+                    id="guestbook-message"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={4}

@@ -313,6 +313,7 @@ export default function Gallery() {
             onClick={() => setSelectedImage(null)}
           >
             <button
+              aria-label="Close image"
               className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors"
               onClick={() => setSelectedImage(null)}
             >
@@ -339,6 +340,7 @@ export default function Gallery() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black"
           >
             <button
+              aria-label="Close slideshow"
               className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10"
               onClick={stopSlideshow}
             >
@@ -346,6 +348,7 @@ export default function Gallery() {
             </button>
             
             <button
+              aria-label="Previous photo"
               className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white hover:bg-white/10 rounded-full transition-colors z-10"
               onClick={prevSlide}
             >
@@ -353,6 +356,7 @@ export default function Gallery() {
             </button>
             
             <button
+              aria-label="Next photo"
               className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white hover:bg-white/10 rounded-full transition-colors z-10"
               onClick={nextSlide}
             >
@@ -407,6 +411,7 @@ export default function Gallery() {
                   {t('gallery.share_photo') || 'Share a Photo'}
                 </h2>
                 <button
+                  aria-label="Close"
                   onClick={() => setShowUploadModal(false)}
                   className="p-2 hover:bg-stone-100 rounded-full transition-colors"
                 >
@@ -440,6 +445,7 @@ export default function Gallery() {
                         />
                         <button
                           type="button"
+                          aria-label="Remove photo"
                           onClick={() => {
                             setUploadFile(null);
                             setUploadPreview(null);
@@ -462,7 +468,7 @@ export default function Gallery() {
                             <p className="font-medium" style={{ color: '#6B5D52' }}>
                               {t('gallery.take_photo') || 'Take a Photo'}
                             </p>
-                            <p className="text-xs text-stone-400">
+                            <p className="text-xs text-stone-500">
                               {t('gallery.use_camera') || 'Use your device camera'}
                             </p>
                           </div>
@@ -481,7 +487,7 @@ export default function Gallery() {
                           <p className="font-medium" style={{ color: '#6B5D52' }}>
                             {t('gallery.choose_from_gallery') || 'Choose from Gallery'}
                           </p>
-                          <p className="text-xs text-stone-400">
+                          <p className="text-xs text-stone-500">
                             {t('gallery.select_existing') || 'Select an existing photo'}
                           </p>
                           <input
@@ -496,11 +502,12 @@ export default function Gallery() {
                   </div>
 
                   <div>
-                    <label className="input-label flex items-center gap-2">
+                    <label htmlFor="gallery-name" className="input-label flex items-center gap-2">
                       <User className="w-4 h-4" style={{ color: '#A67B5B' }} />
                       {t('gallery.your_name') || 'Your Name'}
                     </label>
                     <input
+                      id="gallery-name"
                       type="text"
                       value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}

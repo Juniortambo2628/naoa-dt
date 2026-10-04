@@ -127,7 +127,7 @@
         </div>
 
         <div class="footer">
-            Dinah & Tze Ren Wedding
+            {{ \App\Support\WeddingInfo::coupleNames() }} Wedding
         </div>
     </div>
 </body>

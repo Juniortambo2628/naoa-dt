@@ -244,8 +244,9 @@ export default function RSVP() {
                       </div>
 
                       <div>
-                        <label className="input-label">{t('rsvp.code_label')}</label>
+                        <label htmlFor="rsvp-code" className="input-label">{t('rsvp.code_label')}</label>
                         <input
+                          id="rsvp-code"
                           type="text"
                           {...register('code', { required: 'Please enter your invitation code' })}
                           className="input-field text-center text-lg tracking-widest uppercase"
@@ -290,7 +291,7 @@ export default function RSVP() {
                                     <UserCheck className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Status</span>
+                                    <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Status</span>
                                     <span className={`text-sm font-bold uppercase tracking-wider ${guestData?.rsvp_status === 'confirmed' ? 'text-green-600' : 'text-red-500'}`}>
                                         {guestData?.rsvp_status === 'confirmed' ? 'Attending' : 'Declined'}
                                     </span>
@@ -302,7 +303,7 @@ export default function RSVP() {
                                     <Users className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Plus Ones</span>
+                                    <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Plus Ones</span>
                                     <span className="text-sm font-medium text-stone-700">{(guestData?.plus_ones?.length || 0)} extra people</span>
                                 </div>
                             </div>
@@ -313,7 +314,7 @@ export default function RSVP() {
                                         <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-[#A67B5B]">
                                             <MessageSquare className="w-4 h-4" />
                                         </div>
-                                    <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Your Message</span>
+                                    <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Your Message</span>
                                     </div>
                                     <p className="text-sm text-stone-700 italic">"{guestData.rsvp_message}"</p>
                                 </div>
@@ -325,7 +326,7 @@ export default function RSVP() {
                                         <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-[#A67B5B]">
                                             <UtensilsCrossed className="w-4 h-4" />
                                         </div>
-                                        <span className="text-xs text-stone-400 block uppercase tracking-wider font-bold">Dietary Notes</span>
+                                        <span className="text-xs text-stone-500 block uppercase tracking-wider font-bold">Dietary Notes</span>
                                     </div>
                                     <p className="text-sm text-stone-700">{guestData.dietary_notes}</p>
                                 </div>
@@ -421,9 +422,10 @@ export default function RSVP() {
                                   {...register(`plus_ones_data.${idx}.name`)}
                                   defaultValue={po.name.includes('(Plus One') ? '' : po.name}
                                   className="input-field"
+                                  aria-label={t('rsvp.plus_one_placeholder', `Plus One ${idx + 1} Name`)}
                                   placeholder={t('rsvp.plus_one_placeholder', `Plus One ${idx + 1} Name`)}
                                 />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-stone-300 uppercase tracking-wider font-bold">
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-stone-500 uppercase tracking-wider font-bold">
                                   Guest {idx + 1}
                                 </div>
                               </div>
@@ -483,11 +485,12 @@ export default function RSVP() {
                       {/* Dietary Requirements */}
                       {attending === 'yes' && (
                         <div>
-                          <label className="input-label flex items-center gap-2">
+                          <label htmlFor="rsvp-dietary" className="input-label flex items-center gap-2">
                             <UtensilsCrossed className="w-5 h-5" style={{ color: '#A67B5B' }} />
                             {t('rsvp.dietary_label', 'Dietary Requirements')}
                           </label>
                           <textarea
+                            id="rsvp-dietary"
                             {...register('dietary_notes')}
                             rows={3}
                             className="input-field resize-none"
@@ -498,11 +501,12 @@ export default function RSVP() {
 
                       {/* Message */}
                       <div>
-                        <label className="input-label flex items-center gap-2">
+                        <label htmlFor="rsvp-message" className="input-label flex items-center gap-2">
                           <MessageSquare className="w-5 h-5" style={{ color: '#A67B5B' }} />
                           {t('rsvp.message_label')}
                         </label>
                         <textarea
+                          id="rsvp-message"
                           {...register('message')}
                           rows={4}
                           className="input-field resize-none"

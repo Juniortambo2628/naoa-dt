@@ -5,12 +5,14 @@ import { FlowerDivider } from './CustomIllustrations';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
 import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
+import { getCoupleNames, getWeddingDateText } from '../utils/weddingInfo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const { i18n } = useTranslation();
-  const { isVisible, getContent: getFromContext, contents } = useContent();
+  const { isVisible, getContent: getFromContext, contents, settings } = useContent();
   const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
+  const { coupleNames } = getCoupleNames(settings, contents, i18n.language);
 
   return (
     <footer
@@ -31,13 +33,13 @@ export default function Footer() {
             className="text-4xl mb-4"
             style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
           >
-            {getTxt('couple_names', WEDDING_DEFAULTS.coupleNames)}
+            {coupleNames}
           </h3>
           <p 
             className="text-lg"
             style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
           >
-             {getFromContext('home_hero', 'date_text', i18n.language, WEDDING_DEFAULTS.dateText)}
+             {getWeddingDateText(contents, i18n.language, settings)}
           </p>
         </motion.div>
 

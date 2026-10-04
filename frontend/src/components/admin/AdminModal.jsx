@@ -16,7 +16,7 @@ export default function AdminModal({ isOpen, onClose, title, children, size = 'm
       <div className={`bg-white rounded-2xl w-full ${sizeClasses[size]} p-6 shadow-xl animate-in zoom-in duration-200`}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-medium text-[#4A3F35]">{title}</h2>
-          <button onClick={onClose} className="p-1 hover:bg-stone-100 rounded-lg transition-colors">
+          <button onClick={onClose} aria-label="Close dialog" className="p-1 hover:bg-stone-100 rounded-lg transition-colors">
             <X className="w-5 h-5 text-stone-400" />
           </button>
         </div>

@@ -42,7 +42,7 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400">
+                    <button aria-label="Close" onClick={onClose} className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400">
                         <X className="w-6 h-6" />
                     </button>
                 </div>

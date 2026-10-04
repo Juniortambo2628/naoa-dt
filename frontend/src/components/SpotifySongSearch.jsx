@@ -123,6 +123,7 @@ export default function SpotifySongSearch({ value, onChange, placeholder = "Sear
                         {selectedTrack.preview_url && (
                             <button
                                 type="button"
+                                aria-label={playingPreview === selectedTrack.id ? 'Pause preview' : 'Play preview'}
                                 onClick={() => playPreview(selectedTrack.preview_url, selectedTrack.id)}
                                 className="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
                             >
@@ -135,6 +136,7 @@ export default function SpotifySongSearch({ value, onChange, placeholder = "Sear
                         )}
                         <button
                             type="button"
+                            aria-label="Clear selection"
                             onClick={clearSelection}
                             className="p-2 rounded-full bg-stone-200 text-stone-600 hover:bg-stone-300 transition-colors"
                         >
@@ -153,6 +155,7 @@ export default function SpotifySongSearch({ value, onChange, placeholder = "Sear
                         onFocus={() => query && setShowResults(true)}
                         onBlur={() => setTimeout(() => setShowResults(false), 200)}
                         placeholder={placeholder}
+                        aria-label={placeholder}
                         className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-stone-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 outline-none transition-all"
                     />
                     {loading && (
@@ -191,6 +194,7 @@ export default function SpotifySongSearch({ value, onChange, placeholder = "Sear
                             {track.preview_url && (
                                 <button
                                     type="button"
+                                    aria-label={playingPreview === track.id ? 'Pause preview' : 'Play preview'}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         playPreview(track.preview_url, track.id);

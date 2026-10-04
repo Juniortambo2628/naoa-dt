@@ -74,7 +74,8 @@ export default function Sidebar({ isOpen, onClose }) {
                 style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)' }}
               />
             </Link>
-            <button 
+            <button
+              aria-label="Close menu"
               onClick={onClose}
               className="lg:hidden absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
             >

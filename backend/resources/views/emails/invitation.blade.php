@@ -20,13 +20,11 @@
         </div>
 
         @php
-            $countdown = \App\Models\PageContent::where('section_key', 'countdown')->first();
-            $dateRaw = $countdown->content['wedding_date'] ?? '2026-11-14';
+            $dateRaw = \App\Support\WeddingInfo::weddingDate();
             $dateClean = str_replace(['-', ':', ' '], '', substr($dateRaw, 0, 16));
-            
-            $homeHero = \App\Models\PageContent::where('section_key', 'home_hero')->first();
-            $venue = $homeHero->content['venue']['en'] ?? ($homeHero->content['venue'] ?? 'The Grand Estate');
-            $title = "Dinah & Tze Ren's Wedding";
+
+            $venue = \App\Support\WeddingInfo::venueName();
+            $title = \App\Support\WeddingInfo::coupleNames() . "'s Wedding";
             
             $googleCalendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE" . 
                 "&text=" . urlencode($title) . 

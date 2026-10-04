@@ -83,6 +83,8 @@ class FlightStatusNotification extends Mailable
             $terminalRow = "<tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Terminal</td><td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$terminal}</td></tr>";
         }
 
+        $weddingName = \App\Support\WeddingInfo::coupleNames() . "'s Wedding";
+
         return <<<HTML
         <!DOCTYPE html>
         <html>
@@ -96,7 +98,7 @@ class FlightStatusNotification extends Mailable
                     <div style='background: linear-gradient(135deg, #A67B5B 0%, #8C6A4D 100%); padding: 30px; text-align: center;'>
                         <div style='font-size: 40px; margin-bottom: 10px;'>{$statusIcon}</div>
                         <h1 style='color: white; margin: 0; font-size: 22px; font-weight: 600;'>Flight Status Update</h1>
-                        <p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>Dinah &amp; Tze Ren's Wedding</p>
+                        <p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>{$weddingName}</p>
                     </div>
                     <div style='background: {$statusColor}; padding: 16px; text-align: center;'>
                         <p style='color: white; margin: 0; font-size: 16px; font-weight: 600; text-transform: uppercase;'>Flight {$this->flightNumber} &mdash; {$this->status}</p>
@@ -117,7 +119,7 @@ class FlightStatusNotification extends Mailable
                         <p style='color: #6b7280; font-size: 13px; margin: 0; text-align: center;'>You can update your travel details anytime from your digital invitation.</p>
                     </div>
                     <div style='background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;'>
-                        <p style='color: #9ca3af; margin: 0; font-size: 12px;'>Sent with love from Dinah &amp; Tze Ren's Wedding</p>
+                        <p style='color: #9ca3af; margin: 0; font-size: 12px;'>Sent with love from {$weddingName}</p>
                     </div>
                 </div>
             </div>

@@ -36,9 +36,12 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Change language"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-stone-600 hover:text-[#A67B5B] hover:bg-stone-50 rounded-lg transition-all"
       >
-        <Globe className="w-4 h-4" />
+        <Globe className="w-4 h-4" aria-hidden="true" />
         <span className="hidden md:inline">{currentLang.label}</span>
         <span className="md:hidden">{currentLang.code.toUpperCase()}</span>
       </button>

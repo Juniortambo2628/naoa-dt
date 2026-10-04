@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
+import { getWeddingInfo } from '../utils/weddingInfo';
 import './../echo'; // Ensure Echo is initialized
 
 const ContentContext = createContext();
@@ -15,6 +16,7 @@ export const useContent = () => {
 
 export const ContentProvider = ({ children }) => {
     const [contents, setContents] = useState({});
+    const [settings, setSettings] = useState({});
     const [loading, setLoading] = useState(true);
 
     const fetchContents = useCallback(async () => {
@@ -28,8 +30,19 @@ export const ContentProvider = ({ children }) => {
         }
     }, []);
 
+    // Public settings carry the centralized wedding details (date, names, venue).
+    const fetchSettings = useCallback(async () => {
+        try {
+            const res = await api.get('/settings');
+            setSettings(res.data || {});
+        } catch (err) {
+            console.error('Failed to fetch settings:', err);
+        }
+    }, []);
+
     useEffect(() => {
         fetchContents();
+        fetchSettings();
 
         // Listen for real-time updates via Echo/Pusher if available
         if (window.Echo) {
@@ -46,10 +59,13 @@ export const ContentProvider = ({ children }) => {
             };
         }
 
-        // Fallback: poll for content changes when Echo is unavailable
-        const interval = setInterval(fetchContents, 30000);
+        // Fallback: poll for content/settings changes when Echo is unavailable.
+        const interval = setInterval(() => {
+            fetchContents();
+            fetchSettings();
+        }, 30000);
         return () => clearInterval(interval);
-    }, [fetchContents]);
+    }, [fetchContents, fetchSettings]);
 
     const getContent = useCallback((section, field, lang = 'en', fallback = '') => {
         const sectionData = contents[section];
@@ -84,11 +100,17 @@ export const ContentProvider = ({ children }) => {
         }));
     }, []);
 
+    // Centralized wedding details (Settings-first, Content Manager fallback).
+    const weddingInfo = useMemo(() => getWeddingInfo(settings, contents), [settings, contents]);
+
     return (
-        <ContentContext.Provider value={{ 
-            contents, 
-            loading, 
+        <ContentContext.Provider value={{
+            contents,
+            settings,
+            weddingInfo,
+            loading,
             refreshContent: fetchContents,
+            refreshSettings: fetchSettings,
             updateLocalContent,
             getContent,
             isVisible

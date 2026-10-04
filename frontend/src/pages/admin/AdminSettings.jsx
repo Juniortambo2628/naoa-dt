@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin } from 'lucide-react';
+import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -12,6 +12,12 @@ import Spinner from '../../components/admin/Spinner';
 import LocationPicker from '../../components/LocationPicker';
 
 const settingSections = [
+  {
+    id: 'wedding',
+    label: 'Wedding Details',
+    icon: Heart,
+    description: 'Couple names, date and venue — the single source of truth.',
+  },
   {
     id: 'general',
     label: 'General',
@@ -45,6 +51,11 @@ export default function AdminSettings() {
     admin_email: '',
     public_url: '',
     song_request_limit_enabled: true,
+    wedding_date: '',
+    bride_name: '',
+    groom_name: '',
+    venue_name: '',
+    venue_address: '',
     venue_lat: '',
     venue_lng: '',
   });
@@ -73,6 +84,11 @@ export default function AdminSettings() {
           admin_email: settingsData.admin_email || '',
           public_url: settingsData.public_url || '',
           song_request_limit_enabled: String(settingsData.song_request_limit_enabled) !== 'false',
+          wedding_date: (settingsData.wedding_date || '').split('T')[0],
+          bride_name: settingsData.bride_name || '',
+          groom_name: settingsData.groom_name || '',
+          venue_name: settingsData.venue_name || '',
+          venue_address: settingsData.venue_address || '',
           venue_lat: settingsData.venue_lat || '',
           venue_lng: settingsData.venue_lng || '',
         });
@@ -153,6 +169,37 @@ export default function AdminSettings() {
         {/* Left Column: Settings Form */}
         <div className="lg:col-span-2 space-y-6">
           <form onSubmit={handleSave} className="space-y-6">
+            {/* Wedding Details — single source of truth for date, names & venue */}
+            <SettingsCard icon={Heart} title="Wedding Details" description="The couple, date and venue — used across the site, invitations and emails.">
+              <div className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <AdminInput
+                    label="Bride's Name"
+                    type="text"
+                    placeholder="e.g. Dinah"
+                    value={settings.bride_name}
+                    onChange={(e) => setSettings({ ...settings, bride_name: e.target.value })}
+                  />
+                  <AdminInput
+                    label="Groom's Name"
+                    type="text"
+                    placeholder="e.g. Tze Ren"
+                    value={settings.groom_name}
+                    onChange={(e) => setSettings({ ...settings, groom_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <AdminInput
+                    label="Wedding Date"
+                    type="date"
+                    value={settings.wedding_date}
+                    onChange={(e) => setSettings({ ...settings, wedding_date: e.target.value })}
+                  />
+                  <p className="mt-1.5 text-xs text-stone-400">Shown everywhere, formatted automatically for each language.</p>
+                </div>
+              </div>
+            </SettingsCard>
+
             {/* General */}
             <SettingsCard icon={Globe} title="General" description="Public URL and core site behavior.">
               <div className="space-y-5">
@@ -178,12 +225,33 @@ export default function AdminSettings() {
             </SettingsCard>
 
             {/* Venue Location */}
-            <SettingsCard icon={MapPin} title="Venue Location" description="GPS coordinates for the map on guest invitations.">
-              <LocationPicker
-                lat={settings.venue_lat}
-                lng={settings.venue_lng}
-                onChange={(lat, lng) => setSettings({ ...settings, venue_lat: lat, venue_lng: lng })}
-              />
+            <SettingsCard icon={MapPin} title="Venue Location" description="Venue name, address and map coordinates for invitations.">
+              <div className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <AdminInput
+                    label="Venue Name"
+                    type="text"
+                    placeholder="e.g. Rosewood Manor"
+                    value={settings.venue_name}
+                    onChange={(e) => setSettings({ ...settings, venue_name: e.target.value })}
+                  />
+                  <AdminInput
+                    label="Venue Address"
+                    type="text"
+                    placeholder="e.g. Karen, Nairobi"
+                    value={settings.venue_address}
+                    onChange={(e) => setSettings({ ...settings, venue_address: e.target.value })}
+                  />
+                </div>
+                <div className="pt-4 border-t border-stone-100">
+                  <label className="block text-sm font-medium text-stone-600 mb-2">Map Coordinates</label>
+                  <LocationPicker
+                    lat={settings.venue_lat}
+                    lng={settings.venue_lng}
+                    onChange={(lat, lng) => setSettings({ ...settings, venue_lat: lat, venue_lng: lng })}
+                  />
+                </div>
+              </div>
             </SettingsCard>
 
             {/* Security */}

@@ -209,11 +209,12 @@ export default function SongRequests() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="input-label flex items-center gap-2">
+                  <label htmlFor="song-name" className="input-label flex items-center gap-2">
                     <User className="w-4 h-4" style={{ color: '#A67B5B' }} />
                     {t('songs.your_name') || 'Your Name'}
                   </label>
                   <input
+                    id="song-name"
                     type="text"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}

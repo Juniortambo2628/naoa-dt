@@ -380,8 +380,8 @@ export default function InvitationCanvas({
             <div className="absolute inset-0 z-40 pointer-events-none">
                 {design.showIllustrations && (
                         <div className="absolute flex justify-center gap-6 py-2 opacity-80 z-20" style={{ top: isLandscape ? '210px' : '272px', left: '50%', transform: 'translateX(-50%)' }}>
-                            <img src="/illustrations/male-icon.png" className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
-                            <img src="/illustrations/female-icon.png" className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
+                            <img src="/illustrations/male-icon.png" alt="" className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
+                            <img src="/illustrations/female-icon.png" alt="" className="w-12 h-12 object-contain" style={{ filter: `drop-shadow(0 4px 6px ${design.accentColor}40)` }} crossOrigin="anonymous" />
                         </div>
                 )}
                 

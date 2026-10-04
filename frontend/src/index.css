@@ -431,6 +431,20 @@ p {
   box-shadow: 0 0 0 4px rgba(166, 123, 91, 0.1);
 }
 
+/* Visible keyboard-focus indicator for interactive elements (WCAG 2.4.7).
+   Uses :focus-visible so it only shows for keyboard/AT users, not mouse clicks. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-warm-brown);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .input-field::placeholder {
   color: var(--color-text-muted);
 }

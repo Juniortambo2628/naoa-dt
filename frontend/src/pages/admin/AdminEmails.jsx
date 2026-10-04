@@ -336,7 +336,7 @@ export default function AdminEmails() {
                <div className="bg-white rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
                    <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-stone-50">
                        <h3 className="font-semibold text-lg">{previewType === 'invitation' ? 'Digital Invitation' : 'Save the Date'} Preview</h3>
-                      <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-stone-200 rounded-full">
+                      <button aria-label="Close preview" onClick={() => setShowPreview(false)} className="p-2 hover:bg-stone-200 rounded-full">
                           <X className="w-5 h-5" />
                       </button>
                   </div>

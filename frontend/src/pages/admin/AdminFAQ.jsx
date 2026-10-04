@@ -309,9 +309,10 @@ export default function AdminFAQ() {
                 <AdminModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedFaq ? 'Edit FAQ' : 'Add New FAQ'} size="2xl">
                     <form onSubmit={handleSave} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-stone-700 mb-1">Question</label>
-                            <input 
-                                type="text" 
+                            <label htmlFor="faq-question" className="block text-sm font-medium text-stone-700 mb-1">Question</label>
+                            <input
+                                id="faq-question"
+                                type="text"
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                                 className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/20 outline-none"
