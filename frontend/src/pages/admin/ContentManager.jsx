@@ -29,16 +29,15 @@ const SECTIONS = [
         label: 'Home Hero',
         fields: [
             { key: 'subtitle', label: 'Top Label (e.g. We\'re Getting Married)', type: 'text' },
-            { key: 'date_text', label: 'Wedding Date (e.g. Saturday, November 14th, 2026)', type: 'text' },
-            { key: 'location', label: 'Location Text (e.g. Nairobi)', type: 'text' },
-            { key: 'venue', label: 'Venue (e.g. Rosewood Manor)', type: 'text' }
+            { key: 'location', label: 'Location Text (e.g. Nairobi)', type: 'text' }
+            // Wedding date and venue are configured centrally on Settings › Wedding Details.
         ]
     },
     {
         key: 'countdown',
         label: 'Countdown Timer',
         fields: [
-            { key: 'wedding_date', label: 'Wedding Date & Time (YYYY-MM-DDTHH:MM)', type: 'text' },
+            // The countdown date comes from Settings › Wedding Details (wedding_date).
             { key: 'title', label: 'Section Title', type: 'text' },
             { key: 'subtitle', label: 'Subtitle', type: 'text' }
         ]
@@ -52,10 +51,8 @@ const SECTIONS = [
             { key: 'content_2', label: 'Story Text (Part 2)', type: 'textarea' },
             { key: 'bride_image', label: 'Bride Image', type: 'image' },
             { key: 'groom_image', label: 'Groom Image', type: 'image' },
-            { key: 'bride_name', label: 'Bride Name', type: 'text' },
-            { key: 'groom_name', label: 'Groom Name', type: 'text' },
-            { key: 'quote', label: 'Love Quote', type: 'text' },
-            { key: 'date', label: 'Meaningful Date', type: 'text' }
+            { key: 'quote', label: 'Love Quote', type: 'text' }
+            // Bride & groom names come from Settings › Wedding Details.
         ]
     },
     {
@@ -120,9 +117,8 @@ const SECTIONS = [
         label: 'Events Page (Full)',
         fields: [
             { key: 'title', label: 'Page Title', type: 'text' },
-            { key: 'description', label: 'Subtitle/Description', type: 'textarea' },
-            { key: 'date', label: 'Wedding Date', type: 'text' },
-            { key: 'venue', label: 'Venue', type: 'text' }
+            { key: 'description', label: 'Subtitle/Description', type: 'textarea' }
+            // Wedding date and venue are configured centrally on Settings › Wedding Details.
         ]
     },
     {
@@ -161,11 +157,10 @@ const SECTIONS = [
         key: 'footer',
         label: 'Footer',
         fields: [
-            { key: 'couple_names', label: 'Couple Names (e.g. Dinah & Tze Ren)', type: 'text' },
+            // Couple names come from Settings › Wedding Details.
             { key: 'message', label: 'Closing Message', type: 'text' },
             { key: 'contact_email', label: 'Contact Email', type: 'text' },
-            { key: 'hashtag', label: 'Wedding Hashtag', type: 'text' },
-            { key: 'location', label: 'Copyright Location (e.g. Nairobi)', type: 'text' }
+            { key: 'hashtag', label: 'Wedding Hashtag', type: 'text' }
         ]
     }
 ];
