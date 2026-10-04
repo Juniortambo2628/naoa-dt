@@ -79,7 +79,9 @@ return new class extends Migration
         // Schema::create('role_has_permissions', function (Blueprint $table) { ... });
 
         Schema::table('invitations', function (Blueprint $table) {
-            $table->dropForeign(['guest_id']);
+            // up() only added a unique index on guest_id (no foreign key), so
+            // dropping a foreign key here made rollback fail. Only reverse what
+            // up() actually created.
             $table->dropUnique(['guest_id']);
             $table->dropSoftDeletes();
         });
