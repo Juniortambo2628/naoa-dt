@@ -13,11 +13,52 @@
 
 const DEFAULT_DATE = '2026-11-14';
 
-const resolveLocalized = (val) => {
-  if (!val) return null;
-  if (typeof val === 'object') return val.en || val[Object.keys(val)[0]] || null;
+// Map the app's language codes to BCP-47 locales for date formatting.
+const LOCALE_MAP = { en: 'en-US', zh: 'zh-CN', ms: 'ms-MY', luo: 'en-US' };
+
+/**
+ * Resolve a possibly-localized content value ({ en, zh, ... } or a plain string)
+ * to a string for the requested language, falling back to English.
+ */
+export const resolveLocalized = (val, locale = 'en') => {
+  if (val === null || val === undefined || val === '') return null;
+  if (typeof val === 'object') {
+    return val[locale] || val.en || val[Object.keys(val)[0]] || null;
+  }
   return val;
 };
+
+/**
+ * Format a wedding date value into a human-readable string. Accepts a date
+ * ("YYYY-MM-DD") or datetime ("YYYY-MM-DDTHH:MM") and builds the date in local
+ * time so the displayed day never shifts across timezones.
+ */
+export function formatWeddingDate(weddingDate, locale = 'en') {
+  const raw = (weddingDate || DEFAULT_DATE).split('T')[0];
+  const [y, m, d] = raw.split('-').map(Number);
+  if (!y || !m || !d) return '';
+  const dateObj = new Date(y, m - 1, d);
+  if (Number.isNaN(dateObj.getTime())) return '';
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  try {
+    return dateObj.toLocaleDateString(LOCALE_MAP[locale] || 'en-US', opts);
+  } catch {
+    return dateObj.toLocaleDateString('en-US', opts);
+  }
+}
+
+/**
+ * The human-readable wedding date string shown across the public pages (hero,
+ * footer, programme). Prefers the admin-entered display text
+ * (`home_hero.date_text`), then a formatted `countdown.wedding_date` — never a
+ * hardcoded literal. `content` is the content map (contentService / useContent).
+ */
+export function getWeddingDateText(content = {}, locale = 'en') {
+  return (
+    resolveLocalized(content?.home_hero?.content?.date_text, locale) ||
+    formatWeddingDate(content?.countdown?.content?.wedding_date, locale)
+  );
+}
 
 /**
  * Build the dynamic wedding info object consumed by InvitationCanvas /

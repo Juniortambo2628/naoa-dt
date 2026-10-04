@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 import { FlowerDivider } from './CustomIllustrations';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
+import { getWeddingDateText } from '../utils/weddingInfo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const { i18n } = useTranslation();
-  const { isVisible, getContent: getFromContext } = useContent();
+  const { isVisible, getContent: getFromContext, contents } = useContent();
   const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
 
   return (
@@ -36,7 +37,7 @@ export default function Footer() {
             className="text-lg"
             style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
           >
-             {getFromContext('home_hero', 'date_text', i18n.language, 'June 15th, 2025')}
+             {getWeddingDateText(contents, i18n.language)}
           </p>
         </motion.div>
 

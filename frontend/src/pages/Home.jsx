@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles } from 'lucide-react';
 import { getAssetUrl, polaroidService, galleryService } from '../services/api';
+import { getWeddingDateText } from '../utils/weddingInfo';
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
@@ -230,7 +231,7 @@ function HeroSection({ content, loading }) {
             className="text-2xl md:text-3xl mb-4 font-medium"
             style={{ color: '#4A3F35', fontFamily: "'Cormorant Garamond', serif" }}
           >
-            {loading ? <Skeleton variant="text" width="250px" height="30px" className="mx-auto" as="span" /> : getTxt('date_text', 'hero.date')}
+            {loading ? <Skeleton variant="text" width="250px" height="30px" className="mx-auto" as="span" /> : getWeddingDateText(content, i18n.language)}
           </p>
           <p className="flex items-center justify-center gap-2 text-lg md:text-xl" style={{ color: '#6B5D52' }}>
             <MapPin className="w-5 h-5 flex-shrink-0" style={{ color: '#A67B5B' }} />
