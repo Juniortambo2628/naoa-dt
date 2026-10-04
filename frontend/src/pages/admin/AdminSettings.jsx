@@ -342,7 +342,8 @@ export default function AdminSettings() {
   );
 }
 
-function SettingsCard({ icon: _Icon, title, description, children }) {
+function SettingsCard({ icon, title, description, children }) {
+  const Icon = icon;
   return (
     <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100">
       <div className="flex items-start gap-3 mb-5">
