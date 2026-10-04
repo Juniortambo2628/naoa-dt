@@ -95,8 +95,9 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
       }}
     >
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={onMenuClick}
+          aria-label="Open sidebar menu"
           className="lg:hidden p-2 rounded-lg hover:bg-black/5"
         >
           <Menu className="w-6 h-6 text-[#4A3F35]" />
@@ -136,8 +137,11 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
         </button>
 
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowNotifications(!showNotifications)}
+            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            aria-haspopup="true"
+            aria-expanded={showNotifications}
             className="relative p-2 rounded-xl hover:bg-black/5"
           >
             <Bell className="w-5 h-5 text-[#6B5D52]" />
