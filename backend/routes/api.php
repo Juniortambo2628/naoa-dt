@@ -193,6 +193,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [GiftController::class, 'store']);
         Route::put('/{gift}', [GiftController::class, 'update']);
         Route::delete('/{gift}', [GiftController::class, 'destroy']);
+        Route::delete('/claims/{claim}', [GiftController::class, 'removeClaim']);
     });
 
     // Table Management (admin)

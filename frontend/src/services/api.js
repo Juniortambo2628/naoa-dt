@@ -187,6 +187,9 @@ export const giftService = {
   // Delete gift (admin)
   delete: (id) => api.delete(`/gifts/${id}`),
 
+  // Remove a claim / undo a reservation (admin)
+  removeClaim: (claimId) => api.delete(`/gifts/claims/${claimId}`),
+
   // Get gift statistics
   getStats: () => api.get('/gifts/statistics'),
 };

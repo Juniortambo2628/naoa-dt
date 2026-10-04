@@ -107,6 +107,13 @@ class GiftController extends Controller
         return $this->deletedResponse('Gift deleted successfully');
     }
 
+    public function removeClaim(GiftClaim $claim): JsonResponse
+    {
+        $claim->delete();
+
+        return $this->deletedResponse('Claim removed successfully');
+    }
+
     public function statistics(): JsonResponse
     {
         $totalGifts = Gift::count();

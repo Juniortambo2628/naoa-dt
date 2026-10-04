@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Gift, Plus, Edit, Save, X, DollarSign, ExternalLink, LayoutGrid, List, CheckCircle, Trash2, ShoppingBag, Heart, ArrowUpRight } from 'lucide-react';
+import { Gift, Plus, Edit, Save, X, DollarSign, ExternalLink, LayoutGrid, List, CheckCircle, Trash2, ShoppingBag, Heart, ArrowUpRight, Undo2 } from 'lucide-react';
 import { useGifts } from '../../hooks/useApiHooks';
 import { giftService, getAssetUrl } from '../../services/api';
 import ImageUpload from '../../components/admin/ImageUpload';
@@ -29,6 +29,21 @@ export default function AdminGifts() {
 
   const [viewMode, setViewMode] = useState('grid');
   const [selectedIds, setSelectedIds] = useState([]);
+  const [claimsGiftId, setClaimsGiftId] = useState(null);
+
+  // Keep the open claims modal pointed at the live gift so it reflects refetches.
+  const claimsGift = claimsGiftId ? gifts.find((g) => g.id === claimsGiftId) : null;
+
+  const handleRemoveClaim = async (claimId) => {
+    if (!confirm('Remove this claim? The gift will become available again.')) return;
+    try {
+      await giftService.removeClaim(claimId);
+      toast.success('Claim removed');
+      refetch();
+    } catch {
+      toast.error('Failed to remove claim');
+    }
+  };
 
   const filteredGifts = useFilteredItems(gifts, searchQuery, (gift, searchLower) =>
     gift.name.toLowerCase().includes(searchLower) ||
@@ -126,6 +141,7 @@ export default function AdminGifts() {
             onToggleSelect={toggleSelection}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onViewClaims={(gift) => setClaimsGiftId(gift.id)}
           />
         ) : (
           <GiftList
@@ -134,6 +150,7 @@ export default function AdminGifts() {
             onToggleSelect={toggleSelection}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onViewClaims={(gift) => setClaimsGiftId(gift.id)}
           />
         )}
 
@@ -142,6 +159,13 @@ export default function AdminGifts() {
           onClose={() => setModalOpen(false)}
           onSave={handleSave}
           gift={selectedItem}
+        />
+
+        <ClaimsModal
+          isOpen={!!claimsGift}
+          onClose={() => setClaimsGiftId(null)}
+          gift={claimsGift}
+          onRemoveClaim={handleRemoveClaim}
         />
       </AdminPageLayout>
       <AdminFloatingToolbar
@@ -159,12 +183,13 @@ export default function AdminGifts() {
   );
 }
 
-function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete }) {
+function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onViewClaims }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {gifts.map((gift) => {
         const isSelected = selectedIds.includes(gift.id);
         const isReserved = !gift.is_available;
+        const claimCount = gift.claims?.length || 0;
         const progress = gift.is_cash_fund && gift.price
           ? Math.min(100, ((gift.contributed_amount || 0) / gift.price) * 100)
           : 0;
@@ -249,6 +274,16 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete }) {
                 </p>
               )}
 
+              {claimCount > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
+                  className="w-full mb-2 border border-[#A67B5B]/30 text-[#A67B5B] hover:bg-[#A67B5B]/5 rounded-xl text-sm py-2 flex items-center justify-center gap-1.5"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                  {gift.is_cash_fund ? `${claimCount} contribution${claimCount > 1 ? 's' : ''}` : 'Undo reservation'}
+                </button>
+              )}
+
               <div className="flex gap-2">
                 <button
                   onClick={(e) => { e.stopPropagation(); onEdit(gift); }}
@@ -271,7 +306,7 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete }) {
   );
 }
 
-function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete }) {
+function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onViewClaims }) {
   return (
     <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
       <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 px-5 py-3 bg-stone-50 border-b border-stone-100 text-xs font-semibold text-stone-500 uppercase tracking-wider">
@@ -286,6 +321,7 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete }) {
         {gifts.map((gift) => {
           const isSelected = selectedIds.includes(gift.id);
           const isReserved = !gift.is_available;
+          const claimCount = gift.claims?.length || 0;
 
           return (
             <div
@@ -334,6 +370,15 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete }) {
               </div>
 
               <div className="flex items-center justify-end gap-2">
+                {claimCount > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
+                    title={gift.is_cash_fund ? `${claimCount} contributions` : 'Undo reservation'}
+                    className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); onEdit(gift); }}
                   className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
@@ -418,6 +463,47 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
         <AdminTextarea label="Description (Optional)" rows={2} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
         <SubmitButton loading={loading} icon={<Save className="w-4 h-4" />} label="Save Gift" />
       </form>
+    </AdminModal>
+  );
+}
+
+function ClaimsModal({ isOpen, onClose, gift, onRemoveClaim }) {
+  const claims = gift?.claims || [];
+  const isCashFund = !!gift?.is_cash_fund;
+
+  return (
+    <AdminModal isOpen={isOpen} onClose={onClose} title={gift ? `${isCashFund ? 'Contributions' : 'Reservation'} · ${gift.name}` : ''}>
+      {claims.length === 0 ? (
+        <p className="py-6 text-center text-sm text-stone-500">No active claims.</p>
+      ) : (
+        <div className="space-y-3">
+          {claims.map((claim) => (
+            <div
+              key={claim.id}
+              className="flex items-start justify-between gap-3 rounded-xl border border-stone-100 bg-stone-50 p-3"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-[#4A3F35] truncate">{claim.claimer_name}</p>
+                {claim.claimer_email && (
+                  <p className="text-xs text-stone-500 truncate">{claim.claimer_email}</p>
+                )}
+                {isCashFund && claim.amount != null && (
+                  <p className="text-xs font-medium text-[#8B9A7D] mt-0.5">${Number(claim.amount).toLocaleString()}</p>
+                )}
+                {claim.message && (
+                  <p className="text-xs text-stone-500 italic mt-1 line-clamp-2">&ldquo;{claim.message}&rdquo;</p>
+                )}
+              </div>
+              <button
+                onClick={() => onRemoveClaim(claim.id)}
+                className="flex-shrink-0 border border-red-200 text-red-500 hover:bg-red-50 rounded-lg text-xs px-3 py-1.5 flex items-center gap-1.5"
+              >
+                <Undo2 className="w-3.5 h-3.5" /> {isCashFund ? 'Remove' : 'Undo'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </AdminModal>
   );
 }
