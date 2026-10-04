@@ -11,11 +11,11 @@ trait AdminNotifiable
     /**
      * Create a database notification for the admin user.
      *
-     * @param string $type Notification type identifier (e.g., 'GiftClaimed', 'SongRequested')
-     * @param string $title Short title for the notification
-     * @param string $message Detailed message
-     * @param string $icon Icon identifier (e.g., 'gift', 'music', 'rsvp')
-     * @param array $extra Additional data to include
+     * @param  string  $type  Notification type identifier (e.g., 'GiftClaimed', 'SongRequested')
+     * @param  string  $title  Short title for the notification
+     * @param  string  $message  Detailed message
+     * @param  string  $icon  Icon identifier (e.g., 'gift', 'music', 'rsvp')
+     * @param  array  $extra  Additional data to include
      */
     protected function notifyAdmin(
         string $type,
@@ -39,7 +39,7 @@ trait AdminNotifiable
                 ], $extra),
             ]);
         } catch (\Exception $e) {
-            \Log::warning('Failed to create admin notification: ' . $e->getMessage());
+            \Log::warning('Failed to create admin notification: '.$e->getMessage());
         }
     }
 }

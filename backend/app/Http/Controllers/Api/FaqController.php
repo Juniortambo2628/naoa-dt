@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Faq;
-use App\Traits\Reorderable;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
+use App\Traits\Reorderable;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class FaqController extends Controller
 {
-    use Reorderable, ApiResponse;
+    use ApiResponse, Reorderable;
 
     public function index()
     {
@@ -22,11 +22,11 @@ class FaqController extends Controller
     {
         $validated = $request->validate([
             'question' => 'required|string|max:255',
-            'answer'   => 'required|string',
-            'order'    => 'integer',
+            'answer' => 'required|string',
+            'order' => 'integer',
         ]);
 
-        if (!isset($validated['order'])) {
+        if (! isset($validated['order'])) {
             $validated['order'] = Faq::max('order') + 1;
         }
 
@@ -39,8 +39,8 @@ class FaqController extends Controller
     {
         $validated = $request->validate([
             'question' => 'required|string|max:255',
-            'answer'   => 'required|string',
-            'order'    => 'integer',
+            'answer' => 'required|string',
+            'order' => 'integer',
         ]);
 
         $faq->update($validated);

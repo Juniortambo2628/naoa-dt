@@ -17,9 +17,6 @@ class GuestsExport implements FromCollection, WithHeadings, WithMapping
         return Guest::with('table')->get();
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return [
@@ -40,8 +37,7 @@ class GuestsExport implements FromCollection, WithHeadings, WithMapping
     }
 
     /**
-     * @param \App\Models\Guest $guest
-     * @return array
+     * @param  \App\Models\Guest  $guest
      */
     public function map($guest): array
     {

@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\FlightStatusNotification;
+use App\Models\Event;
+use App\Models\Guest;
+use App\Models\LiveUpdate;
+use App\Models\PolaroidImage;
+use App\Models\Table;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use App\Models\Guest;
-use App\Models\Table;
-use App\Models\PolaroidImage;
-use App\Models\Event;
-use App\Models\LiveUpdate;
-use App\Mail\FlightStatusNotification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class TestController extends Controller
 {
@@ -44,7 +44,7 @@ class TestController extends Controller
             $driver = config('broadcasting.default');
             $checks['broadcasting'] = [
                 'status' => $driver === 'log' ? 'warning' : 'ok',
-                'message' => "Driver: {$driver}" . ($driver === 'log' ? ' (events logged, not broadcast)' : ''),
+                'message' => "Driver: {$driver}".($driver === 'log' ? ' (events logged, not broadcast)' : ''),
             ];
         } catch (\Exception $e) {
             $checks['broadcasting'] = ['status' => 'error', 'message' => $e->getMessage()];
@@ -68,7 +68,7 @@ class TestController extends Controller
             $checks['storage'] = ['status' => 'error', 'message' => $e->getMessage()];
         }
 
-        $allOk = !collect($checks)->contains('status', 'error');
+        $allOk = ! collect($checks)->contains('status', 'error');
 
         return $this->successResponse([
             'status' => $allOk ? 'healthy' : 'degraded',
@@ -153,8 +153,8 @@ class TestController extends Controller
         try {
             Mail::send([], [], function ($message) use ($email, $type) {
                 $message->to($email)
-                        ->subject('Test Email: ' . ucfirst(str_replace('_', ' ', $type)))
-                        ->html("<h1>This is a test email</h1><p>Type: $type</p><p>If you see this, email sending is configured correctly!</p>");
+                    ->subject('Test Email: '.ucfirst(str_replace('_', ' ', $type)))
+                    ->html("<h1>This is a test email</h1><p>Type: $type</p><p>If you see this, email sending is configured correctly!</p>");
             });
 
             return $this->successResponse(null, 'Test email sent successfully!');
@@ -256,7 +256,7 @@ class TestController extends Controller
         $guestName = 'Test Guest';
         $flightNumber = $flightData['flight_number'];
 
-        $previousStatus = match($type) {
+        $previousStatus = match ($type) {
             'delayed' => ['status' => 'active', 'delay_arrival' => 15],
             'cancelled' => ['status' => 'scheduled', 'delay_arrival' => 0],
             'gate_change' => ['status' => 'active', 'arrival_gate' => 'B15'],

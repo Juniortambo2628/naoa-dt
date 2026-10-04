@@ -33,7 +33,7 @@ class GuestResource extends JsonResource
             'save_the_date_method' => $this->save_the_date_method,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            
+
             // Relationships
             'invitation' => $this->whenLoaded('invitation'),
             'plus_ones' => $this->whenLoaded('plusOnes'),

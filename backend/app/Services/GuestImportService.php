@@ -7,7 +7,6 @@ use App\Models\Guest;
 use App\Models\Invitation;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class GuestImportService
@@ -37,16 +36,17 @@ class GuestImportService
         foreach ($rows as $row) {
             if (empty($row['names']) && empty($row['name'])) {
                 $skippedCount++;
+
                 continue;
             }
 
             $name = trim($row['names'] ?? $row['name'] ?? '');
-            $email = !empty($row['email']) ? trim($row['email']) : null;
-            $phone = !empty($row['telphone_number']) ? trim($row['telphone_number']) : null;
-            $method = !empty($row['save_the_date_sent_via_whatsappemail']) ? trim($row['save_the_date_sent_via_whatsappemail']) : null;
-            $invitation_via = !empty($row['invitation_via']) ? trim($row['invitation_via']) : null;
-            $group = !empty($row['group']) ? trim($row['group']) : 'Invited';
-            $plusOnes = max(0, ((int)($row['number_of_invites'] ?? 1)) - 1);
+            $email = ! empty($row['email']) ? trim($row['email']) : null;
+            $phone = ! empty($row['telphone_number']) ? trim($row['telphone_number']) : null;
+            $method = ! empty($row['save_the_date_sent_via_whatsappemail']) ? trim($row['save_the_date_sent_via_whatsappemail']) : null;
+            $invitation_via = ! empty($row['invitation_via']) ? trim($row['invitation_via']) : null;
+            $group = ! empty($row['group']) ? trim($row['group']) : 'Invited';
+            $plusOnes = max(0, ((int) ($row['number_of_invites'] ?? 1)) - 1);
 
             $existing = $this->findExistingGuest($name, $email);
 
@@ -93,8 +93,6 @@ class GuestImportService
     /**
      * Finalize import with user resolutions for conflicts.
      *
-     * @param array $valid
-     * @param array $conflicts
      * @return array{created: int, updated: int, skipped: int}
      */
     public function confirmImport(array $valid, array $conflicts): array
@@ -134,7 +132,7 @@ class GuestImportService
      */
     private function createGuestWithPlusOnes(array $data, array &$results): void
     {
-        $plusOnesCount = (int)($data['plus_ones_allowed'] ?? 0);
+        $plusOnesCount = (int) ($data['plus_ones_allowed'] ?? 0);
 
         $guest = Guest::create($data + [
             'plus_ones_allowed' => 0,
@@ -145,7 +143,7 @@ class GuestImportService
 
         for ($i = 1; $i <= $plusOnesCount; $i++) {
             $po = Guest::create([
-                'name' => $guest->name . ' (Plus One ' . $i . ')',
+                'name' => $guest->name.' (Plus One '.$i.')',
                 'group' => $guest->group,
                 'parent_guest_id' => $guest->id,
                 'plus_ones_allowed' => 0,
@@ -164,14 +162,16 @@ class GuestImportService
         $resolution = $conflict['resolution'] ?? 'skip';
         $existingId = $conflict['existing']['id'] ?? null;
 
-        if (!$existingId) {
+        if (! $existingId) {
             $results['skipped']++;
+
             return;
         }
 
         $guest = Guest::find($existingId);
-        if (!$guest) {
+        if (! $guest) {
             $results['skipped']++;
+
             return;
         }
 

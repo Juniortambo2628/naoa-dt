@@ -23,7 +23,7 @@ class FlightStatusNotification extends Mailable
 
     public function envelope(): Envelope
     {
-        $subject = match($this->changeType) {
+        $subject = match ($this->changeType) {
             'cancelled' => "Flight {$this->flightNumber} Cancelled - {$this->guestName}",
             'delayed' => "Flight {$this->flightNumber} Delayed - {$this->guestName}",
             'gate_change' => "Flight {$this->flightNumber} Gate Change - {$this->guestName}",
@@ -42,7 +42,7 @@ class FlightStatusNotification extends Mailable
 
     private function buildHtml(): string
     {
-        $statusColor = match($this->changeType) {
+        $statusColor = match ($this->changeType) {
             'cancelled' => '#DC2626',
             'delayed' => '#D97706',
             'gate_change' => '#2563EB',
@@ -50,7 +50,7 @@ class FlightStatusNotification extends Mailable
             default => '#059669',
         };
 
-        $statusIcon = match($this->changeType) {
+        $statusIcon = match ($this->changeType) {
             'cancelled' => '❌',
             'delayed' => '⏰',
             'gate_change' => '🚪',
@@ -83,7 +83,7 @@ class FlightStatusNotification extends Mailable
             $terminalRow = "<tr><td style='padding: 8px 0; color: #6b7280; font-size: 13px;'>Terminal</td><td style='padding: 8px 0; color: #111827; font-size: 14px; text-align: right;'>{$terminal}</td></tr>";
         }
 
-        $weddingName = \App\Support\WeddingInfo::coupleNames() . "'s Wedding";
+        $weddingName = \App\Support\WeddingInfo::coupleNames()."'s Wedding";
 
         return <<<HTML
         <!DOCTYPE html>

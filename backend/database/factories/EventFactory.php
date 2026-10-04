@@ -30,7 +30,7 @@ class EventFactory extends Factory
             ]),
             'event_date' => fake()->dateTimeBetween('+30 days', '+365 days'),
             'event_time' => fake()->time('H:i'),
-            'venue' => fake()->company() . ' Venue',
+            'venue' => fake()->company().' Venue',
             'description' => fake()->sentence(10),
         ];
     }

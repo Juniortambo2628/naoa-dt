@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Table;
 use App\Models\Guest;
+use App\Models\Table;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TableController extends Controller
 {
@@ -21,13 +21,13 @@ class TableController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'     => 'required|string',
+            'name' => 'required|string',
             'capacity' => 'required|integer|min:1',
-            'type'     => 'required|in:round,rectangular',
-            'x'        => 'integer',
-            'y'        => 'integer',
-            'width'    => 'integer',
-            'height'   => 'integer',
+            'type' => 'required|in:round,rectangular',
+            'x' => 'integer',
+            'y' => 'integer',
+            'width' => 'integer',
+            'height' => 'integer',
         ]);
 
         $table = Table::create($data);
@@ -38,13 +38,13 @@ class TableController extends Controller
     public function update(Request $request, Table $table): JsonResponse
     {
         $data = $request->validate([
-            'name'     => 'sometimes|string',
+            'name' => 'sometimes|string',
             'capacity' => 'sometimes|integer|min:1',
-            'type'     => 'sometimes|in:round,rectangular',
-            'x'        => 'sometimes|integer',
-            'y'        => 'sometimes|integer',
-            'width'    => 'sometimes|integer',
-            'height'   => 'sometimes|integer',
+            'type' => 'sometimes|in:round,rectangular',
+            'x' => 'sometimes|integer',
+            'y' => 'sometimes|integer',
+            'width' => 'sometimes|integer',
+            'height' => 'sometimes|integer',
         ]);
 
         $table->update($data);
@@ -81,7 +81,7 @@ class TableController extends Controller
     public function publicIndex()
     {
         return $this->successResponse(
-            Table::with(['guests' => fn($q) => $q->select('id', 'name', 'table_id')])->get()
+            Table::with(['guests' => fn ($q) => $q->select('id', 'name', 'table_id')])->get()
         );
     }
 }

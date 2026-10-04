@@ -26,7 +26,7 @@ class TableFactory extends Factory
                 'Family Table',
                 'Friends Table',
                 'Colleagues Table',
-            ]) . ' ' . fake()->numberBetween(1, 20),
+            ]).' '.fake()->numberBetween(1, 20),
             'capacity' => fake()->randomElement([6, 8, 10, 12]),
             'x' => fake()->numberBetween(50, 900),
             'y' => fake()->numberBetween(50, 600),

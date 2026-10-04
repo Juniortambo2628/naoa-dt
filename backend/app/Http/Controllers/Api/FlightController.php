@@ -30,7 +30,7 @@ class FlightController extends Controller
 
         $flightData = $this->flightService->lookupFlight($flightNumber, $date);
 
-        if (!$flightData) {
+        if (! $flightData) {
             return $this->notFoundResponse('Flight not found. Please check the flight number and try again.');
         }
 
@@ -57,7 +57,7 @@ class FlightController extends Controller
 
         $flightData = $this->flightService->getFlightStatus($flightNumber, $date);
 
-        if (!$flightData) {
+        if (! $flightData) {
             return $this->notFoundResponse('Unable to fetch flight status.');
         }
 

@@ -20,7 +20,7 @@ class PolaroidImageFactory extends Factory
     public function definition(): array
     {
         return [
-            'image_path' => 'uploads/polaroids/' . fake()->uuid() . '.jpg',
+            'image_path' => 'uploads/polaroids/'.fake()->uuid().'.jpg',
             'note' => fake()->optional(0.7)->sentence(4),
             'custom_size' => fake()->randomElement(['small', 'medium', 'large', 'original']),
             'offset_x' => fake()->numberBetween(-20, 20),

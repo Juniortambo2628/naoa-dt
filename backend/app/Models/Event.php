@@ -25,8 +25,6 @@ class Event extends Model
 
     /**
      * Get the schedule items for this event.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function scheduleItems(): HasMany
     {

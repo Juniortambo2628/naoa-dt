@@ -23,12 +23,14 @@ class WeddingInfo
         if (is_array($val)) {
             return $val['en'] ?? (reset($val) ?: null);
         }
+
         return (string) $val;
     }
 
     protected static function content(string $section, string $field)
     {
         $row = PageContent::where('section_key', $section)->first();
+
         return $row?->content[$field] ?? null;
     }
 
@@ -49,10 +51,11 @@ class WeddingInfo
         $bride = Setting::getValue('bride_name');
         $groom = Setting::getValue('groom_name');
         if ($bride || $groom) {
-            return trim(self::brideName() . ' & ' . self::groomName());
+            return trim(self::brideName().' & '.self::groomName());
         }
+
         return self::localized(self::content('footer', 'couple_names'))
-            ?: trim(self::brideName() . ' & ' . self::groomName()) ?: $default;
+            ?: trim(self::brideName().' & '.self::groomName()) ?: $default;
     }
 
     /** Machine-readable ISO wedding date. */

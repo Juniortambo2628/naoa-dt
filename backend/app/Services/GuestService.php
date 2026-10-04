@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Mail\AdminRSVPNotification;
+use App\Mail\RSVPConfirmation;
 use App\Models\Guest;
-use App\Models\SongRequest;
 use App\Models\Notification;
 use App\Models\Setting;
-use App\Mail\RSVPConfirmation;
-use App\Mail\AdminRSVPNotification;
+use App\Models\SongRequest;
 use App\Traits\AdminNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,9 +16,10 @@ use Illuminate\Support\Facades\Mail;
 class GuestService
 {
     use AdminNotifiable;
+
     /**
      * Submit an RSVP for a given guest
-     * 
+     *
      * @return array ['success' => bool, 'message' => string, 'error' => string|null]
      */
     public function submitRsvp(Guest $guest, array $data): array
@@ -26,9 +27,9 @@ class GuestService
         $plusOnes = min($data['plus_ones_count'] ?? 0, $guest->plus_ones_allowed);
 
         try {
-            DB::transaction(function () use ($guest, $data, $plusOnes) {
+            DB::transaction(function () use ($guest, $data) {
                 $status = $data['attending'] ? 'confirmed' : 'declined';
-                
+
                 // Update primary guest status
                 $guest->update([
                     'rsvp_status' => $status,
@@ -37,12 +38,12 @@ class GuestService
                 ]);
 
                 // Handle Song Request
-                if (!empty($data['song_request'])) {
+                if (! empty($data['song_request'])) {
                     $songData = $data['song_request'];
                     if (str_starts_with($songData, 'spotify:')) {
                         $json = json_decode(substr($songData, 8), true);
                         SongRequest::create([
-                            'guest_name' => $guest->name, 
+                            'guest_name' => $guest->name,
                             'song_data' => $json,
                             'song_title' => $json['name'] ?? 'Unknown',
                             'artist' => $json['artist'] ?? 'Unknown',
@@ -72,7 +73,7 @@ class GuestService
                     ];
 
                     // Update name if provided in plus_ones_data array
-                    if (isset($plusOnesData[$index]['name']) && !empty($plusOnesData[$index]['name'])) {
+                    if (isset($plusOnesData[$index]['name']) && ! empty($plusOnesData[$index]['name'])) {
                         $updateData['name'] = $plusOnesData[$index]['name'];
                     }
 
@@ -84,8 +85,9 @@ class GuestService
                 }
             });
         } catch (\Exception $e) {
-            Log::error('RSVP Submission Error: ' . $e->getMessage());
+            Log::error('RSVP Submission Error: '.$e->getMessage());
             Log::error($e->getTraceAsString());
+
             return ['success' => false, 'message' => 'Internal Server Error', 'error' => $e->getMessage()];
         }
 
@@ -95,7 +97,7 @@ class GuestService
                 Mail::to($guest->email)->send(new RSVPConfirmation($guest, $data['attending']));
             }
         } catch (\Exception $e) {
-            Log::warning('RSVP confirmation email failed for guest ' . $guest->name . ': ' . $e->getMessage());
+            Log::warning('RSVP confirmation email failed for guest '.$guest->name.': '.$e->getMessage());
         }
 
         // Send notification email to admin if enabled
@@ -104,21 +106,21 @@ class GuestService
             if ($adminNotify === 'true' || $adminNotify === true) {
                 $adminEmail = Setting::getValue('admin_email', config('mail.from.address'));
                 Mail::to($adminEmail)->send(new AdminRSVPNotification(
-                    $guest, 
-                    $data['attending'], 
-                    $plusOnes, 
+                    $guest,
+                    $data['attending'],
+                    $plusOnes,
                     $data['message'] ?? null
                 ));
             }
         } catch (\Exception $e) {
-            Log::warning('RSVP admin notification email failed: ' . $e->getMessage());
+            Log::warning('RSVP admin notification email failed: '.$e->getMessage());
         }
 
         // Record notification for admin in database
         $this->notifyAdmin(
             'App\Notifications\RSVPReceived',
-            'New RSVP: ' . $guest->name,
-            $guest->name . ' has ' . ($data['attending'] ? 'confirmed their attendance.' : 'respectfully declined.'),
+            'New RSVP: '.$guest->name,
+            $guest->name.' has '.($data['attending'] ? 'confirmed their attendance.' : 'respectfully declined.'),
             'rsvp',
             [
                 'guest_id' => $guest->id,

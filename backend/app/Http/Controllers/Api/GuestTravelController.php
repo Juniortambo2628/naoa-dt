@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
-use App\Models\GuestTravelDetail;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class GuestTravelController extends Controller
@@ -21,7 +20,7 @@ class GuestTravelController extends Controller
     {
         $guest = Guest::where('unique_code', strtoupper($code))->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Guest not found');
         }
 
@@ -43,7 +42,7 @@ class GuestTravelController extends Controller
     {
         $guest = Guest::where('unique_code', strtoupper($code))->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Guest not found');
         }
 
@@ -104,7 +103,7 @@ class GuestTravelController extends Controller
     {
         $guest = Guest::where('unique_code', strtoupper($code))->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Guest not found');
         }
 
@@ -114,7 +113,7 @@ class GuestTravelController extends Controller
 
         $travelDetail = $guest->travelDetail;
 
-        if (!$travelDetail) {
+        if (! $travelDetail) {
             $travelDetail = $guest->travelDetail()->create([]);
         }
 
@@ -125,7 +124,7 @@ class GuestTravelController extends Controller
 
         // Store new ticket
         $file = $request->file('ticket');
-        $path = $file->store('travel-tickets/' . $guest->id, 'public');
+        $path = $file->store('travel-tickets/'.$guest->id, 'public');
 
         $travelDetail->update([
             'ticket_file_path' => $path,
@@ -147,13 +146,13 @@ class GuestTravelController extends Controller
     {
         $guest = Guest::where('unique_code', strtoupper($code))->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Guest not found');
         }
 
         $travelDetail = $guest->travelDetail;
 
-        if (!$travelDetail || !$travelDetail->ticket_file_path) {
+        if (! $travelDetail || ! $travelDetail->ticket_file_path) {
             return $this->errorResponse('No ticket to delete', 404);
         }
 

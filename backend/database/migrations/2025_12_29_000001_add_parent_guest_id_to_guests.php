@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::table('guests', function (Blueprint $table) {
             $table->foreignId('parent_guest_id')
-                  ->nullable()
-                  ->after('id')
-                  ->constrained('guests')
-                  ->onDelete('cascade');
+                ->nullable()
+                ->after('id')
+                ->constrained('guests')
+                ->onDelete('cascade');
         });
     }
 

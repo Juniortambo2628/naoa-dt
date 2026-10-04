@@ -20,10 +20,10 @@ class GiftFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->word() . ' ' . fake()->randomElement(['Set', 'Collection', 'Kit', 'Bundle', 'Essential']),
+            'name' => fake()->unique()->word().' '.fake()->randomElement(['Set', 'Collection', 'Kit', 'Bundle', 'Essential']),
             'description' => fake()->sentence(8),
             'price' => fake()->randomFloat(2, 10, 500),
-            'image_url' => 'https://picsum.photos/seed/' . fake()->uuid() . '/400/300',
+            'image_url' => 'https://picsum.photos/seed/'.fake()->uuid().'/400/300',
             'product_link' => fake()->url(),
             'category' => fake()->randomElement(['kitchen', 'bedroom', 'bathroom', 'living', 'outdoor', 'dining', 'decor', 'experience']),
             'is_cash_fund' => false,

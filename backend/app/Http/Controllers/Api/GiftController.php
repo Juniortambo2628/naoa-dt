@@ -7,8 +7,8 @@ use App\Models\Gift;
 use App\Models\GiftClaim;
 use App\Traits\AdminNotifiable;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class GiftController extends Controller
@@ -27,22 +27,22 @@ class GiftController extends Controller
     public function claim(Request $request, Gift $gift): JsonResponse
     {
         $request->validate([
-            'name'    => 'required|string|max:255',
-            'email'   => 'nullable|email|max:255',
-            'amount'  => 'nullable|numeric|min:1',
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'amount' => 'nullable|numeric|min:1',
             'message' => 'nullable|string|max:500',
         ]);
 
-        if (!$gift->is_cash_fund && $gift->claims()->exists()) {
+        if (! $gift->is_cash_fund && $gift->claims()->exists()) {
             return $this->errorResponse('This gift has already been reserved', 422);
         }
 
         $claim = GiftClaim::create([
-            'gift_id'        => $gift->id,
-            'claimer_name'   => $request->name,
-            'claimer_email'  => $request->email,
-            'amount'         => $gift->is_cash_fund ? $request->amount : $gift->price,
-            'message'        => $request->message,
+            'gift_id' => $gift->id,
+            'claimer_name' => $request->name,
+            'claimer_email' => $request->email,
+            'amount' => $gift->is_cash_fund ? $request->amount : $gift->price,
+            'message' => $request->message,
         ]);
 
         if ($claim->claimer_email) {
@@ -65,11 +65,11 @@ class GiftController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'name'         => 'required|string|max:255',
-            'description'  => 'nullable|string',
-            'price'        => 'nullable|numeric|min:0',
-            'image_url'    => 'nullable|url',
-            'category'     => 'nullable|string|max:50',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'image_url' => 'nullable|url',
+            'category' => 'nullable|string|max:50',
             'is_cash_fund' => 'boolean',
         ]);
 
@@ -83,14 +83,14 @@ class GiftController extends Controller
     public function update(Request $request, Gift $gift): JsonResponse
     {
         $request->validate([
-            'name'          => 'sometimes|string|max:255',
-            'description'   => 'nullable|string',
-            'price'         => 'nullable|numeric|min:0',
-            'image_url'     => 'nullable|url',
-            'product_link'  => 'nullable|url',
-            'category'      => 'nullable|string|max:50',
-            'is_cash_fund'  => 'boolean',
-            'is_available'  => 'boolean',
+            'name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'image_url' => 'nullable|url',
+            'product_link' => 'nullable|url',
+            'category' => 'nullable|string|max:50',
+            'is_cash_fund' => 'boolean',
+            'is_available' => 'boolean',
         ]);
 
         $gift->update($request->only([
@@ -121,13 +121,13 @@ class GiftController extends Controller
             ->where('is_cash_fund', false)
             ->count();
         $totalValue = GiftClaim::sum('amount');
-        $cashFundTotal = GiftClaim::whereHas('gift', fn($q) => $q->where('is_cash_fund', true))
+        $cashFundTotal = GiftClaim::whereHas('gift', fn ($q) => $q->where('is_cash_fund', true))
             ->sum('amount');
 
         return $this->successResponse([
-            'total_gifts'     => $totalGifts,
-            'claimed_gifts'   => $claimedGifts,
-            'total_value'     => $totalValue,
+            'total_gifts' => $totalGifts,
+            'claimed_gifts' => $claimedGifts,
+            'total_value' => $totalValue,
             'cash_fund_total' => $cashFundTotal,
         ]);
     }

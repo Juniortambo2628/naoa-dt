@@ -11,20 +11,22 @@ use Illuminate\Http\Request;
 class PageContentController extends Controller
 {
     use ApiResponse, NormalizesUrls;
+
     public function index()
     {
         $query = PageContent::query();
 
         // If not authenticated as admin, show only visible items
-        if (!auth('sanctum')->check()) {
+        if (! auth('sanctum')->check()) {
             $query->where('is_visible', true);
         }
 
         $items = $query->get()->keyBy('section_key');
-        
+
         // Normalize URLs in content
-        $items->transform(function($item) {
+        $items->transform(function ($item) {
             $item->content = $this->normalizeUrls($item->content);
+
             return $item;
         });
 
@@ -35,22 +37,22 @@ class PageContentController extends Controller
     {
         $query = PageContent::where('section_key', $key);
 
-        if (!auth('sanctum')->check()) {
+        if (! auth('sanctum')->check()) {
             $query->where('is_visible', true);
         }
 
         $item = $query->first();
 
-        if (!$item) {
+        if (! $item) {
             return $this->successResponse([
                 'section_key' => $key,
-                'content' => (object)[],
+                'content' => (object) [],
                 'is_visible' => true,
             ]);
         }
 
         $item->content = $this->normalizeUrls($item->content);
-        
+
         return $this->successResponse($item);
     }
 
@@ -58,14 +60,14 @@ class PageContentController extends Controller
     {
         $request->validate([
             'content' => 'nullable|array',
-            'is_visible' => 'boolean'
+            'is_visible' => 'boolean',
         ]);
 
         $content = PageContent::updateOrCreate(
             ['section_key' => $key],
             [
                 'content' => $request->input('content'),
-                'is_visible' => $request->input('is_visible', true)
+                'is_visible' => $request->input('is_visible', true),
             ]
         );
 
@@ -73,7 +75,7 @@ class PageContentController extends Controller
             event(new \App\Events\PageContentUpdated($content));
         } catch (\Exception $e) {
             // Broadcast failure (e.g. Reverb not running) — log but don't break the update
-            \Log::warning('Broadcast failed for PageContentUpdated: ' . $e->getMessage());
+            \Log::warning('Broadcast failed for PageContentUpdated: '.$e->getMessage());
         }
 
         return $this->successResponse($content);

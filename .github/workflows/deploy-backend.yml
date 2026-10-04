@@ -1,140 +1,210 @@
 name: Deploy Backend to cPanel
 
+# Deploys the Laravel backend (naoa-core) to cPanel.
+#
+# This no longer runs on push directly: it runs only after the "CI" workflow
+# completes successfully on main, so a red test suite never reaches production.
+# It can also be run by hand from the Actions tab (workflow_dispatch).
+
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [ main ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
 
 jobs:
   deploy:
     name: Deploy Laravel Backend
     runs-on: ubuntu-latest
+    # Deploy only when CI passed (workflow_run) or when manually dispatched.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout the commit that passed CI
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.3'
-        tools: composer
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_mysql, bcmath, intl, gd, zip
+          tools: composer
 
-    - name: Install Composer Dependencies
-      run: |
-        cd backend
-        composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+      - name: Install Composer dependencies (production)
+        run: |
+          cd backend
+          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-    # Package backend into a tarball, excluding .env
-    - name: Create deployment archive
-      run: |
-        tar -czf backend-deploy.tar.gz \
-          --exclude='.env' \
-          -C backend .
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    # Upload the archive to the server via SCP
-    - name: Upload archive to server
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.SFTP_HOST }}
-        username: ${{ secrets.SFTP_USERNAME }}
-        key: ${{ secrets.SFTP_SSH_KEY }}
-        port: 1624
-        source: "backend-deploy.tar.gz"
-        target: "/home/zhpebukm/"
-
-    # SSH in and deploy the files
-    - name: Deploy on server
-      uses: appleboy/ssh-action@v1.2.0
-      with:
-        host: ${{ secrets.SFTP_HOST }}
-        username: ${{ secrets.SFTP_USERNAME }}
-        key: ${{ secrets.SFTP_SSH_KEY }}
-        port: 1624
-        script: |
-          set -e
-          CORE="/home/zhpebukm/naoa-core"
-          PUBLIC="/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public"
-          ARCHIVE="/home/zhpebukm/backend-deploy.tar.gz"
-
-          # Ensure directories exist
-          mkdir -p "$CORE" "$PUBLIC"
-          mkdir -p "$CORE/storage/app/public/uploads"
-          mkdir -p "$CORE/storage/app/public/illustrations"
-
-          # Backup .env if it exists
-          [ -f "$CORE/.env" ] && cp "$CORE/.env" /tmp/.env.deploy.bak
-
-          # Clean core directory (preserve storage dir and .env)
-          cd "$CORE"
-          find . -mindepth 1 -maxdepth 1 \
-            ! -name 'storage' \
-            ! -name '.env' \
-            -exec rm -rf {} +
-
-          # Extract new code
-          tar -xzf "$ARCHIVE" -C "$CORE"
-
-          # Restore .env (or use production.env as fallback)
-          if [ -f /tmp/.env.deploy.bak ]; then
-            mv /tmp/.env.deploy.bak "$CORE/.env"
-          elif [ -f "$CORE/production.env" ] && [ ! -f "$CORE/.env" ]; then
-            cp "$CORE/production.env" "$CORE/.env"
+      - name: Build production assets (best effort)
+        run: |
+          cd backend
+          # The API backend only ships Vite assets for the default welcome page,
+          # so a build failure here must not block the deploy.
+          if [ -f package.json ]; then
+            npm install --no-audit --no-fund || echo "npm install skipped"
+            npm run build || echo "asset build skipped (no production assets required)"
           fi
 
-          # Ensure bootstrap/cache directory exists (required by Laravel)
-          mkdir -p "$CORE/bootstrap/cache"
+      - name: Create deployment archive
+        run: |
+          # Ship vendor/ and built assets; exclude .env (server keeps its own)
+          # and dev-only cruft.
+          tar -czf backend-deploy.tar.gz \
+            --exclude='.env' \
+            --exclude='.git' \
+            --exclude='tests' \
+            --exclude='node_modules' \
+            --exclude='storage/logs/*' \
+            -C backend .
 
-          # Ensure storage directory structure exists
-          mkdir -p "$CORE/storage/framework/cache/data"
-          mkdir -p "$CORE/storage/framework/sessions"
-          mkdir -p "$CORE/storage/framework/views"
-          mkdir -p "$CORE/storage/logs"
+      - name: Upload archive to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_SSH_KEY }}
+          port: 1624
+          source: "backend-deploy.tar.gz"
+          target: "/home/zhpebukm/"
 
-          # Fix permissions
-          chmod -R 755 "$CORE/storage"
-          chmod -R 755 "$CORE/bootstrap/cache"
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_SSH_KEY }}
+          port: 1624
+          command_timeout: "15m"
+          script: |
+            set -euo pipefail
 
-          # Deploy public assets to web root
-          cp -R "$CORE/public/." "$PUBLIC/"
-          [ -f "$CORE/public/.htaccess" ] && cp "$CORE/public/.htaccess" "$PUBLIC/"
+            CORE="/home/zhpebukm/naoa-core"
+            PUBLIC="/home/zhpebukm/dnt-wed.okjtech.co.ke/api/public"
+            ARCHIVE="/home/zhpebukm/backend-deploy.tar.gz"
 
-          # Ensure storage symlink
-          ln -sf "$CORE/storage/app/public" "$PUBLIC/storage"
+            echo "=== 1. Requirement checks ==="
+            command -v php >/dev/null || { echo "FATAL: php not found on server"; exit 1; }
+            php -r 'exit(version_compare(PHP_VERSION, "8.2.0", ">=") ? 0 : 1);' \
+              || { echo "FATAL: PHP 8.2+ required, found $(php -v | head -1)"; exit 1; }
+            # Resolve a usable composer command (binary or phar); empty if none.
+            if command -v composer >/dev/null; then COMPOSER="composer";
+            elif [ -f "$CORE/composer.phar" ]; then COMPOSER="php $CORE/composer.phar";
+            else COMPOSER=""; fi
+            echo "PHP: $(php -v | head -1)"
+            echo "Composer: ${COMPOSER:-'(none - relying on shipped vendor/)'}"
 
-          # Diagnostics: verify deployment state
-          echo "--- Deployment Diagnostics ---"
-          echo ".env exists: $([ -f "$CORE/.env" ] && echo YES || echo NO)"
-          echo ".env size: $(wc -c < "$CORE/.env" 2>/dev/null || echo 'N/A')"
-          echo "vendor/autoload.php exists: $([ -f "$CORE/vendor/autoload.php" ] && echo YES || echo NO)"
-          echo "bootstrap/app.php exists: $([ -f "$CORE/bootstrap/app.php" ] && echo YES || echo NO)"
-          echo "bootstrap/cache dir exists: $([ -d "$CORE/bootstrap/cache" ] && echo YES || echo NO)"
-          echo "PHP version: $(php -v 2>&1 | head -1)"
-          echo "--- End Diagnostics ---"
+            echo "=== 2. Ensure directory structure ==="
+            mkdir -p "$CORE" "$PUBLIC"
+            mkdir -p "$CORE/storage/app/public/uploads"
+            mkdir -p "$CORE/storage/app/public/illustrations"
+            mkdir -p "$CORE/storage/framework/cache/data"
+            mkdir -p "$CORE/storage/framework/sessions"
+            mkdir -p "$CORE/storage/framework/views"
+            mkdir -p "$CORE/storage/logs"
+            mkdir -p "$CORE/bootstrap/cache"
 
-          # Clear Laravel caches
-          cd "$CORE"
-          php artisan config:clear || true
-          php artisan cache:clear || true
-          php artisan route:clear || true
-          php artisan view:clear || true
+            echo "=== 3. Back up .env, then swap in new code ==="
+            [ -f "$CORE/.env" ] && cp "$CORE/.env" /tmp/.env.deploy.bak || true
+            cd "$CORE"
+            # Replace code but preserve storage/ and .env.
+            find . -mindepth 1 -maxdepth 1 \
+              ! -name 'storage' \
+              ! -name '.env' \
+              -exec rm -rf {} +
+            tar -xzf "$ARCHIVE" -C "$CORE"
 
-          # Rebuild config cache for production performance
-          php artisan config:cache || true
-          php artisan route:cache || true
+            echo "=== 4. Restore / provision .env ==="
+            if [ -f /tmp/.env.deploy.bak ]; then
+              mv /tmp/.env.deploy.bak "$CORE/.env"
+            elif [ ! -f "$CORE/.env" ] && [ -f "$CORE/production.env" ]; then
+              cp "$CORE/production.env" "$CORE/.env"
+            elif [ ! -f "$CORE/.env" ] && [ -f "$CORE/.env.example" ]; then
+              cp "$CORE/.env.example" "$CORE/.env"
+            fi
+            [ -f "$CORE/.env" ] || { echo "FATAL: no .env on server and no fallback"; exit 1; }
 
-          # Quick smoke test
-          echo "--- Smoke Test ---"
-          php artisan --version || echo "ERROR: artisan failed to run"
+            echo "=== 5. Dependencies (fallback if vendor/ missing) ==="
+            if [ ! -f "$CORE/vendor/autoload.php" ]; then
+              if [ -n "$COMPOSER" ]; then
+                echo "vendor/ missing - installing on server"
+                $COMPOSER install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+              else
+                echo "FATAL: vendor/ missing and no composer available"; exit 1
+              fi
+            fi
 
-          # Clean up archive
-          rm -f "$ARCHIVE"
+            echo "=== 6. App key (generate only if absent) ==="
+            if ! grep -qE '^APP_KEY=base64:.+' "$CORE/.env"; then
+              echo "APP_KEY missing - generating"
+              php artisan key:generate --force
+            fi
 
-          echo "✅ Backend deployment complete!"
+            echo "=== 7. Permissions ==="
+            chmod -R 775 "$CORE/storage" "$CORE/bootstrap/cache"
 
-    # NOTE: Storage symlink must exist on server:
-    # ln -s /home/zhpebukm/naoa-core/storage/app/public /home/zhpebukm/dnt-wed.okjtech.co.ke/api/public/storage
-    # Uploads are stored in: /home/zhpebukm/naoa-core/storage/app/public/uploads/
-    # Served via: https://api-dntwed.okjtech.co.ke/storage/uploads/...
+            echo "=== 8. Database migrations (idempotent, safe to re-run) ==="
+            php artisan migrate --force
+
+            echo "=== 9. Storage symlink ==="
+            # public/storage must point at storage/app/public.
+            if [ ! -L "$PUBLIC/storage" ]; then
+              rm -rf "$PUBLIC/storage"
+              ln -s "$CORE/storage/app/public" "$PUBLIC/storage"
+            fi
+            php artisan storage:link 2>/dev/null || true
+
+            echo "=== 10. Deploy public assets to web root ==="
+            cp -R "$CORE/public/." "$PUBLIC/"
+            [ -f "$CORE/public/.htaccess" ] && cp "$CORE/public/.htaccess" "$PUBLIC/" || true
+
+            echo "=== 11. Refresh caches & reload workers ==="
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            # Tell any running queue workers to restart with the new code.
+            php artisan queue:restart || true
+
+            echo "=== 12. Clean up archive ==="
+            rm -f "$ARCHIVE"
+
+            echo "=== 13. Verify expected structure ==="
+            FAIL=0
+            for f in "$CORE/vendor/autoload.php" "$CORE/bootstrap/app.php" "$CORE/.env" "$PUBLIC/index.php"; do
+              if [ -e "$f" ]; then echo "ok: $f"; else echo "MISSING: $f"; FAIL=1; fi
+            done
+            if [ -L "$PUBLIC/storage" ] && [ -e "$PUBLIC/storage" ]; then
+              echo "ok: storage symlink resolves"
+            else
+              echo "MISSING: working storage symlink"; FAIL=1
+            fi
+            [ "$FAIL" = "0" ] || { echo "FATAL: structure verification failed"; exit 1; }
+
+            echo "=== 14. Smoke tests ==="
+            php artisan --version
+            php artisan about --only=environment || true
+            # Hit the framework health endpoint through the public entrypoint.
+            if command -v curl >/dev/null; then
+              curl -fsS -o /dev/null -w "health /up -> HTTP %{http_code}\n" \
+                "https://api-dntwed.okjtech.co.ke/up" || echo "WARN: /up health check did not return 2xx"
+            fi
+
+            echo "✅ Backend deployment complete!"
+
+    # Server layout reference:
+    #   Core app:  /home/zhpebukm/naoa-core
+    #   Web root:  /home/zhpebukm/dnt-wed.okjtech.co.ke/api/public
+    #   Uploads:   /home/zhpebukm/naoa-core/storage/app/public/uploads/
+    #   Served at: https://api-dntwed.okjtech.co.ke/storage/uploads/...

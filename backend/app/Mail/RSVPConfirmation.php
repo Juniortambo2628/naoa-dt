@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Models\Guest;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -15,8 +14,11 @@ class RSVPConfirmation extends Mailable
     use Queueable, SerializesModels;
 
     public $guest;
+
     public $attending;
+
     public $subjectText;
+
     public $messageText;
 
     /**
@@ -26,9 +28,9 @@ class RSVPConfirmation extends Mailable
     {
         $this->guest = $guest;
         $this->attending = $attending;
-        
+
         $this->subjectText = \App\Models\Setting::getValue('email_rsvp_subject', 'RSVP Confirmation - Dinah & Tze Ren\'s Wedding');
-        
+
         if ($attending) {
             $this->messageText = \App\Models\Setting::getValue('email_rsvp_attending_message', 'We\'re so excited you can make it!');
         } else {

@@ -62,8 +62,8 @@ return [
                 (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
             'dump' => [
-               'dump_binary_path' => 'C:\wamp64\bin\mysql\mysql9.1.0\bin',
-               'use_single_transaction' => true,
+                'dump_binary_path' => 'C:\wamp64\bin\mysql\mysql9.1.0\bin',
+                'use_single_transaction' => true,
             ],
         ],
 

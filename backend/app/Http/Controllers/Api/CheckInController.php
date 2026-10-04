@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\GuestCheckedIn;
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
-use App\Events\GuestCheckedIn;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class CheckInController extends Controller
 {
@@ -17,8 +17,8 @@ class CheckInController extends Controller
 
     public function generateQR(Guest $guest): JsonResponse
     {
-        if (!$guest->qr_code) {
-            $guest->qr_code = 'QR-' . strtoupper(Str::random(10));
+        if (! $guest->qr_code) {
+            $guest->qr_code = 'QR-'.strtoupper(Str::random(10));
             $guest->save();
         }
 
@@ -28,9 +28,9 @@ class CheckInController extends Controller
             ->generate($guest->qr_code);
 
         return $this->successResponse([
-            'qr_code'  => $guest->qr_code,
-            'qr_image' => 'data:image/png;base64,' . base64_encode($qrCode),
-            'guest'    => $guest,
+            'qr_code' => $guest->qr_code,
+            'qr_image' => 'data:image/png;base64,'.base64_encode($qrCode),
+            'guest' => $guest,
         ]);
     }
 
@@ -42,13 +42,13 @@ class CheckInController extends Controller
 
         $guest = Guest::with('table')->where('qr_code', $request->qr_code)->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Invalid QR code. Guest not found.');
         }
 
         if ($guest->checked_in_at) {
             return $this->errorResponse(
-                'Guest already checked in at ' . $guest->checked_in_at->format('g:i A'),
+                'Guest already checked in at '.$guest->checked_in_at->format('g:i A'),
                 400,
                 ['guest' => $guest]
             );
@@ -65,7 +65,7 @@ class CheckInController extends Controller
 
         return $this->successResponse(
             ['guest' => $guest],
-            'Welcome, ' . $guest->name . '!'
+            'Welcome, '.$guest->name.'!'
         );
     }
 
@@ -76,9 +76,9 @@ class CheckInController extends Controller
 
         return $this->successResponse([
             'total_expected' => $total,
-            'checked_in'     => $checkedIn,
-            'remaining'      => $total - $checkedIn,
-            'percentage'     => $total > 0 ? round(($checkedIn / $total) * 100) : 0,
+            'checked_in' => $checkedIn,
+            'remaining' => $total - $checkedIn,
+            'percentage' => $total > 0 ? round(($checkedIn / $total) * 100) : 0,
         ]);
     }
 

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PolaroidImageCreated;
 use App\Http\Controllers\Controller;
 use App\Models\PolaroidImage;
-use App\Events\PolaroidImageCreated;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class PolaroidImageController extends Controller
@@ -35,7 +35,7 @@ class PolaroidImageController extends Controller
             $path = $request->file('image')->store('polaroids', 'public');
 
             $polaroid = PolaroidImage::create([
-                'image_path' => '/storage/' . $path
+                'image_path' => '/storage/'.$path,
             ]);
 
             return $this->createdResponse($polaroid);
@@ -57,7 +57,7 @@ class PolaroidImageController extends Controller
         $path = $request->file('image')->store('polaroids', 'public');
 
         $polaroid = PolaroidImage::create([
-            'image_path' => '/storage/' . $path,
+            'image_path' => '/storage/'.$path,
             'title' => $request->title,
             'caption' => $request->caption,
             'taken_at' => $request->taken_at ?? now(),

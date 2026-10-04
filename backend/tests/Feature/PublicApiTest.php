@@ -2,10 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Table;
 use App\Models\Guest;
 use App\Models\Setting;
+use App\Models\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class PublicApiTest extends TestCase
@@ -45,6 +46,21 @@ class PublicApiTest extends TestCase
 
     public function test_weather_endpoint_returns_forecast(): void
     {
+        // Stub the upstream Open-Meteo call so the test is deterministic and
+        // doesn't depend on a live third-party service (which would make the
+        // suite flaky and unusable as a deploy gate).
+        Http::fake([
+            'api.open-meteo.com/*' => Http::response([
+                'daily' => [
+                    'time' => ['2026-11-14'],
+                    'temperature_2m_max' => [27.5],
+                    'temperature_2m_min' => [18.1],
+                    'precipitation_probability_max' => [10],
+                    'weathercode' => [1],
+                ],
+            ], 200),
+        ]);
+
         Setting::create(['key' => 'venue_lat', 'value' => '-1.2921', 'group' => 'general']);
         Setting::create(['key' => 'venue_lng', 'value' => '36.8219', 'group' => 'general']);
 
