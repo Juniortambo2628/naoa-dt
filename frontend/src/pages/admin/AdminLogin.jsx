@@ -131,18 +131,20 @@ export default function AdminLogin() {
           {!is2faRequired ? (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
-                <label 
+                <label
+                  htmlFor="admin-login-email"
                   className="block text-sm font-medium mb-2"
                   style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                 >
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail 
+                  <Mail
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                     style={{ color: 'rgba(255, 255, 255, 0.4)' }}
                   />
                   <input
+                    id="admin-login-email"
                     type="email"
                     {...register('email', { 
                       required: 'Email is required',
@@ -167,18 +169,20 @@ export default function AdminLogin() {
               </div>
 
               <div>
-                <label 
+                <label
+                  htmlFor="admin-login-password"
                   className="block text-sm font-medium mb-2"
                   style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                 >
                   Password
                 </label>
                 <div className="relative">
-                  <Lock 
+                  <Lock
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                     style={{ color: 'rgba(255, 255, 255, 0.4)' }}
                   />
                   <input
+                    id="admin-login-password"
                     type="password"
                     {...register('password', { 
                       required: 'Password is required',
@@ -231,18 +235,20 @@ export default function AdminLogin() {
               </div>
 
               <div>
-                <label 
+                <label
+                  htmlFor="admin-login-2fa"
                   className="block text-sm font-medium mb-2"
                   style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                 >
                   Verification Code
                 </label>
                 <div className="relative">
-                  <Lock 
+                  <Lock
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                     style={{ color: 'rgba(255, 255, 255, 0.4)' }}
                   />
                   <input
+                    id="admin-login-2fa"
                     type="text"
                     value={twoFactorCode}
                     onChange={(e) => setTwoFactorCode(e.target.value)}

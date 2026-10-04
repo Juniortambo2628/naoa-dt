@@ -215,6 +215,7 @@ export default function AdminEnquiries() {
                   <div className="flex items-start gap-3 mb-4">
                     <input
                       type="checkbox"
+                      aria-label="Select enquiry"
                       checked={selectedIds.includes(enq.id)}
                       onChange={() => toggleSelection(enq.id)}
                       onClick={(e) => e.stopPropagation()}
@@ -279,6 +280,7 @@ export default function AdminEnquiries() {
                     <div className="flex flex-wrap items-center gap-3 mb-3">
                       <input
                         type="checkbox"
+                        aria-label="Select enquiry"
                         checked={selectedIds.includes(enq.id)}
                         onChange={() => toggleSelection(enq.id)}
                         className="w-4 h-4 accent-[#A67B5B] cursor-pointer"
@@ -336,8 +338,9 @@ export default function AdminEnquiries() {
               
               <form onSubmit={handleReply} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-stone-700 mb-2">Your Response</label>
+                  <label htmlFor="enquiry-response" className="block text-sm font-bold text-stone-700 mb-2">Your Response</label>
                   <textarea
+                    id="enquiry-response"
                     required
                     rows={6}
                     placeholder="Type your reply here..."

@@ -112,6 +112,7 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search globally..."
+            aria-label="Search globally"
             className="w-64 pl-10 pr-4 py-2 rounded-xl border-2 bg-white focus:outline-none transition-all focus:ring-2 focus:ring-[#A67B5B]/50"
             style={{ borderColor: '#E8D4C8' }}
           />
