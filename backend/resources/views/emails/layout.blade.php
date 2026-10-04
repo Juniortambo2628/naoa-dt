@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-@php($coupleNamesTitle = \App\Support\WeddingInfo::coupleNames() . ' Wedding')
+@php
+    $coupleNamesTitle = \App\Support\WeddingInfo::coupleNames() . ' Wedding';
+@endphp
 <html lang="en">
 <head>
     <meta charset="utf-8">

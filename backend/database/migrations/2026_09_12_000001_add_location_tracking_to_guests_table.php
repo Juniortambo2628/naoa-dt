@@ -9,10 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('guests', function (Blueprint $table) {
-            $table->string('location_zone')->nullable()->after('invitation_via');
-            $table->decimal('location_lat', 10, 7)->nullable()->after('location_zone');
-            $table->decimal('location_lng', 10, 7)->nullable()->after('location_lat');
-            $table->timestamp('location_updated_at')->nullable()->after('location_lng');
+            if (!Schema::hasColumn('guests', 'location_zone')) {
+                $table->string('location_zone')->nullable()->after('invitation_via');
+            }
+            if (!Schema::hasColumn('guests', 'location_lat')) {
+                $table->decimal('location_lat', 10, 7)->nullable()->after('location_zone');
+            }
+            if (!Schema::hasColumn('guests', 'location_lng')) {
+                $table->decimal('location_lng', 10, 7)->nullable()->after('location_lat');
+            }
+            if (!Schema::hasColumn('guests', 'location_updated_at')) {
+                $table->timestamp('location_updated_at')->nullable()->after('location_lng');
+            }
         });
     }
 
