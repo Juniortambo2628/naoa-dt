@@ -30,7 +30,7 @@ class GiftTest extends TestCase
         $response = $this->getJson('/api/gifts');
 
         $response->assertOk()
-            ->assertJsonCount(3);
+            ->assertJsonCount(3, 'data');
     }
 
     public function test_public_can_claim_gift(): void
@@ -204,6 +204,6 @@ class GiftTest extends TestCase
         $response = $this->getJson('/api/gifts');
 
         $response->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonCount(1, 'data');
     }
 }

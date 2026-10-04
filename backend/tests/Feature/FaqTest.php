@@ -26,9 +26,11 @@ class FaqTest extends TestCase
         $response = $this->getJson('/api/faqs');
 
         $response->assertOk()
-            ->assertJsonCount(5)
+            ->assertJsonCount(5, 'data')
             ->assertJsonStructure([
-                '*' => ['id', 'question', 'answer', 'order'],
+                'data' => [
+                    '*' => ['id', 'question', 'answer', 'order'],
+                ],
             ]);
     }
 
@@ -41,7 +43,7 @@ class FaqTest extends TestCase
         $response = $this->getJson('/api/faqs');
 
         $response->assertOk();
-        $data = $response->json();
+        $data = $response->json('data');
         $this->assertEquals('First', $data[0]['question']);
         $this->assertEquals('Second', $data[1]['question']);
         $this->assertEquals('Third', $data[2]['question']);

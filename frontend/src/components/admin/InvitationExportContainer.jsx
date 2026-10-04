@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import InvitationCanvas from './InvitationCanvas';
 import { normalizePages } from '../../utils/invitationPages';
 import { getMapUrl } from '../../utils/weddingInfo';
+import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 
 export default function InvitationExportContainer({ design, guest, weddingSettings, onReady }) {
     const exportRef = useRef(null);
@@ -172,7 +173,7 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
                     if (item.type === 'calendar_link') {
                         const title = encodeURIComponent(content.title || "Our Wedding");
                         const location = encodeURIComponent(weddingSettings?.venue_name || "Wedding Venue");
-                        const dateStr = weddingSettings?.wedding_date || "2026-11-14";
+                        const dateStr = weddingSettings?.wedding_date || WEDDING_DEFAULTS.weddingDate;
                         const baseUrl = weddingSettings?.public_url || window.location.origin;
                         const calendarUrl = `${baseUrl}/calendar?date=${dateStr}&venue=${location}&title=${title}`;
 

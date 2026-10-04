@@ -28,9 +28,11 @@ class TableTest extends TestCase
             ->getJson('/api/tables');
 
         $response->assertOk()
-            ->assertJsonCount(3)
+            ->assertJsonCount(3, 'data')
             ->assertJsonStructure([
-                '*' => ['id', 'name', 'capacity', 'type', 'guests'],
+                'data' => [
+                    '*' => ['id', 'name', 'capacity', 'type', 'guests'],
+                ],
             ]);
     }
 
@@ -163,7 +165,7 @@ class TableTest extends TestCase
             ->getJson('/api/tables');
 
         $response->assertOk();
-        $tables = $response->json();
+        $tables = $response->json('data');
         $tableData = collect($tables)->firstWhere('id', $table->id);
         $this->assertCount(2, $tableData['guests']);
     }

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Stichoza\GoogleTranslate\GoogleTranslate;
 
 class TranslateController extends Controller
 {
+    use ApiResponse;
+
     public function translate(Request $request)
     {
         $request->validate([
@@ -25,9 +28,9 @@ class TranslateController extends Controller
             $tr->setTarget($targetLang);
             $translatedText = $tr->translate($text);
 
-            return response()->json(['translation' => $translatedText]);
+            return $this->successResponse(['translation' => $translatedText]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Translation failed: ' . $e->getMessage()], 500);
+            return $this->errorResponse('Translation failed: ' . $e->getMessage(), 500);
         }
     }
 }

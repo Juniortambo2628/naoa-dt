@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { settingService, contentService } from '../../services/api';
 import { getWeddingInfo } from '../../utils/weddingInfo';
+import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 import {
     Palette, Sliders, Undo2, Redo2,
     Maximize, Minimize, GripHorizontal, Eye, EyeOff,
@@ -17,7 +18,6 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import { saveAs } from 'file-saver';
 import { Skeleton } from '../../components/Skeleton';
-/* Force refresh: 2026-04-15 07:02 - Syntax fix complete. Component should now reload. */
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);
@@ -65,10 +65,10 @@ export default function InvitationDesigner() {
 
         // Multi-language Content (scoped to this page)
         content: {
-            en: { title: 'Dinah & Tze Ren', message: 'We invite you to celebrate our wedding' },
-            zh: { title: 'Dinah & Tze Ren', message: '我们诚挚地邀请您参加我们的婚礼' },
-            ms: { title: 'Dinah & Tze Ren', message: 'Kami menjemput anda untuk meraikan perkahwinan kami' },
-            luo: { title: 'Dinah & Tze Ren', message: 'Wakwayi mondo ibe kodo e harus' }
+            en: { title: WEDDING_DEFAULTS.coupleNames, message: 'We invite you to celebrate our wedding' },
+            zh: { title: WEDDING_DEFAULTS.coupleNames, message: '我们诚挚地邀请您参加我们的婚礼' },
+            ms: { title: WEDDING_DEFAULTS.coupleNames, message: 'Kami menjemput anda untuk meraikan perkahwinan kami' },
+            luo: { title: WEDDING_DEFAULTS.coupleNames, message: 'Wakwayi mondo ibe kodo e harus' }
         },
 
         // Advanced Settings
@@ -159,10 +159,10 @@ export default function InvitationDesigner() {
                     bgImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
                     accentColor: '#A67B5B',
                     content: {
-                        en: { title: 'Dinah & Tze Ren', message: designType === 'invitation' ? 'We invite you to celebrate our wedding' : 'Save the Date for our Wedding' },
-                        zh: { title: 'Dinah & Tze Ren', message: designType === 'invitation' ? '我们诚挚地邀请您参加我们的婚礼' : '请保留我们的婚礼日期' },
-                        ms: { title: 'Dinah & Tze Ren', message: designType === 'invitation' ? 'Kami menjemput anda untuk meraikan perkahwinan kami' : 'Simpan tarikh untuk perkahwinan kami' },
-                        luo: { title: 'Dinah & Tze Ren', message: designType === 'invitation' ? 'Wakwayi mondo ibe kodo e harus' : 'Wakwayi mondo iwer kodwa e harus' } 
+                        en: { title: WEDDING_DEFAULTS.coupleNames, message: designType === 'invitation' ? 'We invite you to celebrate our wedding' : 'Save the Date for our Wedding' },
+                        zh: { title: WEDDING_DEFAULTS.coupleNames, message: designType === 'invitation' ? '我们诚挚地邀请您参加我们的婚礼' : '请保留我们的婚礼日期' },
+                        ms: { title: WEDDING_DEFAULTS.coupleNames, message: designType === 'invitation' ? 'Kami menjemput anda untuk meraikan perkahwinan kami' : 'Simpan tarikh untuk perkahwinan kami' },
+                        luo: { title: WEDDING_DEFAULTS.coupleNames, message: designType === 'invitation' ? 'Wakwayi mondo ibe kodo e harus' : 'Wakwayi mondo iwer kodwa e harus' } 
                     },
                     items: [
                         { id: 'title_1', type: 'text', textKey: 'title', x: 25, y: 180, width: 450, height: 120, fontStyle: 'cursive', fontSize: 52, zIndex: 50 },

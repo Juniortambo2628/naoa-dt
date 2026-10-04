@@ -11,7 +11,9 @@
  * stale seeded default and is NOT where admins configure the date.
  */
 
-const DEFAULT_DATE = '2026-11-14';
+import { WEDDING_DEFAULTS } from './weddingDefaults';
+
+const DEFAULT_DATE = WEDDING_DEFAULTS.weddingDate;
 
 // Map the app's language codes to BCP-47 locales for date formatting.
 const LOCALE_MAP = { en: 'en-US', zh: 'zh-CN', ms: 'ms-MY', luo: 'en-US' };

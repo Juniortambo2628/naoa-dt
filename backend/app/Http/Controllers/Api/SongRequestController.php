@@ -24,7 +24,7 @@ class SongRequestController extends Controller
             'pending' => SongRequest::where('is_played', false)->count(),
         ];
 
-        return response()->json([
+        return $this->successResponse([
             'songs' => SongRequestResource::collection($songs),
             'stats' => $stats,
         ]);

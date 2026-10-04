@@ -19,7 +19,7 @@ class GuestbookController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
+        return $this->successResponse([
             'entries' => GuestbookEntryResource::collection($entries),
             'total'   => $entries->count(),
         ]);

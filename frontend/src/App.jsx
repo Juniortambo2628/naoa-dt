@@ -1,9 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 
 // Lazy load Pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -19,8 +19,8 @@ const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const DigitalInvitation = lazy(() => import('./pages/DigitalInvitation'));
 const Contact = lazy(() => import('./pages/Contact'));
-const AdminEnquiries = lazy(() => import('./pages/admin/AdminEnquiries'));
 
+import PublicLayout from './components/PublicLayout';
 import Loader from './components/Loader';
 import CookieConsent from './components/CookieConsent';
 import NotFound from './components/NotFound';
@@ -43,20 +43,6 @@ const queryClient = new QueryClient({
 
  
 function App() {
-  const [initialLoading, setInitialLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate initial loading for the "Wow" factor
-    const timer = setTimeout(() => {
-      setInitialLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (initialLoading) {
-    return <Loader />;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -66,23 +52,26 @@ function App() {
           <AnimatePresence mode="wait">
             <Suspense fallback={<Loader />}>
               <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/rsvp" element={<RSVP />} />
-                <Route path="/rsvp/:code" element={<RSVP />} />
-                <Route path="/programme" element={<Programme />} />
-                <Route path="/gifts" element={<GiftRegistry />} />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/songs" element={<SongRequests />} />
-                <Route path="/guestbook" element={<Guestbook />} />
+                {/* Public Routes — shared Navbar/Footer via PublicLayout */}
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/rsvp" element={<RSVP />} />
+                  <Route path="/rsvp/:code" element={<RSVP />} />
+                  <Route path="/programme" element={<Programme />} />
+                  <Route path="/gifts" element={<GiftRegistry />} />
+                  <Route path="/gallery" element={<Gallery />} />
+                  <Route path="/songs" element={<SongRequests />} />
+                  <Route path="/guestbook" element={<Guestbook />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/contact" element={<Contact />} />
+                </Route>
+
+                {/* FAQ has a bespoke full-screen layout; guest invitation is chrome-less */}
                 <Route path="/faq" element={<Faq />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/invitation/:code" element={<DigitalInvitation />} />
-                <Route path="/contact" element={<Contact />} />
-                
-                {/* Admin Routes */}
+
+                {/* Admin Routes — AdminDashboard owns its own nested routing */}
                 <Route path="/admin" element={<AdminLogin />} />
-                <Route path="/admin/dashboard/enquiries" element={<AdminDashboard />} />
                 <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
                 {/* Auxiliary Routes */}
                 <Route path="/module-unavailable/:module" element={<ModuleDisabled />} />

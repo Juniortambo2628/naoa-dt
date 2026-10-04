@@ -27,11 +27,13 @@ class SongRequestTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                'songs',
-                'stats' => ['total', 'played', 'pending'],
+                'data' => [
+                    'songs',
+                    'stats' => ['total', 'played', 'pending'],
+                ],
             ]);
 
-        $this->assertCount(3, $response->json('songs'));
+        $this->assertCount(3, $response->json('data.songs'));
     }
 
     public function test_public_can_submit_song_request(): void
@@ -121,7 +123,7 @@ class SongRequestTest extends TestCase
         $response = $this->getJson('/api/song-requests');
 
         $response->assertOk();
-        $stats = $response->json('stats');
+        $stats = $response->json('data.stats');
         $this->assertEquals(5, $stats['total']);
         $this->assertEquals(2, $stats['played']);
         $this->assertEquals(3, $stats['pending']);
@@ -138,7 +140,7 @@ class SongRequestTest extends TestCase
         $response = $this->getJson('/api/song-requests');
 
         $response->assertOk();
-        $songs = $response->json('songs');
+        $songs = $response->json('data.songs');
         $this->assertEquals('Old Song Title', $songs[0]['song_title']);
         $this->assertEquals('New Song Title', $songs[1]['song_title']);
     }

@@ -29,11 +29,13 @@ class GuestbookTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                'entries',
-                'total',
+                'data' => [
+                    'entries',
+                    'total',
+                ],
             ]);
 
-        $this->assertEquals(3, $response->json('total'));
+        $this->assertEquals(3, $response->json('data.total'));
     }
 
     public function test_public_can_submit_entry(): void
@@ -120,7 +122,7 @@ class GuestbookTest extends TestCase
         $response = $this->getJson('/api/guestbook');
 
         $response->assertOk();
-        $this->assertEquals(0, $response->json('total'));
+        $this->assertEquals(0, $response->json('data.total'));
     }
 
     public function test_entries_are_ordered_by_newest_first(): void
@@ -135,7 +137,7 @@ class GuestbookTest extends TestCase
         $response = $this->getJson('/api/guestbook');
 
         $response->assertOk();
-        $entries = $response->json('entries');
+        $entries = $response->json('data.entries');
         $this->assertEquals('New entry', $entries[0]['message']);
     }
 }

@@ -15,7 +15,7 @@ class FaqController extends Controller
 
     public function index()
     {
-        return response()->json(Faq::orderBy('order')->get());
+        return $this->successResponse(Faq::orderBy('order')->get());
     }
 
     public function store(Request $request): JsonResponse
