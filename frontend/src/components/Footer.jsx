@@ -9,7 +9,7 @@ import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const { i18n } = useTranslation();
-  const { isVisible, getContent: getFromContext } = useContent();
+  const { isVisible, getContent: getFromContext, contents } = useContent();
   const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
 
   return (

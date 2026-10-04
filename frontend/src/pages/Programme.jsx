@@ -21,6 +21,7 @@ import Loader from '../components/Loader';
 import { fadeInUp, staggerContainer, staggerItem } from '../hooks/useScrollAnimation';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
+import { getWeddingDateText, resolveLocalized } from '../utils/weddingInfo';
 
 const iconMap = {
   'Ceremony': Heart,
@@ -172,7 +173,7 @@ export default function Programme() {
               className="text-lg"
               style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
             >
-              {getTxt('programme_page', 'date', 'hero.date')}
+              {resolveLocalized(content?.programme_page?.content?.date, i18n.language) || getWeddingDateText(content, i18n.language)}
             </p>
           </motion.div>
 
