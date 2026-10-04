@@ -19,9 +19,11 @@ trait NormalizesUrls
                     if (str_starts_with($path, $prefix)) {
                         $path = substr($path, strlen($prefix));
                     }
+
                     return $path;
                 }
             }
+
             return $data;
         }
 

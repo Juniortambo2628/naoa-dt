@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\GuestbookEntryResource;
 use App\Models\GuestbookEntry;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class GuestbookController extends Controller
 {
@@ -21,7 +21,7 @@ class GuestbookController extends Controller
 
         return $this->successResponse([
             'entries' => GuestbookEntryResource::collection($entries),
-            'total'   => $entries->count(),
+            'total' => $entries->count(),
         ]);
     }
 
@@ -29,12 +29,12 @@ class GuestbookController extends Controller
     {
         $request->validate([
             'guest_name' => 'required|string|max:100',
-            'message'    => 'required|string|max:1000',
+            'message' => 'required|string|max:1000',
         ]);
 
         $entry = GuestbookEntry::create([
-            'guest_name'  => $request->guest_name,
-            'message'     => $request->message,
+            'guest_name' => $request->guest_name,
+            'message' => $request->message,
             'is_approved' => true,
         ]);
 

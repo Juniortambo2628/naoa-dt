@@ -78,22 +78,22 @@ class PageContentFactory extends Factory
             ],
             'venue' => [
                 'heading' => 'The Venue',
-                'name' => fake()->company() . ' Estate',
+                'name' => fake()->company().' Estate',
                 'address' => fake()->address(),
                 'description' => fake()->paragraph(),
                 'image' => 'https://picsum.photos/seed/venue/800/600',
             ],
             'travel' => [
                 'heading' => 'Getting There',
-                'airport' => fake()->city() . ' International Airport',
+                'airport' => fake()->city().' International Airport',
                 'driving' => fake()->paragraph(),
                 'parking' => fake()->paragraph(),
             ],
             'accommodations' => [
                 'heading' => 'Where to Stay',
                 'hotels' => [
-                    ['name' => fake()->company() . ' Hotel', 'address' => fake()->address(), 'price_range' => '$$$'],
-                    ['name' => fake()->company() . ' Inn', 'address' => fake()->address(), 'price_range' => '$$'],
+                    ['name' => fake()->company().' Hotel', 'address' => fake()->address(), 'price_range' => '$$$'],
+                    ['name' => fake()->company().' Inn', 'address' => fake()->address(), 'price_range' => '$$'],
                 ],
             ],
             'rsvp' => [

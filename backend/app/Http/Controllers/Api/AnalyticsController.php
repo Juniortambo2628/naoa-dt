@@ -30,7 +30,7 @@ class AnalyticsController extends Controller
         $groups = Guest::selectRaw('`group` as grp, COUNT(*) as count')
             ->groupBy('grp')
             ->pluck('count', 'grp')
-            ->map(fn($count, $name) => [
+            ->map(fn ($count, $name) => [
                 'name' => $name ?: 'Unassigned',
                 'value' => $count,
             ])
@@ -59,7 +59,7 @@ class AnalyticsController extends Controller
             ->groupBy('date')
             ->orderBy('date')
             ->pluck('count', 'date')
-            ->map(fn($count, $date) => [
+            ->map(fn ($count, $date) => [
                 'date' => $date,
                 'count' => $count,
             ])

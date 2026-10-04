@@ -23,14 +23,14 @@ class TranslateController extends Controller
         $sourceLang = 'en'; // Assuming source is always English for this admins tool
 
         try {
-            $tr = new GoogleTranslate();
+            $tr = new GoogleTranslate;
             $tr->setSource($sourceLang);
             $tr->setTarget($targetLang);
             $translatedText = $tr->translate($text);
 
             return $this->successResponse(['translation' => $translatedText]);
         } catch (\Exception $e) {
-            return $this->errorResponse('Translation failed: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Translation failed: '.$e->getMessage(), 500);
         }
     }
 }

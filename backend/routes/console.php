@@ -10,5 +10,3 @@ Artisan::command('inspire', function () {
 
 // Check flight statuses every 30 minutes
 Schedule::command('flights:check-status')->everyThirtyMinutes();
-
-

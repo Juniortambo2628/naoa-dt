@@ -1,9 +1,7 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use App\Models\PageContent;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -21,7 +19,7 @@ return new class extends Migration
                     'page_title' => 'RSVP',
                     'page_subtitle' => 'We can\'t wait to celebrate with you!',
                 ],
-                'is_visible' => true
+                'is_visible' => true,
             ]
         );
     }

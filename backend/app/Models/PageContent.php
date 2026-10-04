@@ -13,6 +13,6 @@ class PageContent extends Model
 
     protected $casts = [
         'content' => 'array',
-        'is_visible' => 'boolean'
+        'is_visible' => 'boolean',
     ];
 }

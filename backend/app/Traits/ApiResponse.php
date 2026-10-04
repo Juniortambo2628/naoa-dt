@@ -10,6 +10,7 @@ trait ApiResponse
         if ($data !== null) {
             $response['data'] = $data;
         }
+
         return response()->json($response, $code);
     }
 
@@ -34,6 +35,7 @@ trait ApiResponse
         if ($errors !== null) {
             $response['errors'] = $errors;
         }
+
         return response()->json($response, $code);
     }
 

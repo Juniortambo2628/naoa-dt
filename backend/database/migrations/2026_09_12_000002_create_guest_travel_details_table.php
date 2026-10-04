@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('guest_travel_details', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('guest_id');
-            $table->index('guest_id');            
+            $table->index('guest_id');
             // Accommodation
             $table->string('hotel_name')->nullable();
             $table->text('hotel_address')->nullable();
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->date('hotel_check_out')->nullable();
             $table->string('hotel_confirmation')->nullable();
             $table->text('hotel_notes')->nullable();
-            
+
             // Flight
             $table->string('airline')->nullable();
             $table->string('flight_number', 50)->nullable();
@@ -33,20 +33,20 @@ return new class extends Migration
             $table->string('flight_arrival_airport', 10)->nullable();
             $table->string('flight_confirmation')->nullable();
             $table->text('flight_notes')->nullable();
-            
+
             // Digital tickets
             $table->string('ticket_file_path', 500)->nullable();
             $table->string('ticket_file_name')->nullable();
             $table->string('ticket_file_type', 50)->nullable();
-            
+
             // Transport to venue
             $table->string('transport_method')->nullable();
             $table->text('transport_notes')->nullable();
-            
+
             // Local contact
             $table->string('local_phone_number')->nullable();
             $table->string('local_phone_carrier')->nullable();
-            
+
             $table->timestamps();
         });
     }

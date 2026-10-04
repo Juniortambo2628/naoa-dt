@@ -3,9 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Guest;
-use App\Models\Invitation;
 use App\Models\User;
-use App\Models\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -183,7 +181,7 @@ class GuestTest extends TestCase
             'plus_ones_allowed' => 1,
         ]);
 
-        $response = $this->postJson("/api/guests/code/RSVPTEST1/rsvp", [
+        $response = $this->postJson('/api/guests/code/RSVPTEST1/rsvp', [
             'attending' => true,
             'plus_ones_count' => 1,
             'message' => 'Looking forward to it!',
@@ -205,7 +203,7 @@ class GuestTest extends TestCase
             'unique_code' => 'DECLTEST1',
         ]);
 
-        $response = $this->postJson("/api/guests/code/DECLTEST1/rsvp", [
+        $response = $this->postJson('/api/guests/code/DECLTEST1/rsvp', [
             'attending' => false,
             'message' => 'Sorry, cannot make it.',
         ]);

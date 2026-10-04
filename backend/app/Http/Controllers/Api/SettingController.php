@@ -11,15 +11,18 @@ use Illuminate\Http\Request;
 class SettingController extends Controller
 {
     use ApiResponse, NormalizesUrls;
+
     public function index()
     {
-        \Illuminate\Support\Facades\Log::info("Fetching settings. Current root: " . request()->root());
+        \Illuminate\Support\Facades\Log::info('Fetching settings. Current root: '.request()->root());
         // Return key-value pairs for easy frontend consumption
         $settings = Setting::all()->pluck('value', 'key')->map(function ($value) {
             $decoded = json_decode($value, true);
             $val = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $value;
+
             return $this->normalizeUrls($val);
         });
+
         return $this->successResponse($settings);
     }
 
@@ -30,7 +33,7 @@ class SettingController extends Controller
             'settings.*' => 'nullable', // Allow strings, arrays, etc.
         ]);
 
-        \Illuminate\Support\Facades\Log::info("Updating settings", ['data' => $data['settings']]);
+        \Illuminate\Support\Facades\Log::info('Updating settings', ['data' => $data['settings']]);
 
         foreach ($data['settings'] as $key => $value) {
             // Convert arrays to JSON strings
@@ -40,7 +43,7 @@ class SettingController extends Controller
                 ['key' => $key],
                 ['value' => $storedValue]
             );
-            
+
             \Illuminate\Support\Facades\Log::info("Saved setting: {$key}", ['value' => $storedValue, 'id' => $setting->id]);
         }
 
@@ -48,6 +51,7 @@ class SettingController extends Controller
         $allSettings = Setting::all()->pluck('value', 'key')->map(function ($value) {
             $decoded = json_decode($value, true);
             $val = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $value;
+
             return $this->normalizeUrls($val);
         });
 

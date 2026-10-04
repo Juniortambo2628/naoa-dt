@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -120,8 +120,8 @@ class Guest extends Model
     {
         return $this->invitation ?? Invitation::create([
             'guest_id' => $this->id,
-            'status'   => 'pending',
-            'token'    => Str::random(32),
+            'status' => 'pending',
+            'token' => Str::random(32),
         ]);
     }
 
@@ -130,7 +130,7 @@ class Guest extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($guest) {
             if (empty($guest->unique_code)) {
                 $guest->unique_code = self::generateUniqueCode();
@@ -143,7 +143,7 @@ class Guest extends Model
         do {
             $code = strtoupper(Str::random(8));
         } while (self::where('unique_code', $code)->exists());
-        
+
         return $code;
     }
 }

@@ -9,25 +9,26 @@ use App\Traits\NormalizesUrls;
 use App\Traits\Reorderable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class GalleryController extends Controller
 {
     use ApiResponse, NormalizesUrls, Reorderable;
+
     public function index()
     {
         $query = GalleryItem::orderBy('order')->orderBy('created_at', 'desc');
 
         // If not authenticated as admin, show only visible items
-        if (!auth('sanctum')->check()) {
+        if (! auth('sanctum')->check()) {
             $query->where('is_visible', true);
         }
 
         $items = $query->get();
 
         // Normalize URLs: ensure they work with the frontend proxy
-        $items->transform(function($item) {
+        $items->transform(function ($item) {
             $item->image_url = $this->normalizeUrls($item->image_url);
+
             return $item;
         });
 
@@ -40,10 +41,11 @@ class GalleryController extends Controller
             'image_url' => 'required|string',
             'caption' => 'nullable|string',
             'order' => 'integer',
-            'is_visible' => 'boolean'
+            'is_visible' => 'boolean',
         ]);
 
         $item = GalleryItem::create($data);
+
         return $this->createdResponse($item);
     }
 
@@ -58,12 +60,14 @@ class GalleryController extends Controller
         ]);
 
         $galleryItem->update($data);
+
         return $this->successResponse($galleryItem);
     }
 
     public function destroy(GalleryItem $galleryItem)
     {
         $galleryItem->delete();
+
         return $this->deletedResponse('Item deleted');
     }
 

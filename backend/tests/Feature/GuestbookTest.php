@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\GuestbookEntry;
 use App\Models\User;
-use Illuminate\Database\ConnectionInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

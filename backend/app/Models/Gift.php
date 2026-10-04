@@ -37,12 +37,14 @@ class Gift extends Model
     public function getClaimedAttribute(): bool
     {
         // For non-cash funds, check if there's any claim from the loaded relation
-        if (!$this->is_cash_fund) {
+        if (! $this->is_cash_fund) {
             if ($this->relationLoaded('claims')) {
                 return $this->claims->isNotEmpty();
             }
+
             return $this->claims()->exists();
         }
+
         return false; // Cash funds are never "claimed"
     }
 
@@ -52,8 +54,10 @@ class Gift extends Model
             if ($this->relationLoaded('claims')) {
                 return $this->claims->sum('amount') ?? 0;
             }
+
             return $this->claims()->sum('amount') ?? 0;
         }
+
         return 0;
     }
 }

@@ -20,7 +20,7 @@ class GalleryItemFactory extends Factory
     public function definition(): array
     {
         return [
-            'image_url' => 'https://picsum.photos/seed/' . fake()->uuid() . '/800/600',
+            'image_url' => 'https://picsum.photos/seed/'.fake()->uuid().'/800/600',
             'caption' => fake()->optional(0.8)->sentence(4),
             'order' => fake()->numberBetween(1, 100),
             'is_visible' => fake()->boolean(80),

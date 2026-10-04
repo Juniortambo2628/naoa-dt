@@ -6,6 +6,6 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
-Broadcast::channel('live-updates', fn() => true);
+Broadcast::channel('live-updates', fn () => true);
 
-Broadcast::channel('polaroid-feed', fn() => true);
+Broadcast::channel('polaroid-feed', fn () => true);

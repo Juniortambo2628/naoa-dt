@@ -17,7 +17,7 @@ class Enquiry extends Model
         'message',
         'reply_message',
         'replied_at',
-        'status'
+        'status',
     ];
 
     protected $casts = [

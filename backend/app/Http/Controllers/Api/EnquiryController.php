@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Enquiry;
 use App\Mail\EnquiryReceived;
 use App\Mail\EnquiryReplied;
+use App\Models\Enquiry;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class EnquiryController extends Controller
 {
@@ -24,9 +24,9 @@ class EnquiryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'email'   => 'required|email|max:255',
-            'type'    => 'nullable|in:guest,vendor,other',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'type' => 'nullable|in:guest,vendor,other',
             'subject' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
@@ -36,7 +36,7 @@ class EnquiryController extends Controller
         try {
             Mail::to(config('mail.from.address'))->send(new EnquiryReceived($enquiry));
         } catch (\Exception $e) {
-            Log::error('Failed to send enquiry email: ' . $e->getMessage());
+            Log::error('Failed to send enquiry email: '.$e->getMessage());
         }
 
         return $this->createdResponse($enquiry, 'Your message has been sent successfully!');
@@ -59,16 +59,17 @@ class EnquiryController extends Controller
 
         try {
             Mail::to($enquiry->email)->send(new EnquiryReplied($enquiry, $replyMessage));
-            
+
             $enquiry->update([
                 'reply_message' => $replyMessage,
-                'replied_at'    => now(),
-                'status'        => 'replied',
+                'replied_at' => now(),
+                'status' => 'replied',
             ]);
 
             return $this->successResponse($enquiry, 'Reply sent successfully!');
         } catch (\Exception $e) {
-            Log::error('Failed to send reply email: ' . $e->getMessage());
+            Log::error('Failed to send reply email: '.$e->getMessage());
+
             return $this->errorResponse('Failed to send email', 500);
         }
     }

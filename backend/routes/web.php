@@ -7,6 +7,7 @@ Route::get('/{any?}', function () {
     if (file_exists($path)) {
         return file_get_contents($path);
     }
+
     return view('welcome');
 })->where('any', '^(?!api|login|calendar|assets|uploads).*$');
 

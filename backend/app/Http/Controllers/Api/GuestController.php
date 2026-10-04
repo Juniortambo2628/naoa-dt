@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\GuestResource;
 use App\Models\Guest;
 use App\Models\Invitation;
 use App\Services\GuestImportService;
@@ -10,7 +11,6 @@ use App\Services\GuestService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Http\Resources\GuestResource;
 
 class GuestController extends Controller
 {
@@ -19,13 +19,14 @@ class GuestController extends Controller
     public function __construct(
         private readonly GuestImportService $importService
     ) {}
+
     /**
      * Get shared validation rules for guest create/update.
      */
     private function guestValidationRules(?Guest $guest = null): array
     {
         $uniqueEmail = $guest
-            ? 'nullable|email|unique:guests,email,' . $guest->id
+            ? 'nullable|email|unique:guests,email,'.$guest->id
             : 'nullable|email|unique:guests,email';
 
         return [
@@ -72,7 +73,7 @@ class GuestController extends Controller
             $search = $request->search;
             $query->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -88,7 +89,7 @@ class GuestController extends Controller
             ->where('unique_code', strtoupper($code))
             ->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Guest not found');
         }
 
@@ -112,7 +113,7 @@ class GuestController extends Controller
     {
         $guest = Guest::where('unique_code', strtoupper($code))->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Guest not found');
         }
 
@@ -173,13 +174,13 @@ class GuestController extends Controller
 
         $guest = Guest::where('unique_code', strtoupper($code))->first();
 
-        if (!$guest) {
+        if (! $guest) {
             return $this->notFoundResponse('Guest not found');
         }
 
         $result = $guestService->submitRsvp($guest, $request->all());
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return $this->errorResponse($result['message'], 500, ['error' => $result['error']]);
         }
 
@@ -202,7 +203,7 @@ class GuestController extends Controller
         );
 
         return $this->successResponse([
-            'invitation' => $invitation
+            'invitation' => $invitation,
         ], 'Invitation marked as sent via WhatsApp');
     }
 
@@ -214,7 +215,7 @@ class GuestController extends Controller
         $request->validate($this->guestValidationRules());
 
         $guest = Guest::create($request->only([
-            'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via'
+            'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
         ]));
 
         // Create pending invitation for primary guest
@@ -226,7 +227,7 @@ class GuestController extends Controller
         // Create plus one guest records if provided
         if ($request->has('plus_ones_data') && is_array($request->plus_ones_data)) {
             foreach ($request->plus_ones_data as $plusOneData) {
-                if (!empty($plusOneData['name'])) {
+                if (! empty($plusOneData['name'])) {
                     $plusOne = Guest::create([
                         'name' => $plusOneData['name'],
                         'email' => $plusOneData['email'] ?? null,
@@ -234,7 +235,7 @@ class GuestController extends Controller
                         'parent_guest_id' => $guest->id,
                         'plus_ones_allowed' => 0,
                     ]);
-                    
+
                     // Create invitation for plus one
                     Invitation::create([
                         'guest_id' => $plusOne->id,
@@ -255,16 +256,16 @@ class GuestController extends Controller
         $request->validate($this->guestValidationRules($guest));
 
         $guest->update($request->only([
-            'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via'
+            'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
         ]));
 
         // Sync plus ones if provided
         if ($request->has('plus_ones_data')) {
             $existingIds = [];
-            
+
             foreach ($request->plus_ones_data as $plusOneData) {
-                if (!empty($plusOneData['name'])) {
-                    if (!empty($plusOneData['id'])) {
+                if (! empty($plusOneData['name'])) {
+                    if (! empty($plusOneData['id'])) {
                         // Update existing plus one
                         $plusOne = Guest::find($plusOneData['id']);
                         if ($plusOne && $plusOne->parent_guest_id === $guest->id) {
@@ -283,17 +284,17 @@ class GuestController extends Controller
                             'parent_guest_id' => $guest->id,
                             'plus_ones_allowed' => 0,
                         ]);
-                        
+
                         Invitation::create([
                             'guest_id' => $plusOne->id,
                             'status' => 'pending',
                         ]);
-                        
+
                         $existingIds[] = $plusOne->id;
                     }
                 }
             }
-            
+
             // Remove plus ones that are no longer in the list
             $guest->plusOnes()->whereNotIn('id', $existingIds)->delete();
         }
@@ -307,6 +308,7 @@ class GuestController extends Controller
     public function destroy(Guest $guest)
     {
         $guest->delete();
+
         return $this->deletedResponse('Guest deleted successfully');
     }
 
@@ -319,7 +321,7 @@ class GuestController extends Controller
         $attending = Guest::where('rsvp_status', 'confirmed')->count();
         $declined = Guest::where('rsvp_status', 'declined')->count();
         $pending = Guest::where('rsvp_status', 'pending')->count();
-        
+
         // Accurate headcount: Every record in Guest table that is 'confirmed'
         // This includes primary guests and their plus-ones if they have separate records
         $totalGuests = $attending;
@@ -328,11 +330,11 @@ class GuestController extends Controller
             ->latest('updated_at')
             ->limit(5)
             ->get()
-            ->map(function($g) {
+            ->map(function ($g) {
                 return [
                     'name' => $g->name,
                     'attending' => $g->rsvp_status === 'confirmed',
-                    'updated_at' => $g->updated_at
+                    'updated_at' => $g->updated_at,
                 ];
             });
 
@@ -357,10 +359,12 @@ class GuestController extends Controller
 
         try {
             $this->importService->import($request->file('file'));
+
             return $this->successResponse(null, 'Guests imported successfully');
         } catch (\Exception $e) {
-            Log::error('Guest Import Error: ' . $e->getMessage());
+            Log::error('Guest Import Error: '.$e->getMessage());
             Log::error($e->getTraceAsString());
+
             return $this->errorResponse('Failed to import guests', 500, ['error' => $e->getMessage()]);
         }
     }
@@ -416,7 +420,7 @@ class GuestController extends Controller
 
         $ids = $request->ids;
         $data = $request->data;
-        
+
         // Only allow updating specific fields in bulk for safety
         $allowedFields = ['group', 'invitation_via', 'rsvp_status', 'plus_ones_allowed'];
         $updateData = array_intersect_key($data, array_flip($allowedFields));
@@ -427,7 +431,7 @@ class GuestController extends Controller
 
         Guest::whereIn('id', $ids)->update($updateData);
 
-        return $this->successResponse(null, count($ids) . ' guests updated successfully');
+        return $this->successResponse(null, count($ids).' guests updated successfully');
     }
 
     /**
@@ -448,8 +452,8 @@ class GuestController extends Controller
         ]);
 
         return $this->successResponse([
-            'guest' => new GuestResource($guest->fresh(['invitation', 'plusOnes']))
-        ], 'RSVP reset successfully for ' . $guest->name . ' and their plus ones.');
+            'guest' => new GuestResource($guest->fresh(['invitation', 'plusOnes'])),
+        ], 'RSVP reset successfully for '.$guest->name.' and their plus ones.');
     }
 
     /**
@@ -472,7 +476,7 @@ class GuestController extends Controller
                     \Illuminate\Support\Facades\Mail::to($guest->email)->send(new \App\Mail\RSVPConfirmation($guest, $isAttending));
                     $count++;
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::warning('Resend RSVP confirmation failed for ' . $guest->name . ': ' . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::warning('Resend RSVP confirmation failed for '.$guest->name.': '.$e->getMessage());
                 }
             }
         }

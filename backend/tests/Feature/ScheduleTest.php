@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Event;
-use App\Models\ScheduleItem;
 use App\Models\LiveUpdate;
+use App\Models\ScheduleItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

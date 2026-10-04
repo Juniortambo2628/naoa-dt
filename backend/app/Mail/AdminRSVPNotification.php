@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Notify the admin about a new RSVP
  */
@@ -17,8 +18,11 @@ class AdminRSVPNotification extends Mailable
     use Queueable, SerializesModels;
 
     public $guest;
+
     public $attending;
+
     public $plusOnes;
+
     public $guestMessage;
 
     /**
@@ -38,6 +42,7 @@ class AdminRSVPNotification extends Mailable
     public function envelope(): Envelope
     {
         $status = $this->attending ? 'Confirmed ✅' : 'Declined ❌';
+
         return new Envelope(
             subject: "New RSVP Notification: {$this->guest->name} ($status)",
         );

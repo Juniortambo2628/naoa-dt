@@ -12,16 +12,16 @@ return new class extends Migration
         $addedTakenAt = false;
 
         Schema::table('polaroid_images', function (Blueprint $table) use (&$addedTakenAt) {
-            if (!Schema::hasColumn('polaroid_images', 'title')) {
+            if (! Schema::hasColumn('polaroid_images', 'title')) {
                 $table->string('title')->nullable()->after('image_path');
             }
-            if (!Schema::hasColumn('polaroid_images', 'caption')) {
+            if (! Schema::hasColumn('polaroid_images', 'caption')) {
                 $table->string('caption')->nullable()->after('title');
             }
-            if (!Schema::hasColumn('polaroid_images', 'location')) {
+            if (! Schema::hasColumn('polaroid_images', 'location')) {
                 $table->string('location')->nullable()->after('caption');
             }
-            if (!Schema::hasColumn('polaroid_images', 'taken_at')) {
+            if (! Schema::hasColumn('polaroid_images', 'taken_at')) {
                 $table->timestamp('taken_at')->nullable()->after('location');
                 $addedTakenAt = true;
             }

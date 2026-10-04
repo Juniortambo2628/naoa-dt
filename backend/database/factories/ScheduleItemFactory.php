@@ -21,7 +21,7 @@ class ScheduleItemFactory extends Factory
     public function definition(): array
     {
         $startTime = fake()->dateTimeBetween('+1 hour', '+4 hours');
-        $endTime = (clone $startTime)->modify('+' . fake()->numberBetween(15, 120) . ' minutes');
+        $endTime = (clone $startTime)->modify('+'.fake()->numberBetween(15, 120).' minutes');
 
         return [
             'event_id' => Event::factory(),

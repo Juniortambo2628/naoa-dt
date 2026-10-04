@@ -31,7 +31,7 @@ class Invitation extends Model
     public function markAsSent(): void
     {
         $this->update([
-            'status'  => 'sent',
+            'status' => 'sent',
             'sent_at' => now(),
         ]);
     }

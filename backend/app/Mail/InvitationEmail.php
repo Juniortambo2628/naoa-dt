@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Models\Guest;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -15,11 +14,17 @@ class InvitationEmail extends Mailable
     use Queueable, SerializesModels;
 
     public $guest;
+
     public $rsvpUrl;
+
     public $subjectText;
+
     public $messageText;
+
     public $attachmentPath;
+
     public $weddingDateFormatted;
+
     public $rsvpDeadline;
 
     /**
@@ -29,13 +34,13 @@ class InvitationEmail extends Mailable
     {
         $this->guest = $guest;
         $this->attachmentPath = $attachmentPath;
-        
+
         // Point to the formal invitation landing page
-        $this->rsvpUrl = config('app.frontend_url', 'http://localhost:5173') . '/invitation/' . $guest->unique_code;
-        
+        $this->rsvpUrl = config('app.frontend_url', 'http://localhost:5173').'/invitation/'.$guest->unique_code;
+
         $this->subjectText = \App\Models\Setting::getValue('email_invitation_subject', 'You are invited! Dinah & Tze Ren\'s Wedding');
         $this->messageText = \App\Models\Setting::getValue('email_invitation_message', 'We are delighted to invite you to celebrate our wedding day.');
-        
+
         $weddingDateRaw = \App\Support\WeddingInfo::weddingDate();
         try {
             $date = \Carbon\Carbon::parse($weddingDateRaw);
@@ -90,6 +95,7 @@ class InvitationEmail extends Mailable
                     ->withMime('image/png'),
             ];
         }
+
         return [];
     }
 }

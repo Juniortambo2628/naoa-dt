@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use PragmaRX\Google2FALaravel\Facade as Google2FA;
@@ -14,6 +13,7 @@ use PragmaRX\Google2FALaravel\Facade as Google2FA;
 class AuthController extends Controller
 {
     use ApiResponse;
+
     public function login(Request $request)
     {
         $request->validate([
@@ -57,13 +57,13 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !$user->two_factor_secret) {
+        if (! $user || ! $user->two_factor_secret) {
             return $this->errorResponse('Invalid request', 422);
         }
 
         $valid = Google2FA::verifyKey($user->two_factor_secret, $request->code, 1);
 
-        if (!$valid) {
+        if (! $valid) {
             return $this->errorResponse('Invalid 2FA code', 422);
         }
 

@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class FlightService
 {
     private string $apiKey;
+
     private string $baseUrl = 'http://api.aviationstack.com/v1';
 
     public function __construct()
@@ -23,12 +24,13 @@ class FlightService
     {
         if (empty($this->apiKey)) {
             Log::warning('AviationStack API key not configured');
+
             return null;
         }
 
         // Normalize flight number (remove spaces, uppercase)
         $flightNumber = strtoupper(str_replace(' ', '', $flightNumber));
-        
+
         // Cache for 1 hour to save API calls
         $cacheKey = "flight_{$flightNumber}_{$date}";
         $cached = Cache::get($cacheKey);
@@ -41,7 +43,7 @@ class FlightService
                 'access_key' => $this->apiKey,
                 'flight_iata' => $flightNumber,
             ];
-            
+
             if ($date) {
                 $params['flight_date'] = $date;
             }
@@ -54,17 +56,18 @@ class FlightService
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
+
                 return null;
             }
 
             $data = $response->json();
-            
+
             if (empty($data['data']) || count($data['data']) === 0) {
                 return null;
             }
 
             $flight = $data['data'][0];
-            
+
             $result = [
                 'flight_number' => $flight['flight']['iata'] ?? $flightNumber,
                 'airline' => $flight['airline']['name'] ?? null,
@@ -91,7 +94,7 @@ class FlightService
 
             // Cache for 1 hour
             Cache::put($cacheKey, $result, now()->addHour());
-            
+
             return $result;
 
         } catch (\Exception $e) {
@@ -99,6 +102,7 @@ class FlightService
                 'flight' => $flightNumber,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -116,18 +120,18 @@ class FlightService
      */
     public function calculateETA(array $flightData): ?array
     {
-        $arrivalTime = $flightData['arrival_estimated'] 
-            ?? $flightData['arrival_scheduled'] 
+        $arrivalTime = $flightData['arrival_estimated']
+            ?? $flightData['arrival_scheduled']
             ?? null;
 
-        if (!$arrivalTime) {
+        if (! $arrivalTime) {
             return null;
         }
 
         $arrival = new \DateTime($arrivalTime);
-        $now = new \DateTime();
+        $now = new \DateTime;
         $diff = $now->diff($arrival);
-        
+
         $isPast = ($arrival < $now);
         $hours = $diff->h + ($diff->days * 24);
         $minutes = $diff->i;
@@ -139,7 +143,7 @@ class FlightService
             'is_past' => $isPast,
             'is_landed' => in_array($flightData['status'], ['landed', 'cancelled']),
             'delay_minutes' => $flightData['delay_arrival'] ?? 0,
-            'original_arrival' => $flightData['arrival_scheduled'] 
+            'original_arrival' => $flightData['arrival_scheduled']
                 ? (new \DateTime($flightData['arrival_scheduled']))->format('H:i')
                 : null,
         ];

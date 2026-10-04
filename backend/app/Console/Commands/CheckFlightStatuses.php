@@ -6,12 +6,13 @@ use App\Mail\FlightStatusNotification;
 use App\Models\GuestTravelDetail;
 use App\Services\FlightService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class CheckFlightStatuses extends Command
 {
     protected $signature = 'flights:check-status';
+
     protected $description = 'Check flight statuses and send notifications for changes';
 
     public function handle(FlightService $flightService): int
@@ -30,6 +31,7 @@ class CheckFlightStatuses extends Command
 
         if ($travelDetails->isEmpty()) {
             $this->info('No flights to check.');
+
             return Command::SUCCESS;
         }
 
@@ -44,8 +46,9 @@ class CheckFlightStatuses extends Command
                     $detail->flight_departure?->format('Y-m-d')
                 );
 
-                if (!$flightData) {
+                if (! $flightData) {
                     $this->warn("Could not fetch data for flight {$detail->flight_number}");
+
                     continue;
                 }
 
@@ -79,22 +82,28 @@ class CheckFlightStatuses extends Command
                 usleep(500000); // 0.5 seconds
 
             } catch (\Exception $e) {
-                Log::error("Flight check failed for {$detail->flight_number}: " . $e->getMessage());
+                Log::error("Flight check failed for {$detail->flight_number}: ".$e->getMessage());
                 $this->error("Error checking flight {$detail->flight_number}: {$e->getMessage()}");
             }
         }
 
         $this->info("Done. Checked {$travelDetails->count()} flights, sent {$notificationsSent} notifications.");
+
         return Command::SUCCESS;
     }
 
     private function detectChange(?array $previous, array $current): ?string
     {
-        if (!$previous) {
+        if (! $previous) {
             // First time checking - only notify if already delayed or cancelled
             $status = $current['status'] ?? '';
-            if ($status === 'cancelled') return 'cancelled';
-            if (($current['delay_arrival'] ?? 0) > 15) return 'delayed';
+            if ($status === 'cancelled') {
+                return 'cancelled';
+            }
+            if (($current['delay_arrival'] ?? 0) > 15) {
+                return 'delayed';
+            }
+
             return null;
         }
 

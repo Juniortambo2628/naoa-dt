@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
-use App\Models\ScheduleItem;
-use App\Models\LiveUpdate;
 use App\Models\Guest;
+use App\Models\LiveUpdate;
+use App\Models\ScheduleItem;
 use App\Notifications\ScheduleChangedNotification;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Notification;
 class ScheduleController extends Controller
 {
     use ApiResponse;
+
     /**
      * Get the wedding schedule
      */
@@ -69,7 +70,7 @@ class ScheduleController extends Controller
         ]);
 
         $scheduleItem->update($request->only([
-            'title', 'start_time', 'end_time', 'description', 'location', 'status'
+            'title', 'start_time', 'end_time', 'description', 'location', 'status',
         ]));
 
         // If setting to current, set all others to upcoming or completed
@@ -78,7 +79,7 @@ class ScheduleController extends Controller
                 ->where('event_id', $scheduleItem->event_id)
                 ->where('order', '<', $scheduleItem->order)
                 ->update(['status' => 'completed']);
-                
+
             ScheduleItem::where('id', '!=', $scheduleItem->id)
                 ->where('event_id', $scheduleItem->event_id)
                 ->where('order', '>', $scheduleItem->order)

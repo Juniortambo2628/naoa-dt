@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SpotifyController extends Controller
@@ -14,6 +14,7 @@ class SpotifyController extends Controller
     use ApiResponse;
 
     protected $clientId;
+
     protected $clientSecret;
 
     public function __construct()
@@ -32,7 +33,7 @@ class SpotifyController extends Controller
                 $this->clientId,
                 $this->clientSecret
             )->post('https://accounts.spotify.com/api/token', [
-                'grant_type' => 'client_credentials'
+                'grant_type' => 'client_credentials',
             ]);
 
             if ($response->successful()) {
@@ -49,7 +50,7 @@ class SpotifyController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'query' => 'required|string|min:2|max:100'
+            'query' => 'required|string|min:2|max:100',
         ]);
 
         try {
@@ -60,7 +61,7 @@ class SpotifyController extends Controller
                     'q' => $request->query('query'),
                     'type' => 'track',
                     'limit' => 10,
-                    'market' => 'US'
+                    'market' => 'US',
                 ]);
 
             if ($response->successful()) {
@@ -82,7 +83,8 @@ class SpotifyController extends Controller
 
             return $this->errorResponse('Failed to search Spotify', 500);
         } catch (\Exception $e) {
-            Log::error('Spotify Search Error: ' . $e->getMessage());
+            Log::error('Spotify Search Error: '.$e->getMessage());
+
             return $this->errorResponse('Spotify service unavailable', 503);
         }
     }
@@ -100,6 +102,7 @@ class SpotifyController extends Controller
 
             if ($response->successful()) {
                 $track = $response->json();
+
                 return $this->successResponse([
                     'id' => $track['id'],
                     'name' => $track['name'],
@@ -112,7 +115,8 @@ class SpotifyController extends Controller
 
             return $this->errorResponse('Track not found', 404);
         } catch (\Exception $e) {
-            Log::error('Spotify GetTrack Error: ' . $e->getMessage());
+            Log::error('Spotify GetTrack Error: '.$e->getMessage());
+
             return $this->errorResponse('Spotify service unavailable', 503);
         }
     }

@@ -1,42 +1,40 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\GuestController;
-use App\Http\Controllers\Api\ScheduleController;
-use App\Http\Controllers\Api\GiftController;
-use App\Http\Controllers\Api\TwoFactorController;
-use App\Http\Controllers\Api\GalleryController;
-use App\Http\Controllers\Api\InvitationController;
-use App\Http\Controllers\Api\PageContentController;
-use App\Http\Controllers\Api\FaqController;
-use App\Http\Controllers\Api\SpotifyController;
-use App\Http\Controllers\Api\SongRequestController;
-use App\Http\Controllers\Api\GuestbookController;
-use App\Http\Controllers\Api\TableController;
-use App\Http\Controllers\Api\MediaController;
-use App\Http\Controllers\Api\SettingController;
-use App\Http\Controllers\Api\TranslateController;
 use App\Http\Controllers\Api\AnalyticsController;
-use App\Http\Controllers\Api\ExportController;
-use App\Http\Controllers\Api\CheckInController;
-use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\TestController;
-use App\Http\Controllers\Api\GuestTravelController;
-use App\Http\Controllers\Api\PolaroidImageController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalendarController;
-use App\Http\Controllers\Api\EnquiryController;
-use App\Http\Controllers\Api\WeatherController;
+use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\EmergencyNumberController;
+use App\Http\Controllers\Api\EnquiryController;
+use App\Http\Controllers\Api\ExportController;
+use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\FlightController;
+use App\Http\Controllers\Api\GalleryController;
+use App\Http\Controllers\Api\GiftController;
+use App\Http\Controllers\Api\GuestbookController;
+use App\Http\Controllers\Api\GuestController;
+use App\Http\Controllers\Api\GuestTravelController;
+use App\Http\Controllers\Api\InvitationController;
+use App\Http\Controllers\Api\MediaController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PageContentController;
+use App\Http\Controllers\Api\PolaroidImageController;
+use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\SongRequestController;
+use App\Http\Controllers\Api\SpotifyController;
+use App\Http\Controllers\Api\TableController;
+use App\Http\Controllers\Api\TestController;
+use App\Http\Controllers\Api\TranslateController;
+use App\Http\Controllers\Api\TwoFactorController;
+use App\Http\Controllers\Api\WeatherController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 */
-
 
 // Public Authentication Routes (Throttled)
 Route::middleware('throttle:15,1')->group(function () {
@@ -50,7 +48,7 @@ Route::middleware('throttle:30,1')->group(function () {
         Route::get('/code/{code}', [GuestController::class, 'getByCode']);
         Route::post('/code/{code}/rsvp', [GuestController::class, 'submitRsvp']);
         Route::post('/code/{code}/location', [GuestController::class, 'updateLocation']);
-        
+
         // Travel details
         Route::get('/code/{code}/travel', [GuestTravelController::class, 'show']);
         Route::post('/code/{code}/travel', [GuestTravelController::class, 'store']);
@@ -66,7 +64,7 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/', [ScheduleController::class, 'getSchedule']);
         Route::get('/updates', [ScheduleController::class, 'getLiveUpdates']);
     });
-    
+
     // Public Content Routes
     Route::group(['prefix' => 'content'], function () {
         Route::get('/', [PageContentController::class, 'index']);
@@ -233,14 +231,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [EmergencyNumberController::class, 'update']);
         Route::delete('/{id}', [EmergencyNumberController::class, 'destroy']);
     });
-    
+
     // Media Upload
     Route::post('/upload', [MediaController::class, 'upload']);
 
     // Settings Management (admin)
     Route::get('/settings', [SettingController::class, 'index']);
     Route::post('/settings', [SettingController::class, 'update']);
-    
+
     // Polaroid Images (Admin)
     Route::post('/polaroid-images', [PolaroidImageController::class, 'store']);
     Route::post('/polaroid-images/live', [PolaroidImageController::class, 'storeLive']);
@@ -301,4 +299,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/test/simulate/live-update', [TestController::class, 'simulateLiveUpdate']);
     Route::post('/test/simulate/polaroid', [TestController::class, 'simulatePolaroid']);
 });
-
