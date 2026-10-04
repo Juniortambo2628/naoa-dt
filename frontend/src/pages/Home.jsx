@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles } from 'lucide-react';
 import { getAssetUrl, polaroidService, galleryService } from '../services/api';
-import { getWeddingDateText } from '../utils/weddingInfo';
+import { getWeddingDateText, getWeddingDate, getCoupleNames } from '../utils/weddingInfo';
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
@@ -23,7 +23,6 @@ import {
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useScrollAnimation';
 import { Skeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
-import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
 
 // Polaroid Floating Image Component
 function PolaroidFloatingImage({ src, size = 160, duration = 10, delay = 0, rotate = 0, note = '', customSize, offsetX, offsetY, customRotation }) {
@@ -76,10 +75,10 @@ const getContent = (content, section, field, i18n, fallbackKey, t) => {
 };
 
 // Hero Section with Horizontal Names, Female/Male Icons, and Infinity Sign
-function HeroSection({ content, loading }) {
+function HeroSection({ content, settings, loading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'home_hero', field, i18n, fallback, t);
-  const getStoryTxt = (field, fallback) => getContent(content, 'our_story', field, i18n, fallback, t);
+  const { brideName, groomName } = getCoupleNames(settings, content, i18n.language);
 
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.3 });
@@ -157,7 +156,7 @@ function HeroSection({ content, loading }) {
                 lineHeight: 1.1,
               }}
             >
-              {loading ? <Skeleton variant="text" width="150px" height="60px" as="span" /> : getStoryTxt('bride_name', WEDDING_DEFAULTS.brideName)}
+              {loading ? <Skeleton variant="text" width="150px" height="60px" as="span" /> : brideName}
             </motion.h1>
           </div>
           
@@ -193,7 +192,7 @@ function HeroSection({ content, loading }) {
                 lineHeight: 1.1,
               }}
             >
-              {loading ? <Skeleton variant="text" width="200px" height="60px" as="span" /> : getStoryTxt('groom_name', WEDDING_DEFAULTS.groomName)}
+              {loading ? <Skeleton variant="text" width="200px" height="60px" as="span" /> : groomName}
             </motion.h1>
             <motion.div
               key={`male-icon-${animationKey}`}
@@ -230,7 +229,7 @@ function HeroSection({ content, loading }) {
             className="text-2xl md:text-3xl mb-4 font-medium"
             style={{ color: '#4A3F35', fontFamily: "'Cormorant Garamond', serif" }}
           >
-            {loading ? <Skeleton variant="text" width="250px" height="30px" className="mx-auto" as="span" /> : getWeddingDateText(content, i18n.language)}
+            {loading ? <Skeleton variant="text" width="250px" height="30px" className="mx-auto" as="span" /> : getWeddingDateText(content, i18n.language, settings)}
           </p>
           <p className="flex items-center justify-center gap-2 text-lg md:text-xl" style={{ color: '#6B5D52' }}>
             <MapPin className="w-5 h-5 flex-shrink-0" style={{ color: '#A67B5B' }} />
@@ -268,12 +267,12 @@ function HeroSection({ content, loading }) {
 }
 
 // Countdown Section with Animated Numbers
-function CountdownSection({ content, loading: cmsLoading }) {
+function CountdownSection({ content, settings, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'countdown', field, i18n, fallback, t);
   
   // Get wedding date from CMS or use fallback
-  const weddingDateStr = content?.countdown?.content?.wedding_date || WEDDING_DEFAULTS.weddingDate;
+  const weddingDateStr = getWeddingDate(settings, content);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
   // Safe parsing
@@ -383,9 +382,10 @@ function CountdownSection({ content, loading: cmsLoading }) {
 }
 
 // Story Section with Love Birds and Interactive Elements
-function StorySection({ content, loading: cmsLoading }) {
+function StorySection({ content, settings, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'our_story', field, i18n, fallback, t);
+  const { brideName, groomName } = getCoupleNames(settings, content, i18n.language);
 
   const ref = useRef(null);
 
@@ -454,7 +454,7 @@ function StorySection({ content, loading: cmsLoading }) {
                 className="text-4xl mb-1"
                 style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
               >
-                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('bride_name', WEDDING_DEFAULTS.brideName)}
+                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : brideName}
               </h3>
               {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.bride_role && (
                 <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
@@ -514,7 +514,7 @@ function StorySection({ content, loading: cmsLoading }) {
                 className="text-4xl mb-1"
                 style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
               >
-                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : getTxt('groom_name', WEDDING_DEFAULTS.groomName)}
+                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : groomName}
               </h3>
               {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.groom_role && (
                 <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
@@ -937,7 +937,7 @@ function CTASection({ content, loading: cmsLoading }) {
 
 // Main Home Page
 export default function Home() {
-  const { contents: content, isVisible, loading: contentLoading } = useContent();
+  const { contents: content, settings, isVisible, loading: contentLoading } = useContent();
 
   return (
     <motion.div
@@ -946,9 +946,9 @@ export default function Home() {
       exit={{ opacity: 0 }}
     >
       <main>
-        {isVisible('home_hero') && <HeroSection content={content} loading={contentLoading} />}
-        {isVisible('countdown') && <CountdownSection content={content} loading={contentLoading} />}
-        {isVisible('our_story') && <StorySection content={content} loading={contentLoading} />}
+        {isVisible('home_hero') && <HeroSection content={content} settings={settings} loading={contentLoading} />}
+        {isVisible('countdown') && <CountdownSection content={content} settings={settings} loading={contentLoading} />}
+        {isVisible('our_story') && <StorySection content={content} settings={settings} loading={contentLoading} />}
         {isVisible('events') && <EventDetails content={content} loading={contentLoading} />}
         {isVisible('gallery') && <GallerySection content={content} loading={contentLoading} />}
         {isVisible('rsvp') && <CTASection content={content} loading={contentLoading} />}

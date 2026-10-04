@@ -10,7 +10,12 @@ class SettingsSeeder extends Seeder
     public function run()
     {
         $settings = [
-            ['key' => 'wedding_date', 'value' => '2025-06-15', 'group' => 'general'],
+            // Canonical wedding details — these are the single source of truth,
+            // edited on the admin Settings page (Wedding Details card) and read
+            // everywhere via frontend/src/utils/weddingInfo.js.
+            ['key' => 'wedding_date', 'value' => '2026-11-14', 'group' => 'general'],
+            ['key' => 'bride_name', 'value' => 'Dinah', 'group' => 'general'],
+            ['key' => 'groom_name', 'value' => 'Tze Ren', 'group' => 'general'],
             ['key' => 'rsvp_enabled', 'value' => 'true', 'group' => 'general'],
             ['key' => 'admin_email_notifications', 'value' => 'true', 'group' => 'notifications'],
             ['key' => 'admin_email', 'value' => 'admin@wedding.com', 'group' => 'notifications'],

@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useGuestByCode, useSettings, useContent } from '../hooks/useApiHooks';
 import InvitationCanvas from '../components/admin/InvitationCanvas';
 import { normalizePages } from '../utils/invitationPages';
-import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
+import { getWeddingInfo, getWeddingDateText } from '../utils/weddingInfo';
 import PublicSeatingChart from '../components/PublicSeatingChart';
 import WeatherWidget from '../components/WeatherWidget';
 import MapsETA from '../components/MapsETA';
@@ -35,31 +35,18 @@ export default function DigitalInvitation() {
     // with legacy single-page themes).
     const invitationPages = normalizePages(design);
 
-    const weddingDate = content?.countdown?.content?.wedding_date || WEDDING_DEFAULTS.weddingDate;
-    const venueName = content?.home_hero?.content?.venue?.en || content?.home_hero?.content?.venue || 'The Grand Estate';
-    const venueAddress = settings?.venue_address || 'Kenya';
-    const venueLat = settings?.venue_lat || '-1.2921';
-    const venueLng = settings?.venue_lng || '36.8219';
-    
-    const formattedDate = new Date(weddingDate).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    // Centralized wedding details (Settings-first, Content Manager fallback).
+    const weddingInfo = getWeddingInfo(settings, content);
+    const weddingDate = weddingInfo.wedding_date;
+    const venueName = weddingInfo.venue_name;
+    const venueAddress = weddingInfo.venue_address || 'Kenya';
+    const venueLat = weddingInfo.venue_lat || '-1.2921';
+    const venueLng = weddingInfo.venue_lng || '36.8219';
 
     const eventTime = content?.event_details?.content?.time || '2:00 PM';
 
-    const getTxt = (section, field, fallback) => {
-        const sectionData = content?.[section]?.content;
-        const val = sectionData?.[field];
-        if (!val) return fallback;
-        if (typeof val === 'object') return val['en'] || val[Object.keys(val)[0]] || fallback;
-        return val;
-    };
-
-    const weddingDateText = getTxt('home_hero', 'date_text', formattedDate);
-    const coupleNames = getTxt('footer', 'couple_names', WEDDING_DEFAULTS.coupleNames);
+    const weddingDateText = getWeddingDateText(content, 'en', settings);
+    const coupleNames = weddingInfo.couple_names;
 
     const getEventDetails = () => {
         // Parse wedding date (YYYY-MM-DD)

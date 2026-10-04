@@ -16,16 +16,11 @@
             <div style="background-color: #FAF8F6; padding: 30px; border-radius: 15px; border: 1px solid #F0ECE9; margin-bottom: 40px; text-align: left;">
                 <h3 style="font-size: 18px; color: #A67B5B; margin-bottom: 15px; text-align: center;">Event Details</h3>
                 @php
-                    $countdown = \App\Models\PageContent::where('section_key', 'countdown')->first();
-                    $dateRaw = $countdown->content['wedding_date'] ?? '2026-11-14';
+                    $dateRaw = \App\Support\WeddingInfo::weddingDate();
                     $formattedDate = \Carbon\Carbon::parse($dateRaw)->format('F jS, Y');
-                    
-                    $homeHero = \App\Models\PageContent::where('section_key', 'home_hero')->first();
-                    $location = $homeHero->content['venue']['en'] ?? $homeHero->content['location'] ?? 'Zereniti House, Limuru, Kenya';
-                    if (is_array($location)) {
-                        $location = $location['en'] ?? array_values($location)[0];
-                    }
-                    
+
+                    $location = \App\Support\WeddingInfo::venueName('Zereniti House, Limuru, Kenya');
+
                     $eventDetails = \App\Models\PageContent::where('section_key', 'event_details')->first();
                     $time = $eventDetails->content['time'] ?? 'TBD';
                 @endphp
@@ -38,7 +33,7 @@
 
                 @php
                     $dateClean = str_replace(['-', ':', ' '], '', substr($dateRaw, 0, 16));
-                    $title = "Dinah & Tze Ren's Wedding";
+                    $title = \App\Support\WeddingInfo::coupleNames() . "'s Wedding";
                     $googleCalendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE" . 
                         "&text=" . urlencode($title) . 
                         "&dates=" . $dateClean . "/" . $dateClean . 

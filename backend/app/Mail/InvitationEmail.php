@@ -36,8 +36,7 @@ class InvitationEmail extends Mailable
         $this->subjectText = \App\Models\Setting::getValue('email_invitation_subject', 'You are invited! Dinah & Tze Ren\'s Wedding');
         $this->messageText = \App\Models\Setting::getValue('email_invitation_message', 'We are delighted to invite you to celebrate our wedding day.');
         
-        $countdown = \App\Models\PageContent::where('section_key', 'countdown')->first();
-        $weddingDateRaw = $countdown->content['wedding_date'] ?? '2026-11-14';
+        $weddingDateRaw = \App\Support\WeddingInfo::weddingDate();
         try {
             $date = \Carbon\Carbon::parse($weddingDateRaw);
             $this->weddingDateFormatted = $date->format('F jS, Y');

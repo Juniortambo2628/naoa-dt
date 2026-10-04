@@ -16,6 +16,6 @@
     <p style="font-size: 13px; color: #8C8279;">In response to your message:</p>
     <p style="font-size: 13px; color: #8C8279; font-style: italic;">"{{ $enquiry->message }}"</p>
 
-    <p style="margin-top: 30px;">Warmly,<br><strong>Dinah & Tze Ren</strong></p>
+    <p style="margin-top: 30px;">Warmly,<br><strong>{{ \App\Support\WeddingInfo::coupleNames() }}</strong></p>
 </div>
 @endsection

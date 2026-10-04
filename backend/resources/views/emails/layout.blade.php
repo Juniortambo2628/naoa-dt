@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+@php($coupleNamesTitle = \App\Support\WeddingInfo::coupleNames() . ' Wedding')
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Dinah & Tze Ren Wedding')</title>
+    <title>@yield('title', $coupleNamesTitle)</title>
     <style>
         /* Base Styles */
         body {
@@ -123,19 +124,14 @@
     <div class="wrapper">
         <div class="container">
             <div class="header">
-                <div class="names">Dinah & Tze Ren</div>
-                <div class="ornament">&mdash;</div>
                 @php
-                    $countdown = \App\Models\PageContent::where('section_key', 'countdown')->first();
-                    $dateRaw = $countdown->content['wedding_date'] ?? '2026-11-14';
+                    $coupleNames = \App\Support\WeddingInfo::coupleNames();
+                    $dateRaw = \App\Support\WeddingInfo::weddingDate();
                     $formattedDate = \Carbon\Carbon::parse($dateRaw)->format('F jS, Y');
-                    
-                    $homeHero = \App\Models\PageContent::where('section_key', 'home_hero')->first();
-                    $location = $homeHero->content['location'] ?? 'Nairobi, Kenya';
-                    if (is_array($location)) {
-                        $location = $location['en'] ?? array_values($location)[0];
-                    }
+                    $location = \App\Support\WeddingInfo::venueAddress(\App\Support\WeddingInfo::venueName('Nairobi, Kenya'));
                 @endphp
+                <div class="names">{{ $coupleNames }}</div>
+                <div class="ornament">&mdash;</div>
                 <div class="date-line">{{ $formattedDate }} • {{ $location }}</div>
             </div>
             
