@@ -69,11 +69,12 @@ class InvitationService
     }
 
     /**
-     * Persist a base64 image to temporary storage for attachment.
+     * Persist a base64-encoded attachment (PDF or image) to temporary storage.
      *
+     * @param  string  $extension  File extension to store under (e.g. 'pdf', 'png')
      * @return string|null Filesystem path, or null on failure
      */
-    public function saveTempImage(string $base64String, Guest $guest): ?string
+    public function saveTempAttachment(string $base64String, Guest $guest, string $extension = 'png'): ?string
     {
         if (! str_contains($base64String, 'base64')) {
             return null;
@@ -85,10 +86,20 @@ class InvitationService
         }
 
         $decodedData = base64_decode($data[1]);
-        $fileName = 'invitations/invitation_'.$guest->id.'_'.time().'.png';
+        $fileName = 'invitations/invitation_'.$guest->id.'_'.time().'.'.$extension;
 
         Storage::disk('public')->put($fileName, $decodedData);
 
         return Storage::disk('public')->path($fileName);
+    }
+
+    /**
+     * Backward-compatible alias for saving a base64 PNG attachment.
+     *
+     * @return string|null Filesystem path, or null on failure
+     */
+    public function saveTempImage(string $base64String, Guest $guest): ?string
+    {
+        return $this->saveTempAttachment($base64String, $guest, 'png');
     }
 }
