@@ -15,13 +15,18 @@ import { MoreHorizontal, ChevronUp, ChevronDown } from 'lucide-react';
  *     disabled?: boolean,
  *     hidden?: boolean,
  *   }
+ * @param {React.ReactNode} children - optional custom controls rendered inside
+ *   the same bar, before the actions (e.g. the invitation designer's page and
+ *   undo/redo controls), so every floating control shares one toolbar.
+ * @param {string} z - z-index utility class for the fixed wrapper (default z-50).
+ * @param {string} wrapperClassName - extra classes for the fixed wrapper.
  */
-export default function AdminFloatingToolbar({ actions = [] }) {
+export default function AdminFloatingToolbar({ actions = [], children = null, z = 'z-50', wrapperClassName = '' }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [visible, setVisible] = useState(true);
 
   const visibleActions = actions.filter((a) => !a.hidden);
-  if (visibleActions.length === 0) return null;
+  if (visibleActions.length === 0 && !children) return null;
 
   // Show first 4 actions directly; collapse the rest into a "More" menu
   const primaryActions = visibleActions.slice(0, 4);
@@ -49,7 +54,7 @@ export default function AdminFloatingToolbar({ actions = [] }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.96 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-1.5rem)]"
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 ${z} max-w-[calc(100vw-1.5rem)] ${wrapperClassName}`}
         >
           <div
             className="flex flex-wrap items-center justify-center gap-2 px-2 py-2 rounded-2xl border border-white/40 shadow-2xl backdrop-blur-md"
@@ -58,6 +63,10 @@ export default function AdminFloatingToolbar({ actions = [] }) {
               boxShadow: '0 12px 40px rgba(74, 63, 53, 0.18)',
             }}
           >
+            {children}
+            {children && visibleActions.length > 0 && (
+              <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+            )}
             {primaryActions.map((action) => {
               const Icon = action.icon;
               return (
@@ -138,7 +147,7 @@ export default function AdminFloatingToolbar({ actions = [] }) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setVisible(true)}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 p-2.5 rounded-full bg-white/90 border border-stone-200 shadow-lg text-[#A67B5B] hover:bg-white transition-colors"
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 ${z} p-2.5 rounded-full bg-white/90 border border-stone-200 shadow-lg text-[#A67B5B] hover:bg-white transition-colors ${wrapperClassName}`}
           title="Show toolbar"
         >
           <ChevronUp className="w-5 h-5" />

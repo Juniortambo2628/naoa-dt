@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { settingService, contentService } from '../../services/api';
 import { getWeddingInfo } from '../../utils/weddingInfo';
 import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 import {
     Palette, Sliders, Undo2, Redo2,
-    Maximize, Minimize, GripHorizontal, Eye, EyeOff,
+    Maximize, Minimize,
     FileImage, FileText, Plus, Copy, Trash2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
@@ -45,7 +44,6 @@ export default function InvitationDesigner() {
   // edit would overwrite the real saved design (losing extra pages).
   const loadedOkRef = useRef(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isWidgetExpanded, setIsWidgetExpanded] = useState(true);
   const previewContainerRef = useRef(null);
   
   const dummyGuest = {
@@ -635,84 +633,6 @@ export default function InvitationDesigner() {
         >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
 
-            {/* Page Navigator */}
-            {!loading && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-stone-200 p-1.5 max-w-[90%]">
-                    <button
-                        onClick={() => goToPage(currentPage - 1)}
-                        disabled={currentPage <= 0}
-                        className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-                        title="Previous Page"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide max-w-[280px] px-0.5">
-                        {design.pages.map((pg, idx) => (
-                            <button
-                                key={pg.id || idx}
-                                onClick={() => goToPage(idx)}
-                                className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all ${currentPage === idx ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
-                                title={`Go to page ${idx + 1}`}
-                            >
-                                {idx + 1}
-                            </button>
-                        ))}
-                    </div>
-
-                    <button
-                        onClick={() => goToPage(currentPage + 1)}
-                        disabled={currentPage >= totalPages - 1}
-                        className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-                        title="Next Page"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-
-                    <div className="w-px h-6 bg-stone-200 mx-0.5" />
-
-                    <button
-                        onClick={addPage}
-                        className="p-2 rounded-xl text-[#A67B5B] hover:bg-[#A67B5B]/10 transition-all flex items-center gap-1"
-                        title="Add a new page"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Add Page</span>
-                    </button>
-                    <button
-                        onClick={() => duplicatePage(currentPage)}
-                        className="p-2 rounded-xl text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B] transition-all"
-                        title="Duplicate current page"
-                    >
-                        <Copy className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => movePage(currentPage, -1)}
-                        disabled={currentPage <= 0}
-                        className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
-                        title="Move page left"
-                    >
-                        <ChevronLeft className="w-4 h-4" strokeWidth={3} />
-                    </button>
-                    <button
-                        onClick={() => movePage(currentPage, 1)}
-                        disabled={currentPage >= totalPages - 1}
-                        className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
-                        title="Move page right"
-                    >
-                        <ChevronRight className="w-4 h-4" strokeWidth={3} />
-                    </button>
-                    <button
-                        onClick={() => deletePage(currentPage)}
-                        disabled={totalPages <= 1}
-                        className={`p-2 rounded-xl transition-all ${totalPages > 1 ? 'text-stone-400 hover:bg-red-50 hover:text-red-500' : 'text-stone-200 cursor-not-allowed'}`}
-                        title="Delete current page"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
-                </div>
-            )}
-
             {loading ? (
                  <div className="flex-1 flex items-center justify-center p-8 z-10">
                      <Skeleton variant="image" width="400px" height="600px" className="rounded-2xl shadow-xl max-w-full" />
@@ -731,89 +651,6 @@ export default function InvitationDesigner() {
                 />
             )}
 
-            {/* Floating Workspace Controls (Undo/Redo & Design Type) */}
-            <motion.div 
-                drag 
-                dragMomentum={false}
-                dragConstraints={previewContainerRef}
-                initial={{ x: "-50%", y: 0 }}
-                style={{ translateX: "-50%" }}
-                className="absolute bottom-6 left-1/2 flex items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-stone-200 p-1.5 z-50"
-            >
-                <div className="flex items-center px-2 cursor-grab active:cursor-grabbing text-stone-300 hover:text-stone-500" title="Drag to move">
-                    <GripHorizontal className="w-4 h-4" />
-                </div>
-                
-                {isWidgetExpanded && (
-                    <div className="flex items-center">
-                        <div className="w-px h-6 bg-stone-200 mx-1" />
-                        <button 
-                            onClick={handleUndo} 
-                            disabled={historyIndex <= 0}
-                            className={`p-3 rounded-xl transition-all ${historyIndex > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-                            title="Undo (Ctrl+Z)"
-                        >
-                            <Undo2 className="w-5 h-5" />
-                        </button>
-                        <div className="w-px h-6 bg-stone-200 mx-1" />
-                        <button 
-                            onClick={handleRedo} 
-                            disabled={historyIndex >= history.length - 1}
-                            className={`p-3 rounded-xl transition-all ${historyIndex < history.length - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-                            title="Redo (Ctrl+Y)"
-                        >
-                            <Redo2 className="w-5 h-5" />
-                        </button>
-                        <div className="w-px h-6 bg-stone-200 mx-1" />
-                        
-                        {/* Selected Element Opacity Adjustment */}
-                        {selectedItemId && (
-                            <>
-                                <div className="flex items-center gap-2 px-2" title="Element Opacity">
-                                    <Sliders className="w-4 h-4 text-[#A67B5B]" />
-                                    <input
-                                        type="range"
-                                        min="0" max="100"
-                                        value={activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
-                                        onChange={(e) => handleDesignUpdate('update_item', { id: selectedItemId, opacity: parseInt(e.target.value) })}
-                                        className="w-20 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#A67B5B]"
-                                    />
-                                    <span className="text-[10px] font-bold text-stone-500 w-6">{activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
-                                </div>
-                                <div className="w-px h-6 bg-stone-200 mx-1" />
-                            </>
-                        )}
-
-                        <select
-                            value={designType}
-                            onChange={(e) => setDesignType(e.target.value)}
-                            className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-transparent text-[#A67B5B] cursor-pointer hover:bg-stone-100 transition-all border-none outline-none appearance-none"
-                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A67B5B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', paddingRight: '20px' }}
-                        >
-                            <option value="invitation">Invitation</option>
-                            <option value="save_the_date">Save the Date</option>
-                        </select>
-                    </div>
-                )}
-                
-                <div className="w-px h-6 bg-stone-200 mx-1" />
-                <button
-                    onClick={() => setIsWidgetExpanded(!isWidgetExpanded)}
-                    className="p-2 rounded-xl transition-all text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]"
-                    title={isWidgetExpanded ? "Collapse Controls" : "Expand Controls"}
-                >
-                    {isWidgetExpanded ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-                <div className="w-px h-6 bg-stone-200 mx-1" />
-                <button
-                    onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="p-2 rounded-xl transition-all text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]"
-                    title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Preview"}
-                >
-                    {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                </button>
-            </motion.div>
-
             {/* Hidden Exporter */}
             <InvitationExportContainer 
                 ref={exporterRef} 
@@ -829,6 +666,7 @@ export default function InvitationDesigner() {
         </div>
       </AdminPageLayout>
       <AdminFloatingToolbar
+        z={isFullscreen ? 'z-[110]' : 'z-50'}
         actions={[
           {
             id: 'test-png',
@@ -845,7 +683,150 @@ export default function InvitationDesigner() {
             disabled: isExporting,
           },
         ]}
-      />
+      >
+        {!loading && (
+          <>
+            {/* Page controls */}
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage <= 0}
+              className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+              title="Previous page"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide max-w-[160px] px-0.5">
+              {design.pages.map((pg, idx) => (
+                <button
+                  key={pg.id || idx}
+                  onClick={() => goToPage(idx)}
+                  className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-bold transition-all ${currentPage === idx ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
+                  title={`Go to page ${idx + 1}`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+              className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+              title="Next page"
+              aria-label="Next page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={addPage}
+              className="p-2 rounded-xl text-[#A67B5B] hover:bg-[#A67B5B]/10 transition-all flex items-center gap-1"
+              title="Add a new page"
+              aria-label="Add a new page"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Add Page</span>
+            </button>
+            <button
+              onClick={() => duplicatePage(currentPage)}
+              className="p-2 rounded-xl text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B] transition-all"
+              title="Duplicate current page"
+              aria-label="Duplicate current page"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => movePage(currentPage, -1)}
+              disabled={currentPage <= 0}
+              className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
+              title="Move page left"
+              aria-label="Move page left"
+            >
+              <ChevronLeft className="w-4 h-4" strokeWidth={3} />
+            </button>
+            <button
+              onClick={() => movePage(currentPage, 1)}
+              disabled={currentPage >= totalPages - 1}
+              className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
+              title="Move page right"
+              aria-label="Move page right"
+            >
+              <ChevronRight className="w-4 h-4" strokeWidth={3} />
+            </button>
+            <button
+              onClick={() => deletePage(currentPage)}
+              disabled={totalPages <= 1}
+              className={`p-2 rounded-xl transition-all ${totalPages > 1 ? 'text-stone-400 hover:bg-red-50 hover:text-red-500' : 'text-stone-200 cursor-not-allowed'}`}
+              title="Delete current page"
+              aria-label="Delete current page"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+
+            <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+
+            {/* Undo / redo */}
+            <button
+              onClick={handleUndo}
+              disabled={historyIndex <= 0}
+              className={`p-2 rounded-xl transition-all ${historyIndex > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              <Undo2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleRedo}
+              disabled={historyIndex >= history.length - 1}
+              className={`p-2 rounded-xl transition-all ${historyIndex < history.length - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
+              title="Redo (Ctrl+Y)"
+              aria-label="Redo"
+            >
+              <Redo2 className="w-4 h-4" />
+            </button>
+
+            {/* Selected element opacity */}
+            {selectedItemId && (
+              <>
+                <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+                <div className="flex items-center gap-2 px-1" title="Element opacity">
+                  <Sliders className="w-4 h-4 text-[#A67B5B]" />
+                  <input
+                    type="range"
+                    min="0" max="100"
+                    aria-label="Element opacity"
+                    value={activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
+                    onChange={(e) => handleDesignUpdate('update_item', { id: selectedItemId, opacity: parseInt(e.target.value) })}
+                    className="w-20 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#A67B5B]"
+                  />
+                  <span className="text-[10px] font-bold text-stone-500 w-6">{activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
+                </div>
+              </>
+            )}
+
+            <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+
+            {/* Design type + fullscreen */}
+            <select
+              value={designType}
+              onChange={(e) => setDesignType(e.target.value)}
+              aria-label="Design type"
+              className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-transparent text-[#A67B5B] cursor-pointer hover:bg-stone-100 transition-all border-none outline-none appearance-none"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A67B5B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', paddingRight: '20px' }}
+            >
+              <option value="invitation">Invitation</option>
+              <option value="save_the_date">Save the Date</option>
+            </select>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-2 rounded-xl transition-all text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]"
+              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </button>
+          </>
+        )}
+      </AdminFloatingToolbar>
     </>
   );
 }
