@@ -74,6 +74,31 @@ export default function AdminGuests() {
     }
   }, [settingsData]);
 
+  // Convert a Blob (e.g. the generated PDF) into a base64 data URL so it can be
+  // posted to the invitation send endpoint alongside the guest id.
+  const blobToBase64 = (blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  // Build the invitation attachment payload: a multi-page PDF with clickable
+  // calendar/location links. Falls back to a PNG if PDF generation fails.
+  const buildInvitePayload = async () => {
+    if (!exporterRef.current) return {};
+    try {
+      const blob = await exporterRef.current.generatePdf();
+      if (blob) {
+        return { pdf_data: await blobToBase64(blob) };
+      }
+    } catch (err) {
+      console.error('PDF generation failed, falling back to PNG', err);
+    }
+    const imageData = await exporterRef.current.generateImage();
+    return { image_data: imageData };
+  };
+
   const exportBulk = async (format = 'png') => {
       const targets = selectedIds.length > 0 
           ? guests.filter(g => selectedIds.includes(g.id)) 
@@ -222,12 +247,9 @@ export default function AdminGuests() {
             // Wait for render
             await new Promise(resolve => setTimeout(resolve, 800));
             
-            let imageData = null;
-            if (exporterRef.current) {
-                imageData = await exporterRef.current.generateImage();
-            }
-            
-            await invitationService.send(guest.id, { image_data: imageData });
+            const payload = await buildInvitePayload();
+
+            await invitationService.send(guest.id, payload);
         }
         toast.success(`Sent ${targets.length} invitations successfully!`);
         refetchGuests();
@@ -375,17 +397,14 @@ export default function AdminGuests() {
   const handleSendInvite = async (guest) => {
     setSendingId(guest.id);
     try {
-        // Generate invitation image before sending
+        // Generate the invitation attachment before sending
         setExportingGuest(guest);
         // Wait for render so the exporter component can pick up the guest data
         await new Promise(resolve => setTimeout(resolve, 800));
-        
-        let imageData = null;
-        if (exporterRef.current) {
-            imageData = await exporterRef.current.generateImage();
-        }
-        
-        await invitationService.send(guest.id, { image_data: imageData });
+
+        const payload = await buildInvitePayload();
+
+        await invitationService.send(guest.id, payload);
         toast.success(`Invitation sent to ${guest.name} with card attached!`);
         refetchGuests();
     } catch (e) {

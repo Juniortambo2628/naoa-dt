@@ -25,14 +25,19 @@ class InvitationController extends Controller
         }
 
         $attachmentPath = null;
+        $pdfData = $request->input('pdf_data');
         $imageData = $request->input('image_data');
 
-        if ($imageData && str_contains($imageData, 'base64')) {
-            try {
-                $attachmentPath = $this->invitationService->saveTempImage($imageData, $guest);
-            } catch (\Exception $e) {
-                Log::error('Failed to save invitation image: '.$e->getMessage());
+        try {
+            if ($pdfData && str_contains($pdfData, 'base64')) {
+                // Preferred: a multi-page PDF with clickable calendar/location links.
+                $attachmentPath = $this->invitationService->saveTempAttachment($pdfData, $guest, 'pdf');
+            } elseif ($imageData && str_contains($imageData, 'base64')) {
+                // Fallback for older clients still sending a single-page PNG.
+                $attachmentPath = $this->invitationService->saveTempAttachment($imageData, $guest, 'png');
             }
+        } catch (\Exception $e) {
+            Log::error('Failed to save invitation attachment: '.$e->getMessage());
         }
 
         $result = $this->invitationService->sendToGuest($guest, $attachmentPath);

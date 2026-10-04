@@ -89,10 +89,12 @@ class InvitationEmail extends Mailable
     public function attachments(): array
     {
         if ($this->attachmentPath && file_exists($this->attachmentPath)) {
+            $isPdf = strtolower(pathinfo($this->attachmentPath, PATHINFO_EXTENSION)) === 'pdf';
+
             return [
                 \Illuminate\Mail\Mailables\Attachment::fromPath($this->attachmentPath)
-                    ->as('Wedding_Invitation.png')
-                    ->withMime('image/png'),
+                    ->as($isPdf ? 'Wedding_Invitation.pdf' : 'Wedding_Invitation.png')
+                    ->withMime($isPdf ? 'application/pdf' : 'image/png'),
             ];
         }
 
