@@ -182,8 +182,9 @@ function ClaimModal({ gift, onClose, onSubmit }) {
 
             <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
               <div>
-                <label className="input-label">{t('gifts.your_name')}</label>
+                <label htmlFor="gift-name" className="input-label">{t('gifts.your_name')}</label>
                 <input
+                  id="gift-name"
                   type="text"
                   {...register('name', { required: t('gifts.name_required') })}
                   className="input-field"
@@ -197,8 +198,9 @@ function ClaimModal({ gift, onClose, onSubmit }) {
               </div>
 
               <div>
-                <label className="input-label">{t('gifts.email_optional')}</label>
+                <label htmlFor="gift-email" className="input-label">{t('gifts.email_optional')}</label>
                 <input
+                  id="gift-email"
                   type="email"
                   {...register('email')}
                   className="input-field"
@@ -208,8 +210,9 @@ function ClaimModal({ gift, onClose, onSubmit }) {
 
               {gift.is_cash_fund && (
                 <div>
-                  <label className="input-label">{t('gifts.amount_label')}</label>
+                  <label htmlFor="gift-amount" className="input-label">{t('gifts.amount_label')}</label>
                   <input
+                    id="gift-amount"
                     type="number"
                     {...register('amount', { 
                       required: t('gifts.amount_required'),
@@ -227,8 +230,9 @@ function ClaimModal({ gift, onClose, onSubmit }) {
               )}
 
               <div>
-                <label className="input-label">{t('gifts.message_optional')}</label>
+                <label htmlFor="gift-message" className="input-label">{t('gifts.message_optional')}</label>
                 <textarea
+                  id="gift-message"
                   {...register('message')}
                   rows={3}
                   className="input-field resize-none"
@@ -398,6 +402,7 @@ export default function GiftRegistry() {
               />
               <input
                 type="text"
+                aria-label={t('gifts.search_placeholder')}
                 placeholder={t('gifts.search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

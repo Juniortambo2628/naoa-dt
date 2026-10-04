@@ -133,10 +133,11 @@ export default function Contact() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <motion.div variants={fadeInUp}>
-                      <label className="block text-stone-700 font-medium mb-2 ml-1">Your Name</label>
+                      <label htmlFor="contact-name" className="block text-stone-700 font-medium mb-2 ml-1">Your Name</label>
                       <div className="relative">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
                         <input
+                          id="contact-name"
                           required
                           type="text"
                           placeholder="Full Name"
@@ -148,10 +149,11 @@ export default function Contact() {
                     </motion.div>
 
                     <motion.div variants={fadeInUp}>
-                      <label className="block text-stone-700 font-medium mb-2 ml-1">Email Address</label>
+                      <label htmlFor="contact-email" className="block text-stone-700 font-medium mb-2 ml-1">Email Address</label>
                       <div className="relative">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
                         <input
+                          id="contact-email"
                           required
                           type="email"
                           placeholder="email@example.com"
@@ -165,8 +167,9 @@ export default function Contact() {
 
                   <div className="grid md:grid-cols-2 gap-6">
                     <motion.div variants={fadeInUp}>
-                      <label className="block text-stone-700 font-medium mb-2 ml-1">I am a...</label>
+                      <label htmlFor="contact-type" className="block text-stone-700 font-medium mb-2 ml-1">I am a...</label>
                       <select
+                        id="contact-type"
                         className="w-full px-5 py-4 rounded-2xl border-2 border-stone-100 focus:border-[#A67B5B] focus:ring-0 transition-all outline-none bg-stone-50/30 appearance-none"
                         value={formData.type}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -179,8 +182,9 @@ export default function Contact() {
                     </motion.div>
 
                     <motion.div variants={fadeInUp}>
-                      <label className="block text-stone-700 font-medium mb-2 ml-1">Subject</label>
+                      <label htmlFor="contact-subject" className="block text-stone-700 font-medium mb-2 ml-1">Subject</label>
                       <input
+                        id="contact-subject"
                         type="text"
                         placeholder="What is this regarding?"
                         className="w-full px-5 py-4 rounded-2xl border-2 border-stone-100 focus:border-[#A67B5B] focus:ring-0 transition-all outline-none bg-stone-50/30"
@@ -191,8 +195,9 @@ export default function Contact() {
                   </div>
 
                   <motion.div variants={fadeInUp}>
-                    <label className="block text-stone-700 font-medium mb-2 ml-1">Your Message</label>
+                    <label htmlFor="contact-message" className="block text-stone-700 font-medium mb-2 ml-1">Your Message</label>
                     <textarea
+                      id="contact-message"
                       required
                       rows={5}
                       placeholder="How can we help you?"

@@ -244,8 +244,9 @@ export default function RSVP() {
                       </div>
 
                       <div>
-                        <label className="input-label">{t('rsvp.code_label')}</label>
+                        <label htmlFor="rsvp-code" className="input-label">{t('rsvp.code_label')}</label>
                         <input
+                          id="rsvp-code"
                           type="text"
                           {...register('code', { required: 'Please enter your invitation code' })}
                           className="input-field text-center text-lg tracking-widest uppercase"
@@ -421,6 +422,7 @@ export default function RSVP() {
                                   {...register(`plus_ones_data.${idx}.name`)}
                                   defaultValue={po.name.includes('(Plus One') ? '' : po.name}
                                   className="input-field"
+                                  aria-label={t('rsvp.plus_one_placeholder', `Plus One ${idx + 1} Name`)}
                                   placeholder={t('rsvp.plus_one_placeholder', `Plus One ${idx + 1} Name`)}
                                 />
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-stone-300 uppercase tracking-wider font-bold">
@@ -483,11 +485,12 @@ export default function RSVP() {
                       {/* Dietary Requirements */}
                       {attending === 'yes' && (
                         <div>
-                          <label className="input-label flex items-center gap-2">
+                          <label htmlFor="rsvp-dietary" className="input-label flex items-center gap-2">
                             <UtensilsCrossed className="w-5 h-5" style={{ color: '#A67B5B' }} />
                             {t('rsvp.dietary_label', 'Dietary Requirements')}
                           </label>
                           <textarea
+                            id="rsvp-dietary"
                             {...register('dietary_notes')}
                             rows={3}
                             className="input-field resize-none"
@@ -498,11 +501,12 @@ export default function RSVP() {
 
                       {/* Message */}
                       <div>
-                        <label className="input-label flex items-center gap-2">
+                        <label htmlFor="rsvp-message" className="input-label flex items-center gap-2">
                           <MessageSquare className="w-5 h-5" style={{ color: '#A67B5B' }} />
                           {t('rsvp.message_label')}
                         </label>
                         <textarea
+                          id="rsvp-message"
                           {...register('message')}
                           rows={4}
                           className="input-field resize-none"

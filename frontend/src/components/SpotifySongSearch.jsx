@@ -153,6 +153,7 @@ export default function SpotifySongSearch({ value, onChange, placeholder = "Sear
                         onFocus={() => query && setShowResults(true)}
                         onBlur={() => setTimeout(() => setShowResults(false), 200)}
                         placeholder={placeholder}
+                        aria-label={placeholder}
                         className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-stone-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 outline-none transition-all"
                     />
                     {loading && (
