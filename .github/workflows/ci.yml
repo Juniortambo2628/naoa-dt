@@ -1,0 +1,110 @@
+name: CI
+
+# Comprehensive checks for every pull request and every push to main.
+# On a successful run against main this workflow triggers
+# "Deploy Backend to cPanel" (see deploy-backend.yml), so nothing deploys
+# unless the test suite is green.
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+# Pint auto-fixes are committed back to the PR branch, which needs write access.
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — lint, auto-fix & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Check out the PR branch head (not the detached merge ref) so Pint
+          # fixes can be pushed back to it.
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_sqlite, sqlite3, bcmath, intl, gd, zip
+          coverage: none
+          tools: composer
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Auto-fix code style (Laravel Pint) — pull requests
+        if: github.event_name == 'pull_request'
+        run: ./vendor/bin/pint
+
+      - name: Commit style fixes back to the PR branch
+        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --quiet; then
+            echo "No style changes to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "style: apply Laravel Pint auto-fixes [skip ci]"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+
+      - name: Verify code style (main) — fails if not formatted
+        if: github.event_name == 'push'
+        run: ./vendor/bin/pint --test
+
+      - name: Run test suite
+        run: php artisan test
+
+  frontend:
+    name: Frontend — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (if a lint script is defined)
+        run: npm run lint --if-present
+
+      - name: Run unit tests (Vitest)
+        run: npm run test --if-present
+
+      - name: Build production bundle
+        run: npm run build
