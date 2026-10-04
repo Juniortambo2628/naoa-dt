@@ -30,6 +30,14 @@ frontend/.env
 frontend/.env.local
 frontend/.env.*.local
 
+# Scratch / debug artifacts (one-off scripts & dumps, never committed)
+debug_output*.txt
+db_show.txt
+routes.json
+rsvp_test.json
+info_output.html
+tmp_replace.js
+
 # IDEs
 .vscode/
 .idea/

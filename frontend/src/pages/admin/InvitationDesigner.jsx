@@ -18,6 +18,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import { saveAs } from 'file-saver';
 import { Skeleton } from '../../components/Skeleton';
+import { toast } from 'react-hot-toast';
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);
@@ -39,6 +40,10 @@ export default function InvitationDesigner() {
   const messageRef = useRef(null);
   const [isExporting, setIsExporting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('saved'); // saved, saving, error
+  // Autosave must stay disarmed until a load actually succeeds, otherwise a
+  // failed load would leave the default blank document in state and the next
+  // edit would overwrite the real saved design (losing extra pages).
+  const loadedOkRef = useRef(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isWidgetExpanded, setIsWidgetExpanded] = useState(true);
   const previewContainerRef = useRef(null);
@@ -99,6 +104,7 @@ export default function InvitationDesigner() {
 
   useEffect(() => {
     const loadDesign = async () => {
+        loadedOkRef.current = false; // disarm autosave until this load succeeds
         try {
             const res = await settingService.getAll();
             const key = designType === 'invitation' ? 'invitation_theme' : 'save_the_date_theme';
@@ -178,8 +184,14 @@ export default function InvitationDesigner() {
                 setHistory([JSON.parse(JSON.stringify(finalDefault))]);
                 setHistoryIndex(0);
             }
+            // Load succeeded — safe to autosave from here on.
+            loadedOkRef.current = true;
         } catch (err) {
             console.error("Failed to load design", err);
+            // Leave autosave disarmed so we never overwrite the saved design
+            // (which may contain extra pages) with the default blank document.
+            setSaveStatus('error');
+            toast.error('Could not load your saved design. Reload the page before editing to avoid overwriting it.', { duration: 8000 });
         }
         setLoading(false);
     };
@@ -217,12 +229,14 @@ export default function InvitationDesigner() {
       } catch (err) {
           console.error('Autosave failed', err);
           setSaveStatus('error');
+          toast.error('Autosave failed — your latest changes are NOT saved. Check your connection and try again.', { id: 'invitation-autosave-error', duration: 8000 });
       }
   };
 
   // Autosave effect — debounced, intentionally keyed only on `design`.
   useEffect(() => {
       if (loading) return; // Don't autosave while initial loading
+      if (!loadedOkRef.current) return; // Don't autosave if the load failed (would overwrite saved pages)
 
       const timer = setTimeout(() => {
           performSilentSave();

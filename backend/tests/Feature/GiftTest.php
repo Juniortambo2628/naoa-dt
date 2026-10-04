@@ -175,6 +175,43 @@ class GiftTest extends TestCase
         $this->assertEquals(1, $data['claimed_gifts']);
     }
 
+    public function test_admin_can_remove_claim_to_undo_reservation(): void
+    {
+        $gift = Gift::factory()->physicalGift()->create(['is_available' => true]);
+
+        $this->postJson("/api/gifts/{$gift->id}/claim", [
+            'name' => 'Mistaken Claimer',
+            'email' => 'oops@example.com',
+        ])->assertStatus(201);
+
+        $claim = GiftClaim::where('gift_id', $gift->id)->firstOrFail();
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/gifts/claims/{$claim->id}");
+
+        $response->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseMissing('gift_claims', ['id' => $claim->id]);
+
+        // Gift is reservable again now that its claim is gone.
+        $this->postJson("/api/gifts/{$gift->id}/claim", [
+            'name' => 'New Claimer',
+            'email' => 'new@example.com',
+        ])->assertStatus(201);
+    }
+
+    public function test_unauthenticated_user_cannot_remove_claim(): void
+    {
+        $gift = Gift::factory()->physicalGift()->create(['is_available' => true]);
+        $claim = GiftClaim::factory()->create(['gift_id' => $gift->id]);
+
+        $response = $this->deleteJson("/api/gifts/claims/{$claim->id}");
+
+        $response->assertStatus(401);
+        $this->assertDatabaseHas('gift_claims', ['id' => $claim->id]);
+    }
+
     public function test_unauthenticated_user_cannot_create_gift(): void
     {
         $response = $this->postJson('/api/gifts', [
