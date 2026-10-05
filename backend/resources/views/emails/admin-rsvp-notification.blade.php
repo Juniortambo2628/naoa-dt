@@ -34,6 +34,12 @@
                 <td style="padding: 10px 0; color: #333;">{{ $plusOnes }}</td>
             </tr>
             @endif
+            @if(!empty($songRequest))
+            <tr>
+                <td style="padding: 10px 0; color: #777;"><strong>Song Request:</strong></td>
+                <td style="padding: 10px 0; color: #333;">{{ $songRequest }}</td>
+            </tr>
+            @endif
         </table>
     </div>
 

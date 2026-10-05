@@ -25,15 +25,18 @@ class AdminRSVPNotification extends Mailable
 
     public $guestMessage;
 
+    public $songRequest;
+
     /**
      * Create a new message instance.
      */
-    public function __construct(Guest $guest, bool $attending, int $plusOnes = 0, ?string $guestMessage = null)
+    public function __construct(Guest $guest, bool $attending, int $plusOnes = 0, ?string $guestMessage = null, ?string $songRequest = null)
     {
         $this->guest = $guest;
         $this->attending = $attending;
         $this->plusOnes = $plusOnes;
         $this->guestMessage = $guestMessage;
+        $this->songRequest = $songRequest;
     }
 
     /**
