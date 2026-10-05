@@ -1,33 +1,38 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, MapPin, Plane, Armchair } from 'lucide-react';
+import { Plus, X, MapPin, Plane, Armchair, Camera } from 'lucide-react';
 import Modal from './Modal';
+import TabbedTwoColumn from './TabbedTwoColumn';
 import GuestLocationPicker from './GuestLocationPicker';
 import GuestTravelForm from './GuestTravelForm';
 import PublicSeatingChart from './PublicSeatingChart';
+import GuestPolaroidCapture from './GuestPolaroidCapture';
 
-// The three guest tools, surfaced through one shared modal dialog.
+// The three guest tools, surfaced through one shared tabbed modal dialog.
 const ACTIONS = [
   {
     id: 'location',
     label: 'Where are you',
     icon: MapPin,
     gradient: 'from-[#A67B5B] to-[#C8A68E]',
-    maxWidth: 'lg',
   },
   {
     id: 'travel',
     label: 'My travel details',
     icon: Plane,
     gradient: 'from-blue-400 to-blue-500',
-    maxWidth: 'lg',
   },
   {
     id: 'seating',
     label: 'Seating chart',
     icon: Armchair,
     gradient: 'from-[#A67B5B] to-[#C8A68E]',
-    maxWidth: '3xl',
+  },
+  {
+    id: 'polaroid',
+    label: 'Snap a polaroid',
+    icon: Camera,
+    gradient: 'from-[#A67B5B] to-[#C8A68E]',
   },
 ];
 
@@ -48,7 +53,7 @@ export default function GuestQuickActions({ guestCode }) {
     }
   }, []);
 
-  const active = ACTIONS.find((a) => a.id === activeAction) || null;
+  const isModalOpen = activeAction !== null;
 
   const markSeen = () => {
     setHasInteracted(true);
@@ -72,14 +77,16 @@ export default function GuestQuickActions({ guestCode }) {
   // Nudge first-time visitors: pulse the button while it's still collapsed.
   const showPulse = !open && !hasInteracted;
 
-  const renderModalBody = () => {
-    switch (activeAction) {
+  const renderModalBody = (item) => {
+    switch (item?.id) {
       case 'location':
         return <GuestLocationPicker guestCode={guestCode} />;
       case 'travel':
         return <GuestTravelForm guestCode={guestCode} />;
       case 'seating':
         return <PublicSeatingChart guestCode={guestCode} showExpand={false} />;
+      case 'polaroid':
+        return <GuestPolaroidCapture guestCode={guestCode} />;
       default:
         return null;
     }
@@ -164,14 +171,20 @@ export default function GuestQuickActions({ guestCode }) {
         </div>
       </div>
 
-      {/* Shared modal dialog for all three actions */}
+      {/* Shared tabbed modal dialog for all three actions */}
       <Modal
-        open={!!active}
+        open={isModalOpen}
         onClose={() => setActiveAction(null)}
-        maxWidth={active?.maxWidth || 'lg'}
-        label={active?.label}
+        maxWidth="5xl"
+        label="Quick actions"
       >
-        {renderModalBody()}
+        <TabbedTwoColumn
+          title="Quick actions"
+          items={ACTIONS}
+          activeId={activeAction}
+          onChange={setActiveAction}
+          renderContent={renderModalBody}
+        />
       </Modal>
     </>
   );

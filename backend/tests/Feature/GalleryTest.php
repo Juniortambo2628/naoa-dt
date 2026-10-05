@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\GalleryItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class GalleryTest extends TestCase
@@ -140,5 +142,38 @@ class GalleryTest extends TestCase
         $this->assertEquals(1, $data[0]['order']);
         $this->assertEquals(2, $data[1]['order']);
         $this->assertEquals(3, $data[2]['order']);
+    }
+
+    public function test_guest_can_upload_a_photo_unauthenticated(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->postJson('/api/gallery/guest-upload', [
+            'image' => UploadedFile::fake()->image('polaroid.jpg', 800, 800),
+            'guest_name' => 'Kevin Omondi',
+            'caption' => 'Great day!',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonFragment([
+                'uploaded_by' => 'Kevin Omondi',
+                'caption' => 'Great day!',
+                'is_guest_upload' => true,
+            ]);
+
+        $this->assertDatabaseHas('gallery_items', [
+            'uploaded_by' => 'Kevin Omondi',
+            'is_guest_upload' => true,
+        ]);
+    }
+
+    public function test_guest_upload_requires_an_image_and_name(): void
+    {
+        $response = $this->postJson('/api/gallery/guest-upload', [
+            'caption' => 'No image or name',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['image', 'guest_name']);
     }
 }

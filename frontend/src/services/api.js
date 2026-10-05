@@ -212,6 +212,12 @@ export const galleryService = {
   update: (id, data) => api.put(`/gallery/${id}`, data),
   delete: (id) => api.delete(`/gallery/${id}`),
   reorder: (items) => api.post('/gallery/reorder', { items }),
+
+  // Public guest photo upload (multipart: image, guest_name, caption?)
+  guestUpload: (formData) =>
+    api.post('/gallery/guest-upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 // CMS / Content services
