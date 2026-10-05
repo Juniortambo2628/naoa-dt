@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, MapPin, Plane, Armchair } from 'lucide-react';
+import { Plus, X, MapPin, Plane, Armchair, Camera } from 'lucide-react';
 import Modal from './Modal';
 import TabbedTwoColumn from './TabbedTwoColumn';
 import GuestLocationPicker from './GuestLocationPicker';
 import GuestTravelForm from './GuestTravelForm';
 import PublicSeatingChart from './PublicSeatingChart';
+import GuestPolaroidCapture from './GuestPolaroidCapture';
 
 // The three guest tools, surfaced through one shared tabbed modal dialog.
 const ACTIONS = [
@@ -25,6 +26,12 @@ const ACTIONS = [
     id: 'seating',
     label: 'Seating chart',
     icon: Armchair,
+    gradient: 'from-[#A67B5B] to-[#C8A68E]',
+  },
+  {
+    id: 'polaroid',
+    label: 'Snap a polaroid',
+    icon: Camera,
     gradient: 'from-[#A67B5B] to-[#C8A68E]',
   },
 ];
@@ -78,6 +85,8 @@ export default function GuestQuickActions({ guestCode }) {
         return <GuestTravelForm guestCode={guestCode} />;
       case 'seating':
         return <PublicSeatingChart guestCode={guestCode} showExpand={false} />;
+      case 'polaroid':
+        return <GuestPolaroidCapture guestCode={guestCode} />;
       default:
         return null;
     }
