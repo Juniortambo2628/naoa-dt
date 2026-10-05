@@ -3,8 +3,7 @@ import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import InvitationCanvas from './InvitationCanvas';
 import { normalizePages } from '../../utils/invitationPages';
-import { getMapUrl } from '../../utils/weddingInfo';
-import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
+import { getMapUrl, getCalendarUrl } from '../../utils/weddingInfo';
 
 export default function InvitationExportContainer({ design, guest, weddingSettings, onReady }) {
     const exportRef = useRef(null);
@@ -171,13 +170,15 @@ export default function InvitationExportContainer({ design, guest, weddingSettin
                     const h = (item.height / CANVAS_HEIGHT) * imgHeight;
 
                     if (item.type === 'calendar_link') {
-                        const title = encodeURIComponent(content.title || "Our Wedding");
-                        const location = encodeURIComponent(weddingSettings?.venue_name || "Wedding Venue");
-                        const dateStr = weddingSettings?.wedding_date || WEDDING_DEFAULTS.weddingDate;
-                        const baseUrl = weddingSettings?.public_url || window.location.origin;
-                        const calendarUrl = `${baseUrl}/calendar?date=${dateStr}&venue=${location}&title=${title}`;
-
-                        pdf.link(x, y, w, h, { url: calendarUrl });
+                        // A real Google Calendar event link built from the shared
+                        // config — no dependency on a backend route (the old
+                        // "/calendar" link 404'd on the SPA host).
+                        const calendarUrl = getCalendarUrl(weddingSettings || {}, {
+                            title: content.title || undefined,
+                        });
+                        if (calendarUrl) {
+                            pdf.link(x, y, w, h, { url: calendarUrl });
+                        }
                     } else if (item.type === 'venue_location') {
                         const mapUrl = getMapUrl(weddingSettings || {});
                         if (mapUrl) {

@@ -148,6 +148,45 @@ export function getWeddingInfo(settings = {}, content = {}, locale = 'en') {
 }
 
 /**
+ * Build a Google Calendar "create event" (TEMPLATE) URL for the wedding, from
+ * the centralized config. This is a real, universal link that works from the
+ * guest page, the exported PDF and anywhere else — it opens Google Calendar
+ * pre-filled with the event, so there is no dependency on a backend route.
+ *
+ * Matches the backend CalendarController format (10:00–22:00 on the wedding
+ * day) so the web view, PDF and emails all create the same event.
+ *
+ * @param {object} info   - wedding info (getWeddingInfo result or weddingSettings)
+ * @param {object} options - optional { title, details } overrides
+ * @returns {string|null}  the Google Calendar URL, or null if the date is invalid
+ */
+export function getCalendarUrl(info = {}, options = {}) {
+  const dateRaw = (info.wedding_date || DEFAULT_DATE).split('T')[0];
+  const [y, m, d] = dateRaw.split('-');
+  if (!/^\d{4}$/.test(y) || !/^\d{2}$/.test(m) || !/^\d{2}$/.test(d)) return null;
+  const dateStr = `${y}${m}${d}`;
+
+  const title =
+    options.title ||
+    info.couple_names ||
+    `${WEDDING_DEFAULTS.brideName} & ${WEDDING_DEFAULTS.groomName}`;
+  const location = info.venue_address || info.venue_name || '';
+  const details =
+    options.details ||
+    'We are so happy to share our special day with you! Please join us for our wedding celebration.';
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${dateStr}T100000/${dateStr}T220000`,
+    details,
+  });
+  if (location) params.set('location', location);
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/**
  * Build a Google Maps URL for the configured venue. Prefers exact coordinates
  * and falls back to a text search of the address / name. Returns null when
  * there is nothing to point at.

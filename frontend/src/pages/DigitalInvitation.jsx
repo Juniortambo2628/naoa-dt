@@ -168,7 +168,7 @@ export default function DigitalInvitation() {
                                     design={pageDesign}
                                     mode="view"
                                     guest={guest}
-                                    weddingSettings={{ wedding_date: weddingDate, venue_name: venueName, venue_address: venueAddress, venue_lat: venueLat, venue_lng: venueLng }}
+                                    weddingSettings={{ wedding_date: weddingDate, couple_names: coupleNames, venue_name: venueName, venue_address: venueAddress, venue_lat: venueLat, venue_lng: venueLng }}
                                 />
                             </div>
                             <p className="text-center text-stone-400 text-xs mt-3 font-medium uppercase tracking-[0.2em]">
