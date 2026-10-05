@@ -6,13 +6,11 @@ import { useGuestByCode, useSettings, useContent } from '../hooks/useApiHooks';
 import InvitationCanvas from '../components/admin/InvitationCanvas';
 import { normalizePages } from '../utils/invitationPages';
 import { getWeddingInfo, getWeddingDateText } from '../utils/weddingInfo';
-import PublicSeatingChart from '../components/PublicSeatingChart';
 import WeatherWidget from '../components/WeatherWidget';
 import MapsETA from '../components/MapsETA';
 import Loader from '../components/Loader';
 import EmergencyNumbers from '../components/EmergencyNumbers';
-import GuestLocationPicker from '../components/GuestLocationPicker';
-import GuestTravelForm from '../components/GuestTravelForm';
+import GuestQuickActions from '../components/GuestQuickActions';
 
 export default function DigitalInvitation() {
     const { code } = useParams();
@@ -217,16 +215,19 @@ export default function DigitalInvitation() {
                     </div>
 
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                        <button 
-                            onClick={() => navigate(`/rsvp/${guest.unique_code}`)}
-                            className="flex-1 bg-[#A67B5B] text-white px-8 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-[#8C6A4D] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-[#A67B5B]/20 group"
-                        >
-                            Respond to RSVP
-                            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        
+                        {/* Only prompt for RSVP while the guest hasn't responded yet. */}
+                        {guest.rsvp_status === 'pending' && (
+                            <button
+                                onClick={() => navigate(`/rsvp/${guest.unique_code}`)}
+                                className="flex-1 bg-[#A67B5B] text-white px-8 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-[#8C6A4D] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-[#A67B5B]/20 group"
+                            >
+                                Respond to RSVP
+                                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        )}
+
                         <div className="flex flex-col gap-2 flex-1">
-                            <button 
+                            <button
                                 onClick={downloadIcs}
                                 className="px-8 py-5 rounded-2xl font-bold text-stone-600 border-2 border-stone-200 hover:bg-stone-50 transition-colors flex items-center justify-center gap-3 text-center"
                             >
@@ -257,17 +258,8 @@ export default function DigitalInvitation() {
                         <WeatherWidget weddingDate={weddingDate} />
                     </div>
 
-                    {/* Location Tracking */}
-                    <GuestLocationPicker guestCode={code} />
-
-                    {/* Travel & Accommodation Details */}
-                    <GuestTravelForm guestCode={code} />
-
                     {/* Emergency Numbers */}
                     <EmergencyNumbers compact={true} />
-
-                    {/* Seating Chart */}
-                    <PublicSeatingChart guestCode={code} />
 
                     <div className="pt-8 border-t border-stone-200/60">
                         <p className="text-stone-400 text-sm text-center lg:text-left italic">
@@ -283,6 +275,9 @@ export default function DigitalInvitation() {
                     {coupleNames} Wedding {new Date(weddingDate).getFullYear()}
                 </p>
             </footer>
+
+            {/* Floating quick actions: Where are you · My travel details · Seating chart */}
+            <GuestQuickActions guestCode={code} />
         </div>
     );
 }
