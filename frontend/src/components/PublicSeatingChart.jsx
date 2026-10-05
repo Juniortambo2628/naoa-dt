@@ -248,7 +248,7 @@ function TableDetailPanel({ table, guestTableId, onClose }) {
   );
 }
 
-export default function PublicSeatingChart({ guestCode, embedded = true }) {
+export default function PublicSeatingChart({ guestCode, embedded = true, showExpand = true }) {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [guestTableId, setGuestTableId] = useState(null);
@@ -371,7 +371,7 @@ export default function PublicSeatingChart({ guestCode, embedded = true }) {
         
         <div className="flex items-center gap-2">
           {/* Expand button */}
-          {embedded && (
+          {embedded && showExpand && (
             <button
               onClick={() => setIsExpanded(true)}
               className="p-2 hover:bg-stone-100 rounded-lg transition-colors group"
