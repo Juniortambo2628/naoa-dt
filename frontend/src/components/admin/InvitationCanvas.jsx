@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Moveable from 'react-moveable';
 import { getAssetUrl } from '../../services/api';
-import { getMapUrl } from '../../utils/weddingInfo';
+import { getMapUrl, getCalendarUrl } from '../../utils/weddingInfo';
 import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 
 export default function InvitationCanvas({ 
@@ -109,13 +109,26 @@ export default function InvitationCanvas({
               timeZone: 'UTC' // Forces UTC interpretation if the string was YYYY-MM-DD
           });
 
-          return (
+          const calInner = (
               <div className="w-full h-full px-4 py-2 text-center overflow-hidden flex flex-col justify-center">
                   <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.2em', color: item.color || '#A67B5B', fontWeight: 'bold', whiteSpace: 'nowrap', display: 'block', margin: '2px 0', lineHeight: 1 }}>Save the Date</span>
                   <span style={{ fontSize: `${(item.fontSize || 11)}px`, fontFamily: 'serif', fontWeight: 'bold', color: '#292524', whiteSpace: 'nowrap', display: 'block', margin: '4px 0', lineHeight: 1.2 }}>{formattedDate}</span>
                   <span style={{ fontSize: '10px', color: '#737373', textTransform: 'uppercase', letterSpacing: '0.1em', borderTop: '1px solid #e7e5e4', display: 'block', margin: '4px 8px 0 8px', paddingTop: '6px', whiteSpace: 'nowrap', lineHeight: 1 }}>Add to Calendar</span>
               </div>
           );
+
+          // In the public (view) mode the element is a real link that creates a
+          // Google Calendar event from the shared config. In edit/preview it is
+          // static (the PDF export adds a clickable link overlay separately).
+          const calendarUrl = getCalendarUrl(weddingSettings || {}, { title: content.title || undefined });
+          if (mode === 'view' && calendarUrl) {
+              return (
+                  <a href={calendarUrl} target="_blank" rel="noopener noreferrer" className="w-full h-full block no-underline" style={{ color: 'inherit', textDecoration: 'none' }}>
+                      {calInner}
+                  </a>
+              );
+          }
+          return calInner;
       } else if (item.type === 'venue_location') {
           const venueName = weddingSettings?.venue_name || 'Our Venue';
           const venueAddress = weddingSettings?.venue_address || '';
