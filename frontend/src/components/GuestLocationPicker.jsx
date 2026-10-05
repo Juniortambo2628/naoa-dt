@@ -116,7 +116,7 @@ export default function GuestLocationPicker({ guestCode, onSuccess }) {
   useEffect(() => {
     const fetchVenue = async () => {
       try {
-        const res = await settingService.getAll();
+        const res = await settingService.getPublic();
         if (res.data?.venue_lat && res.data?.venue_lng) {
           setVenueCoords([parseFloat(res.data.venue_lat), parseFloat(res.data.venue_lng)]);
         }

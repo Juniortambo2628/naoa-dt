@@ -232,9 +232,12 @@ export const contentService = {
 
 // Settings services
 export const settingService = {
-  // Get all settings
+  // Get all settings (admin, requires auth)
   getAll: () => api.get('/settings'),
-  
+
+  // Get the public, whitelisted subset of settings (guest-facing pages)
+  getPublic: () => api.get('/public/settings'),
+
   // Update settings
   update: (settings) => api.post('/settings', { settings }),
 };

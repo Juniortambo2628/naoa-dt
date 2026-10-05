@@ -71,6 +71,9 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/{key}', [PageContentController::class, 'show']);
     });
 
+    // Public Settings (whitelisted subset for guest-facing pages)
+    Route::get('/public/settings', [SettingController::class, 'publicIndex']);
+
     // Public FAQ Routes
     Route::get('/faqs', [FaqController::class, 'index']);
 

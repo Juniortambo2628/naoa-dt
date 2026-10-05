@@ -33,7 +33,7 @@ export const ContentProvider = ({ children }) => {
     // Public settings carry the centralized wedding details (date, names, venue).
     const fetchSettings = useCallback(async () => {
         try {
-            const res = await api.get('/settings');
+            const res = await api.get('/public/settings');
             setSettings(res.data || {});
         } catch (err) {
             console.error('Failed to fetch settings:', err);

@@ -7,23 +7,47 @@ use App\Models\Setting;
 use App\Traits\ApiResponse;
 use App\Traits\NormalizesUrls;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class SettingController extends Controller
 {
     use ApiResponse, NormalizesUrls;
 
+    /**
+     * Settings keys that are safe to expose to unauthenticated (guest-facing)
+     * callers. These drive the public invitation, guest pages and emails.
+     * Everything else (email copy, admin notification config, internal URLs)
+     * stays behind auth on the admin `/settings` endpoint.
+     */
+    public const PUBLIC_KEYS = [
+        'wedding_date',
+        'bride_name',
+        'groom_name',
+        'venue_name',
+        'venue_address',
+        'venue_lat',
+        'venue_lng',
+        'rsvp_enabled',
+        'invitation_theme',
+        'save_the_date_theme',
+    ];
+
     public function index()
     {
         \Illuminate\Support\Facades\Log::info('Fetching settings. Current root: '.request()->root());
-        // Return key-value pairs for easy frontend consumption
-        $settings = Setting::all()->pluck('value', 'key')->map(function ($value) {
-            $decoded = json_decode($value, true);
-            $val = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $value;
 
-            return $this->normalizeUrls($val);
-        });
+        return $this->successResponse($this->formatSettings(Setting::all()));
+    }
 
-        return $this->successResponse($settings);
+    /**
+     * Public, unauthenticated subset of settings for guest-facing pages.
+     * Only the whitelisted keys above are returned.
+     */
+    public function publicIndex()
+    {
+        $settings = Setting::whereIn('key', self::PUBLIC_KEYS)->get();
+
+        return $this->successResponse($this->formatSettings($settings));
     }
 
     public function update(Request $request)
@@ -48,13 +72,20 @@ class SettingController extends Controller
         }
 
         // Refresh all settings to ensure frontend is in sync
-        $allSettings = Setting::all()->pluck('value', 'key')->map(function ($value) {
+        return $this->successResponse($this->formatSettings(Setting::all()), 'Settings updated successfully');
+    }
+
+    /**
+     * Turn a collection of Setting models into the key => value map the
+     * frontend consumes, decoding JSON values and normalizing stored URLs.
+     */
+    private function formatSettings(Collection $settings)
+    {
+        return $settings->pluck('value', 'key')->map(function ($value) {
             $decoded = json_decode($value, true);
             $val = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $value;
 
             return $this->normalizeUrls($val);
         });
-
-        return $this->successResponse($allSettings, 'Settings updated successfully');
     }
 }
