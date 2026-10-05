@@ -71,6 +71,17 @@ export const useSettings = () => {
   });
 };
 
+// Public, whitelisted settings for guest-facing pages (no auth required).
+export const usePublicSettings = () => {
+  return useQuery({
+    queryKey: ['settings', 'public'],
+    queryFn: async () => {
+      const { data } = await settingService.getPublic();
+      return data;
+    },
+  });
+};
+
 export const useUpdateSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({

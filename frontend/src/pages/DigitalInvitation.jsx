@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Calendar, MapPin, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useEffect } from 'react';
-import { useGuestByCode, useSettings, useContent } from '../hooks/useApiHooks';
+import { useGuestByCode, usePublicSettings, useContent } from '../hooks/useApiHooks';
 import InvitationCanvas from '../components/admin/InvitationCanvas';
 import { normalizePages } from '../utils/invitationPages';
 import { getWeddingInfo, getWeddingDateText } from '../utils/weddingInfo';
@@ -17,7 +17,7 @@ export default function DigitalInvitation() {
     const navigate = useNavigate();
     
     const { data: guest, isLoading: isGuestLoading, isError: isGuestError } = useGuestByCode(code);
-    const { data: settings, isLoading: isSettingsLoading } = useSettings();
+    const { data: settings, isLoading: isSettingsLoading } = usePublicSettings();
     const { data: content, isLoading: isContentLoading } = useContent();
 
     const isLoading = isGuestLoading || isSettingsLoading || isContentLoading;

@@ -125,7 +125,7 @@ export default function GuestLocationMap({ embedded = false }) {
     const fetchVenue = async () => {
       try {
         const { settingService } = await import('../services/api');
-        const res = await settingService.getAll();
+        const res = await settingService.getPublic();
         if (res.data?.venue_lat && res.data?.venue_lng) {
           setVenueCoords([parseFloat(res.data.venue_lat), parseFloat(res.data.venue_lng)]);
         }

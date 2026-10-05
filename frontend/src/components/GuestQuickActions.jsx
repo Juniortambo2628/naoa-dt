@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, MapPin, Plane, Armchair } from 'lucide-react';
 import Modal from './Modal';
@@ -31,16 +31,46 @@ const ACTIONS = [
   },
 ];
 
+// Remember whether the guest has opened the menu before, so the attention
+// pulse only nudges first-time visitors instead of looping forever.
+const SEEN_KEY = 'guestQuickActionsSeen';
+
 export default function GuestQuickActions({ guestCode }) {
   const [open, setOpen] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
+  const [hasInteracted, setHasInteracted] = useState(true);
+
+  useEffect(() => {
+    try {
+      setHasInteracted(localStorage.getItem(SEEN_KEY) === 'true');
+    } catch {
+      setHasInteracted(false);
+    }
+  }, []);
 
   const active = ACTIONS.find((a) => a.id === activeAction) || null;
+
+  const markSeen = () => {
+    setHasInteracted(true);
+    try {
+      localStorage.setItem(SEEN_KEY, 'true');
+    } catch {
+      // Ignore storage failures (private mode, etc.) — the menu still works.
+    }
+  };
+
+  const toggleOpen = () => {
+    setOpen((v) => !v);
+    markSeen();
+  };
 
   const handleSelect = (id) => {
     setActiveAction(id);
     setOpen(false);
   };
+
+  // Nudge first-time visitors: pulse the button while it's still collapsed.
+  const showPulse = !open && !hasInteracted;
 
   const renderModalBody = () => {
     switch (activeAction) {
@@ -87,18 +117,51 @@ export default function GuestQuickActions({ guestCode }) {
             })}
         </AnimatePresence>
 
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.92 }}
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? 'Close quick actions' : 'Open quick actions'}
-          aria-expanded={open}
-          className="w-14 h-14 rounded-full bg-gradient-to-br from-[#A67B5B] to-[#8C6A4D] text-white flex items-center justify-center shadow-xl shadow-[#A67B5B]/30 hover:scale-105 transition-transform"
-        >
-          <motion.span animate={{ rotate: open ? 135 : 0 }} transition={{ duration: 0.2 }}>
-            {open ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-          </motion.span>
-        </motion.button>
+        {/* Main trigger with an always-visible "Quick actions" label */}
+        <div className="flex items-center gap-2.5">
+          <AnimatePresence>
+            {!open && (
+              <motion.span
+                key="qa-label"
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 8 }}
+                aria-hidden="true"
+                className="px-3.5 py-2 rounded-full bg-white shadow-lg border border-[#A67B5B]/25 text-sm font-semibold text-[#8C6A4D] whitespace-nowrap"
+              >
+                Quick actions
+              </motion.span>
+            )}
+          </AnimatePresence>
+
+          <div className="relative flex items-center justify-center">
+            {/* One-time attention pulse for first-time visitors. */}
+            {showPulse && (
+              <motion.span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-[#A67B5B]"
+                initial={{ opacity: 0.45, scale: 1 }}
+                animate={{ opacity: 0, scale: 1.8 }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
+              />
+            )}
+
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.92 }}
+              animate={showPulse ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+              transition={showPulse ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+              onClick={toggleOpen}
+              aria-label={open ? 'Close quick actions' : 'Open quick actions'}
+              aria-expanded={open}
+              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-[#A67B5B] to-[#8C6A4D] text-white flex items-center justify-center shadow-xl shadow-[#A67B5B]/40 ring-4 ring-white/70 hover:scale-105 transition-transform"
+            >
+              <motion.span animate={{ rotate: open ? 135 : 0 }} transition={{ duration: 0.2 }}>
+                {open ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+              </motion.span>
+            </motion.button>
+          </div>
+        </div>
       </div>
 
       {/* Shared modal dialog for all three actions */}
