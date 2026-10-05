@@ -91,23 +91,45 @@ class GuestService
             return ['success' => false, 'message' => 'Internal Server Error', 'error' => $e->getMessage()];
         }
 
+        // The active mailer is logged with both emails so production logs show
+        // whether mail is actually going out over SMTP (vs. being swallowed by
+        // the `log`/`array` driver) when diagnosing delivery problems.
+        $mailer = config('mail.default');
+        $fromAddress = config('mail.from.address');
+
         // Send confirmation email to guest (non-blocking)
         try {
             if ($guest->email) {
                 Mail::to($guest->email)->send(new RSVPConfirmation($guest, $data['attending']));
+                Log::info('RSVP confirmation email dispatched', [
+                    'to' => $guest->email,
+                    'mailer' => $mailer,
+                    'from' => $fromAddress,
+                ]);
+            } else {
+                Log::info('RSVP confirmation email skipped: guest has no email', ['guest' => $guest->name]);
             }
-        } catch (\Exception $e) {
-            Log::warning('RSVP confirmation email failed for guest '.$guest->name.': '.$e->getMessage());
+        } catch (\Throwable $e) {
+            Log::warning('RSVP confirmation email failed for guest '.$guest->name.': '.get_class($e).': '.$e->getMessage());
         }
 
         // Send notification email to admin if enabled
         try {
-            $adminNotify = Setting::getValue('admin_email_notifications', 'false');
-            if (filter_var($adminNotify, FILTER_VALIDATE_BOOLEAN)) {
-                // Fall back to the configured from-address when no recipient is set
-                // (getValue returns an empty string when the row exists but is blank).
-                $adminEmail = Setting::getValue('admin_email') ?: config('mail.from.address');
+            $adminNotifyRaw = Setting::getValue('admin_email_notifications', 'false');
+            $adminNotify = filter_var($adminNotifyRaw, FILTER_VALIDATE_BOOLEAN);
+            // Fall back to the configured from-address when no recipient is set
+            // (getValue returns an empty string when the row exists but is blank).
+            $adminEmail = Setting::getValue('admin_email') ?: $fromAddress;
 
+            Log::info('RSVP admin notification check', [
+                'enabled_raw' => $adminNotifyRaw,
+                'enabled' => $adminNotify,
+                'recipient' => $adminEmail,
+                'from' => $fromAddress,
+                'mailer' => $mailer,
+            ]);
+
+            if ($adminNotify) {
                 if (! empty($adminEmail)) {
                     Mail::to($adminEmail)->send(new AdminRSVPNotification(
                         $guest,
@@ -116,12 +138,13 @@ class GuestService
                         $data['message'] ?? null,
                         $this->formatSongRequest($data['song_request'] ?? null)
                     ));
+                    Log::info('RSVP admin notification dispatched', ['to' => $adminEmail]);
                 } else {
                     Log::warning('RSVP admin notification skipped: notifications enabled but no recipient configured.');
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('RSVP admin notification email failed: '.$e->getMessage());
+            Log::warning('RSVP admin notification email failed: '.get_class($e).': '.$e->getMessage());
         }
 
         // Record notification for admin in database
