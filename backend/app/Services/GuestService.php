@@ -103,16 +103,24 @@ class GuestService
         // Send notification email to admin if enabled
         try {
             $adminNotify = Setting::getValue('admin_email_notifications', 'false');
-            if ($adminNotify === 'true' || $adminNotify === true) {
-                $adminEmail = Setting::getValue('admin_email', config('mail.from.address'));
-                Mail::to($adminEmail)->send(new AdminRSVPNotification(
-                    $guest,
-                    $data['attending'],
-                    $plusOnes,
-                    $data['message'] ?? null
-                ));
+            if (filter_var($adminNotify, FILTER_VALIDATE_BOOLEAN)) {
+                // Fall back to the configured from-address when no recipient is set
+                // (getValue returns an empty string when the row exists but is blank).
+                $adminEmail = Setting::getValue('admin_email') ?: config('mail.from.address');
+
+                if (! empty($adminEmail)) {
+                    Mail::to($adminEmail)->send(new AdminRSVPNotification(
+                        $guest,
+                        (bool) ($data['attending'] ?? false),
+                        $plusOnes,
+                        $data['message'] ?? null,
+                        $this->formatSongRequest($data['song_request'] ?? null)
+                    ));
+                } else {
+                    Log::warning('RSVP admin notification skipped: notifications enabled but no recipient configured.');
+                }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::warning('RSVP admin notification email failed: '.$e->getMessage());
         }
 
@@ -130,5 +138,30 @@ class GuestService
         );
 
         return ['success' => true, 'message' => 'RSVP submitted successfully'];
+    }
+
+    /**
+     * Turn a raw RSVP song_request value into a human-readable label.
+     *
+     * The guest form sends either a plain string or a "spotify:" prefixed
+     * JSON payload (track name + artist).
+     */
+    private function formatSongRequest(?string $songRequest): ?string
+    {
+        if (empty($songRequest)) {
+            return null;
+        }
+
+        if (str_starts_with($songRequest, 'spotify:')) {
+            $json = json_decode(substr($songRequest, 8), true);
+
+            if (json_last_error() === JSON_ERROR_NONE && ! empty($json['name'])) {
+                return trim($json['name'].(! empty($json['artist']) ? ' — '.$json['artist'] : ''));
+            }
+
+            return null;
+        }
+
+        return $songRequest;
     }
 }
