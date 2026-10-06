@@ -116,6 +116,7 @@ export function createBlankPage(shared = {}, { withDefaults = false } = {}) {
 
   return {
     id: freshId('page'),
+    name: withDefaults ? 'Main' : 'More Information',
     bgImage: null,
     backgroundColor: '#ffffff',
     overlayOpacity: 0,
@@ -141,6 +142,7 @@ export function createBlankPage(shared = {}, { withDefaults = false } = {}) {
 export function clonePage(page) {
   const clone = JSON.parse(JSON.stringify(page));
   clone.id = freshId('page');
+  clone.name = page.name ? `${page.name} copy` : undefined;
   if (Array.isArray(clone.items)) {
     clone.items = clone.items.map((item) => {
       const isTitle = item.textKey === 'title';
