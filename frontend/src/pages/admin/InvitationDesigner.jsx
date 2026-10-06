@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { settingService, contentService } from '../../services/api';
 import { getWeddingInfo } from '../../utils/weddingInfo';
 import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
+import { Reorder } from 'framer-motion';
 import {
     Palette, Sliders, Undo2, Redo2,
     Maximize, Minimize,
-    FileImage, FileText, Plus, Copy, Trash2, ChevronLeft, ChevronRight
+    FileImage, FileText, Plus, Copy, Trash2, ChevronLeft, ChevronRight,
+    Pencil, GripVertical
 } from 'lucide-react';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
@@ -34,6 +36,8 @@ export default function InvitationDesigner() {
   const [editorLang, setEditorLang] = useState('en');
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [editingPageId, setEditingPageId] = useState(null); // page whose name is being edited
+  const [pageNameDraft, setPageNameDraft] = useState('');
   const exporterRef = useRef(null);
   const titleRef = useRef(null);
   const messageRef = useRef(null);
@@ -564,6 +568,57 @@ export default function InvitationDesigner() {
       }
   };
 
+  const pageLabel = (pg, idx) => (pg?.name && pg.name.trim()) || `Page ${idx + 1}`;
+
+  const renamePage = (index, rawName) => {
+      const name = (rawName || '').trim();
+      setDesign(prev => {
+          const current = prev.pages[index];
+          if (!current) return prev;
+          // Store undefined (falls back to "Page N") when cleared, and skip a
+          // no-op history entry when nothing actually changed.
+          const nextName = name || undefined;
+          if ((current.name || undefined) === nextName) return prev;
+          const newState = {
+              ...prev,
+              pages: prev.pages.map((p, i) => i === index ? { ...p, name: nextName } : p),
+          };
+          addToHistory(newState);
+          return newState;
+      });
+  };
+
+  const startRenaming = (index) => {
+      const pg = design.pages[index];
+      if (!pg) return;
+      setEditingPageId(pg.id);
+      setPageNameDraft(pg.name || `Page ${index + 1}`);
+  };
+
+  const commitRename = () => {
+      if (!editingPageId) return;
+      const index = design.pages.findIndex(p => p.id === editingPageId);
+      if (index !== -1) renamePage(index, pageNameDraft);
+      setEditingPageId(null);
+      setPageNameDraft('');
+  };
+
+  // Drag-to-reorder from the page bar. Driven by stable page ids (framer-motion
+  // Reorder) and keeps the current page selected by id across the reorder.
+  const reorderPages = (newIds) => {
+      const activeId = design.pages[currentPage]?.id;
+      const byId = Object.fromEntries(design.pages.map(p => [p.id, p]));
+      const newPages = newIds.map(id => byId[id]).filter(Boolean);
+      if (newPages.length !== design.pages.length) return;
+      setDesign(prev => {
+          const newState = { ...prev, pages: newPages };
+          addToHistory(newState);
+          return newState;
+      });
+      const newIdx = newPages.findIndex(p => p.id === activeId);
+      if (newIdx >= 0) setCurrentPage(newIdx);
+  };
+
   const languages = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
     { code: 'zh', label: '中文', flag: '🇨🇳' },
@@ -696,18 +751,54 @@ export default function InvitationDesigner() {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide max-w-[160px] px-0.5">
-              {design.pages.map((pg, idx) => (
-                <button
-                  key={pg.id || idx}
-                  onClick={() => goToPage(idx)}
-                  className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-bold transition-all ${currentPage === idx ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
-                  title={`Go to page ${idx + 1}`}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-            </div>
+            <Reorder.Group
+              as="div"
+              axis="x"
+              values={design.pages.map(p => p.id)}
+              onReorder={reorderPages}
+              className="flex items-center gap-1 overflow-x-auto scrollbar-hide max-w-[260px] px-0.5"
+            >
+              {design.pages.map((pg, idx) => {
+                const isActive = currentPage === idx;
+                const isEditing = editingPageId === pg.id;
+                return (
+                  <Reorder.Item
+                    as="div"
+                    key={pg.id}
+                    value={pg.id}
+                    dragListener={!isEditing}
+                    whileDrag={{ scale: 1.06, zIndex: 5 }}
+                    onClick={() => { if (!isEditing) goToPage(idx); }}
+                    onDoubleClick={() => startRenaming(idx)}
+                    title={isEditing ? undefined : `${pageLabel(pg, idx)} — click to open, double-click to rename, drag to reorder`}
+                    className={`group flex items-center gap-1 h-7 px-2 rounded-lg text-xs font-bold whitespace-nowrap select-none transition-colors ${isEditing ? 'cursor-text' : 'cursor-grab active:cursor-grabbing'} ${isActive ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
+                  >
+                    {isEditing ? (
+                      <input
+                        autoFocus
+                        value={pageNameDraft}
+                        onChange={(e) => setPageNameDraft(e.target.value)}
+                        onBlur={commitRename}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+                          else if (e.key === 'Escape') { setEditingPageId(null); setPageNameDraft(''); }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-28 bg-white text-stone-700 rounded px-1 py-0.5 text-xs font-bold outline-none ring-1 ring-[#A67B5B]"
+                        maxLength={40}
+                        placeholder={`Page ${idx + 1}`}
+                      />
+                    ) : (
+                      <>
+                        <GripVertical className={`w-3 h-3 flex-shrink-0 ${isActive ? 'text-white/60' : 'text-stone-300 group-hover:text-stone-400'}`} />
+                        <span className={`text-[9px] font-extrabold ${isActive ? 'text-white/70' : 'text-stone-400'}`}>{idx + 1}</span>
+                        <span className="max-w-[96px] truncate">{pageLabel(pg, idx)}</span>
+                      </>
+                    )}
+                  </Reorder.Item>
+                );
+              })}
+            </Reorder.Group>
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage >= totalPages - 1}
@@ -733,6 +824,14 @@ export default function InvitationDesigner() {
               aria-label="Duplicate current page"
             >
               <Copy className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => startRenaming(currentPage)}
+              className="p-2 rounded-xl text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B] transition-all"
+              title="Rename current page"
+              aria-label="Rename current page"
+            >
+              <Pencil className="w-4 h-4" />
             </button>
             <button
               onClick={() => movePage(currentPage, -1)}
