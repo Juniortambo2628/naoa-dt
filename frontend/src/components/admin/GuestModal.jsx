@@ -225,6 +225,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
               id="gm-phone"
               type="tel"
               className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]"
+              value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
