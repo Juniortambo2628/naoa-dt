@@ -15,7 +15,8 @@ import Spinner from '../../components/admin/Spinner';
 import GuestList from '../../components/admin/GuestList';
 import GuestBulkActions from '../../components/admin/GuestBulkActions';
 import { useGuests, useSettings, useContent } from '../../hooks/useApiHooks';
-import { getWeddingInfo } from '../../utils/weddingInfo';
+import { getWeddingInfo, getCoupleNames } from '../../utils/weddingInfo';
+import { renderWhatsAppMessage } from '../../utils/whatsappMessage';
 import { useSearch } from '../../context/SearchContext';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -482,11 +483,13 @@ ${rows.join('\n')}
     }
   };
 
-  const buildWhatsAppMessage = (guest, pdfUrl) => {
-    const inviteUrl = `${window.location.origin}/invitation/${guest.unique_code}`;
-    const pdfLine = pdfUrl ? `\n\nYour invitation card (PDF):\n${pdfUrl}` : '';
-    return `Hi *${guest.name}*! 💌\n\nWe are so excited to invite you to our wedding!${pdfLine}\n\nYou can view your personalized digital invitation and RSVP here:\n${inviteUrl}\n\nWe can't wait to celebrate with you!\n— Dinah & Tze Ren`;
-  };
+  const buildWhatsAppMessage = (guest, pdfUrl) => renderWhatsAppMessage(settingsData?.whatsapp_message_template, {
+    name: guest.name,
+    code: guest.unique_code,
+    invite_link: `${window.location.origin}/invitation/${guest.unique_code}`,
+    pdf_link: pdfUrl,
+    couple: getCoupleNames(settingsData, contentData).coupleNames,
+  });
 
   const whatsAppUrl = (guest, message) =>
     `https://wa.me/${guest.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
