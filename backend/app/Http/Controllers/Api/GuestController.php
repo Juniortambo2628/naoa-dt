@@ -37,6 +37,9 @@ class GuestController extends Controller
             'group' => 'nullable|string|max:50',
             'plus_ones_allowed' => 'integer|min:0|max:10',
             'invitation_via' => 'nullable|string|in:whatsapp,email',
+            'rsvp_status' => 'sometimes|string|in:pending,confirmed,declined',
+            'rsvp_message' => 'nullable|string|max:1000',
+            'dietary_notes' => 'nullable|string|max:1000',
             'plus_ones_data' => 'nullable|array',
             'plus_ones_data.*.id' => 'nullable|integer',
             'plus_ones_data.*.name' => 'required_with:plus_ones_data|string|max:255',
@@ -271,6 +274,7 @@ class GuestController extends Controller
 
         $guest->update($request->only([
             'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
+            'rsvp_status', 'rsvp_message', 'dietary_notes',
         ]));
 
         // Sync plus ones if provided
@@ -430,13 +434,14 @@ class GuestController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:guests,id',
             'data' => 'required|array',
+            'data.rsvp_status' => 'sometimes|string|in:pending,confirmed,declined',
         ]);
 
         $ids = $request->ids;
         $data = $request->data;
 
         // Only allow updating specific fields in bulk for safety
-        $allowedFields = ['group', 'invitation_via', 'rsvp_status', 'plus_ones_allowed'];
+        $allowedFields = ['group', 'invitation_via', 'rsvp_status', 'plus_ones_allowed', 'rsvp_message', 'dietary_notes'];
         $updateData = array_intersect_key($data, array_flip($allowedFields));
 
         if (empty($updateData)) {

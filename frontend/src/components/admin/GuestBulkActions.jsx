@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Download, FileImage, FileText, MessageCircle, Mail, Send, RotateCcw, Trash2, X } from 'lucide-react';
+import { ChevronDown, Download, FileImage, FileText, MessageCircle, Mail, Send, RotateCcw, Trash2, X, CheckCircle, XCircle } from 'lucide-react';
 
 export default function GuestBulkActions({
   selectedIds,
@@ -112,6 +112,28 @@ export default function GuestBulkActions({
                   </div>
                 )}
               </div>
+
+              <button
+                onClick={() => {
+                  if (window.confirm(`Mark ${selectedIds.length} selected guests as confirmed?`)) {
+                    onBulkUpdate({ rsvp_status: 'confirmed' });
+                  }
+                }}
+                className="flex items-center gap-2 hover:text-green-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
+              >
+                <CheckCircle className="w-4 h-4" /> Mark Confirmed
+              </button>
+
+              <button
+                onClick={() => {
+                  if (window.confirm(`Mark ${selectedIds.length} selected guests as declined?`)) {
+                    onBulkUpdate({ rsvp_status: 'declined' });
+                  }
+                }}
+                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
+              >
+                <XCircle className="w-4 h-4" /> Mark Declined
+              </button>
 
               <button
                 onClick={() => {
