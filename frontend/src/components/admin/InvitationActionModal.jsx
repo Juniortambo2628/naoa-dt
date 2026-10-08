@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Mail, MessageCircle, X, Loader2, Send, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function InvitationActionModal({ isOpen, onClose, guest, onSendEmail, onSendWhatsApp, onUpdateGuest }) {
+export default function InvitationActionModal({ isOpen, onClose, guest, onSendEmail, onPrepareWhatsApp, onShareWhatsApp, onUpdateGuest }) {
     const [isSending, setIsSending] = useState(false);
     const [editData, setEditData] = useState({
         email: '',
         phone: ''
     });
     const [isEditing, setIsEditing] = useState(false);
+    const [preparedWhatsApp, setPreparedWhatsApp] = useState(null);
 
     // Sync state when guest changes
     useEffect(() => {
@@ -19,6 +20,7 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
             });
             setIsEditing(false);
         }
+        setPreparedWhatsApp(null);
     }, [guest]);
 
     if (!guest) return null;
@@ -34,12 +36,19 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
         }
     };
 
+    // WhatsApp is two clicks: the first renders/uploads the PDF, the second shares it.
+    // Sharing a file needs a fresh user gesture, which the PDF render would outlast.
     const handleSendWhatsApp = async () => {
         if (!editData.phone) return;
+        if (preparedWhatsApp) {
+            await onShareWhatsApp(preparedWhatsApp);
+            setPreparedWhatsApp(null);
+            onClose();
+            return;
+        }
         setIsSending(true);
         try {
-            await onSendWhatsApp(guest);
-            onClose();
+            setPreparedWhatsApp(await onPrepareWhatsApp(guest));
         } finally {
             setIsSending(false);
         }
@@ -156,8 +165,8 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
                                         <MessageCircle className="w-8 h-8" />
                                     </div>
                                     <div className="text-center">
-                                        <span className="block font-bold text-stone-800">WhatsApp Invite</span>
-                                        <span className="text-[10px] text-stone-500 font-medium uppercase tracking-tighter">Personal & Fast</span>
+                                        <span className="block font-bold text-stone-800">{preparedWhatsApp ? 'Share on WhatsApp' : 'WhatsApp Invite'}</span>
+                                        <span className="text-[10px] text-stone-500 font-medium uppercase tracking-tighter">{preparedWhatsApp ? 'PDF ready — tap to send' : 'With PDF card'}</span>
                                     </div>
                                 </button>
                             </div>

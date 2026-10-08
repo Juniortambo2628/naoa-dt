@@ -218,7 +218,7 @@ export default function AdminGuests() {
     for (const id of selectedIds) {
       const guest = guests.find(g => g.id === id);
       if (guest && guest.phone) {
-        handleWhatsAppInvite(guest);
+        await handleWhatsAppInvite(guest);
         await new Promise(r => setTimeout(r, 500)); // Small delay between tabs
       }
     }
@@ -416,21 +416,66 @@ export default function AdminGuests() {
     }
   };
 
-  const handleWhatsAppInvite = async (guest) => {
+  const buildWhatsAppMessage = (guest, pdfUrl) => {
     const inviteUrl = `${window.location.origin}/invitation/${guest.unique_code}`;
-    const message = `Hi *${guest.name}*! 💌\n\nWe are so excited to invite you to our wedding!\n\nYou can view your personalized digital invitation and RSVP here:\n${inviteUrl}\n\nWe can't wait to celebrate with you!\n— Dinah & Tze Ren`;
-    
-    const whatsappUrl = `https://wa.me/${guest.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
-    
-    window.open(whatsappUrl, '_blank');
-    
-    // Mark as sent in backend
+    const pdfLine = pdfUrl ? `\n\nYour invitation card (PDF):\n${pdfUrl}` : '';
+    return `Hi *${guest.name}*! 💌\n\nWe are so excited to invite you to our wedding!${pdfLine}\n\nYou can view your personalized digital invitation and RSVP here:\n${inviteUrl}\n\nWe can't wait to celebrate with you!\n— Dinah & Tze Ren`;
+  };
+
+  const whatsAppUrl = (guest, message) =>
+    `https://wa.me/${guest.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+
+  // Step 1: render the guest's invitation PDF, upload it (so the message can link
+  // to it) and mark the invite as sent. Returns what step 2 needs to share it.
+  const prepareWhatsAppInvite = async (guest) => {
+    let file = null;
+    let pdfUrl = null;
     try {
+      setExportingGuest(guest);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const blob = exporterRef.current ? await exporterRef.current.generatePdf() : null;
+      if (blob) {
+        const fileName = `Invitation_${guest.name.replace(/\s+/g, '_')}.pdf`;
+        file = new File([blob], fileName, { type: 'application/pdf' });
+        const res = await guestService.markWhatsappInvite(guest.id, { pdf_data: await blobToBase64(blob) });
+        pdfUrl = res?.data?.pdf_url || null;
+      } else {
         await guestService.markWhatsappInvite(guest.id);
-        refetchGuests();
+      }
+      refetchGuests();
     } catch (e) {
-        console.error("Failed to mark WhatsApp as sent", e);
+      console.error('Failed to prepare WhatsApp invitation PDF', e);
+    } finally {
+      setExportingGuest(null);
     }
+    return { guest, file, pdfUrl, message: buildWhatsAppMessage(guest, pdfUrl) };
+  };
+
+  // Step 2 (must run straight from a click): attach the PDF via the device share
+  // sheet where supported (mobile, Chrome/Edge/Safari desktop); otherwise download
+  // the PDF so it can be dropped into the chat, and open WhatsApp with the PDF link.
+  const shareWhatsAppInvite = async ({ guest, file, message }) => {
+    if (file && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: message });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        console.error('Share failed, falling back to WhatsApp link', e);
+      }
+    }
+    if (file) {
+      saveAs(file, file.name);
+      toast('PDF downloaded — attach it in the WhatsApp chat if needed', { icon: '📎' });
+    }
+    window.open(whatsAppUrl(guest, message), '_blank');
+  };
+
+  // Bulk: can't attach files across many chats, so each message links to the guest's PDF.
+  const handleWhatsAppInvite = async (guest) => {
+    const tab = window.open('', '_blank');
+    const { message } = await prepareWhatsAppInvite(guest);
+    if (tab) tab.location.href = whatsAppUrl(guest, message);
   };
 
   const handleUpdateGuest = async (guest, data) => {
@@ -627,7 +672,8 @@ export default function AdminGuests() {
         onClose={() => setIsInviteModalOpen(false)}
         guest={inviteGuest}
         onSendEmail={handleSendInvite}
-        onSendWhatsApp={handleWhatsAppInvite}
+        onPrepareWhatsApp={prepareWhatsAppInvite}
+        onShareWhatsApp={shareWhatsAppInvite}
         onUpdateGuest={handleUpdateGuest}
       />
 
