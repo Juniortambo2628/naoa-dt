@@ -23,7 +23,7 @@ export default function GuestBulkActions({
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
-          className="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2 bg-stone-900 text-white p-3 sm:px-6 sm:py-4 rounded-2xl shadow-2xl z-[100] flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 border border-stone-800 sm:max-w-[95vw] max-h-[70vh] overflow-y-auto sm:max-h-none sm:overflow-visible"
+          className="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2 bg-stone-900 text-white p-3 sm:px-6 sm:py-4 rounded-2xl shadow-2xl z-[100] flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 border border-stone-800 sm:w-max sm:max-w-[min(95vw,72rem)] max-h-[70vh] overflow-y-auto sm:max-h-none sm:overflow-visible"
         >
           <div className="flex items-center gap-2 lg:pr-6 lg:border-r border-stone-800 shrink-0">
             <div className="w-6 h-6 rounded-full bg-[#A67B5B] flex items-center justify-center text-[10px] font-bold">
@@ -39,10 +39,10 @@ export default function GuestBulkActions({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap lg:flex-nowrap items-center gap-2 sm:gap-3 py-1">
-            <div className="contents sm:flex items-center gap-3 lg:border-r border-stone-800 lg:pr-4 shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 py-1">
+            <div className="contents">
               <select
-                className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-3 py-2 w-full sm:w-36"
+                className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-3 py-2 w-full sm:w-auto"
                 onChange={(e) => {
                   if (e.target.value) {
                     onBulkUpdate({ group: e.target.value });
@@ -61,7 +61,7 @@ export default function GuestBulkActions({
               <div className="relative min-w-0">
                 <button
                   onClick={() => setShowBulkMenu(prev => prev === 'invite' ? null : 'invite')}
-                  className="flex items-center gap-2 bg-stone-800 text-white text-xs px-4 py-2 rounded border border-stone-700 hover:bg-stone-700 transition-colors w-full sm:w-36 justify-between"
+                  className="flex items-center gap-2 bg-stone-800 text-white text-xs px-4 py-2 rounded border border-stone-700 hover:bg-stone-700 transition-colors whitespace-nowrap w-full sm:w-auto justify-between"
                 >
                   Invite Via <ChevronDown className={`w-3 h-3 transition-transform ${showBulkMenu === 'invite' ? 'rotate-180' : ''}`} />
                 </button>
@@ -92,12 +92,12 @@ export default function GuestBulkActions({
               </div>
             </div>
 
-            <div className="contents sm:flex sm:flex-wrap items-center gap-3 shrink-0">
+            <div className="contents">
               {/* Export — click-toggle submenu */}
               <div className="relative min-w-0">
                 <button
                   onClick={() => setShowBulkMenu(prev => prev === 'export' ? null : 'export')}
-                  className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-full sm:w-36 justify-between"
+                  className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-between"
                 >
                   <Download className="w-4 h-4" /> Export <ChevronDown className={`w-3 h-3 transition-transform ${showBulkMenu === 'export' ? 'rotate-180' : ''}`} />
                 </button>
@@ -134,7 +134,7 @@ export default function GuestBulkActions({
                     onBulkUpdate({ rsvp_status: 'confirmed' });
                   }
                 }}
-                className="flex items-center gap-2 hover:text-green-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-full sm:w-36 justify-center"
+                className="flex items-center gap-2 hover:text-green-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
               >
                 <CheckCircle className="w-4 h-4" /> Mark Confirmed
               </button>
@@ -145,7 +145,7 @@ export default function GuestBulkActions({
                     onBulkUpdate({ rsvp_status: 'declined' });
                   }
                 }}
-                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-full sm:w-36 justify-center"
+                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
               >
                 <XCircle className="w-4 h-4" /> Mark Declined
               </button>
@@ -156,14 +156,14 @@ export default function GuestBulkActions({
                     onBulkUpdate({ rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
                   }
                 }}
-                className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-full sm:w-36 justify-center"
+                className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
               >
                 <RotateCcw className="w-4 h-4" /> Reset RSVP
               </button>
 
               <button
                 onClick={onBulkDelete}
-                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-full sm:w-36 justify-center"
+                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
               >
                 <Trash2 className="w-4 h-4" /> Delete
               </button>
