@@ -161,7 +161,7 @@ export default function AdminGuests() {
       const targets = pool.filter(g => g.phone);
 
       if (targets.length === 0) {
-          toast.error('No guests with phone numbers to export.');
+          toast.error(`None of the ${pool.length} guests have a phone number.`);
           return;
       }
 
@@ -205,7 +205,8 @@ ${rows.join('\n')}
 
           const content = await zip.generateAsync({ type: 'blob' });
           saveAs(content, `WhatsApp_Invitations_${new Date().toISOString().slice(0, 10)}.zip`);
-          toast.success(`WhatsApp kit ready for ${targets.length} guests`);
+          const skipped = pool.length - targets.length;
+          toast.success(`WhatsApp kit ready for ${targets.length} guests${skipped ? ` (${skipped} skipped — no phone number)` : ''}`, { duration: 6000 });
       } catch (err) {
           console.error('WhatsApp kit export failed', err);
           toast.error('Failed to build the WhatsApp kit.');
