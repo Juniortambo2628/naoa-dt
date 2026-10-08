@@ -1,7 +1,39 @@
-import { Users, Check, Send, Edit, Trash2, RotateCcw, MessageCircle, Mail } from 'lucide-react';
+import { Users, Send, Edit, Trash2, RotateCcw, MessageCircle, Mail } from 'lucide-react';
 import AdminCard from './AdminCard';
 import EmptyState from './EmptyState';
 import Spinner from './Spinner';
+
+const RSVP_STYLES = {
+  confirmed: 'bg-green-100 text-green-700 border-green-200',
+  declined: 'bg-red-100 text-red-700 border-red-200',
+  pending: 'bg-orange-100 text-orange-700 border-orange-200',
+};
+
+// Lets admins record RSVPs received verbally (call, in person, etc.).
+function RsvpStatusSelect({ guest, onUpdateGuest }) {
+  const status = guest.rsvp_status || 'pending';
+  const handleChange = (e) => {
+    const next = e.target.value;
+    if (next === status) return;
+    if (!window.confirm(`Mark ${guest.name} as ${next}?`)) return;
+    onUpdateGuest(guest, next === 'pending'
+      ? { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null }
+      : { rsvp_status: next });
+  };
+  return (
+    <select
+      value={status}
+      onChange={handleChange}
+      title="Set RSVP status manually"
+      aria-label={`RSVP status for ${guest.name}`}
+      className={`px-2 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#A67B5B] ${RSVP_STYLES[status] || RSVP_STYLES.pending}`}
+    >
+      <option value="pending">Pending</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="declined">Declined</option>
+    </select>
+  );
+}
 
 export default function GuestList({
   guestsLoading,
@@ -138,21 +170,13 @@ export default function GuestList({
                     </button>
                   </td>
                   <td className="px-3 py-2 text-xs">
-                    <span className={`px-2 py-1 rounded-full flex items-center justify-center gap-1 w-fit whitespace-nowrap
-                      ${guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                        guest.rsvp_status === 'declined' ? 'bg-red-100 text-red-700' :
-                          'bg-orange-100 text-orange-700'}
-                    `}>
-                      {guest.rsvp_status === 'confirmed' && <Check className="w-2.5 h-2.5" />}
-                      {guest.rsvp_status === 'confirmed' ? 'Confirmed' :
-                        guest.rsvp_status === 'declined' ? 'Declined' : 'Pending'}
-                    </span>
+                    <RsvpStatusSelect guest={guest} onUpdateGuest={onUpdateGuest} />
                   </td>
                   <td className="px-3 py-2 text-center border-r border-stone-200">
                     <button
                       onClick={() => {
                         if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
-                          onInlineSave(guest, 'rsvp_status', 'pending');
+                          onUpdateGuest(guest, { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
                         }
                       }}
                       className="p-1 text-stone-400 hover:text-orange-500"
@@ -301,15 +325,7 @@ export default function GuestList({
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex w-fit whitespace-nowrap items-center gap-1 ${
-                      guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                        guest.rsvp_status === 'declined' ? 'bg-red-100 text-red-700' :
-                          'bg-orange-100 text-orange-700'
-                    }`}>
-                      {guest.rsvp_status === 'confirmed' && <Check className="w-2.5 h-2.5" />}
-                      {guest.rsvp_status === 'confirmed' ? 'Confirmed' :
-                        guest.rsvp_status === 'declined' ? 'Declined' : 'Pending'}
-                    </span>
+                    <RsvpStatusSelect guest={guest} onUpdateGuest={onUpdateGuest} />
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
