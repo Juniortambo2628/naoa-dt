@@ -8,6 +8,7 @@ use App\Models\Guest;
 use App\Models\Invitation;
 use App\Services\GuestImportService;
 use App\Services\GuestService;
+use App\Services\InvitationService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -192,8 +193,20 @@ class GuestController extends Controller
     /**
      * Mark an invitation as sent via WhatsApp
      */
-    public function markWhatsappSent(Guest $guest)
+    public function markWhatsappSent(Request $request, Guest $guest, InvitationService $invitationService)
     {
+        // Optionally store the generated invitation PDF so the WhatsApp message
+        // can link to the actual card, not just the invitation page.
+        $pdfUrl = null;
+        $pdfData = $request->input('pdf_data');
+        if ($pdfData && str_contains($pdfData, 'base64')) {
+            try {
+                $pdfUrl = $invitationService->savePublicPdf($pdfData, $guest);
+            } catch (\Exception $e) {
+                Log::error('Failed to save WhatsApp invitation PDF: '.$e->getMessage());
+            }
+        }
+
         $invitation = $guest->invitation()->updateOrCreate(
             ['guest_id' => $guest->id],
             [
@@ -204,6 +217,7 @@ class GuestController extends Controller
 
         return $this->successResponse([
             'invitation' => $invitation,
+            'pdf_url' => $pdfUrl,
         ], 'Invitation marked as sent via WhatsApp');
     }
 
