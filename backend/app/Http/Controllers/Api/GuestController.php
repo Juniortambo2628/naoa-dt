@@ -225,6 +225,23 @@ class GuestController extends Controller
     }
 
     /**
+     * Undo "sent via WhatsApp" (e.g. ticked by mistake on the WhatsApp checklist).
+     * Invitations already opened or responded to are left untouched.
+     */
+    public function unmarkWhatsappSent(Guest $guest)
+    {
+        $invitation = $guest->invitation;
+
+        if ($invitation && $invitation->status === 'sent') {
+            $invitation->update(['status' => 'pending', 'sent_at' => null]);
+        }
+
+        return $this->successResponse([
+            'invitation' => $invitation?->fresh(),
+        ], 'WhatsApp invitation unmarked');
+    }
+
+    /**
      * Create a new guest (admin only)
      */
     public function store(Request $request)

@@ -12,6 +12,7 @@ export default function GuestBulkActions({
   onBulkSendInvite,
   onBulkResendConfirmation,
   onExportBulk,
+  onExportWhatsAppKit,
   onBulkDelete,
   onClearSelection,
 }) {
@@ -115,6 +116,13 @@ export default function GuestBulkActions({
                       disabled={isBulkExporting}
                     >
                       <FileText className="w-3.5 h-3.5 text-blue-400" /> Export PDF
+                    </button>
+                    <button
+                      onClick={() => { onExportWhatsAppKit(); setShowBulkMenu(null); }}
+                      className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
+                      disabled={isBulkExporting}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 text-green-500" /> WhatsApp Kit
                     </button>
                   </div>
                 )}

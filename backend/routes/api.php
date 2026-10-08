@@ -165,6 +165,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{guest}', [GuestController::class, 'update']);
         Route::delete('/{guest}', [GuestController::class, 'destroy']);
         Route::post('/{guest}/whatsapp-invite', [GuestController::class, 'markWhatsappSent']);
+        Route::delete('/{guest}/whatsapp-invite', [GuestController::class, 'unmarkWhatsappSent']);
         Route::post('/{guest}/reset-rsvp', [GuestController::class, 'resetRsvp']);
         Route::post('/bulk-resend-confirmation', [GuestController::class, 'resendConfirmationBulk']);
     });
