@@ -315,4 +315,32 @@ class GuestTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    public function test_admin_can_mark_and_unmark_whatsapp_invite(): void
+    {
+        $guest = Guest::factory()->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/guests/{$guest->id}/whatsapp-invite")
+            ->assertOk();
+        $this->assertSame('sent', $guest->fresh()->invitation->status);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/guests/{$guest->id}/whatsapp-invite")
+            ->assertOk();
+        $invitation = $guest->fresh()->invitation;
+        $this->assertSame('pending', $invitation->status);
+        $this->assertNull($invitation->sent_at);
+    }
+
+    public function test_unmark_whatsapp_invite_keeps_opened_invitations(): void
+    {
+        $guest = Guest::factory()->create();
+        $guest->invitation()->create(['status' => 'opened', 'sent_at' => now(), 'opened_at' => now()]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/guests/{$guest->id}/whatsapp-invite")
+            ->assertOk();
+        $this->assertSame('opened', $guest->fresh()->invitation->status);
+    }
 }

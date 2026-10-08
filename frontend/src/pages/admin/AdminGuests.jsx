@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, MessageCircle } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
 import ImportConflictModal from '../../components/admin/ImportConflictModal';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
 import InvitationActionModal from '../../components/admin/InvitationActionModal';
+import WhatsAppChecklistModal from '../../components/admin/WhatsAppChecklistModal';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminToolbar from '../../components/admin/AdminToolbar';
@@ -44,6 +45,7 @@ export default function AdminGuests() {
   const [viewMode, setViewMode] = useState('list');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteGuest, setInviteGuest] = useState(null);
+  const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importData, setImportData] = useState(null); // { conflicts: [], valid: [], skipped_count: 0 }
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
@@ -183,7 +185,6 @@ export default function AdminGuests() {
               if (blob) folder.file(fileName, blob);
 
               rows.push(`<tr>
-  <td><input type="checkbox" aria-label="Sent"></td>
   <td>${num}</td>
   <td><strong>${esc(guest.name)}</strong><br><small>${esc(guest.unique_code)}</small></td>
   <td>${esc(guest.phone)}</td>
@@ -194,10 +195,10 @@ export default function AdminGuests() {
 
           zip.file('index.html', `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WhatsApp Invitations</title>
-<style>body{font-family:system-ui,sans-serif;margin:16px;color:#292524}table{border-collapse:collapse;width:100%}td,th{padding:8px;border-bottom:1px solid #e7e5e4;text-align:left;font-size:14px}a.wa{background:#25D366;color:#fff;padding:6px 10px;border-radius:6px;text-decoration:none;white-space:nowrap}tr:has(input:checked){opacity:.45}</style>
+<style>body{font-family:system-ui,sans-serif;margin:16px;color:#292524}table{border-collapse:collapse;width:100%}td,th{padding:8px;border-bottom:1px solid #e7e5e4;text-align:left;font-size:14px}a.wa{background:#25D366;color:#fff;padding:6px 10px;border-radius:6px;text-decoration:none;white-space:nowrap}</style>
 </head><body><h1>WhatsApp Invitations (${targets.length})</h1>
-<p>For each guest: tap <b>Open chat</b> (the personal message and RSVP link are pre-filled), attach their PDF from the <code>PDFs</code> folder, send, then tick the box.</p>
-<table><thead><tr><th>Sent</th><th>#</th><th>Guest</th><th>Phone</th><th>Invite</th><th>WhatsApp</th></tr></thead><tbody>
+<p>For each guest: tap <b>Open chat</b> (the personal message and RSVP link are pre-filled), attach their PDF from the <code>PDFs</code> folder and send. Track progress with the <b>WhatsApp Checklist</b> in the admin dashboard — ticks there are saved.</p>
+<table><thead><tr><th>#</th><th>Guest</th><th>Phone</th><th>Invite</th><th>WhatsApp</th></tr></thead><tbody>
 ${rows.join('\n')}
 </tbody></table></body></html>`);
 
@@ -543,6 +544,37 @@ ${rows.join('\n')}
     if (tab) tab.location.href = whatsAppUrl(guest, message);
   };
 
+  // WhatsApp checklist helpers
+  const downloadGuestPdf = async (guest) => {
+    try {
+      setExportingGuest(guest);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const blob = exporterRef.current ? await exporterRef.current.generatePdf() : null;
+      if (!blob) throw new Error('No PDF generated');
+      saveAs(blob, `Invitation_${guest.name.replace(/[^\w-]+/g, '_')}_${guest.unique_code}.pdf`);
+    } catch (e) {
+      console.error('PDF download failed', e);
+      toast.error(`Couldn't create the PDF for ${guest.name}`);
+    } finally {
+      setExportingGuest(null);
+    }
+  };
+
+  const openGuestChat = (guest) => {
+    window.open(whatsAppUrl(guest, buildWhatsAppMessage(guest)), '_blank');
+  };
+
+  const toggleWhatsAppSent = async (guest, sent) => {
+    try {
+      if (sent) await guestService.markWhatsappInvite(guest.id);
+      else await guestService.unmarkWhatsappInvite(guest.id);
+      refetchGuests();
+    } catch (e) {
+      toast.error('Failed to save — please try again');
+      throw e;
+    }
+  };
+
   const handleUpdateGuest = async (guest, data) => {
     try {
       // Merge with existing guest data to ensure validation (like 'name') passes
@@ -624,6 +656,12 @@ ${rows.join('\n')}
       icon: FileText,
       onClick: () => exportBulk('pdf'),
       disabled: isBulkExporting,
+    },
+    {
+      id: 'whatsapp-checklist',
+      label: 'WhatsApp Checklist',
+      icon: ListChecks,
+      onClick: () => setIsChecklistOpen(true),
     },
     {
       id: 'whatsapp-kit',
@@ -738,6 +776,15 @@ ${rows.join('\n')}
         onDelete={handleDelete}
         onUpdateGuest={handleUpdateGuest}
         onSetCurrentPage={setCurrentPage}
+      />
+
+      <WhatsAppChecklistModal
+        isOpen={isChecklistOpen}
+        onClose={() => setIsChecklistOpen(false)}
+        guests={filteredGuests}
+        onDownloadPdf={downloadGuestPdf}
+        onOpenChat={openGuestChat}
+        onToggleSent={toggleWhatsAppSent}
       />
 
       <InvitationActionModal 
