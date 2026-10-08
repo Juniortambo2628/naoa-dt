@@ -705,7 +705,7 @@ export default function AdminGuests() {
           />
       )}
       </AdminPageLayout>
-      <AdminFloatingToolbar actions={toolbarActions} />
+      {selectedIds.length === 0 && <AdminFloatingToolbar actions={toolbarActions} />}
     </>
   );
 }
