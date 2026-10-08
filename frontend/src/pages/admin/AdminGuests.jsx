@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, MessageCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
@@ -147,6 +147,71 @@ export default function AdminGuests() {
       }
   };
 
+
+  // Download a "WhatsApp kit": every guest's personalised PDF plus an index.html
+  // checklist with a one-tap link that opens each guest's chat with their own
+  // message (incl. their unique RSVP link), so invites can be sent one by one.
+  const exportWhatsAppKit = async () => {
+      const pool = selectedIds.length > 0
+          ? guests.filter(g => selectedIds.includes(g.id))
+          : filteredGuests;
+      const targets = pool.filter(g => g.phone);
+
+      if (targets.length === 0) {
+          toast.error('No guests with phone numbers to export.');
+          return;
+      }
+
+      setIsBulkExporting(true);
+      setBulkProgress({ current: 0, total: targets.length });
+
+      const zip = new JSZip();
+      const folder = zip.folder('PDFs');
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const rows = [];
+
+      try {
+          for (let i = 0; i < targets.length; i++) {
+              const guest = targets[i];
+              setBulkProgress({ current: i + 1, total: targets.length });
+              setExportingGuest(guest);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              const num = String(i + 1).padStart(3, '0');
+              const fileName = `${num}_${guest.name.replace(/[^\w-]+/g, '_')}_${guest.unique_code}.pdf`;
+              const blob = await exporterRef.current.generatePdf();
+              if (blob) folder.file(fileName, blob);
+
+              rows.push(`<tr>
+  <td><input type="checkbox" aria-label="Sent"></td>
+  <td>${num}</td>
+  <td><strong>${esc(guest.name)}</strong><br><small>${esc(guest.unique_code)}</small></td>
+  <td>${esc(guest.phone)}</td>
+  <td>${blob ? `<a href="PDFs/${esc(fileName)}" target="_blank">Open PDF</a>` : '<em>failed</em>'}</td>
+  <td><a class="wa" href="${esc(whatsAppUrl(guest, buildWhatsAppMessage(guest)))}" target="_blank">Open chat</a></td>
+</tr>`);
+          }
+
+          zip.file('index.html', `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WhatsApp Invitations</title>
+<style>body{font-family:system-ui,sans-serif;margin:16px;color:#292524}table{border-collapse:collapse;width:100%}td,th{padding:8px;border-bottom:1px solid #e7e5e4;text-align:left;font-size:14px}a.wa{background:#25D366;color:#fff;padding:6px 10px;border-radius:6px;text-decoration:none;white-space:nowrap}tr:has(input:checked){opacity:.45}</style>
+</head><body><h1>WhatsApp Invitations (${targets.length})</h1>
+<p>For each guest: tap <b>Open chat</b> (the personal message and RSVP link are pre-filled), attach their PDF from the <code>PDFs</code> folder, send, then tick the box.</p>
+<table><thead><tr><th>Sent</th><th>#</th><th>Guest</th><th>Phone</th><th>Invite</th><th>WhatsApp</th></tr></thead><tbody>
+${rows.join('\n')}
+</tbody></table></body></html>`);
+
+          const content = await zip.generateAsync({ type: 'blob' });
+          saveAs(content, `WhatsApp_Invitations_${new Date().toISOString().slice(0, 10)}.zip`);
+          toast.success(`WhatsApp kit ready for ${targets.length} guests`);
+      } catch (err) {
+          console.error('WhatsApp kit export failed', err);
+          toast.error('Failed to build the WhatsApp kit.');
+      } finally {
+          setIsBulkExporting(false);
+          setExportingGuest(null);
+      }
+  };
 
   const handleAdd = () => {
     setSelectedGuest(null);
@@ -561,6 +626,13 @@ export default function AdminGuests() {
       disabled: isBulkExporting,
     },
     {
+      id: 'whatsapp-kit',
+      label: 'WhatsApp Kit',
+      icon: MessageCircle,
+      onClick: exportWhatsAppKit,
+      disabled: isBulkExporting,
+    },
+    {
       id: 'reset-rsvps',
       label: 'Reset RSVPs',
       icon: Trash2,
@@ -624,6 +696,7 @@ export default function AdminGuests() {
         onBulkSendInvite={handleBulkSendInvite}
         onBulkResendConfirmation={handleBulkResendConfirmation}
         onExportBulk={exportBulk}
+        onExportWhatsAppKit={exportWhatsAppKit}
         onBulkDelete={handleBulkDelete}
         onClearSelection={() => { setSelectedIds([]); setShowBulkMenu(null); }}
       />
