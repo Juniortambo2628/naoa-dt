@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Clock, MapPin, ChevronRight, Megaphone } from 'lucide-react';
+import { Radio, Clock, MapPin, ChevronRight, Megaphone, CalendarHeart, Hammer } from 'lucide-react';
 import { scheduleService } from '../services/api';
 import { getLiveStatus, formatTime } from '../utils/liveEvent';
 
@@ -9,7 +9,9 @@ const RECENT_UPDATE_MS = 2 * 3600 * 1000;
 
 // Live tracker for the wedding programme on the guest invitation: what's
 // happening now, what's next, and the latest announcement from the couple.
-export default function LiveEventWidget() {
+// While the programme isn't ready (module hidden, no items yet, or only items
+// that pre-date the wedding), show the wedding date from Settings instead.
+export default function LiveEventWidget({ programmeVisible = true, weddingDate, weddingDateText }) {
   const navigate = useNavigate();
   const [events, setEvents] = useState(null);
   const [updates, setUpdates] = useState([]);
@@ -38,7 +40,31 @@ export default function LiveEventWidget() {
 
   if (!events) return null;
   const status = getLiveStatus(events, now);
-  if (status.state === 'none') return null;
+
+  const weddingDayEnd = weddingDate ? new Date(`${String(weddingDate).slice(0, 10)}T23:59:59`) : null;
+  const weddingAhead = weddingDayEnd && !Number.isNaN(weddingDayEnd.getTime()) && now <= weddingDayEnd;
+  const comingSoon = !programmeVisible || status.state === 'none' || (status.state === 'after' && weddingAhead);
+
+  if (comingSoon) {
+    return (
+      <section className="rounded-2xl overflow-hidden border border-palette-forest/20 bg-white shadow-sm">
+        <div className="px-5 py-3 bg-palette-forest text-palette-cream flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+          <Hammer className="w-4 h-4" /> Programme coming soon
+        </div>
+        <div className="p-5 flex gap-4 items-center">
+          <div className="w-12 h-12 rounded-xl bg-palette-cream text-palette-cinnamon flex items-center justify-center shrink-0">
+            <CalendarHeart className="w-6 h-6" />
+          </div>
+          <div>
+            {weddingDateText && <p className="text-lg font-serif text-palette-cinnamon">{weddingDateText}</p>}
+            <p className="text-sm text-stone-500">
+              We're still putting the finishing touches on the day's programme. Check back here for live updates on the day!
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const latest = updates[0];
   const showUpdate = latest && now - new Date(latest.created_at) < RECENT_UPDATE_MS;
