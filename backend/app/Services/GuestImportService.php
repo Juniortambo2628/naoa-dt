@@ -34,7 +34,7 @@ class GuestImportService
     public function validateImport(UploadedFile $file): array
     {
         $data = Excel::toArray(new GuestsImport, $file);
-        $rows = $data[0] ?? [];
+        $rows = $data[$this->guestSheetIndex($file, $data)] ?? [];
 
         $conflicts = [];
         $valid = [];
@@ -43,7 +43,11 @@ class GuestImportService
 
         foreach ($rows as $row) {
             if (empty($row['names']) && empty($row['name'])) {
-                $skippedCount++;
+                // Blank spreadsheet rows aren't "skipped guests"; only count
+                // rows that have data but no name.
+                if (array_filter($row, fn ($v) => $v !== null && $v !== '')) {
+                    $skippedCount++;
+                }
 
                 continue;
             }
@@ -56,7 +60,7 @@ class GuestImportService
             $group = ! empty($row['group']) ? trim($row['group']) : 'Invited';
             $plusOnes = max(0, ((int) ($row['number_of_invites'] ?? 1)) - 1);
 
-            $keys = $this->rowKeys($name, $email, $phone);
+            $keys = $this->rowKeys($name, $email);
             if (array_intersect($keys, $seen)) {
                 $skippedCount++;
 
@@ -128,9 +132,39 @@ class GuestImportService
     }
 
     /**
-     * Find an existing guest by email, then phone, then name — all compared
-     * case/whitespace-insensitively (phones by digits only). Plus-one records
-     * are ignored so "Jane (Plus One 1)" never matches a primary row.
+     * Pick the worksheet holding the guest list: a tab whose name contains
+     * "final" (e.g. "Final-guest-list") wins, otherwise the first tab with a
+     * Names/Name column, otherwise the first tab.
+     */
+    private function guestSheetIndex(UploadedFile $file, array $sheets): int
+    {
+        try {
+            $type = \PhpOffice\PhpSpreadsheet\IOFactory::identify($file->getRealPath());
+            $names = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($type)->listWorksheetNames($file->getRealPath());
+            foreach ($names as $i => $sheetName) {
+                if (str_contains(mb_strtolower($sheetName), 'final') && ! empty($sheets[$i])) {
+                    return $i;
+                }
+            }
+        } catch (\Throwable) {
+            // CSV or unreadable names: fall through to header detection.
+        }
+
+        foreach ($sheets as $i => $rows) {
+            $first = $rows[0] ?? [];
+            if (array_key_exists('names', $first) || array_key_exists('name', $first)) {
+                return $i;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Find an existing guest by email, then name — compared case/whitespace-
+     * insensitively. Phone is deliberately NOT used: families often share one
+     * number. Plus-one records are ignored so "Jane (Plus One 1)" never
+     * matches a primary row.
      */
     public function findExistingGuest(string $name, ?string $email, ?string $phone = null): ?Guest
     {
@@ -140,15 +174,6 @@ class GuestImportService
             $existing = $primary()->whereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim($email))])->first();
             if ($existing) {
                 return $existing;
-            }
-        }
-
-        $digits = $this->phoneDigits($phone);
-        if (strlen($digits) >= 7) {
-            $existing = $primary()->whereNotNull('phone')->get(['id', 'phone'])
-                ->first(fn ($g) => $this->phoneDigits($g->phone) === $digits);
-            if ($existing) {
-                return Guest::find($existing->id);
             }
         }
 
@@ -162,28 +187,12 @@ class GuestImportService
         return mb_strtolower(preg_replace('/\s+/', ' ', trim((string) $name)));
     }
 
-    private function phoneDigits(?string $phone): string
-    {
-        $digits = preg_replace('/\D+/', '', (string) $phone);
-
-        // Treat 07xx… and 2547xx… (Kenya) as the same number.
-        if (str_starts_with($digits, '0') && strlen($digits) === 10) {
-            $digits = '254'.substr($digits, 1);
-        }
-
-        return $digits;
-    }
-
     /** Identity keys for in-file duplicate detection. */
-    private function rowKeys(string $name, ?string $email, ?string $phone): array
+    private function rowKeys(string $name, ?string $email): array
     {
         $keys = ['name:'.$this->normalizeName($name)];
         if ($email) {
             $keys[] = 'email:'.mb_strtolower(trim($email));
-        }
-        $digits = $this->phoneDigits($phone);
-        if (strlen($digits) >= 7) {
-            $keys[] = 'phone:'.$digits;
         }
 
         return $keys;
