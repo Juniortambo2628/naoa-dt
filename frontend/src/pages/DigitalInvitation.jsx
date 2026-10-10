@@ -13,6 +13,7 @@ import EmergencyNumbers from '../components/EmergencyNumbers';
 import GuestQuickActions from '../components/GuestQuickActions';
 import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
+import { resolveInvitationSections } from '../utils/invitationSections';
 
 export default function DigitalInvitation() {
     const { code } = useParams();
@@ -30,6 +31,12 @@ export default function DigitalInvitation() {
         orientation: 'portrait',
         items: []
     };
+
+    // Which parts of the page the admin has switched on (Settings → Guest Invitation Page).
+    const show = resolveInvitationSections(settings?.invitation_sections);
+    const detailCount = [show.when, show.where].filter(Boolean).length;
+    const infoCount = [show.map, show.weather].filter(Boolean).length;
+    const showRsvpButton = show.rsvp && guest?.rsvp_status === 'pending';
 
     // Every page of the invitation, flattened for rendering (backward compatible
     // with legacy single-page themes).
@@ -149,6 +156,7 @@ export default function DigitalInvitation() {
             <div className="relative max-w-screen-xl mx-auto px-4 py-12 md:py-20 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-center">
                 
                 {/* Left Side: The Interactive Card */}
+                {show.card && (
                 <motion.div 
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -177,15 +185,16 @@ export default function DigitalInvitation() {
                         </div>
                     ))}
                 </motion.div>
+                )}
 
                 {/* Right Side: Welcome & Actions */}
                 <motion.div 
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                    className="w-full max-w-lg space-y-10"
+                    className={`w-full space-y-10 ${show.card ? 'max-w-lg' : 'max-w-2xl'}`}
                 >
-                    <div className="text-center lg:text-left space-y-4">
+                    <div className={`text-center space-y-4 ${show.card ? 'lg:text-left' : ''}`}>
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-palette-forest/10 text-palette-forest rounded-full text-xs font-bold uppercase tracking-wider mb-2">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Official Invitation
@@ -194,12 +203,14 @@ export default function DigitalInvitation() {
                             Hi {guest.name}, <br />
                             <span className="text-palette-cinnamon">You're Invited!</span>
                         </h1>
-                        <p className="text-lg text-stone-500 leading-relaxed max-w-md mx-auto lg:mx-0">
+                        {show.welcome && <p className={`text-lg text-stone-500 leading-relaxed max-w-md mx-auto ${show.card ? 'lg:mx-0' : ''}`}>
                             We are so happy to share our special day with you. Please see the details below and kindly let us know if you can join us.
-                        </p>
+                        </p>}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {detailCount > 0 && (
+                    <div className={`grid grid-cols-1 gap-4 ${detailCount === 2 ? 'md:grid-cols-2' : ''}`}>
+                        {show.when && (
                         <div className="bg-white p-6 rounded-2xl border border-palette-light-brown/40 shadow-sm hover:shadow-md transition-shadow group">
                             <div className="w-10 h-10 bg-palette-forest/10 text-palette-forest rounded-xl flex items-center justify-center mb-4 group-hover:bg-palette-forest group-hover:text-white transition-colors">
                                 <Calendar className="w-5 h-5" />
@@ -207,6 +218,8 @@ export default function DigitalInvitation() {
                             <h3 className="font-bold text-palette-olive! mb-1 italic">When</h3>
                             <p className="text-sm text-stone-500">{weddingDateText}</p>
                         </div>
+                        )}
+                        {show.where && (
                         <div className="bg-white p-6 rounded-2xl border border-palette-light-brown/40 shadow-sm hover:shadow-md transition-shadow group">
                             <div className="w-10 h-10 bg-palette-forest/10 text-palette-forest rounded-xl flex items-center justify-center mb-4 group-hover:bg-palette-forest group-hover:text-white transition-colors">
                                 <MapPin className="w-5 h-5" />
@@ -214,11 +227,14 @@ export default function DigitalInvitation() {
                             <h3 className="font-bold text-palette-olive! mb-1 italic">Where</h3>
                             <p className="text-sm text-stone-500">{venueName}</p>
                         </div>
+                        )}
                     </div>
+                    )}
 
+                    {(showRsvpButton || show.calendar) && (
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
                         {/* Only prompt for RSVP while the guest hasn't responded yet. */}
-                        {guest.rsvp_status === 'pending' && (
+                        {showRsvpButton && (
                             <button
                                 onClick={() => navigate(`/rsvp/${guest.unique_code}`)}
                                 className="flex-1 bg-palette-cinnamon text-white px-8 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-palette-rust hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-palette-cinnamon/20 group"
@@ -228,6 +244,7 @@ export default function DigitalInvitation() {
                             </button>
                         )}
 
+                        {show.calendar && (
                         <div className="flex flex-col gap-2 flex-1">
                             <button
                                 onClick={downloadIcs}
@@ -237,9 +254,11 @@ export default function DigitalInvitation() {
                                 Add to Calendar
                             </button>
                         </div>
+                        )}
                     </div>
+                    )}
                     
-                    {guest.rsvp_status !== 'pending' && (
+                    {show.rsvp && guest.rsvp_status !== 'pending' && (
                          <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -250,35 +269,39 @@ export default function DigitalInvitation() {
                     )}
 
                     {/* Live programme tracker */}
-                    <LiveEventWidget
+                    {show.programme && <LiveEventWidget
                         programmeVisible={content?.programme_page ? content.programme_page.is_visible !== false && content.programme_page.is_visible !== 0 : false}
                         weddingDate={weddingDate}
                         weddingDateText={weddingDateText}
-                    />
+                    />}
 
                     {/* Dress code colours */}
-                    <DressCodePalette />
+                    {show.dressCode && <DressCodePalette />}
 
                     {/* Guest Info Panel: Maps + Weather */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <MapsETA 
+                    {infoCount > 0 && (
+                    <div className={`grid grid-cols-1 gap-4 ${infoCount === 2 ? 'md:grid-cols-2' : ''}`}>
+                        {show.map && <MapsETA 
                             venueName={venueName}
                             venueAddress={venueAddress}
                             venueLat={venueLat}
                             venueLng={venueLng}
-                        />
-                        <WeatherWidget weddingDate={weddingDate} />
+                        />}
+                        {show.weather && <WeatherWidget weddingDate={weddingDate} />}
                     </div>
+                    )}
 
                     {/* Emergency Numbers */}
-                    <EmergencyNumbers compact={true} />
+                    {show.emergency && <EmergencyNumbers compact={true} />}
 
+                    {show.signoff && (
                     <div className="pt-8 border-t border-stone-200/60">
-                        <p className="text-stone-400 text-sm text-center lg:text-left italic">
+                        <p className={`text-stone-400 text-sm text-center italic ${show.card ? 'lg:text-left' : ''}`}>
                             With love, <br />
                             <span className="font-serif text-palette-cinnamon not-italic">{coupleNames}</span>
                         </p>
                     </div>
+                    )}
                 </motion.div>
             </div>
 
@@ -289,7 +312,7 @@ export default function DigitalInvitation() {
             </footer>
 
             {/* Floating quick actions: Where are you · My travel details · Seating chart */}
-            <GuestQuickActions guestCode={code} />
+            {show.quickActions && <GuestQuickActions guestCode={code} />}
         </div>
     );
 }

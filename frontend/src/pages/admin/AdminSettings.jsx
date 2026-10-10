@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle } from 'lucide-react';
+import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -10,6 +10,7 @@ import AdminModal from '../../components/admin/AdminModal';
 import { AdminInput } from '../../components/admin/AdminInput';
 import Spinner from '../../components/admin/Spinner';
 import LocationPicker from '../../components/LocationPicker';
+import { INVITATION_SECTIONS, resolveInvitationSections } from '../../utils/invitationSections';
 import { DEFAULT_WHATSAPP_TEMPLATE, WHATSAPP_PLACEHOLDERS, renderWhatsAppMessage } from '../../utils/whatsappMessage';
 
 const settingSections = [
@@ -30,6 +31,12 @@ const settingSections = [
     label: 'Security',
     icon: Lock,
     description: 'Protect your account with two-factor authentication.',
+  },
+  {
+    id: 'invitation-page',
+    label: 'Guest Invitation Page',
+    icon: LayoutTemplate,
+    description: 'Choose which parts of the guest invitation page are shown.',
   },
   {
     id: 'whatsapp',
@@ -66,6 +73,7 @@ export default function AdminSettings() {
     venue_lat: '',
     venue_lng: '',
     whatsapp_message_template: DEFAULT_WHATSAPP_TEMPLATE,
+    invitation_sections: resolveInvitationSections(),
   });
 
   const { data: settingsData, isLoading } = useSettings();
@@ -100,6 +108,7 @@ export default function AdminSettings() {
           venue_lat: settingsData.venue_lat || '',
           venue_lng: settingsData.venue_lng || '',
           whatsapp_message_template: settingsData.whatsapp_message_template || DEFAULT_WHATSAPP_TEMPLATE,
+          invitation_sections: resolveInvitationSections(settingsData.invitation_sections),
         });
     }
   }, [settingsData]);
@@ -310,6 +319,26 @@ export default function AdminSettings() {
                     />
                   </div>
                 )}
+              </div>
+            </SettingsCard>
+
+            {/* Guest invitation page sections */}
+            <SettingsCard icon={LayoutTemplate} title="Guest Invitation Page" description="Turn parts of the guest invitation on or off. The page layout adjusts to what's shown.">
+              <div className="flex gap-3 mb-4 text-xs">
+                <button type="button" className="text-[#A67B5B] hover:underline" onClick={() => setSettings(s => ({ ...s, invitation_sections: Object.fromEntries(INVITATION_SECTIONS.map(x => [x.id, true])) }))}>Show all</button>
+                <button type="button" className="text-stone-500 hover:underline" onClick={() => setSettings(s => ({ ...s, invitation_sections: Object.fromEntries(INVITATION_SECTIONS.map(x => [x.id, false])) }))}>Hide all</button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {INVITATION_SECTIONS.map(section => (
+                  <Toggle
+                    key={section.id}
+                    id={`inv-section-${section.id}`}
+                    checked={settings.invitation_sections[section.id]}
+                    onChange={(checked) => setSettings(s => ({ ...s, invitation_sections: { ...s.invitation_sections, [section.id]: checked } }))}
+                    label={section.label}
+                    hint={section.hint}
+                  />
+                ))}
               </div>
             </SettingsCard>
 
