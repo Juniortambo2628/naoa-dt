@@ -1,5 +1,6 @@
+import { createPortal } from 'react-dom';
 import { useMemo, useState } from 'react';
-import { X, FileText, MessageCircle, Loader2 } from 'lucide-react';
+import { X, FileText, MessageCircle, Loader2, Search } from 'lucide-react';
 
 const SENT_STATUSES = ['sent', 'opened', 'responded'];
 
@@ -9,13 +10,28 @@ const isInviteSent = (guest) => SENT_STATUSES.includes(guest.invitation?.status)
 // invitation status, so progress is kept across sessions and devices.
 export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDownloadPdf, onOpenChat, onToggleSent }) {
   const [hideSent, setHideSent] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('az'); // az | za | unsent
   const [busyId, setBusyId] = useState(null);
   const [pending, setPending] = useState({}); // optimistic ticks: guestId -> bool
 
   const withPhone = useMemo(() => guests.filter(g => g.phone), [guests]);
   const sentState = (g) => (g.id in pending ? pending[g.id] : isInviteSent(g));
   const sentCount = withPhone.filter(sentState).length;
-  const rows = hideSent ? withPhone.filter(g => !sentState(g)) : withPhone;
+  const q = query.trim().toLowerCase();
+  const qDigits = q.replace(/\D/g, '');
+  const rows = withPhone
+    .filter(g => !hideSent || !sentState(g))
+    .filter(g => !q
+      || g.name?.toLowerCase().includes(q)
+      || g.unique_code?.toLowerCase().includes(q)
+      || g.email?.toLowerCase().includes(q)
+      || (qDigits.length >= 3 && String(g.phone).replace(/\D/g, '').includes(qDigits)))
+    .sort((a, b) => {
+      if (sortBy === 'unsent' && sentState(a) !== sentState(b)) return sentState(a) ? 1 : -1;
+      const byName = (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+      return sortBy === 'za' ? -byName : byName;
+    });
 
   if (!isOpen) return null;
 
@@ -38,7 +54,7 @@ export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDown
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4">
       <div className="bg-white w-full sm:max-w-3xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-stone-100 flex items-start justify-between gap-4">
@@ -63,6 +79,29 @@ export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDown
               />
             </div>
           </div>
+          <div className="w-full flex flex-col sm:flex-row gap-2 order-last">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name, phone or code…"
+                aria-label="Search guests"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-stone-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30"
+              />
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Sort guests"
+              className="py-2 px-3 rounded-lg border border-stone-200 bg-white text-sm text-stone-700"
+            >
+              <option value="az">Name A–Z</option>
+              <option value="za">Name Z–A</option>
+              <option value="unsent">Not sent first</option>
+            </select>
+          </div>
           <label className="flex items-center gap-2 text-xs text-stone-600 cursor-pointer">
             <input type="checkbox" checked={hideSent} onChange={(e) => setHideSent(e.target.checked)} />
             Hide sent
@@ -72,7 +111,7 @@ export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDown
         <ul className="overflow-y-auto divide-y divide-stone-100">
           {rows.length === 0 && (
             <li className="p-8 text-center text-sm text-stone-400">
-              {withPhone.length === 0 ? 'No guests with phone numbers.' : 'All done — every invite is ticked off.'}
+              {withPhone.length === 0 ? 'No guests with phone numbers.' : q ? `No guests match "${query.trim()}".` : 'All done — every invite is ticked off.'}
             </li>
           )}
           {rows.map(guest => {
@@ -113,5 +152,5 @@ export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDown
         </ul>
       </div>
     </div>
-  );
+  , document.body);
 }

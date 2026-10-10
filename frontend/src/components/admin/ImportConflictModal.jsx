@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, Check, ArrowRight, User, Mail, Phone, Users } from 'lucide-react';
@@ -23,7 +24,7 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -153,5 +154,5 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
                 </div>
             </motion.div>
         </div>
-    );
+    , document.body);
 }

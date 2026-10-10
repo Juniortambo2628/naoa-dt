@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export default function AdminModal({ isOpen, onClose, title, children, size = 'md' }) {
@@ -11,7 +12,7 @@ export default function AdminModal({ isOpen, onClose, title, children, size = 'm
     '2xl': 'max-w-2xl',
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className={`bg-white rounded-2xl w-full ${sizeClasses[size]} p-6 shadow-xl animate-in zoom-in duration-200`}>
         <div className="flex justify-between items-center mb-6">
@@ -23,5 +24,5 @@ export default function AdminModal({ isOpen, onClose, title, children, size = 'm
         {children}
       </div>
     </div>
-  );
+  , document.body);
 }
