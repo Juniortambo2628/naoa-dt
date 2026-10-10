@@ -11,6 +11,7 @@ import MapsETA from '../components/MapsETA';
 import Loader from '../components/Loader';
 import EmergencyNumbers from '../components/EmergencyNumbers';
 import GuestQuickActions from '../components/GuestQuickActions';
+import LiveEventWidget from '../components/LiveEventWidget';
 
 export default function DigitalInvitation() {
     const { code } = useParams();
@@ -24,7 +25,7 @@ export default function DigitalInvitation() {
     
     const design = settings?.invitation_theme || {
         backgroundColor: '#ffffff',
-        accentColor: '#A67B5B',
+        accentColor: '#9B4621',
         orientation: 'portrait',
         items: []
     };
@@ -127,7 +128,7 @@ export default function DigitalInvitation() {
                     <p className="text-stone-500 mb-8">We couldn't find an invitation matching that code. Please check your link and try again.</p>
                     <button 
                         onClick={() => navigate('/')}
-                        className="w-full bg-[#A67B5B] text-white py-4 rounded-xl font-bold hover:bg-[#8C6A4D] transition-colors"
+                        className="w-full bg-palette-cinnamon text-white py-4 rounded-xl font-bold hover:bg-palette-rust transition-colors"
                     >
                         Go to Homepage
                     </button>
@@ -137,11 +138,11 @@ export default function DigitalInvitation() {
     }
 
     return (
-        <div className="min-h-screen bg-[#fcfaf8] selection:bg-[#A67B5B]/10">
+        <div className="min-h-screen bg-palette-cream-soft selection:bg-palette-cinnamon/15">
             {/* Background elements */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
-                <div className="absolute -top-[10%] -left-[5%] w-[40%] h-[40%] bg-[#A67B5B]/10 blur-[120px] rounded-full" />
-                <div className="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-[#8C6A4D]/10 blur-[150px] rounded-full" />
+                <div className="absolute -top-[10%] -left-[5%] w-[40%] h-[40%] bg-palette-burnt-orange/20 blur-[120px] rounded-full" />
+                <div className="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-palette-forest/15 blur-[150px] rounded-full" />
             </div>
 
             <div className="relative max-w-screen-xl mx-auto px-4 py-12 md:py-20 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-center">
@@ -184,13 +185,13 @@ export default function DigitalInvitation() {
                     className="w-full max-w-lg space-y-10"
                 >
                     <div className="text-center lg:text-left space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#A67B5B]/10 text-[#A67B5B] rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-palette-forest/10 text-palette-forest rounded-full text-xs font-bold uppercase tracking-wider mb-2">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Official Invitation
                         </div>
                         <h1 className="text-4xl md:text-5xl font-serif text-stone-800 leading-tight">
                             Hi {guest.name}, <br />
-                            <span className="text-[#A67B5B]">You're Invited!</span>
+                            <span className="text-palette-cinnamon">You're Invited!</span>
                         </h1>
                         <p className="text-lg text-stone-500 leading-relaxed max-w-md mx-auto lg:mx-0">
                             We are so happy to share our special day with you. Please see the details below and kindly let us know if you can join us.
@@ -198,18 +199,18 @@ export default function DigitalInvitation() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow group">
-                            <div className="w-10 h-10 bg-[#fcfaf8] text-[#A67B5B] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#A67B5B] group-hover:text-white transition-colors">
+                        <div className="bg-white p-6 rounded-2xl border border-palette-light-brown/40 shadow-sm hover:shadow-md transition-shadow group">
+                            <div className="w-10 h-10 bg-palette-forest/10 text-palette-forest rounded-xl flex items-center justify-center mb-4 group-hover:bg-palette-forest group-hover:text-white transition-colors">
                                 <Calendar className="w-5 h-5" />
                             </div>
-                            <h3 className="font-bold text-stone-800 mb-1 italic">When</h3>
+                            <h3 className="font-bold text-palette-olive! mb-1 italic">When</h3>
                             <p className="text-sm text-stone-500">{weddingDateText}</p>
                         </div>
-                        <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow group">
-                            <div className="w-10 h-10 bg-[#fcfaf8] text-[#A67B5B] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#A67B5B] group-hover:text-white transition-colors">
+                        <div className="bg-white p-6 rounded-2xl border border-palette-light-brown/40 shadow-sm hover:shadow-md transition-shadow group">
+                            <div className="w-10 h-10 bg-palette-forest/10 text-palette-forest rounded-xl flex items-center justify-center mb-4 group-hover:bg-palette-forest group-hover:text-white transition-colors">
                                 <MapPin className="w-5 h-5" />
                             </div>
-                            <h3 className="font-bold text-stone-800 mb-1 italic">Where</h3>
+                            <h3 className="font-bold text-palette-olive! mb-1 italic">Where</h3>
                             <p className="text-sm text-stone-500">{venueName}</p>
                         </div>
                     </div>
@@ -219,7 +220,7 @@ export default function DigitalInvitation() {
                         {guest.rsvp_status === 'pending' && (
                             <button
                                 onClick={() => navigate(`/rsvp/${guest.unique_code}`)}
-                                className="flex-1 bg-[#A67B5B] text-white px-8 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-[#8C6A4D] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-[#A67B5B]/20 group"
+                                className="flex-1 bg-palette-cinnamon text-white px-8 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-palette-rust hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-palette-cinnamon/20 group"
                             >
                                 Respond to RSVP
                                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -229,7 +230,7 @@ export default function DigitalInvitation() {
                         <div className="flex flex-col gap-2 flex-1">
                             <button
                                 onClick={downloadIcs}
-                                className="px-8 py-5 rounded-2xl font-bold text-stone-600 border-2 border-stone-200 hover:bg-stone-50 transition-colors flex items-center justify-center gap-3 text-center"
+                                className="px-8 py-5 rounded-2xl font-bold text-palette-forest border-2 border-palette-forest/30 hover:bg-palette-forest/5 transition-colors flex items-center justify-center gap-3 text-center"
                             >
                                 <Calendar className="w-5 h-5" />
                                 Add to Calendar
@@ -246,6 +247,9 @@ export default function DigitalInvitation() {
                             Status: You have already {guest.rsvp_status === 'confirmed' ? 'confirmed' : 'declined'} this invitation.
                          </motion.div>
                     )}
+
+                    {/* Live programme tracker */}
+                    <LiveEventWidget />
 
                     {/* Guest Info Panel: Maps + Weather */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -264,7 +268,7 @@ export default function DigitalInvitation() {
                     <div className="pt-8 border-t border-stone-200/60">
                         <p className="text-stone-400 text-sm text-center lg:text-left italic">
                             With love, <br />
-                            <span className="font-serif text-stone-600 not-italic">{coupleNames}</span>
+                            <span className="font-serif text-palette-cinnamon not-italic">{coupleNames}</span>
                         </p>
                     </div>
                 </motion.div>
