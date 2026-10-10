@@ -30,6 +30,7 @@ class SettingController extends Controller
         'rsvp_enabled',
         'invitation_theme',
         'save_the_date_theme',
+        'invitation_sections',
     ];
 
     public function index()
