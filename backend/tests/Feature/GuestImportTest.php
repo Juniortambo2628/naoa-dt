@@ -23,7 +23,7 @@ class GuestImportTest extends TestCase
 
     private function csv(array $rows): UploadedFile
     {
-        $lines = ["names,email,telphone_number,number_of_invites,group"];
+        $lines = ['names,email,telphone_number,number_of_invites,group'];
         foreach ($rows as $r) {
             $lines[] = implode(',', $r);
         }
