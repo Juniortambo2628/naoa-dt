@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
 import { X, Save, UserPlus } from 'lucide-react';
 
@@ -137,7 +138,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
 
   const suggestions = getFilteredSuggestions();
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -335,5 +336,5 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
         </form>
       </div>
     </div>
-  );
+  , document.body);
 }
