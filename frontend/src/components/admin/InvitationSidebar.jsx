@@ -7,6 +7,7 @@ import {
   AlertCircle, Sliders,
 } from 'lucide-react';
 import ImageUpload from './ImageUpload';
+import WeddingPalettePicker from './WeddingPalettePicker';
 import { Skeleton } from '../Skeleton';
 
 export default function InvitationSidebar({
@@ -230,7 +231,20 @@ export default function InvitationSidebar({
                 </div>
 
                 <div className="space-y-4 font-sans">
-                  <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-[0.2em]" style={{ fontFamily: 'Lato, sans-serif' }}>Accent Color</h3>
+                  <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-[0.2em]" style={{ fontFamily: 'Lato, sans-serif' }}>Wedding Palette</h3>
+                  <WeddingPalettePicker
+                    accentColor={design.accentColor}
+                    backgroundColor={design.backgroundColor}
+                    onAccentChange={(hex) => updateDesign('accentColor', hex)}
+                    onApplyCombination={(combo) => {
+                      updateDesign('backgroundColor', combo.background);
+                      updateDesign('accentColor', combo.accent);
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-4 font-sans">
+                  <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-[0.2em]" style={{ fontFamily: 'Lato, sans-serif' }}>Other Accent Colors</h3>
                   <div className="flex flex-wrap gap-2">
                     {presetColors.map(color => (
                       <button

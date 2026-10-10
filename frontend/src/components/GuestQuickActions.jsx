@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, MapPin, Plane, Armchair, Camera } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, X, MapPin, Plane, Armchair, Camera, CalendarClock } from 'lucide-react';
 import Modal from './Modal';
 import TabbedTwoColumn from './TabbedTwoColumn';
 import GuestLocationPicker from './GuestLocationPicker';
@@ -14,33 +15,44 @@ const ACTIONS = [
     id: 'location',
     label: 'Where are you',
     icon: MapPin,
-    gradient: 'from-[#A67B5B] to-[#C8A68E]',
+    gradient: 'from-palette-cinnamon to-palette-burnt-orange',
   },
   {
     id: 'travel',
     label: 'My travel details',
     icon: Plane,
-    gradient: 'from-blue-400 to-blue-500',
+    gradient: 'from-palette-forest to-palette-olive',
   },
   {
     id: 'seating',
     label: 'Seating chart',
     icon: Armchair,
-    gradient: 'from-[#A67B5B] to-[#C8A68E]',
+    gradient: 'from-palette-rust to-palette-burnt-orange',
+  },
+  {
+    id: 'programme',
+    label: 'Event programme',
+    icon: CalendarClock,
+    gradient: 'from-palette-burnt-orange to-palette-rust',
+    href: '/programme', // navigates instead of opening the modal
   },
   {
     id: 'polaroid',
     label: 'Snap a polaroid',
     icon: Camera,
-    gradient: 'from-[#A67B5B] to-[#C8A68E]',
+    gradient: 'from-palette-olive to-palette-forest',
   },
 ];
+
+// Actions shown as tabs inside the shared modal (link-only actions excluded).
+const MODAL_ACTIONS = ACTIONS.filter(a => !a.href);
 
 // Remember whether the guest has opened the menu before, so the attention
 // pulse only nudges first-time visitors instead of looping forever.
 const SEEN_KEY = 'guestQuickActionsSeen';
 
 export default function GuestQuickActions({ guestCode }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
   const [hasInteracted, setHasInteracted] = useState(true);
@@ -70,6 +82,12 @@ export default function GuestQuickActions({ guestCode }) {
   };
 
   const handleSelect = (id) => {
+    const action = ACTIONS.find(a => a.id === id);
+    if (action?.href) {
+      setOpen(false);
+      navigate(action.href);
+      return;
+    }
     setActiveAction(id);
     setOpen(false);
   };
@@ -134,7 +152,7 @@ export default function GuestQuickActions({ guestCode }) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 8 }}
                 aria-hidden="true"
-                className="px-3.5 py-2 rounded-full bg-white shadow-lg border border-[#A67B5B]/25 text-sm font-semibold text-[#8C6A4D] whitespace-nowrap"
+                className="px-3.5 py-2 rounded-full bg-white shadow-lg border border-palette-cinnamon/25 text-sm font-semibold text-palette-cinnamon whitespace-nowrap"
               >
                 Quick actions
               </motion.span>
@@ -146,7 +164,7 @@ export default function GuestQuickActions({ guestCode }) {
             {showPulse && (
               <motion.span
                 aria-hidden="true"
-                className="absolute inset-0 rounded-full bg-[#A67B5B]"
+                className="absolute inset-0 rounded-full bg-palette-cinnamon"
                 initial={{ opacity: 0.45, scale: 1 }}
                 animate={{ opacity: 0, scale: 1.8 }}
                 transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
@@ -161,7 +179,7 @@ export default function GuestQuickActions({ guestCode }) {
               onClick={toggleOpen}
               aria-label={open ? 'Close quick actions' : 'Open quick actions'}
               aria-expanded={open}
-              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-[#A67B5B] to-[#8C6A4D] text-white flex items-center justify-center shadow-xl shadow-[#A67B5B]/40 ring-4 ring-white/70 hover:scale-105 transition-transform"
+              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-palette-cinnamon to-palette-rust text-white flex items-center justify-center shadow-xl shadow-palette-cinnamon/40 ring-4 ring-white/70 hover:scale-105 transition-transform"
             >
               <motion.span animate={{ rotate: open ? 135 : 0 }} transition={{ duration: 0.2 }}>
                 {open ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
@@ -180,7 +198,7 @@ export default function GuestQuickActions({ guestCode }) {
       >
         <TabbedTwoColumn
           title="Quick actions"
-          items={ACTIONS}
+          items={MODAL_ACTIONS}
           activeId={activeAction}
           onChange={setActiveAction}
           renderContent={renderModalBody}
