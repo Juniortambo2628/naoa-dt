@@ -47,17 +47,53 @@ class GuestImportTest extends TestCase
             ->json('data');
     }
 
-    public function test_existing_guests_are_matched_case_insensitively_by_name_email_or_phone(): void
+    public function test_existing_guests_are_matched_case_insensitively_by_name_or_email(): void
     {
-        Guest::factory()->create(['name' => 'Ann Kairu', 'email' => 'ann@example.com', 'phone' => '+254 717 215425', 'plus_ones_allowed' => 0]);
+        Guest::factory()->create(['name' => 'Ann Kairu', 'email' => 'ann@example.com', 'phone' => '+254717215425', 'plus_ones_allowed' => 0]);
 
         $data = $this->preview([
             ['ANN  KAIRU', 'ann@example.com', '+254717215425', 1, 'Family'], // same person, messy name
             ['Ann K.', 'ANN@EXAMPLE.COM', '', 1, 'Family'],                // same email, different case
-            ['A. Kairu', '', '0717215425', 1, 'Family'],                   // same phone, local format
         ]);
 
         $this->assertSame([], $data['valid'], 'no new guests should be created');
+    }
+
+    public function test_family_members_sharing_a_phone_are_separate_guests(): void
+    {
+        Guest::factory()->create(['name' => 'Esther Oyoo', 'email' => null, 'phone' => '+254722591814', 'plus_ones_allowed' => 0]);
+
+        $data = $this->preview([
+            ['Esther Oyoo', '', '+254722591814', 1, ''],
+            ['Nanette Oyoo', '', '+254722591814', 1, ''],
+            ['Nathan Oyoo', '', '+254722591814', 1, ''],
+        ]);
+
+        $this->assertSame(['Nanette Oyoo', 'Nathan Oyoo'], array_column($data['valid'], 'name'));
+    }
+
+    public function test_the_final_guest_list_tab_is_used_when_present(): void
+    {
+        $book = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
+        $book->getActiveSheet()->setTitle('Draft')->fromArray([['Names', 'Email'], ['Draft Person', 'draft@example.com']]);
+        $book->createSheet()->setTitle('Final-guest-list')->fromArray([
+            ['Orig #', 'Names', 'Number of Invites', 'Telphone number', 'Email', 'Save the Date sent via (whatsapp/email)', 'Notes'],
+            [1, 'Final Person', 1, null, 'final@example.com', 'E-mail', null],
+        ]);
+        // Phones are stored as text in the guest sheet, so keep the leading "+".
+        $book->getSheetByName('Final-guest-list')->setCellValueExplicit('D2', '+19059203068', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+        $path = tempnam(sys_get_temp_dir(), 'gl').'.xlsx';
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($book))->save($path);
+
+        $data = $this->actingAs($this->admin, 'sanctum')
+            ->post('/api/guests/validate-import', ['file' => new UploadedFile($path, 'guests.xlsx', null, null, true)])
+            ->assertOk()->json('data');
+
+        $this->assertSame(['Final Person'], array_column($data['valid'], 'name'));
+        $this->assertSame('+19059203068', $data['valid'][0]['phone']);
+        $this->assertSame('final@example.com', $data['valid'][0]['email']);
+        $this->assertSame('E-mail', $data['valid'][0]['save_the_date_method']);
+        $this->assertSame(0, $data['valid'][0]['plus_ones_allowed']);
     }
 
     public function test_duplicate_rows_within_the_file_are_imported_once(): void
