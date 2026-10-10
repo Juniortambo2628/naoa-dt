@@ -12,6 +12,7 @@ import Loader from '../components/Loader';
 import EmergencyNumbers from '../components/EmergencyNumbers';
 import GuestQuickActions from '../components/GuestQuickActions';
 import LiveEventWidget from '../components/LiveEventWidget';
+import DressCodePalette from '../components/DressCodePalette';
 
 export default function DigitalInvitation() {
     const { code } = useParams();
@@ -249,7 +250,14 @@ export default function DigitalInvitation() {
                     )}
 
                     {/* Live programme tracker */}
-                    <LiveEventWidget />
+                    <LiveEventWidget
+                        programmeVisible={content?.programme_page ? content.programme_page.is_visible !== false && content.programme_page.is_visible !== 0 : false}
+                        weddingDate={weddingDate}
+                        weddingDateText={weddingDateText}
+                    />
+
+                    {/* Dress code colours */}
+                    <DressCodePalette />
 
                     {/* Guest Info Panel: Maps + Weather */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
