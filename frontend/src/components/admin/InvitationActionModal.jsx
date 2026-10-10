@@ -1,4 +1,4 @@
-import { createPortal } from 'react-dom';
+import Overlay from '../Overlay';
 import { useState, useEffect } from 'react';
 import { Mail, MessageCircle, X, Loader2, Send, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -60,10 +60,10 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
         setIsEditing(false);
     };
 
-    return createPortal(
+    return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <Overlay onClose={onClose}>
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -187,8 +187,8 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
                             )}
                         </div>
                     </motion.div>
-                </div>
+                </Overlay>
             )}
         </AnimatePresence>
-    , document.body);
+    );
 }

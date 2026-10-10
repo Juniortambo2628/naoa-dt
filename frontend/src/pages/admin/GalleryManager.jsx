@@ -1,3 +1,4 @@
+import Overlay from '../../components/Overlay';
 import { useState, useEffect } from 'react';
 import { galleryService, getAssetUrl } from '../../services/api';
 import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical, Check } from 'lucide-react';
@@ -185,7 +186,7 @@ export default function GalleryManager() {
         )}
 
         {editingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEditingItem(null)}>
+          <Overlay onClose={() => setEditingItem(null)}>
             <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
               <h3 className="text-lg font-medium text-[#4A3F35] mb-4">Edit Photo</h3>
               <div className="mb-4 rounded-lg overflow-hidden h-48 bg-stone-100">
@@ -223,7 +224,7 @@ export default function GalleryManager() {
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
 
         {loading ? <p>Loading...</p> : viewMode === 'grid' ? (

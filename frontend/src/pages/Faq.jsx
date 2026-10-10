@@ -1,3 +1,4 @@
+import Overlay from '../components/Overlay';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, ChevronRight, X, ArrowLeft } from 'lucide-react';
@@ -295,13 +296,7 @@ export default function Faq() {
             {/* Expanded Table Modal */}
             <AnimatePresence>
                 {expandedTableHtml && (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center md:p-8"
-                        onClick={() => setExpandedTableHtml(null)}
-                    >
+                    <Overlay onClose={() => setExpandedTableHtml(null)} className="flex items-end md:items-center justify-center md:p-8">
                         <motion.div 
                             initial={{ y: '100%', opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
@@ -323,7 +318,7 @@ export default function Faq() {
                                 <div className="p-4 md:p-6" dangerouslySetInnerHTML={{ __html: expandedTableHtml }} />
                             </div>
                         </motion.div>
-                    </motion.div>
+                    </Overlay>
                 )}
             </AnimatePresence>
         </motion.div>

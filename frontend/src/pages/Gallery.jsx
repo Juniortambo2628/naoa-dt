@@ -1,3 +1,4 @@
+import Overlay from '../components/Overlay';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -305,13 +306,7 @@ export default function Gallery() {
       {/* Lightbox Modal */}
       <AnimatePresence>
         {selectedImage && !slideshowActive && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-            onClick={() => setSelectedImage(null)}
-          >
+          <Overlay onClose={() => setSelectedImage(null)} backdropClassName="bg-black/90">
             <button
               aria-label="Close image"
               className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors"
@@ -326,19 +321,14 @@ export default function Gallery() {
               onClick={(e) => e.stopPropagation()}
             />
             {/* Captions removed as per request */}
-          </motion.div>
+          </Overlay>
         )}
       </AnimatePresence>
 
       {/* Slideshow Modal */}
       <AnimatePresence>
         {slideshowActive && images.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black"
-          >
+          <Overlay onClose={stopSlideshow} backdropClassName="bg-black" className="flex items-center justify-center" closeOnBackdrop={false}>
             <button
               aria-label="Close slideshow"
               className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10"
@@ -382,20 +372,14 @@ export default function Gallery() {
                 {currentSlide + 1} / {images.length}
               </p>
             </div>
-          </motion.div>
+          </Overlay>
         )}
       </AnimatePresence>
 
       {/* Upload Modal */}
       <AnimatePresence>
         {showUploadModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={() => setShowUploadModal(false)}
-          >
+          <Overlay onClose={() => setShowUploadModal(false)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -536,7 +520,7 @@ export default function Gallery() {
                 </form>
               )}
             </motion.div>
-          </motion.div>
+          </Overlay>
         )}
       </AnimatePresence>
 

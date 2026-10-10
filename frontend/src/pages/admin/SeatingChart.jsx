@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import Overlay from '../../components/Overlay';
 import { motion, AnimatePresence } from 'framer-motion';
 import { guestService, tableService } from '../../services/api';
 import { Plus, Users, MoreVertical, Trash2, Check, X, Search, Eye, Armchair } from 'lucide-react';
@@ -10,10 +10,6 @@ import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import AdminCard from '../../components/admin/AdminCard';
 import { useSearch } from '../../context/SearchContext';
 
-// Portal for Dropdowns/Modals
-const Portal = ({ children }) => {
-  return createPortal(children, document.body);
-};
 
 
 // GuestItem with Portal Menu
@@ -75,8 +71,7 @@ function GuestItem({ guest, tables, onAssign }) {
         {/* Portal Menu */}
         <AnimatePresence>
             {showMenu && (
-                <Portal>
-                     <div className="fixed inset-0 z-[100]" onClick={() => setShowMenu(false)} />
+                <Overlay onClose={() => setShowMenu(false)} backdropClassName="" className="" lockScroll={false}>
                      <motion.div 
                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -115,7 +110,7 @@ function GuestItem({ guest, tables, onAssign }) {
                             )}
                         </div>
                      </motion.div>
-                </Portal>
+                </Overlay>
             )}
         </AnimatePresence>
     </>
@@ -194,15 +189,7 @@ function TableDetailsModal({ table, onClose, onUnassign }) {
     if (!table) return null;
 
     return (
-        <Portal>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                    onClick={onClose}
-                />
+        <Overlay onClose={onClose}>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -258,8 +245,7 @@ function TableDetailsModal({ table, onClose, onUnassign }) {
                         )}
                     </div>
                 </motion.div>
-            </div>
-        </Portal>
+        </Overlay>
     );
 }
 
