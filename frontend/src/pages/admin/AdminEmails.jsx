@@ -1,3 +1,4 @@
+import Overlay from '../../components/Overlay';
 import { useState, useEffect } from 'react';
 import { Mail, Send, CheckCircle, Clock, X, Save } from 'lucide-react';
 import { invitationService, settingService, guestService, contentService } from '../../services/api';
@@ -332,7 +333,7 @@ export default function AdminEmails() {
 
       {/* Preview Modal */}
       {showPreview && design && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Overlay onClose={() => setShowPreview(false)}>
                <div className="bg-white rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
                    <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-stone-50">
                        <h3 className="font-semibold text-lg">{previewType === 'invitation' ? 'Digital Invitation' : 'Save the Date'} Preview</h3>
@@ -358,7 +359,7 @@ export default function AdminEmails() {
                       </p>
                   </div>
               </div>
-          </div>
+          </Overlay>
       )}
       </div>
     </AdminPageLayout>

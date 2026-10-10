@@ -9,6 +9,7 @@ import {
     FileImage, FileText, Plus, Copy, Trash2, ChevronLeft, ChevronRight,
     Pencil, GripVertical
 } from 'lucide-react';
+import { PortalWhen } from '../../components/Overlay';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
@@ -678,6 +679,7 @@ export default function InvitationDesigner() {
          />
 
         {/* Live Preview Area */}
+        <PortalWhen active={isFullscreen}>
         <div 
             ref={previewContainerRef}
             className={`transition-all duration-300 flex items-center justify-center relative overflow-hidden ${
@@ -717,6 +719,7 @@ export default function InvitationDesigner() {
                 }}
             />
         </div>
+        </PortalWhen>
         </div>
         </div>
       </AdminPageLayout>

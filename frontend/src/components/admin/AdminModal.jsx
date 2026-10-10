@@ -1,4 +1,4 @@
-import { createPortal } from 'react-dom';
+import Overlay from '../Overlay';
 import { X } from 'lucide-react';
 
 export default function AdminModal({ isOpen, onClose, title, children, size = 'md' }) {
@@ -12,8 +12,8 @@ export default function AdminModal({ isOpen, onClose, title, children, size = 'm
     '2xl': 'max-w-2xl',
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+  return (
+    <Overlay onClose={onClose} closeOnBackdrop={false}>
       <div className={`bg-white rounded-2xl w-full ${sizeClasses[size]} p-6 shadow-xl animate-in zoom-in duration-200`}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-medium text-[#4A3F35]">{title}</h2>
@@ -23,6 +23,6 @@ export default function AdminModal({ isOpen, onClose, title, children, size = 'm
         </div>
         {children}
       </div>
-    </div>
-  , document.body);
+    </Overlay>
+  );
 }

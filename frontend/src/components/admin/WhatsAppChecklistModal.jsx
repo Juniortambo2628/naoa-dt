@@ -1,4 +1,4 @@
-import { createPortal } from 'react-dom';
+import Overlay from '../Overlay';
 import { useMemo, useState } from 'react';
 import { X, FileText, MessageCircle, Loader2, Search } from 'lucide-react';
 
@@ -54,8 +54,8 @@ export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDown
     }
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4">
+  return (
+    <Overlay onClose={onClose} className="flex items-end sm:items-center justify-center sm:p-4">
       <div className="bg-white w-full sm:max-w-3xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-stone-100 flex items-start justify-between gap-4">
           <div>
@@ -151,6 +151,6 @@ export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDown
           })}
         </ul>
       </div>
-    </div>
-  , document.body);
+    </Overlay>
+  );
 }
