@@ -52,6 +52,16 @@
   --color-text-light: #6B5D52;
   --color-text-muted: #8B7B6B;
   
+  /* Wedding palette (from the couple's colour board) — see utils/weddingPalette.js */
+  --color-palette-cinnamon: #9B4621;
+  --color-palette-forest: #304B3C;
+  --color-palette-rust: #B6400E;
+  --color-palette-olive: #788269;
+  --color-palette-burnt-orange: #BB492E;
+  --color-palette-light-brown: #DDBAA4;
+  --color-palette-cream: #FCEDDA;
+  --color-palette-cream-soft: #FEF6ED;
+
   /* Typography */
   --font-script: 'Great Vibes', cursive;
   --font-serif: 'Cormorant Garamond', serif;

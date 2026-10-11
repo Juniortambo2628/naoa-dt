@@ -31,15 +31,8 @@ class GuestsImport implements ToModel, WithHeadingRow
         $plusOnesAllowed = max(0, $totalInvites - 1);
         $group = ! empty($row['group']) ? trim($row['group']) : 'Invited';
 
-        // Check if guest exists by email or name
-        $guest = null;
-        if ($email) {
-            $guest = Guest::where('email', $email)->first();
-        }
-
-        if (! $guest) {
-            $guest = Guest::where('name', $name)->first();
-        }
+        // Same matching as the preview/confirm flow (email, phone, name; case-insensitive).
+        $guest = app(\App\Services\GuestImportService::class)->findExistingGuest($name, $email, $phone);
 
         if ($guest) {
             // User requested NOT to overwrite existing data in this phase,

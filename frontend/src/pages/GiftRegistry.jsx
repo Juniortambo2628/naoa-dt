@@ -1,3 +1,4 @@
+import Overlay from '../components/Overlay';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -144,14 +145,7 @@ function ClaimModal({ gift, onClose, onSubmit }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(74, 63, 53, 0.6)', backdropFilter: 'blur(8px)' }}
-      onClick={onClose}
-    >
+    <Overlay onClose={onClose} backdropClassName="" style={{ background: 'rgba(74, 63, 53, 0.6)', backdropFilter: 'blur(8px)' }}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -285,7 +279,7 @@ function ClaimModal({ gift, onClose, onSubmit }) {
           </div>
         )}
       </motion.div>
-    </motion.div>
+    </Overlay>
   );
 }
 

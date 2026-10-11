@@ -145,6 +145,18 @@ class SettingTest extends TestCase
         $this->assertSame('#A67B5B', $response->json('data.invitation_theme.accentColor'));
     }
 
+    public function test_public_settings_includes_invitation_section_toggles(): void
+    {
+        $this->actingAs(\App\Models\User::factory()->create(), 'sanctum')
+            ->postJson('/api/settings', ['settings' => ['invitation_sections' => ['map' => false, 'weather' => true]]])
+            ->assertOk();
+
+        $response = $this->getJson('/api/public/settings')->assertOk();
+
+        $this->assertFalse($response->json('data.invitation_sections.map'));
+        $this->assertTrue($response->json('data.invitation_sections.weather'));
+    }
+
     public function test_public_settings_excludes_private_keys(): void
     {
         Setting::create(['key' => 'wedding_date', 'value' => '2026-11-14']);

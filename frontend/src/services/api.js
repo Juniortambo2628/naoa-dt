@@ -98,7 +98,9 @@ export const guestService = {
   delete: (id) => api.delete(`/guests/${id}`),
 
   // Mark WhatsApp invite sent
-  markWhatsappInvite: (id) => api.post(`/guests/${id}/whatsapp-invite`),
+  markWhatsappInvite: (id, data = {}) => api.post(`/guests/${id}/whatsapp-invite`, data),
+  // Undo a WhatsApp invite marked as sent
+  unmarkWhatsappInvite: (id) => api.delete(`/guests/${id}/whatsapp-invite`),
   
   // Import guests from Excel
   import: (file) => {

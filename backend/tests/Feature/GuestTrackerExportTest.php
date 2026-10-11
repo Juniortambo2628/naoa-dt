@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Exports\GuestTrackerExport;
 use App\Models\Guest;
 use App\Models\Invitation;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
@@ -46,6 +47,8 @@ class GuestTrackerExportTest extends TestCase
             $this->assertStringContainsString('Hi *Julie Ouma*!', $row[10]);
             $this->assertStringContainsString('https://dntwed.okjtech.co.ke/invitation/'.$remaining->unique_code, $row[10]);
             $this->assertStringStartsWith('https://wa.me/254737451618?text=', $row[11]);
+            $this->assertStringNotContainsString('{pdf_link}', $row[10]);
+            $this->assertStringNotContainsString('invitation card (PDF)', $row[10]);
 
             $this->assertSame('Invited', $invitedSheet->map($invited->fresh('invitation'))[5]);
 
@@ -66,6 +69,28 @@ class GuestTrackerExportTest extends TestCase
 
         Excel::assertDownloaded('guest-invite-tracker-moms-friends.xlsx', function (GuestTrackerExport $export) {
             $this->assertSame(['Hellen Apiyo'], $export->sheets()[0]->collection()->pluck('name')->all());
+
+            return true;
+        });
+    }
+
+    public function test_tracker_uses_the_whatsapp_template_from_settings(): void
+    {
+        Excel::fake();
+
+        Setting::create(['key' => 'whatsapp_message_template', 'value' => "Hello {name}, code {code}\nPDF: {pdf_link}\n{invite_link}"]);
+        $guest = Guest::factory()->create(['name' => 'Nelly Okanda', 'phone' => '+254713698581']);
+
+        $this->actingAs(User::factory()->create(), 'sanctum')
+            ->get('/api/export/guest-tracker?base_url=https://dntwed.okjtech.co.ke')
+            ->assertOk();
+
+        Excel::assertDownloaded('guest-invite-tracker.xlsx', function (GuestTrackerExport $export) use ($guest) {
+            $row = $export->sheets()[0]->map($guest->fresh('invitation'));
+            $this->assertSame(
+                "Hello Nelly Okanda, code {$guest->unique_code}\nhttps://dntwed.okjtech.co.ke/invitation/{$guest->unique_code}",
+                $row[10]
+            );
 
             return true;
         });

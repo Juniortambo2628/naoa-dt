@@ -7,6 +7,7 @@ use App\Models\Guest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class InvitationService
 {
@@ -91,6 +92,25 @@ class InvitationService
         Storage::disk('public')->put($fileName, $decodedData);
 
         return Storage::disk('public')->path($fileName);
+    }
+
+    /**
+     * Store a base64-encoded invitation PDF on the public disk under a
+     * hard-to-guess name and return its public URL (used for WhatsApp invites).
+     */
+    public function savePublicPdf(string $base64String, Guest $guest): ?string
+    {
+        $data = explode(',', $base64String, 2);
+        if (count($data) < 2) {
+            return null;
+        }
+
+        $slug = Str::slug($guest->name) ?: 'guest';
+        $fileName = 'invitations/whatsapp/'.$slug.'_'.Str::random(24).'.pdf';
+
+        Storage::disk('public')->put($fileName, base64_decode($data[1]));
+
+        return Storage::disk('public')->url($fileName);
     }
 
     /**

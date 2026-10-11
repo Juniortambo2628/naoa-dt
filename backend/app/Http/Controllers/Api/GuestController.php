@@ -8,6 +8,7 @@ use App\Models\Guest;
 use App\Models\Invitation;
 use App\Services\GuestImportService;
 use App\Services\GuestService;
+use App\Services\InvitationService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +37,9 @@ class GuestController extends Controller
             'group' => 'nullable|string|max:50',
             'plus_ones_allowed' => 'integer|min:0|max:10',
             'invitation_via' => 'nullable|string|in:whatsapp,email',
+            'rsvp_status' => 'sometimes|string|in:pending,confirmed,declined',
+            'rsvp_message' => 'nullable|string|max:1000',
+            'dietary_notes' => 'nullable|string|max:1000',
             'plus_ones_data' => 'nullable|array',
             'plus_ones_data.*.id' => 'nullable|integer',
             'plus_ones_data.*.name' => 'required_with:plus_ones_data|string|max:255',
@@ -192,8 +196,20 @@ class GuestController extends Controller
     /**
      * Mark an invitation as sent via WhatsApp
      */
-    public function markWhatsappSent(Guest $guest)
+    public function markWhatsappSent(Request $request, Guest $guest, InvitationService $invitationService)
     {
+        // Optionally store the generated invitation PDF so the WhatsApp message
+        // can link to the actual card, not just the invitation page.
+        $pdfUrl = null;
+        $pdfData = $request->input('pdf_data');
+        if ($pdfData && str_contains($pdfData, 'base64')) {
+            try {
+                $pdfUrl = $invitationService->savePublicPdf($pdfData, $guest);
+            } catch (\Exception $e) {
+                Log::error('Failed to save WhatsApp invitation PDF: '.$e->getMessage());
+            }
+        }
+
         $invitation = $guest->invitation()->updateOrCreate(
             ['guest_id' => $guest->id],
             [
@@ -204,7 +220,25 @@ class GuestController extends Controller
 
         return $this->successResponse([
             'invitation' => $invitation,
+            'pdf_url' => $pdfUrl,
         ], 'Invitation marked as sent via WhatsApp');
+    }
+
+    /**
+     * Undo "sent via WhatsApp" (e.g. ticked by mistake on the WhatsApp checklist).
+     * Invitations already opened or responded to are left untouched.
+     */
+    public function unmarkWhatsappSent(Guest $guest)
+    {
+        $invitation = $guest->invitation;
+
+        if ($invitation && $invitation->status === 'sent') {
+            $invitation->update(['status' => 'pending', 'sent_at' => null]);
+        }
+
+        return $this->successResponse([
+            'invitation' => $invitation?->fresh(),
+        ], 'WhatsApp invitation unmarked');
     }
 
     /**
@@ -257,6 +291,7 @@ class GuestController extends Controller
 
         $guest->update($request->only([
             'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
+            'rsvp_status', 'rsvp_message', 'dietary_notes',
         ]));
 
         // Sync plus ones if provided
@@ -416,13 +451,14 @@ class GuestController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:guests,id',
             'data' => 'required|array',
+            'data.rsvp_status' => 'sometimes|string|in:pending,confirmed,declined',
         ]);
 
         $ids = $request->ids;
         $data = $request->data;
 
         // Only allow updating specific fields in bulk for safety
-        $allowedFields = ['group', 'invitation_via', 'rsvp_status', 'plus_ones_allowed'];
+        $allowedFields = ['group', 'invitation_via', 'rsvp_status', 'plus_ones_allowed', 'rsvp_message', 'dietary_notes'];
         $updateData = array_intersect_key($data, array_flip($allowedFields));
 
         if (empty($updateData)) {

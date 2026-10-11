@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Sparkles, Home, Clock } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { WeddingRingsIllustration } from './Illustrations';
 
 export default function ModuleDisabled() {
   const { module } = useParams();
@@ -19,11 +20,15 @@ export default function ModuleDisabled() {
             className="max-w-2xl mx-auto"
           >
             <div className="relative mb-8">
-              <img 
-                src="/brain/699ba937-e6f4-425f-9901-986e2064b318/module_disabled_illustration_1777484858633.png" 
-                alt="Under Maintenance" 
-                className="w-full max-w-md mx-auto rounded-3xl shadow-2xl"
-              />
+              {/* Built-in illustration (no external image to break) */}
+              <div
+                role="img"
+                aria-label="Coming soon"
+                className="w-full max-w-md mx-auto aspect-[4/3] rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden"
+                style={{ background: 'radial-gradient(circle at 30% 20%, #FCEDDA 0%, #DDBAA4 55%, #9B4621 140%)' }}
+              >
+                <WeddingRingsIllustration size={220} />
+              </div>
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}

@@ -1,3 +1,4 @@
+import Overlay from '../Overlay';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Table as TableIcon, Plus, Trash2, Check } from 'lucide-react';
@@ -101,7 +102,7 @@ export default function TableInsertModal({ isOpen, onClose, onInsert }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <Overlay onClose={onClose} closeOnBackdrop={false}>
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -190,6 +191,6 @@ export default function TableInsertModal({ isOpen, onClose, onInsert }) {
                     </button>
                 </div>
             </motion.div>
-        </div>
+        </Overlay>
     );
 }

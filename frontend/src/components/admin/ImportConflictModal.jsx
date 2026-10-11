@@ -1,3 +1,4 @@
+import Overlay from '../Overlay';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, Check, ArrowRight, User, Mail, Phone, Users } from 'lucide-react';
@@ -24,7 +25,7 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <Overlay onClose={onClose} closeOnBackdrop={false}>
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -152,6 +153,6 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
                     </div>
                 </div>
             </motion.div>
-        </div>
+        </Overlay>
     );
 }

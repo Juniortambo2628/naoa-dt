@@ -1,3 +1,4 @@
+import Overlay from './Overlay';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, RotateCcw, Check, SwitchCamera } from 'lucide-react';
@@ -141,12 +142,7 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
   }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black flex flex-col"
-    >
+    <Overlay onClose={onClose} backdropClassName="bg-black" className="flex flex-col" closeOnBackdrop={false} zIndex={110}>
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
         <button
@@ -238,6 +234,6 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
           )}
         </div>
       </div>
-    </motion.div>
+    </Overlay>
   );
 }

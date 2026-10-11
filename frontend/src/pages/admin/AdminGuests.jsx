@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, Download } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks, Download } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
 import ImportConflictModal from '../../components/admin/ImportConflictModal';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
 import InvitationActionModal from '../../components/admin/InvitationActionModal';
+import WhatsAppChecklistModal from '../../components/admin/WhatsAppChecklistModal';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminToolbar from '../../components/admin/AdminToolbar';
@@ -14,7 +15,8 @@ import Spinner from '../../components/admin/Spinner';
 import GuestList from '../../components/admin/GuestList';
 import GuestBulkActions from '../../components/admin/GuestBulkActions';
 import { useGuests, useSettings, useContent } from '../../hooks/useApiHooks';
-import { getWeddingInfo } from '../../utils/weddingInfo';
+import { getWeddingInfo, getCoupleNames } from '../../utils/weddingInfo';
+import { renderWhatsAppMessage } from '../../utils/whatsappMessage';
 import { useSearch } from '../../context/SearchContext';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -44,6 +46,7 @@ export default function AdminGuests() {
   const [viewMode, setViewMode] = useState('list');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteGuest, setInviteGuest] = useState(null);
+  const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isExportingTracker, setIsExportingTracker] = useState(false);
   const [importData, setImportData] = useState(null); // { conflicts: [], valid: [], skipped_count: 0 }
@@ -149,6 +152,71 @@ export default function AdminGuests() {
   };
 
 
+  // Download a "WhatsApp kit": every guest's personalised PDF plus an index.html
+  // checklist with a one-tap link that opens each guest's chat with their own
+  // message (incl. their unique RSVP link), so invites can be sent one by one.
+  const exportWhatsAppKit = async () => {
+      const pool = selectedIds.length > 0
+          ? guests.filter(g => selectedIds.includes(g.id))
+          : filteredGuests;
+      const targets = pool.filter(g => g.phone);
+
+      if (targets.length === 0) {
+          toast.error(`None of the ${pool.length} guests have a phone number.`);
+          return;
+      }
+
+      setIsBulkExporting(true);
+      setBulkProgress({ current: 0, total: targets.length });
+
+      const zip = new JSZip();
+      const folder = zip.folder('PDFs');
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const rows = [];
+
+      try {
+          for (let i = 0; i < targets.length; i++) {
+              const guest = targets[i];
+              setBulkProgress({ current: i + 1, total: targets.length });
+              setExportingGuest(guest);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              const num = String(i + 1).padStart(3, '0');
+              const fileName = `${num}_${guest.name.replace(/[^\w-]+/g, '_')}_${guest.unique_code}.pdf`;
+              const blob = await exporterRef.current.generatePdf();
+              if (blob) folder.file(fileName, blob);
+
+              rows.push(`<tr>
+  <td>${num}</td>
+  <td><strong>${esc(guest.name)}</strong><br><small>${esc(guest.unique_code)}</small></td>
+  <td>${esc(guest.phone)}</td>
+  <td>${blob ? `<a href="PDFs/${esc(fileName)}" target="_blank">Open PDF</a>` : '<em>failed</em>'}</td>
+  <td><a class="wa" href="${esc(whatsAppUrl(guest, buildWhatsAppMessage(guest)))}" target="_blank">Open chat</a></td>
+</tr>`);
+          }
+
+          zip.file('index.html', `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WhatsApp Invitations</title>
+<style>body{font-family:system-ui,sans-serif;margin:16px;color:#292524}table{border-collapse:collapse;width:100%}td,th{padding:8px;border-bottom:1px solid #e7e5e4;text-align:left;font-size:14px}a.wa{background:#25D366;color:#fff;padding:6px 10px;border-radius:6px;text-decoration:none;white-space:nowrap}</style>
+</head><body><h1>WhatsApp Invitations (${targets.length})</h1>
+<p>For each guest: tap <b>Open chat</b> (the personal message and RSVP link are pre-filled), attach their PDF from the <code>PDFs</code> folder and send. Track progress with the <b>WhatsApp Checklist</b> in the admin dashboard — ticks there are saved.</p>
+<table><thead><tr><th>#</th><th>Guest</th><th>Phone</th><th>Invite</th><th>WhatsApp</th></tr></thead><tbody>
+${rows.join('\n')}
+</tbody></table></body></html>`);
+
+          const content = await zip.generateAsync({ type: 'blob' });
+          saveAs(content, `WhatsApp_Invitations_${new Date().toISOString().slice(0, 10)}.zip`);
+          const skipped = pool.length - targets.length;
+          toast.success(`WhatsApp kit ready for ${targets.length} guests${skipped ? ` (${skipped} skipped — no phone number)` : ''}`, { duration: 6000 });
+      } catch (err) {
+          console.error('WhatsApp kit export failed', err);
+          toast.error('Failed to build the WhatsApp kit.');
+      } finally {
+          setIsBulkExporting(false);
+          setExportingGuest(null);
+      }
+  };
+
   const handleAdd = () => {
     setSelectedGuest(null);
     setModalOpen(true);
@@ -219,7 +287,7 @@ export default function AdminGuests() {
     for (const id of selectedIds) {
       const guest = guests.find(g => g.id === id);
       if (guest && guest.phone) {
-        handleWhatsAppInvite(guest);
+        await handleWhatsAppInvite(guest);
         await new Promise(r => setTimeout(r, 500)); // Small delay between tabs
       }
     }
@@ -437,21 +505,98 @@ export default function AdminGuests() {
     }
   };
 
-  // Keep this message in sync with backend/app/Support/InviteMessage.php (used by the tracker export).
-  const handleWhatsAppInvite = async (guest) => {
-    const inviteUrl = `${window.location.origin}/invitation/${guest.unique_code}`;
-    const message = `Hi *${guest.name}*! 💌\n\nWe are so excited to invite you to our wedding!\n\nYou can view your personalized digital invitation and RSVP here:\n${inviteUrl}\n\nWe can't wait to celebrate with you!\n— Dinah & Tze Ren`;
-    
-    const whatsappUrl = `https://wa.me/${guest.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
-    
-    window.open(whatsappUrl, '_blank');
-    
-    // Mark as sent in backend
+  const buildWhatsAppMessage = (guest, pdfUrl) => renderWhatsAppMessage(settingsData?.whatsapp_message_template, {
+    name: guest.name,
+    code: guest.unique_code,
+    invite_link: `${window.location.origin}/invitation/${guest.unique_code}`,
+    pdf_link: pdfUrl,
+    couple: getCoupleNames(settingsData, contentData).coupleNames,
+  });
+
+  const whatsAppUrl = (guest, message) =>
+    `https://wa.me/${guest.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+
+  // Step 1: render the guest's invitation PDF, upload it (so the message can link
+  // to it) and mark the invite as sent. Returns what step 2 needs to share it.
+  const prepareWhatsAppInvite = async (guest) => {
+    let file = null;
+    let pdfUrl = null;
     try {
+      setExportingGuest(guest);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const blob = exporterRef.current ? await exporterRef.current.generatePdf() : null;
+      if (blob) {
+        const fileName = `Invitation_${guest.name.replace(/\s+/g, '_')}.pdf`;
+        file = new File([blob], fileName, { type: 'application/pdf' });
+        const res = await guestService.markWhatsappInvite(guest.id, { pdf_data: await blobToBase64(blob) });
+        pdfUrl = res?.data?.pdf_url || null;
+      } else {
         await guestService.markWhatsappInvite(guest.id);
-        refetchGuests();
+      }
+      refetchGuests();
     } catch (e) {
-        console.error("Failed to mark WhatsApp as sent", e);
+      console.error('Failed to prepare WhatsApp invitation PDF', e);
+    } finally {
+      setExportingGuest(null);
+    }
+    return { guest, file, pdfUrl, message: buildWhatsAppMessage(guest, pdfUrl) };
+  };
+
+  // Step 2 (must run straight from a click): attach the PDF via the device share
+  // sheet where supported (mobile, Chrome/Edge/Safari desktop); otherwise download
+  // the PDF so it can be dropped into the chat, and open WhatsApp with the PDF link.
+  const shareWhatsAppInvite = async ({ guest, file, message }) => {
+    if (file && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: message });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        console.error('Share failed, falling back to WhatsApp link', e);
+      }
+    }
+    if (file) {
+      saveAs(file, file.name);
+      toast('PDF downloaded — attach it in the WhatsApp chat if needed', { icon: '📎' });
+    }
+    window.open(whatsAppUrl(guest, message), '_blank');
+  };
+
+  // Bulk: can't attach files across many chats, so each message links to the guest's PDF.
+  const handleWhatsAppInvite = async (guest) => {
+    const tab = window.open('', '_blank');
+    const { message } = await prepareWhatsAppInvite(guest);
+    if (tab) tab.location.href = whatsAppUrl(guest, message);
+  };
+
+  // WhatsApp checklist helpers
+  const downloadGuestPdf = async (guest) => {
+    try {
+      setExportingGuest(guest);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const blob = exporterRef.current ? await exporterRef.current.generatePdf() : null;
+      if (!blob) throw new Error('No PDF generated');
+      saveAs(blob, `Invitation_${guest.name.replace(/[^\w-]+/g, '_')}_${guest.unique_code}.pdf`);
+    } catch (e) {
+      console.error('PDF download failed', e);
+      toast.error(`Couldn't create the PDF for ${guest.name}`);
+    } finally {
+      setExportingGuest(null);
+    }
+  };
+
+  const openGuestChat = (guest) => {
+    window.open(whatsAppUrl(guest, buildWhatsAppMessage(guest)), '_blank');
+  };
+
+  const toggleWhatsAppSent = async (guest, sent) => {
+    try {
+      if (sent) await guestService.markWhatsappInvite(guest.id);
+      else await guestService.unmarkWhatsappInvite(guest.id);
+      refetchGuests();
+    } catch (e) {
+      toast.error('Failed to save — please try again');
+      throw e;
     }
   };
 
@@ -545,6 +690,19 @@ export default function AdminGuests() {
       disabled: isBulkExporting,
     },
     {
+      id: 'whatsapp-checklist',
+      label: 'WhatsApp Checklist',
+      icon: ListChecks,
+      onClick: () => setIsChecklistOpen(true),
+    },
+    {
+      id: 'whatsapp-kit',
+      label: 'WhatsApp Kit',
+      icon: MessageCircle,
+      onClick: exportWhatsAppKit,
+      disabled: isBulkExporting,
+    },
+    {
       id: 'reset-rsvps',
       label: 'Reset RSVPs',
       icon: Trash2,
@@ -608,6 +766,7 @@ export default function AdminGuests() {
         onBulkSendInvite={handleBulkSendInvite}
         onBulkResendConfirmation={handleBulkResendConfirmation}
         onExportBulk={exportBulk}
+        onExportWhatsAppKit={exportWhatsAppKit}
         onBulkDelete={handleBulkDelete}
         onClearSelection={() => { setSelectedIds([]); setShowBulkMenu(null); }}
       />
@@ -651,12 +810,22 @@ export default function AdminGuests() {
         onSetCurrentPage={setCurrentPage}
       />
 
+      <WhatsAppChecklistModal
+        isOpen={isChecklistOpen}
+        onClose={() => setIsChecklistOpen(false)}
+        guests={filteredGuests}
+        onDownloadPdf={downloadGuestPdf}
+        onOpenChat={openGuestChat}
+        onToggleSent={toggleWhatsAppSent}
+      />
+
       <InvitationActionModal 
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
         guest={inviteGuest}
         onSendEmail={handleSendInvite}
-        onSendWhatsApp={handleWhatsAppInvite}
+        onPrepareWhatsApp={prepareWhatsAppInvite}
+        onShareWhatsApp={shareWhatsAppInvite}
         onUpdateGuest={handleUpdateGuest}
       />
 
@@ -688,7 +857,7 @@ export default function AdminGuests() {
           />
       )}
       </AdminPageLayout>
-      <AdminFloatingToolbar actions={toolbarActions} />
+      {selectedIds.length === 0 && <AdminFloatingToolbar actions={toolbarActions} />}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Download, FileImage, FileText, MessageCircle, Mail, Send, RotateCcw, Trash2, X } from 'lucide-react';
+import { ChevronDown, Download, FileImage, FileText, MessageCircle, Mail, Send, RotateCcw, Trash2, X, CheckCircle, XCircle } from 'lucide-react';
 
 export default function GuestBulkActions({
   selectedIds,
@@ -12,6 +12,7 @@ export default function GuestBulkActions({
   onBulkSendInvite,
   onBulkResendConfirmation,
   onExportBulk,
+  onExportWhatsAppKit,
   onBulkDelete,
   onClearSelection,
 }) {
@@ -22,19 +23,26 @@ export default function GuestBulkActions({
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-[100] flex items-center flex-nowrap overflow-visible no-scrollbar gap-6 border border-stone-800 max-w-[95vw]"
+          className="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2 bg-stone-900 text-white p-3 sm:px-6 sm:py-4 rounded-2xl shadow-2xl z-[100] flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 border border-stone-800 sm:w-max sm:max-w-[min(95vw,72rem)] max-h-[70vh] overflow-y-auto sm:max-h-none sm:overflow-visible"
         >
-          <div className="flex items-center gap-2 pr-6 border-r border-stone-800 shrink-0">
+          <div className="flex items-center gap-2 lg:pr-6 lg:border-r border-stone-800 shrink-0">
             <div className="w-6 h-6 rounded-full bg-[#A67B5B] flex items-center justify-center text-[10px] font-bold">
               {selectedIds.length}
             </div>
             <span className="text-sm font-medium whitespace-nowrap">Selected</span>
+            <button
+              onClick={onClearSelection}
+              aria-label="Clear selection"
+              className="lg:hidden ml-auto p-1.5 hover:bg-stone-800 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-3 overflow-visible no-scrollbar py-1">
-            <div className="flex items-center gap-3 border-r border-stone-800 pr-4 shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 py-1">
+            <div className="contents">
               <select
-                className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-3 py-2 w-36"
+                className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-3 py-2 w-full sm:w-auto"
                 onChange={(e) => {
                   if (e.target.value) {
                     onBulkUpdate({ group: e.target.value });
@@ -50,15 +58,15 @@ export default function GuestBulkActions({
               </select>
 
               {/* Invite Via — click-toggle submenu */}
-              <div className="relative shrink-0">
+              <div className="relative min-w-0">
                 <button
                   onClick={() => setShowBulkMenu(prev => prev === 'invite' ? null : 'invite')}
-                  className="flex items-center gap-2 bg-stone-800 text-white text-xs px-4 py-2 rounded border border-stone-700 hover:bg-stone-700 transition-colors w-36 justify-between"
+                  className="flex items-center gap-2 bg-stone-800 text-white text-xs px-4 py-2 rounded border border-stone-700 hover:bg-stone-700 transition-colors whitespace-nowrap w-full sm:w-auto justify-between"
                 >
                   Invite Via <ChevronDown className={`w-3 h-3 transition-transform ${showBulkMenu === 'invite' ? 'rotate-180' : ''}`} />
                 </button>
                 {showBulkMenu === 'invite' && (
-                  <div className="absolute bottom-full left-0 mb-2 w-40 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 z-[110]">
+                  <div className="mt-2 w-full sm:absolute sm:bottom-full sm:left-0 sm:mb-2 sm:mt-0 sm:w-40 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 z-[110]">
                     <button
                       onClick={() => { onBulkWhatsApp(); setShowBulkMenu(null); }}
                       className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
@@ -84,17 +92,17 @@ export default function GuestBulkActions({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="contents">
               {/* Export — click-toggle submenu */}
-              <div className="relative shrink-0">
+              <div className="relative min-w-0">
                 <button
                   onClick={() => setShowBulkMenu(prev => prev === 'export' ? null : 'export')}
-                  className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-between"
+                  className="flex items-center gap-2 hover:text-[#A67B5B] transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-between"
                 >
                   <Download className="w-4 h-4" /> Export <ChevronDown className={`w-3 h-3 transition-transform ${showBulkMenu === 'export' ? 'rotate-180' : ''}`} />
                 </button>
                 {showBulkMenu === 'export' && (
-                  <div className="absolute bottom-full left-0 mb-2 w-40 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 z-[110]">
+                  <div className="mt-2 w-full sm:absolute sm:bottom-full sm:left-0 sm:mb-2 sm:mt-0 sm:w-40 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 z-[110]">
                     <button
                       onClick={() => { onExportBulk('png'); setShowBulkMenu(null); }}
                       className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
@@ -109,9 +117,38 @@ export default function GuestBulkActions({
                     >
                       <FileText className="w-3.5 h-3.5 text-blue-400" /> Export PDF
                     </button>
+                    <button
+                      onClick={() => { onExportWhatsAppKit(); setShowBulkMenu(null); }}
+                      className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs flex items-center gap-2 text-white"
+                      disabled={isBulkExporting}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 text-green-500" /> WhatsApp Kit
+                    </button>
                   </div>
                 )}
               </div>
+
+              <button
+                onClick={() => {
+                  if (window.confirm(`Mark ${selectedIds.length} selected guests as confirmed?`)) {
+                    onBulkUpdate({ rsvp_status: 'confirmed' });
+                  }
+                }}
+                className="flex items-center gap-2 hover:text-green-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
+              >
+                <CheckCircle className="w-4 h-4" /> Mark Confirmed
+              </button>
+
+              <button
+                onClick={() => {
+                  if (window.confirm(`Mark ${selectedIds.length} selected guests as declined?`)) {
+                    onBulkUpdate({ rsvp_status: 'declined' });
+                  }
+                }}
+                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
+              >
+                <XCircle className="w-4 h-4" /> Mark Declined
+              </button>
 
               <button
                 onClick={() => {
@@ -119,14 +156,14 @@ export default function GuestBulkActions({
                     onBulkUpdate({ rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
                   }
                 }}
-                className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
+                className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
               >
                 <RotateCcw className="w-4 h-4" /> Reset RSVP
               </button>
 
               <button
                 onClick={onBulkDelete}
-                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 w-36 justify-center"
+                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
               >
                 <Trash2 className="w-4 h-4" /> Delete
               </button>
@@ -135,7 +172,8 @@ export default function GuestBulkActions({
 
           <button
             onClick={onClearSelection}
-            className="ml-2 p-1 hover:bg-stone-800 rounded-lg transition-colors border-l border-stone-800 pl-4 shrink-0"
+            aria-label="Clear selection"
+            className="hidden lg:block ml-2 p-1 hover:bg-stone-800 rounded-lg transition-colors border-l border-stone-800 pl-4 shrink-0"
           >
             <X className="w-4 h-4" />
           </button>

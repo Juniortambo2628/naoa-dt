@@ -1,3 +1,4 @@
+import Overlay from './Overlay';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Armchair, Users, MapPin, Maximize2, X, Search } from 'lucide-react';
@@ -440,14 +441,7 @@ export default function PublicSeatingChart({ guestCode, embedded = true, showExp
   return (
     <AnimatePresence>
       {isExpanded && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          style={{ zIndex: 9999 }}
-          onClick={() => setIsExpanded(false)}
-        >
+        <Overlay onClose={() => setIsExpanded(false)} zIndex={9999}>
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -569,7 +563,7 @@ export default function PublicSeatingChart({ guestCode, embedded = true, showExp
               </AnimatePresence>
             </div>
           </motion.div>
-        </motion.div>
+        </Overlay>
       )}
     </AnimatePresence>
   );

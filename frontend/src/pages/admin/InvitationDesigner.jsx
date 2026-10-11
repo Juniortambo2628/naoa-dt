@@ -9,6 +9,7 @@ import {
     FileImage, FileText, Plus, Copy, Trash2, ChevronLeft, ChevronRight,
     Pencil, GripVertical
 } from 'lucide-react';
+import { PortalWhen } from '../../components/Overlay';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
@@ -678,12 +679,14 @@ export default function InvitationDesigner() {
          />
 
         {/* Live Preview Area */}
+        <PortalWhen active={isFullscreen}>
         <div 
             ref={previewContainerRef}
-            className={`transition-all duration-300 flex items-center justify-center relative overflow-hidden ${
+            className={`transition-all duration-300 flex items-center justify-center overflow-hidden ${
                 isFullscreen
+                    // No `relative` here: it would override `fixed` and leave the preview in the page flow.
                     ? 'fixed inset-0 z-[100] bg-stone-100/95 backdrop-blur-md p-8'
-                    : 'order-1 lg:order-2 flex-1 min-h-[55vh] lg:min-h-0 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
+                    : 'relative order-1 lg:order-2 flex-1 min-h-[55vh] lg:min-h-0 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
             }`}
         >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
@@ -717,6 +720,7 @@ export default function InvitationDesigner() {
                 }}
             />
         </div>
+        </PortalWhen>
         </div>
         </div>
       </AdminPageLayout>
