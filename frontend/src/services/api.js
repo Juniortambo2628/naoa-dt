@@ -124,6 +124,13 @@ export const guestService = {
   // Export guests to Excel
   export: () => api.get('/export/guests', { responseType: 'blob' }),
 
+  // Export the invitation tracker (invite status, codes, WhatsApp messages).
+  // base_url keeps exported invitation links identical to the dashboard's.
+  exportTracker: (params = {}) => api.get('/export/guest-tracker', {
+    params: { base_url: window.location.origin, ...params },
+    responseType: 'blob',
+  }),
+
   // Get guest statistics
   getStats: () => api.get('/guests/statistics'),
 
