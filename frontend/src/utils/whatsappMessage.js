@@ -5,6 +5,9 @@
  * Placeholders: {name} {invite_link} {pdf_link} {code} {couple}
  * Lines containing {pdf_link} are dropped when no PDF link is available
  * (e.g. when the PDF is attached by hand instead of linked).
+ *
+ * Mirrored in backend/app/Support/InviteMessage.php for the invite tracker
+ * export — keep the default template and rendering rules in sync.
  */
 export const WHATSAPP_PLACEHOLDERS = [
   { key: '{name}', label: "Guest's name" },

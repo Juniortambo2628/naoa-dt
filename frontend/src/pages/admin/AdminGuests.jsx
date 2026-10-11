@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks, Download } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
@@ -48,6 +48,7 @@ export default function AdminGuests() {
   const [inviteGuest, setInviteGuest] = useState(null);
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isExportingTracker, setIsExportingTracker] = useState(false);
   const [importData, setImportData] = useState(null); // { conflicts: [], valid: [], skipped_count: 0 }
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -484,6 +485,26 @@ ${rows.join('\n')}
     }
   };
 
+  const handleExportTracker = async () => {
+    setIsExportingTracker(true);
+    try {
+      const res = await guestService.exportTracker();
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'guest-invite-tracker.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to export invite tracker');
+    } finally {
+      setIsExportingTracker(false);
+    }
+  };
+
   const buildWhatsAppMessage = (guest, pdfUrl) => renderWhatsAppMessage(settingsData?.whatsapp_message_template, {
     name: guest.name,
     code: guest.unique_code,
@@ -646,6 +667,13 @@ ${rows.join('\n')}
       icon: Upload,
       onClick: () => fileInputRef.current?.click(),
       disabled: isImporting,
+    },
+    {
+      id: 'export-tracker',
+      label: 'Export Invite Tracker',
+      icon: Download,
+      onClick: handleExportTracker,
+      disabled: isExportingTracker,
     },
     {
       id: 'export-images',

@@ -257,6 +257,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Exports
     Route::get('/export/guests', [ExportController::class, 'exportGuestsExcel']);
+    Route::get('/export/guest-tracker', [ExportController::class, 'exportGuestTracker']);
     Route::get('/export/vendor-pdf', [ExportController::class, 'exportVendorPdf']);
 
     // QR Check-in

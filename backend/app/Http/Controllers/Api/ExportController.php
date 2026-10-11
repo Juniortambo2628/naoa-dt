@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exports\GuestsExport;
+use App\Exports\GuestTrackerExport;
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExportController extends Controller
@@ -16,6 +19,24 @@ class ExportController extends Controller
     public function exportGuestsExcel()
     {
         return Excel::download(new GuestsExport, 'guest-list.xlsx');
+    }
+
+    /**
+     * Export the invitation tracker: invite status, invitation code and a
+     * ready-to-send WhatsApp message per guest, optionally for one group.
+     */
+    public function exportGuestTracker(Request $request)
+    {
+        $request->validate([
+            // Public site origin used in invitation links (the dashboard sends window.location.origin).
+            'base_url' => ['nullable', 'url:http,https', 'max:255'],
+            'group' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $group = $request->input('group');
+        $filename = 'guest-invite-tracker'.($group ? '-'.Str::slug($group) : '').'.xlsx';
+
+        return Excel::download(new GuestTrackerExport($request->input('base_url'), $group), $filename);
     }
 
     /**
