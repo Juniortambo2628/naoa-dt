@@ -32,6 +32,7 @@ const AdminEmails = lazy(() => import('./AdminEmails'));
 const AdminSettings = lazy(() => import('./AdminSettings'));
 const AdminGuests = lazy(() => import('./AdminGuests'));
 const AdminFAQ = lazy(() => import('./AdminFAQ'));
+const AdminUsers = lazy(() => import('./AdminUsers'));
 const AdminModules = lazy(() => import('./AdminModules'));
 const AdminEnquiries = lazy(() => import('./AdminEnquiries'));
 const AdminRSVPs = lazy(() => import('./AdminRSVPs'));
@@ -265,6 +266,7 @@ export default function AdminDashboard() {
           <Route path="guestbook" element={<AdminGuestbook />} />
           <Route path="enquiries" element={<AdminEnquiries />} />
           <Route path="faqs" element={<AdminFAQ />} />
+          <Route path="users" element={<AdminUsers />} />
           <Route path="test" element={<AdminTestLab />} />
           {/* Unknown admin sub-paths fall back to the overview, as before */}
           <Route path="*" element={<DashboardOverview />} />

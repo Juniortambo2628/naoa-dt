@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\EmergencyNumberController;
 use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\FlightController;
 use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\GiftController;
@@ -222,6 +223,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // FAQ Management (admin)
+    // Admin users management
+    Route::apiResource('users', UserController::class)->except(['show']);
+
     Route::group(['prefix' => 'faqs'], function () {
         Route::post('/', [FaqController::class, 'store']);
         Route::post('/reorder', [FaqController::class, 'reorder']);

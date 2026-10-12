@@ -187,7 +187,7 @@ export default function Navbar() {
                   <Link
                     to="/rsvp"
                     onClick={() => setIsOpen(false)}
-                    className="btn-primary mt-8"
+                    className="btn-primary btn-rsvp mt-8"
                   >
                     RSVP Now
                   </Link>

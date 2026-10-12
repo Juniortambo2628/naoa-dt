@@ -4,7 +4,7 @@ import {
   giftService, guestbookService, faqService, enquiryService,
   songRequestService, scheduleService, tableService,
   notificationService, analyticsService, checkinService,
-  polaroidService, weatherService,
+  polaroidService, weatherService, userService,
 } from '../services/api';
 import usePolling from './usePolling';
 
@@ -160,6 +160,16 @@ export const useGuestbook = () => {
 };
 
 // --- FAQs ---
+export const useAdminUsers = () => {
+  return useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const { data } = await userService.getAll();
+      return data;
+    },
+  });
+};
+
 export const useFAQs = () => {
   return useQuery({
     queryKey: ['faqs'],

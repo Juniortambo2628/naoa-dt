@@ -8,7 +8,7 @@ use App\Traits\ApiResponse;
 use App\Traits\NormalizesUrls;
 use App\Traits\Reorderable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class GalleryController extends Controller
 {
@@ -90,9 +90,12 @@ class GalleryController extends Controller
             'caption' => 'nullable|string|max:255',
         ]);
 
-        // Store the image
-        $path = $request->file('image')->store('gallery/guest-uploads', 'public');
-        $url = Storage::url($path);
+        // Store directly under public/ (same as MediaController) so the file is
+        // served without relying on the storage symlink or APP_URL host.
+        $file = $request->file('image');
+        $filename = time().'_'.Str::random(10).'.'.($file->guessExtension() ?: 'jpg');
+        $file->move(public_path('uploads/guest-uploads'), $filename);
+        $url = '/uploads/guest-uploads/'.$filename;
 
         // Create gallery item
         $item = GalleryItem::create([

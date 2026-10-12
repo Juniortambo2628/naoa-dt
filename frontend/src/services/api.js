@@ -307,6 +307,14 @@ export const faqService = {
   reorder: (faqs) => api.post('/faqs/reorder', { faqs }),
 };
 
+// Admin user services
+export const userService = {
+  getAll: () => api.get('/users'),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+};
+
 // Polaroid services
 export const polaroidService = {
   getAll: (params) => api.get('/polaroid-images', { params }),
