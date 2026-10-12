@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\EmergencyNumberController;
 use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\FaqController;
-use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\FlightController;
 use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\GiftController;
@@ -28,6 +27,7 @@ use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\TestController;
 use App\Http\Controllers\Api\TranslateController;
 use App\Http\Controllers\Api\TwoFactorController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WeatherController;
 use Illuminate\Support\Facades\Route;
 
