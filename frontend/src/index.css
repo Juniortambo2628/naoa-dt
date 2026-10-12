@@ -138,21 +138,28 @@ p {
   background: linear-gradient(180deg, var(--color-blush-light) 0%, var(--color-cream) 100%);
 }
 
-/* Button Styles - Unified System */
+/* Button Styles - Unified System
+   All button variants share one base declaration. Labels are title case;
+   only RSVP calls-to-action opt into uppercase via .btn-rsvp. */
 
-/* Base button styles - shared by all buttons */
-.btn-base {
+.btn-base,
+.btn-primary,
+.btn-secondary,
+.btn-outline,
+.btn-tab,
+.btn-claimed {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 2rem;
   border-radius: 9999px; /* pill shape */
+  border: 2px solid transparent;
   font-family: var(--font-serif);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -162,45 +169,30 @@ p {
 }
 
 /* Icon alignment within buttons */
-.btn-base svg,
-.btn-base .btn-icon {
+:is(.btn-base, .btn-primary, .btn-secondary, .btn-outline) :is(svg, .btn-icon) {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
   vertical-align: middle;
+}
+
+:is(.btn-primary, .btn-secondary, .btn-outline):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* RSVP is the only label that stays uppercase */
+.btn-rsvp {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 /* Primary button - filled brown */
 .btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
   background: linear-gradient(135deg, var(--color-warm-brown) 0%, var(--color-copper) 100%);
   color: white;
-  padding: 0.875rem 2rem;
-  border-radius: 9999px;
-  font-family: var(--font-serif);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-decoration: none;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(166, 123, 91, 0.25);
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.btn-primary svg {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  vertical-align: middle;
 }
 
 .btn-primary:hover {
@@ -208,40 +200,12 @@ p {
   box-shadow: 0 6px 20px rgba(166, 123, 91, 0.35);
 }
 
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Secondary button - outline brown (main style) */
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+/* Secondary / outline buttons - outline brown */
+.btn-secondary,
+.btn-outline {
   background: transparent;
   color: var(--color-warm-brown);
-  padding: 0.875rem 2rem;
-  border-radius: 9999px;
-  font-family: var(--font-serif);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-decoration: none;
-  border: 2px solid var(--color-warm-brown);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.btn-secondary svg {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  vertical-align: middle;
+  border-color: var(--color-warm-brown);
 }
 
 .btn-secondary:hover {
@@ -250,51 +214,15 @@ p {
   transform: translateY(-2px);
 }
 
-.btn-secondary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Outline button - THE standard pill outline style */
-.btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: transparent;
-  color: var(--color-warm-brown);
-  padding: 0.875rem 2rem;
-  border-radius: 9999px;
-  font-family: var(--font-serif);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-decoration: none;
-  border: 2px solid var(--color-warm-brown);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.btn-outline svg {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  vertical-align: middle;
-}
-
 .btn-outline:hover {
   background: rgba(166, 123, 91, 0.08);
   transform: translateY(-1px);
 }
 
-/* Small button variant */
+/* Size variants */
 .btn-sm {
   padding: 0.625rem 1.5rem;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .btn-sm svg {
@@ -302,18 +230,15 @@ p {
   height: 0.875rem;
 }
 
-/* Large button variant */
 .btn-lg {
   padding: 1rem 2.5rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
-/* Full width button */
 .btn-full {
   width: 100%;
 }
 
-/* Button with icon */
 .btn-icon-text {
   display: inline-flex;
   align-items: center;
@@ -322,20 +247,9 @@ p {
 
 /* Tab/Category buttons */
 .btn-tab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   padding: 0.625rem 1.25rem;
-  border-radius: 9999px;
-  font-family: var(--font-serif);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  text-decoration: none;
+  font-size: 0.85rem;
   border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
   background: rgba(248, 232, 224, 0.8);
   color: var(--color-text-light);
 }
@@ -352,20 +266,11 @@ p {
 
 /* Claimed/disabled state button */
 .btn-claimed {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
   padding: 0.625rem 1.5rem;
-  border-radius: 9999px;
-  font-family: var(--font-serif);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  border: none;
   background: var(--color-blush-dark);
   color: white;
-  border: none;
   cursor: not-allowed;
   opacity: 0.7;
 }

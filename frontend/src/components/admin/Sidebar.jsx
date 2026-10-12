@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Calendar, Gift, Mail, Settings, Image,
-  LogOut, X, Edit, PieChart, UserCheck, Music, MessageSquare, FlaskConical, HelpCircle, CheckCircle
+  LogOut, X, Edit, PieChart, UserCheck, Music, MessageSquare, FlaskConical, HelpCircle, CheckCircle, UserCog
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,6 +25,7 @@ const navItems = [
   { path: '/admin/dashboard/gifts', icon: Gift, label: 'Gifts', id: 'sidebar-gifts' },
   { path: '/admin/dashboard/emails', icon: Mail, label: 'Email Templates', id: 'sidebar-emails' },
   { path: '/admin/dashboard/test', icon: FlaskConical, label: 'Test Lab', id: 'sidebar-test' },
+  { path: '/admin/dashboard/users', icon: UserCog, label: 'Users', id: 'sidebar-users' },
   { path: '/admin/dashboard/settings', icon: Settings, label: 'Settings', id: 'sidebar-settings' },
 ];
 

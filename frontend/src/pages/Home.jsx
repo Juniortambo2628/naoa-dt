@@ -247,7 +247,7 @@ function HeroSection({ content, settings, loading }) {
         >
           <Link 
             to="/rsvp" 
-            className="btn-primary btn-lg"
+            className="btn-primary btn-lg btn-rsvp"
           >
             {t('hero.rsvp_cta')}
           </Link>
@@ -923,7 +923,7 @@ function CTASection({ content, loading: cmsLoading }) {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <motion.div variants={staggerItem}>
-              <Link to="/rsvp" className="btn-primary inline-flex items-center gap-2">
+              <Link to="/rsvp" className="btn-primary btn-rsvp inline-flex items-center gap-2">
                 <Heart className="w-5 h-5" />
                 {t('rsvp.respond')}
               </Link>

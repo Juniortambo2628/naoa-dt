@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\TestController;
 use App\Http\Controllers\Api\TranslateController;
 use App\Http\Controllers\Api\TwoFactorController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WeatherController;
 use Illuminate\Support\Facades\Route;
 
@@ -222,6 +223,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // FAQ Management (admin)
+    // Admin users management
+    Route::apiResource('users', UserController::class)->except(['show']);
+
     Route::group(['prefix' => 'faqs'], function () {
         Route::post('/', [FaqController::class, 'store']);
         Route::post('/reorder', [FaqController::class, 'reorder']);
