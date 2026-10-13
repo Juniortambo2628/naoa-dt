@@ -5,7 +5,7 @@ import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import ToggleButton from '../../components/admin/ToggleButton';
-import Spinner from '../../components/admin/Spinner';
+import Button from '../../components/Button';
 import { useContent } from '../../context/ContentContext';
 import { toast } from 'react-hot-toast';
 import { notifyError } from '../../utils/feedback';
@@ -322,7 +322,7 @@ export default function ContentManager() {
       actions={PAGES.map(page => ({
         id: page.id,
         label: page.label,
-        variant: activePage === page.id ? 'primary' : 'secondary',
+        variant: activePage === page.id ? 'secondary' : 'primary',
         onClick: () => {
           setActivePage(page.id);
           setExpandedSection(page.sections[0]);
@@ -459,19 +459,15 @@ export default function ContentManager() {
                                                     </label>
                                                     
                                                     {isMultiLang && activeLang === 'en' && (
-                                                        <button 
+                                                        <Button
+                                                            size="sm"
+                                                            icon={Sparkles}
                                                             onClick={() => handleTranslate(section.key, field.key)}
-                                                            disabled={translating?.section === section.key && translating?.field === field.key}
-                                                            className="text-xs flex items-center gap-1 text-[#A67B5B] hover:text-[#8B6A4E] disabled:opacity-50"
+                                                            loading={translating?.section === section.key && translating?.field === field.key}
                                                             title="Auto-translate to all other languages"
                                                         >
-                                                            {translating?.section === section.key && translating?.field === field.key ? (
-                                                                <Spinner size="sm" />
-                                                            ) : (
-                                                                <Sparkles className="w-3 h-3" />
-                                                            )}
                                                             Auto-Translate
-                                                        </button>
+                                                        </Button>
                                                     )}
                                                 </div>
                                                 
@@ -502,17 +498,15 @@ export default function ContentManager() {
                                 </div>
 
                                 <div className="flex justify-end items-center pt-4 border-t border-stone-50">
-                                     <button 
+                                     <Button
+                                        variant="secondary"
+                                        icon={Save}
+                                        className="min-w-[120px]"
                                         onClick={() => handleSave(section.key)}
-                                        disabled={isSaving}
-                                        className={`btn-primary flex items-center gap-2 min-w-[120px] justify-center ${isSaving ? 'opacity-80' : ''}`}
+                                        loading={isSaving}
                                      >
-                                         {isSaving ? (
-                                             <>Saving...</>
-                                         ) : (
-                                             <><Save className="w-4 h-4" /> Save Changes</>
-                                         )}
-                                     </button>
+                                         {isSaving ? 'Saving...' : 'Save Changes'}
+                                     </Button>
                                 </div>
                             </div>
                         )}

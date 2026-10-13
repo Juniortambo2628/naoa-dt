@@ -23,6 +23,7 @@ import { AdminHeaderStatus } from '../../context/AdminChromeContext';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import Button from '../../components/Button';
 import { saveAs } from 'file-saver';
 import { Skeleton } from '../../components/Skeleton';
 import { toast } from 'react-hot-toast';
@@ -762,7 +763,6 @@ export default function InvitationDesigner() {
       })
       : [];
 
-  const toggleButton = (active) => `p-2 rounded-xl transition-all ${active ? 'bg-[#A67B5B]/15 text-[#8B5E3C]' : 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]'}`;
   const divider = <div className="w-px h-6 bg-stone-200/70 mx-0.5" />;
 
   return (
@@ -902,55 +902,52 @@ export default function InvitationDesigner() {
             {divider}
 
             {/* Undo / redo */}
-            <button
+            <Button
+              size="icon"
+              icon={Undo2}
               onClick={handleUndo}
               disabled={historyIndex <= 0}
-              className={`p-2 rounded-xl transition-all ${historyIndex > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
               title="Undo (Ctrl+Z)"
               aria-label="Undo"
-            >
-              <Undo2 className="w-4 h-4" />
-            </button>
-            <button
+            />
+            <Button
+              size="icon"
+              icon={Redo2}
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
-              className={`p-2 rounded-xl transition-all ${historyIndex < history.length - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
               title="Redo (Ctrl+Y)"
               aria-label="Redo"
-            >
-              <Redo2 className="w-4 h-4" />
-            </button>
+            />
 
             {divider}
 
             {/* Design tools */}
             <InvitationAddMenu onAdd={addElement} />
-            <button
+            <Button
+              size="icon"
+              icon={Grid3x3}
+              variant={design.showGrid ? 'secondary' : 'primary'}
               onClick={() => updateDesign('showGrid', !design.showGrid)}
               aria-pressed={!!design.showGrid}
-              className={toggleButton(design.showGrid)}
               title="Show grid"
               aria-label="Show grid"
-            >
-              <Grid3x3 className="w-4 h-4" />
-            </button>
-            <button
+            />
+            <Button
+              size="icon"
+              icon={Magnet}
+              variant={design.snapToGrid ? 'secondary' : 'primary'}
               onClick={() => updateDesign('snapToGrid', !design.snapToGrid)}
               aria-pressed={!!design.snapToGrid}
-              className={toggleButton(design.snapToGrid)}
               title="Snap to grid"
               aria-label="Snap to grid"
-            >
-              <Magnet className="w-4 h-4" />
-            </button>
-            <button
+            />
+            <Button
+              size="icon"
+              icon={design.orientation === 'landscape' ? RectangleHorizontal : RectangleVertical}
               onClick={() => updateDesign('orientation', design.orientation === 'landscape' ? 'portrait' : 'landscape')}
-              className={toggleButton(false)}
               title={`Orientation: ${design.orientation === 'landscape' ? 'landscape' : 'portrait'} (click to switch)`}
               aria-label={`Switch to ${design.orientation === 'landscape' ? 'portrait' : 'landscape'} orientation`}
-            >
-              {design.orientation === 'landscape' ? <RectangleHorizontal className="w-4 h-4" /> : <RectangleVertical className="w-4 h-4" />}
-            </button>
+            />
             <label className="relative p-2 rounded-xl text-stone-400 hover:bg-stone-100 cursor-pointer" title="Accent colour">
               <span className="block w-4 h-4 rounded-full border border-white shadow-sm" style={{ background: design.accentColor }} />
               <input
@@ -985,16 +982,16 @@ export default function InvitationDesigner() {
 
             {/* Zoom */}
             <div className="flex items-center" role="group" aria-label="Zoom">
-              <button onClick={() => zoomBy(-1)} className={toggleButton(false)} title="Zoom out (Ctrl −)" aria-label="Zoom out"><ZoomOut className="w-4 h-4" /></button>
-              <button
+              <Button size="icon" icon={ZoomOut} onClick={() => zoomBy(-1)} title="Zoom out (Ctrl −)" aria-label="Zoom out" />
+              <Button
+                className="min-w-[3.25rem] mx-1"
                 onClick={() => setZoom('fit')}
-                className="min-w-[3.25rem] px-1 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100"
                 title="Fit to screen (Ctrl 0)"
                 aria-label={`Zoom ${Math.round(currentScale * 100)}%, click to fit`}
               >
                 {zoom === 'fit' ? 'Fit' : `${Math.round(currentScale * 100)}%`}
-              </button>
-              <button onClick={() => zoomBy(1)} className={toggleButton(false)} title="Zoom in (Ctrl +)" aria-label="Zoom in"><ZoomIn className="w-4 h-4" /></button>
+              </Button>
+              <Button size="icon" icon={ZoomIn} onClick={() => zoomBy(1)} title="Zoom in (Ctrl +)" aria-label="Zoom in" />
             </div>
 
             {divider}
@@ -1010,14 +1007,13 @@ export default function InvitationDesigner() {
               <option value="invitation">Invitation</option>
               <option value="save_the_date">Save the Date</option>
             </select>
-            <button
+            <Button
+              size="icon"
+              icon={isFullscreen ? Minimize : Maximize}
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 rounded-xl transition-all text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]"
               title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}
               aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}
-            >
-              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-            </button>
+            />
           </>
         )}
       </AdminFloatingToolbar>

@@ -11,6 +11,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminModal from '../../components/admin/AdminModal';
 import { AdminInput } from '../../components/admin/AdminInput';
 import Spinner from '../../components/admin/Spinner';
+import Button from '../../components/Button';
 import LocationPicker from '../../components/LocationPicker';
 import { INVITATION_SECTIONS, resolveInvitationSections } from '../../utils/invitationSections';
 import { DEFAULT_WHATSAPP_TEMPLATE, WHATSAPP_PLACEHOLDERS, renderWhatsAppMessage } from '../../utils/whatsappMessage';
@@ -199,7 +200,7 @@ export default function AdminSettings() {
           id: 'save-settings',
           label: updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes',
           icon: Save,
-          variant: 'primary',
+          variant: 'secondary',
           onClick: () => formRef.current?.requestSubmit(),
           disabled: updateSettingsMutation.isPending || !dirty,
         },
@@ -324,14 +325,13 @@ export default function AdminSettings() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
+                <Button
+                  variant={is2faEnabled ? 'danger' : 'secondary'}
                   onClick={handle2faToggle}
-                  disabled={verifying2fa}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${is2faEnabled ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#A67B5B] text-white hover:bg-[#8C6A4D]'}`}
+                  loading={verifying2fa}
                 >
-                  {verifying2fa ? <Spinner size="sm" /> : (is2faEnabled ? 'Disable 2FA' : 'Enable 2FA')}
-                </button>
+                  {is2faEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+                </Button>
               </div>
             </SettingsCard>
 
@@ -439,22 +439,21 @@ export default function AdminSettings() {
             </SettingsCard>
 
             <div className="flex justify-end gap-4 pt-2">
-              <button
-                type="button"
-                className="btn-secondary"
+              <Button
                 onClick={handleDiscard}
                 disabled={updateSettingsMutation.isPending}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="btn-primary min-w-[140px] flex items-center justify-center gap-2"
-                disabled={updateSettingsMutation.isPending}
+                variant="secondary"
+                icon={Save}
+                className="min-w-[140px]"
+                loading={updateSettingsMutation.isPending}
               >
-                {updateSettingsMutation.isPending ? <Spinner size="sm" /> : <Save className="w-4 h-4" />}
                 {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -520,14 +519,15 @@ export default function AdminSettings() {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={verifying2fa}
-            className="btn-primary w-full flex items-center justify-center gap-2"
+            variant="secondary"
+            icon={ShieldCheck}
+            fullWidth
+            loading={verifying2fa}
           >
-            {verifying2fa ? <Spinner size="sm" /> : <ShieldCheck className="w-4 h-4" />}
             {verifying2fa ? 'Verifying...' : 'Complete Setup'}
-          </button>
+          </Button>
         </form>
       </AdminModal>
     </AdminPageLayout>

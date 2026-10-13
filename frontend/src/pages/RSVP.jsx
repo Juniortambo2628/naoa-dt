@@ -435,20 +435,22 @@ export default function RSVP() {
                             </div>
                             
                             <div className="flex gap-4">
-                                <button 
-                                    type="button"
+                                <Button
+                                    variant={showSongRequest ? 'secondary' : 'primary'}
+                                    aria-pressed={showSongRequest}
                                     onClick={() => setShowSongRequest(true)}
-                                    className={`flex-1 py-3 px-4 rounded-xl border-2 transition-all text-sm font-medium ${showSongRequest ? 'border-[#8B9A7D] bg-white text-[#8B9A7D]' : 'border-stone-100 bg-white text-stone-500'}`}
+                                    className="flex-1"
                                 >
                                     Yes, I have a song!
-                                </button>
-                                <button 
-                                    type="button"
+                                </Button>
+                                <Button
+                                    variant={!showSongRequest ? 'secondary' : 'primary'}
+                                    aria-pressed={!showSongRequest}
                                     onClick={() => { setShowSongRequest(false); setSongRequest(''); }}
-                                    className={`flex-1 py-3 px-4 rounded-xl border-2 transition-all text-sm font-medium ${!showSongRequest ? 'border-[#8B5E3C] bg-white text-[#8B5E3C]' : 'border-stone-100 bg-white text-stone-500'}`}
+                                    className="flex-1"
                                 >
                                     No, thank you
-                                </button>
+                                </Button>
                             </div>
 
                             {showSongRequest && (

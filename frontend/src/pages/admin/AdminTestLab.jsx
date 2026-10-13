@@ -12,6 +12,7 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import { AdminInput } from '../../components/admin/AdminInput';
 import { notifyError } from '../../utils/feedback';
+import Button from '../../components/Button';
 
 const STATUS_COLORS = {
   ok: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', dot: 'bg-green-500' },
@@ -241,7 +242,7 @@ export default function AdminTestLab() {
           id: 'health-check',
           label: healthLoading ? 'Checking...' : 'Run Health Check',
           icon: Activity,
-          variant: 'primary',
+          variant: 'secondary',
           onClick: runHealthCheck,
           disabled: healthLoading,
         },
@@ -268,14 +269,9 @@ export default function AdminTestLab() {
             </div>
             <h2 className="text-lg font-medium text-stone-800">API Status Monitor</h2>
           </div>
-          <button
-            onClick={runHealthCheck}
-            disabled={healthLoading}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${healthLoading ? 'animate-spin' : ''}`} />
+          <Button icon={RefreshCw} onClick={runHealthCheck} loading={healthLoading}>
             Refresh
-          </button>
+          </Button>
         </div>
 
         {health ? (
@@ -351,27 +347,26 @@ export default function AdminTestLab() {
               <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
               <div className="flex gap-2">
                 {['normal', 'important', 'alert'].map(t => (
-                  <button
+                  <Button
                     key={t}
+                    variant={liveType === t ? 'secondary' : 'primary'}
+                    aria-pressed={liveType === t}
                     onClick={() => setLiveType(t)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      liveType === t
-                        ? 'bg-[#A67B5B] text-white'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                    }`}
                   >
                     {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
-            <button
+            <Button
+              variant="secondary"
+              icon={Radio}
+              fullWidth
               onClick={handleSimulateLiveUpdate}
               disabled={loading || !liveMsg.trim()}
-              className="w-full py-3 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6A4E] transition-all font-medium flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Radio className="w-4 h-4" /> Post Live Update
-            </button>
+              Post Live Update
+            </Button>
             <p className="text-xs text-stone-400 text-center">Posts to Programme page via polling</p>
           </div>
         </AdminCard>
@@ -397,13 +392,15 @@ export default function AdminTestLab() {
               onChange={(e) => setPolaroidLocation(e.target.value)}
               placeholder="Main Hall"
             />
-            <button
+            <Button
+              variant="secondary"
+              icon={Camera}
+              fullWidth
               onClick={handleSimulatePolaroid}
               disabled={loading}
-              className="w-full py-3 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6A4E] transition-all font-medium flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Camera className="w-4 h-4" /> Simulate Polaroid
-            </button>
+              Simulate Polaroid
+            </Button>
             <p className="text-xs text-stone-400 text-center">Creates a placeholder entry on Digital Invitation page</p>
           </div>
         </AdminCard>
@@ -420,13 +417,9 @@ export default function AdminTestLab() {
             <h2 className="text-lg font-medium text-stone-800">Weather API</h2>
           </div>
           <p className="text-xs text-stone-500 mb-4">Test the Open-Meteo weather proxy for venue forecast.</p>
-          <button
-            onClick={handleTestWeather}
-            disabled={loading}
-            className="w-full py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <Cloud className="w-4 h-4" /> Test Weather Endpoint
-          </button>
+          <Button icon={Cloud} fullWidth onClick={handleTestWeather} disabled={loading}>
+            Test Weather Endpoint
+          </Button>
           {weatherResult && (
             <div className="mt-3 p-3 bg-stone-50 rounded-lg text-xs">
               <p className="font-medium text-stone-700">{weatherResult.location || 'Venue'}</p>
@@ -445,13 +438,9 @@ export default function AdminTestLab() {
             <h2 className="text-lg font-medium text-stone-800">Seating API</h2>
           </div>
           <p className="text-xs text-stone-500 mb-4">Test the public seating chart endpoint.</p>
-          <button
-            onClick={handleTestSeating}
-            disabled={loading}
-            className="w-full py-2.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-all text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <Map className="w-4 h-4" /> Test Seating Endpoint
-          </button>
+          <Button icon={Map} fullWidth onClick={handleTestSeating} disabled={loading}>
+            Test Seating Endpoint
+          </Button>
           {seatingResult && (
             <div className="mt-3 p-3 bg-stone-50 rounded-lg text-xs">
               <p className="font-medium text-stone-700">{seatingResult.length} tables found</p>
@@ -471,13 +460,9 @@ export default function AdminTestLab() {
             <h2 className="text-lg font-medium text-stone-800">Settings API</h2>
           </div>
           <p className="text-xs text-stone-500 mb-4">Verify venue coordinates and site settings.</p>
-          <button
-            onClick={handleTestSettings}
-            disabled={loading}
-            className="w-full py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-all text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <Settings className="w-4 h-4" /> Test Settings Endpoint
-          </button>
+          <Button icon={Settings} fullWidth onClick={handleTestSettings} disabled={loading}>
+            Test Settings Endpoint
+          </Button>
           {settingsResult && (
             <div className="mt-3 p-3 bg-stone-50 rounded-lg text-xs">
               <p className="font-medium text-stone-700">Venue Location</p>
@@ -490,20 +475,12 @@ export default function AdminTestLab() {
 
       {/* Quick Links */}
       <div className="flex gap-3 mb-6">
-        <Link
-          to="/invitation/LO2J85UX"
-          target="_blank"
-          className="flex items-center gap-2 px-4 py-2 bg-[#A67B5B]/10 text-[#A67B5B] rounded-lg hover:bg-[#A67B5B]/20 transition-all text-sm font-medium"
-        >
-          <ExternalLink className="w-4 h-4" /> Preview Digital Invitation
-        </Link>
-        <Link
-          to="/programme"
-          target="_blank"
-          className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-all text-sm font-medium"
-        >
-          <ExternalLink className="w-4 h-4" /> Preview Programme Page
-        </Link>
+        <Button as={Link} to="/invitation/LO2J85UX" target="_blank" icon={ExternalLink}>
+          Preview Digital Invitation
+        </Button>
+        <Button as={Link} to="/programme" target="_blank" icon={ExternalLink}>
+          Preview Programme Page
+        </Button>
       </div>
 
       {/* Email & Code Testing */}
@@ -524,20 +501,12 @@ export default function AdminTestLab() {
               placeholder="guest@example.com"
             />
             <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => handleSendTestEmail('invitation')}
-                disabled={loading}
-                className="flex items-center justify-center gap-2 p-3 bg-stone-50 border border-stone-200 rounded-lg hover:border-[#A67B5B] hover:bg-white transition-all text-sm font-medium text-stone-700"
-              >
-                <Send className="w-4 h-4" /> Invitation
-              </button>
-              <button
-                onClick={() => handleSendTestEmail('rsvp_confirmation')}
-                disabled={loading}
-                className="flex items-center justify-center gap-2 p-3 bg-stone-50 border border-stone-200 rounded-lg hover:border-[#A67B5B] hover:bg-white transition-all text-sm font-medium text-stone-700"
-              >
-                <CheckCircle className="w-4 h-4" /> Confirmation
-              </button>
+              <Button icon={Send} onClick={() => handleSendTestEmail('invitation')} disabled={loading}>
+                Invitation
+              </Button>
+              <Button icon={CheckCircle} onClick={() => handleSendTestEmail('rsvp_confirmation')} disabled={loading}>
+                Confirmation
+              </Button>
             </div>
           </div>
         </AdminCard>
@@ -558,14 +527,15 @@ export default function AdminTestLab() {
               { type: 'diverted', label: 'Diverted', color: 'purple' },
               { type: 'status_change', label: 'Landed', color: 'green' },
             ].map((item) => (
-              <button
+              <Button
                 key={item.type}
+                icon={Plane}
+                fullWidth
                 onClick={() => handleSendTestFlightNotification(item.type)}
                 disabled={loading || !testEmail}
-                className={`w-full flex items-center justify-center gap-2 p-3 bg-${item.color}-50 border border-${item.color}-200 rounded-lg hover:border-${item.color}-400 hover:bg-white transition-all text-sm font-medium text-${item.color}-700 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                <Plane className="w-4 h-4" /> {item.label}
-              </button>
+                {item.label}
+              </Button>
             ))}
           </div>
           {!testEmail && (
@@ -590,9 +560,7 @@ export default function AdminTestLab() {
                 onChange={(e) => setTestCode(e.target.value.toUpperCase())}
                 className="flex-1 p-2 border border-stone-200 rounded-lg outline-none font-mono text-center tracking-widest font-bold"
               />
-              <button aria-label="Generate a random code" onClick={generateRandomCode} className="p-2 bg-stone-100 rounded-lg hover:bg-stone-200 text-stone-600">
-                <RefreshCw className="w-5 h-5" />
-              </button>
+              <Button size="icon" icon={RefreshCw} aria-label="Generate a random code" title="Generate a random code" onClick={generateRandomCode} />
             </div>
             <div className="flex justify-center p-4 bg-white border border-stone-200 rounded-xl">
               <img
@@ -601,13 +569,9 @@ export default function AdminTestLab() {
                 className="w-28 h-28"
               />
             </div>
-            <button
-              onClick={handleVerifyCode}
-              disabled={loading}
-              className="w-full py-3 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6A4E] transition-all font-medium flex items-center justify-center gap-2"
-            >
-              <CheckCircle className="w-4 h-4" /> Verify RSVP Code
-            </button>
+            <Button variant="secondary" icon={CheckCircle} fullWidth onClick={handleVerifyCode} disabled={loading}>
+              Verify RSVP Code
+            </Button>
           </div>
         </AdminCard>
       </div>

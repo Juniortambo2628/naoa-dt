@@ -831,7 +831,7 @@ ${rows.join('\n')}
       id: 'add-guest',
       label: 'Add Guest',
       icon: Plus,
-      variant: 'primary',
+      variant: 'secondary',
       onClick: handleAdd,
     },
     {

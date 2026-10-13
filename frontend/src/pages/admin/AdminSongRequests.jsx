@@ -13,8 +13,8 @@ import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import StatCard from '../../components/admin/StatCard';
 import EmptyState from '../../components/admin/EmptyState';
-import Spinner from '../../components/admin/Spinner';
 import DeleteButton from '../../components/admin/DeleteButton';
+import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
@@ -128,7 +128,7 @@ export default function AdminSongRequests() {
   };
 
   const bulkActions = [
-    { id: 'mark-played', label: 'Mark Played', icon: CheckCircle, variant: 'primary', onClick: handleBulkMarkPlayed },
+    { id: 'mark-played', label: 'Mark Played', icon: CheckCircle, variant: 'secondary', onClick: handleBulkMarkPlayed },
     { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
   ];
 
@@ -286,23 +286,18 @@ export default function AdminSongRequests() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        {!song.is_played && (
-                          <button
-                            onClick={() => handleMarkPlayed(song.id)}
-                            disabled={isProcessing(song.id)}
-                            className="btn-sm btn-secondary flex items-center gap-2"
-                            title="Mark as Played"
-                          >
-                            {isProcessing(song.id) ? (
-                              <Spinner size="sm" />
-                            ) : (
-                              <>
-                                <Check className="w-4 h-4" />
-                                <span className="hidden sm:inline">Played</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant={song.is_played ? 'secondary' : 'primary'}
+                          icon={Check}
+                          onClick={() => handleMarkPlayed(song.id)}
+                          disabled={song.is_played}
+                          loading={isProcessing(song.id)}
+                          aria-pressed={!!song.is_played}
+                          title={song.is_played ? 'Played' : 'Mark as Played'}
+                        >
+                          <span className="hidden sm:inline">Played</span>
+                        </Button>
 
                         <DeleteButton
                           onClick={() => handleLocalDelete(song.id, { confirmMessage: 'Are you sure you want to remove this request?' })}
@@ -377,27 +372,28 @@ function SongGrid({ songs, selectedIds, onToggleSelect, onMarkPlayed, onDelete, 
               </div>
 
               <div className="flex gap-2">
-                {!song.is_played && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onMarkPlayed(song.id); }}
-                    disabled={isProcessing(song.id)}
-                    className="flex-1 btn-secondary text-sm py-2 flex items-center justify-center gap-1.5"
-                  >
-                    {isProcessing(song.id) ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      <>
-                        <Check className="w-3.5 h-3.5" /> Played
-                      </>
-                    )}
-                  </button>
-                )}
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(song.id, { confirmMessage: 'Are you sure you want to remove this request?' }); }}
-                  className="flex-1 border border-red-200 text-red-500 hover:bg-red-50 rounded-xl text-sm py-2 flex items-center justify-center gap-1.5 transition-colors"
+                <Button
+                  size="sm"
+                  variant={song.is_played ? 'secondary' : 'primary'}
+                  icon={Check}
+                  className="flex-1"
+                  onClick={(e) => { e.stopPropagation(); onMarkPlayed(song.id); }}
+                  disabled={song.is_played}
+                  loading={isProcessing(song.id)}
+                  aria-pressed={!!song.is_played}
+                  title={song.is_played ? 'Played' : 'Mark as Played'}
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
+                  Played
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  icon={Trash2}
+                  className="flex-1"
+                  onClick={(e) => { e.stopPropagation(); onDelete(song.id, { confirmMessage: 'Are you sure you want to remove this request?' }); }}
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           </div>
