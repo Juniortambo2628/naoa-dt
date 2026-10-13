@@ -186,7 +186,7 @@ export const useAdminUsers = () => {
     queryKey: ['admin-users'],
     queryFn: async () => {
       const { data } = await userService.getAll();
-      return data;
+      return Array.isArray(data) ? data : [];
     },
   });
 };
