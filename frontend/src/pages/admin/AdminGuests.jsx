@@ -906,7 +906,7 @@ ${rows.join('\n')}
         summary={<AdminSummaryCards cards={summaryCards} columns={6} />}
         actions={toolbarActions}
         toolbarHidden={selectedIds.length > 0}
-        search="Search name, email, phone, group, code..."
+        search="Search guests…"
         filters={{
           groups: [
             {

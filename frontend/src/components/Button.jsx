@@ -9,6 +9,7 @@ import { buttonClass } from './buttonStyles';
  * @param {'primary'|'secondary'|'danger'} [variant='primary'] - primary is
  *   white and bordered, secondary is filled brown, danger is red text.
  * @param {'sm'|'md'|'lg'|'icon'|'icon-sm'} [size='md']
+ * @param {'sans'|'serif'} [font='sans'] - typeface only (serif for guest-site RSVP calls to action)
  * @param {LucideIcon} [icon] - leading icon component
  * @param {boolean} [loading] - shows a spinner in place of the icon and disables
  * @param {boolean} [fullWidth]
@@ -19,6 +20,7 @@ const Button = forwardRef(function Button(
     as: Tag = 'button',
     variant = 'primary',
     size = 'md',
+    font = 'sans',
     icon: Icon = null,
     loading = false,
     fullWidth = false,
@@ -39,7 +41,7 @@ const Button = forwardRef(function Button(
       disabled={isButton ? isDisabled : undefined}
       aria-disabled={!isButton && isDisabled ? true : undefined}
       aria-busy={loading || undefined}
-      className={buttonClass({ variant, size, fullWidth, className })}
+      className={buttonClass({ variant, size, font, fullWidth, className })}
       {...props}
     >
       {loading ? <Loader2 className="animate-spin" /> : Icon && <Icon />}

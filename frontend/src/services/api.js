@@ -330,6 +330,7 @@ export const backupService = {
   create: (includeUploads = false) => api.post('/backups', { include_uploads: includeUploads }),
   download: (name) => api.get(`/backups/${encodeURIComponent(name)}/download`, { responseType: 'blob' }),
   restore: (name) => api.post(`/backups/${encodeURIComponent(name)}/restore`),
+  verify: (name) => api.post(`/backups/${encodeURIComponent(name)}/verify`),
   delete: (name) => api.delete(`/backups/${encodeURIComponent(name)}`),
 };
 

@@ -80,7 +80,7 @@ export default function AdminGuestbook() {
             icon={<MessageSquare className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        search="Search messages or guest names..."
+        search="Search messages…"
         filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
       >
         <AdminBulkActions

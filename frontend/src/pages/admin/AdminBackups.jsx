@@ -43,6 +43,18 @@ export default function AdminBackups() {
     notifySuccess(includeUploads ? 'Backup with photos created' : 'Backup created');
   });
 
+  // Test-restores the backup into a throwaway database; the real data is untouched.
+  const verify = (backup) => run(`verify:${backup.name}`, async () => {
+    const { data: result } = await backupService.verify(backup.name);
+    const records = result.tables.reduce((sum, t) => sum + t.restored, 0);
+    if (result.ok) {
+      notifySuccess(`Backup verified: ${result.tables.length} tables and ${records} records restore correctly.`);
+    } else {
+      const bad = result.tables.filter((t) => !t.ok).map((t) => `${t.table} (${t.restored}/${t.expected})`);
+      notifyError(`Backup verification failed — incomplete tables: ${bad.join(', ')}`);
+    }
+  });
+
   const download = (backup) => run(backup.name, async () => {
     const res = await backupService.download(backup.name);
     saveAs(res.data, backup.name);
@@ -149,6 +161,7 @@ export default function AdminBackups() {
                     <td className="px-4 py-3 text-stone-600">{formatSize(backup.size)}</td>
                     <td className="px-6 py-3">
                       <div className="flex justify-end gap-1">
+                        <Button size="icon-sm" icon={ShieldCheck} onClick={() => verify(backup)} disabled={!!busy} loading={busy === `verify:${backup.name}`} aria-label={`Verify ${backup.name}`} title="Verify it restores (safe test)" />
                         <Button size="icon-sm" icon={Download} onClick={() => download(backup)} disabled={!!busy} aria-label={`Download ${backup.name}`} title="Download" />
                         <Button size="icon-sm" icon={RotateCcw} onClick={() => restore(backup)} disabled={!!busy} aria-label={`Restore ${backup.name}`} title="Restore" />
                         <Button size="icon-sm" variant="danger" icon={Trash2} onClick={() => remove(backup)} disabled={!!busy} aria-label={`Delete ${backup.name}`} title="Delete" />

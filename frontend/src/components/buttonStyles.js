@@ -27,11 +27,19 @@ export const BUTTON_SIZES = {
   'icon-sm': 'p-1.5 text-xs',
 };
 
-export function buttonClass({ variant = 'primary', size = 'md', fullWidth = false, className = '' } = {}) {
+// Typeface only — colours and shape stay the same. The guest site uses the
+// serif for its RSVP calls to action to match the invitation lettering.
+export const BUTTON_FONTS = {
+  sans: '',
+  serif: 'font-serif !font-semibold tracking-wide text-[1.1em]',
+};
+
+export function buttonClass({ variant = 'primary', size = 'md', font = 'sans', fullWidth = false, className = '' } = {}) {
   return [
     BUTTON_BASE,
     BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.primary,
     BUTTON_SIZES[size] || BUTTON_SIZES.md,
+    BUTTON_FONTS[font] || '',
     fullWidth ? 'w-full' : '',
     className,
   ].filter(Boolean).join(' ');

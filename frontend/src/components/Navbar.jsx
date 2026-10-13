@@ -106,7 +106,7 @@ export default function Navbar() {
             )}
 
             {isVisible('rsvp') && (
-                <Button as={Link} to="/rsvp" variant="secondary">
+                <Button as={Link} to="/rsvp" variant="secondary" font="serif">
                     {t('nav.rsvp')}
                 </Button>
             )}
@@ -115,7 +115,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
             {isVisible('rsvp') && (
-                <Button as={Link} to="/rsvp" variant="secondary" size="sm">
+                <Button as={Link} to="/rsvp" variant="secondary" font="serif" size="sm">
                     RSVP
                 </Button>
             )}
@@ -177,6 +177,7 @@ export default function Navbar() {
                     to="/rsvp"
                     onClick={() => setIsOpen(false)}
                     variant="secondary"
+                    font="serif"
                     size="lg"
                     className="mt-8"
                   >

@@ -156,7 +156,7 @@ export default function AdminEnquiries() {
             icon={<Mail className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        search="Search enquiries..."
+        search="Search enquiries…"
         filters={{
           groups: [{
             id: 'type',

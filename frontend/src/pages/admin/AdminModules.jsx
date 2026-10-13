@@ -90,7 +90,7 @@ export default function AdminModules() {
             { id: 'enable-all', label: 'Enable All', icon: Eye, variant: 'secondary', onClick: () => setAllModules(true), disabled: bulkSaving },
             { id: 'disable-all', label: 'Disable All', icon: EyeOff, onClick: () => setAllModules(false), disabled: bulkSaving },
           ]}
-          search="Search modules..."
+          search="Search modules…"
           filters={{
             groups: [{
               id: 'status',

@@ -246,7 +246,7 @@ function HeroSection({ content, settings, loading }) {
           transition={{ delay: 3.3, duration: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Button as={Link} to="/rsvp" variant="secondary" size="lg">
+          <Button as={Link} to="/rsvp" variant="secondary" font="serif" size="lg">
             {t('hero.rsvp_cta')}
           </Button>
         </motion.div>
@@ -921,7 +921,7 @@ function CTASection({ content, loading: cmsLoading }) {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <motion.div variants={staggerItem}>
-              <Button as={Link} to="/rsvp" variant="secondary" icon={Heart}>
+              <Button as={Link} to="/rsvp" variant="secondary" font="serif" icon={Heart}>
                 {t('rsvp.respond')}
               </Button>
             </motion.div>

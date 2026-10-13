@@ -139,7 +139,7 @@ export default function AdminSchedule() {
             icon={<Calendar className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        search="Search events, venues, or schedule items..."
+        search="Search schedule…"
       >
         <AdminListPanel plain>
           {loading ? (

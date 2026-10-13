@@ -35,6 +35,13 @@ describe('Button', () => {
     expect(link.className).toBe(buttonClass({ variant: 'secondary' }))
   })
 
+  it('can switch the typeface without changing the style', () => {
+    render(<Button variant="secondary" font="serif">RSVP</Button>)
+    const cls = screen.getByRole('button', { name: 'RSVP' }).className
+    expect(cls).toContain('font-serif')
+    expect(cls).toContain('bg-[#A67B5B]')
+  })
+
   it('has exactly the toolbar styles', () => {
     expect(Object.keys(BUTTON_VARIANTS)).toEqual(['primary', 'secondary', 'danger'])
   })

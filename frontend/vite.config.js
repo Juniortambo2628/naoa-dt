@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     build: {
+      // vendor-export (PDF/zip export) is ~700 kB but only loads when someone exports.
+      chunkSizeWarningLimit: 750,
       rollupOptions: {
         output: {
           // Split heavy, feature-specific libraries into their own vendor
@@ -19,6 +21,9 @@ export default defineConfig(({ mode }) => {
             if (/[\\/]node_modules[\\/](react-quill-new|quill|react-moveable|moveable|@daybrush)[\\/]/.test(id)) return 'vendor-editor';
             if (/[\\/]node_modules[\\/](filepond|react-filepond|browser-image-compression)/.test(id)) return 'vendor-upload';
             if (/[\\/]node_modules[\\/]html5-qrcode[\\/]/.test(id)) return 'vendor-qr';
+            // Core libraries every page needs: kept apart so they stay cached across deploys.
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|@remix-run)[\\/]/.test(id)) return 'vendor-react';
+            if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'vendor-motion';
             return undefined;
           },
         },

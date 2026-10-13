@@ -112,7 +112,7 @@ export default function AdminRSVPs() {
                 />
             }
             summary={<AdminSummaryCards cards={statCards} columns={4} />}
-            search="Search guests, messages, or dietary notes..."
+            search="Search RSVPs…"
             filters={{
               groups: [{
                 id: 'responses',

@@ -51,3 +51,4 @@ tmp_replace.js
 # Local Playwright override (pre-installed browser)
 frontend/playwright.local.config.mjs
 frontend/tests/visual/test-results/
+frontend/playwright-report/
