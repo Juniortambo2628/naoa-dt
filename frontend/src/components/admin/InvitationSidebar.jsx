@@ -9,6 +9,7 @@ import {
 import ImageUpload from './ImageUpload';
 import WeddingPalettePicker from './WeddingPalettePicker';
 import { Skeleton } from '../Skeleton';
+import { ELEMENT_KINDS } from './invitationElements';
 
 export default function InvitationSidebar({
   loading,
@@ -22,6 +23,7 @@ export default function InvitationSidebar({
   updateDesign,
   handleDesignUpdate,
   addItem,
+  onAddElement,
   deleteItem,
   updateContent,
   insertPlaceholder,
@@ -42,18 +44,22 @@ export default function InvitationSidebar({
         </div>
       ) : (
         <div className="flex-1 lg:overflow-y-auto font-sans">
-          <div className="p-6 space-y-8">
-            {/* Tabs Navigation */}
-            <div className="flex p-1 bg-stone-100/50 rounded-xl mb-6">
+          <div className="p-6 pt-0 space-y-8">
+            {/* Tabs Navigation — stays pinned while the panel scrolls */}
+            <div className="sticky top-16 lg:top-0 z-20 -mx-6 px-6 pt-6 pb-3 bg-white/95 backdrop-blur-sm border-b border-stone-100">
+             <div className="flex p-1 bg-stone-100/50 rounded-xl" role="tablist" aria-label="Designer panels">
               {(['style', 'text', 'layout', 'items', 'layers']).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
+                  role="tab"
+                  aria-selected={activeTab === tab}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${activeTab === tab ? 'bg-white text-[#A67B5B] shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
                 >
                   {tab}
                 </button>
               ))}
+             </div>
             </div>
 
             {activeTab === 'items' && (
@@ -70,49 +76,15 @@ export default function InvitationSidebar({
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => addItem('rsvp_code', { width: 120, height: 60 })}
-                        className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
-                      >
-                        <Move className="w-5 h-5" /> RSVP Code
-                      </button>
-                      <button
-                        onClick={() => addItem('calendar_link', { width: 140, height: 70 })}
-                        className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
-                      >
-                        <Calendar className="w-5 h-5" /> Save Date
-                      </button>
-                      <button
-                        onClick={() => addItem('venue_location', { width: 220, height: 72, x: 140, y: 250 })}
-                        className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
-                      >
-                        <MapPin className="w-5 h-5" /> Location
-                      </button>
-                      <button
-                        onClick={() => {
-                          const newId = `final_${Date.now()}`;
-                          addItem('text', { id: newId, textKey: newId, width: 300, height: 40, fontStyle: 'serif', fontSize: 16, x: 100, y: 450, italic: true });
-                          updateContent(editorLang, newId, 'invite to follow');
-                        }}
-                        className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
-                      >
-                        <AlignLeft className="w-5 h-5" /> Final Line
-                      </button>
-                      <button
-                        onClick={() => {
-                          addItem('frame', {
-                            width: design.orientation === 'landscape' ? 585 : 460,
-                            height: design.orientation === 'landscape' ? 460 : 585,
-                            x: 20,
-                            y: 20,
-                            color: design.accentColor,
-                            thickness: 2
-                          });
-                        }}
-                        className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
-                      >
-                        <SquareDashedMousePointer className="w-5 h-5" /> Interactive Frame
-                      </button>
+                      {ELEMENT_KINDS.map(kind => (
+                        <button
+                          key={kind.id}
+                          onClick={() => onAddElement(kind.id)}
+                          className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
+                        >
+                          <kind.icon className="w-5 h-5" /> {kind.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
