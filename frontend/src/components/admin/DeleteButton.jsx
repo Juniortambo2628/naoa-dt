@@ -1,9 +1,8 @@
 import { Trash2 } from 'lucide-react';
-import Spinner from './Spinner';
+import Button from '../Button';
 
 /**
- * DeleteButton — consistent delete icon button for admin pages.
- * Shows a spinner when the item is being processed.
+ * DeleteButton — the icon-only delete action for admin list rows and cards.
  *
  * @param {function} onClick    - Click handler
  * @param {boolean}  processing - Whether this item is currently being processed
@@ -11,13 +10,14 @@ import Spinner from './Spinner';
  */
 export default function DeleteButton({ onClick, processing, title = 'Delete' }) {
   return (
-    <button
+    <Button
+      variant="danger"
+      size="icon"
+      icon={Trash2}
+      loading={processing}
       onClick={onClick}
-      disabled={processing}
-      className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
       title={title}
-    >
-      {processing ? <Spinner size="sm" /> : <Trash2 className="w-5 h-5" />}
-    </button>
+      aria-label={title}
+    />
   );
 }

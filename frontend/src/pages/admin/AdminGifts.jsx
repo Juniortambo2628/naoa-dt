@@ -14,7 +14,7 @@ import { useSearch } from '../../context/SearchContext';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
-import SubmitButton from '../../components/admin/SubmitButton';
+import Button from '../../components/Button';
 import Spinner from '../../components/admin/Spinner';
 import { toast } from 'react-hot-toast';
 import { confirmAction, notifyError } from '../../utils/feedback';
@@ -97,7 +97,7 @@ export default function AdminGifts() {
   };
 
   const bulkActions = [
-    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'primary', onClick: handleBulkToggleAvailability },
+    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'secondary', onClick: handleBulkToggleAvailability },
     { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
   ];
 
@@ -110,7 +110,7 @@ export default function AdminGifts() {
             id: 'add-gift',
             label: 'Add Gift',
             icon: Plus,
-            variant: 'primary',
+            variant: 'secondary',
             onClick: handleAdd,
           },
         ]}
@@ -268,28 +268,35 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
               )}
 
               {claimCount > 0 && (
-                <button
+                <Button
+                  size="sm"
+                  fullWidth
+                  icon={Undo2}
+                  className="mb-2"
                   onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
-                  className="w-full mb-2 border border-[#A67B5B]/30 text-[#A67B5B] hover:bg-[#A67B5B]/5 rounded-xl text-sm py-2 flex items-center justify-center gap-1.5"
                 >
-                  <Undo2 className="w-3.5 h-3.5" />
                   {gift.is_cash_fund ? `${claimCount} contribution${claimCount > 1 ? 's' : ''}` : 'Undo reservation'}
-                </button>
+                </Button>
               )}
 
               <div className="flex gap-2">
-                <button
+                <Button
+                  size="sm"
+                  icon={Edit}
+                  className="flex-1"
                   onClick={(e) => { e.stopPropagation(); onEdit(gift); }}
-                  className="flex-1 btn-secondary text-sm py-2 flex items-center justify-center gap-1.5"
                 >
-                  <Edit className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button
+                  Edit
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  icon={Trash2}
+                  className="flex-1"
                   onClick={(e) => { e.stopPropagation(); onDelete(gift.id); }}
-                  className="flex-1 border border-red-200 text-red-500 hover:bg-red-50 rounded-xl text-sm py-2 flex items-center justify-center gap-1.5"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
+                  Delete
+                </Button>
               </div>
             </div>
           </div>
@@ -364,26 +371,29 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
 
               <div className="flex items-center justify-end gap-2">
                 {claimCount > 0 && (
-                  <button aria-label={gift.is_cash_fund ? `${claimCount} contributions` : 'Undo reservation'}
-                    onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
+                  <Button
+                    size="icon-sm"
+                    icon={Undo2}
+                    aria-label={gift.is_cash_fund ? `${claimCount} contributions` : 'Undo reservation'}
                     title={gift.is_cash_fund ? `${claimCount} contributions` : 'Undo reservation'}
-                    className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
-                  >
-                    <Undo2 className="w-4 h-4" />
-                  </button>
+                    onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
+                  />
                 )}
-                <button aria-label={`Edit ${gift.name}`}
+                <Button
+                  size="icon-sm"
+                  icon={Edit}
+                  aria-label={`Edit ${gift.name}`}
+                  title="Edit"
                   onClick={(e) => { e.stopPropagation(); onEdit(gift); }}
-                  className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button aria-label={`Delete ${gift.name}`}
+                />
+                <Button
+                  variant="danger"
+                  size="icon-sm"
+                  icon={Trash2}
+                  aria-label={`Delete ${gift.name}`}
+                  title="Delete"
                   onClick={(e) => { e.stopPropagation(); onDelete(gift.id); }}
-                  className="p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                />
               </div>
             </div>
           );
@@ -454,7 +464,7 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
           <label htmlFor="cashFund" className="text-sm font-medium text-stone-700">This is a Cash Fund</label>
         </div>
         <AdminTextarea label="Description (Optional)" rows={2} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-        <SubmitButton loading={loading} icon={<Save className="w-4 h-4" />} label="Save Gift" />
+        <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Gift</Button>
       </form>
     </AdminModal>
   );
@@ -487,12 +497,15 @@ function ClaimsModal({ isOpen, onClose, gift, onRemoveClaim }) {
                   <p className="text-xs text-stone-500 italic mt-1 line-clamp-2">&ldquo;{claim.message}&rdquo;</p>
                 )}
               </div>
-              <button
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Undo2}
+                className="flex-shrink-0"
                 onClick={() => onRemoveClaim(claim.id)}
-                className="flex-shrink-0 border border-red-200 text-red-500 hover:bg-red-50 rounded-lg text-xs px-3 py-1.5 flex items-center gap-1.5"
               >
-                <Undo2 className="w-3.5 h-3.5" /> {isCashFund ? 'Remove' : 'Undo'}
-              </button>
+                {isCashFund ? 'Remove' : 'Undo'}
+              </Button>
             </div>
           ))}
         </div>

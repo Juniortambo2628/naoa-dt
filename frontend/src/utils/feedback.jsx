@@ -1,4 +1,5 @@
 import { toast } from 'react-hot-toast';
+import Button from '../components/Button';
 
 /*
  * App-wide user feedback, usable from any handler without hooks:
@@ -74,8 +75,9 @@ export function notifyUndo(message, onUndo, duration = 7000) {
   toast((t) => (
     <span className="flex items-center gap-3">
       <span>{message}</span>
-      <button
-        type="button"
+      <Button
+        size="sm"
+        variant="secondary"
         onClick={async () => {
           toast.dismiss(t.id);
           try {
@@ -85,10 +87,9 @@ export function notifyUndo(message, onUndo, duration = 7000) {
             notifyError(err, 'Could not undo');
           }
         }}
-        className="px-2.5 py-1 rounded-lg bg-[#A67B5B] text-white text-xs font-semibold hover:bg-[#8B5E3C]"
       >
         Undo
-      </button>
+      </Button>
     </span>
   ), { duration });
 }

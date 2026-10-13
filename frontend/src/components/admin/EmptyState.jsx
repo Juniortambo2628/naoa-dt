@@ -1,4 +1,5 @@
 import { Skeleton } from '../Skeleton';
+import Button from '../Button';
 
 /**
  * Loading / empty placeholder for admin lists.
@@ -27,21 +28,15 @@ export default function EmptyState({ icon: Icon, message, searchQuery, loading, 
     );
   }
 
-  const ActionIcon = action?.icon;
   return (
     <div className="p-12 text-center text-stone-500">
       {Icon && <Icon className="w-12 h-12 mx-auto mb-4 opacity-20" aria-hidden="true" />}
       <p>{searchQuery ? `Nothing matches “${searchQuery}”` : message || 'No items yet'}</p>
       {searchQuery && <p className="mt-1 text-sm text-stone-500">Try a different search or clear the filters.</p>}
       {!searchQuery && action && (
-        <button
-          type="button"
-          onClick={action.onClick}
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#A67B5B] text-white text-sm font-medium hover:bg-[#8B5E3C]"
-        >
-          {ActionIcon && <ActionIcon className="w-4 h-4" />}
+        <Button variant="secondary" icon={action.icon} onClick={action.onClick} className="mt-4">
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   );

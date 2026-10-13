@@ -5,6 +5,7 @@ import { MoreHorizontal, ChevronUp, ChevronDown } from 'lucide-react';
 import AdminToolbarSearch from './AdminToolbarSearch';
 import AdminToolbarFilters, { countActiveFilters } from './AdminToolbarFilters';
 import { useSearch } from '../../context/SearchContext';
+import Button from '../Button';
 
 /**
  * AdminFloatingToolbar — the shared, fixed bottom-center toolbar that every
@@ -18,7 +19,7 @@ import { useSearch } from '../../context/SearchContext';
  *     label: string,
  *     icon: LucideIcon,
  *     onClick: () => void,
- *     variant?: 'primary' | 'secondary' | 'danger',
+ *     variant?: 'primary' | 'secondary' | 'danger',  // see components/Button
  *     disabled?: boolean,
  *     hidden?: boolean,
  *   }
@@ -61,18 +62,6 @@ export default function AdminFloatingToolbar({
   const overflowActions = visibleActions.slice(maxPrimary);
   const hasOverflow = overflowActions.length > 0;
 
-  const baseButton =
-    'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all';
-
-  const variantStyles = {
-    primary:
-      'bg-[#A67B5B] text-white hover:bg-[#8B5E3C] shadow-md',
-    secondary:
-      'bg-white/80 text-[#4A3F35] hover:bg-white border border-stone-200/60',
-    danger:
-      'bg-white/80 text-red-600 hover:bg-red-50 border border-stone-200/60',
-  };
-
   return createPortal(
     <AnimatePresence>
       {visible ? (
@@ -100,35 +89,27 @@ export default function AdminFloatingToolbar({
             {children && visibleActions.length > 0 && (
               <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
             )}
-            {primaryActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.id}
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  className={`${baseButton} ${variantStyles[action.variant || 'secondary']} ${
-                    action.disabled ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  title={action.label}
-                >
-                  {Icon && <Icon className="w-4 h-4" />}
-                  {/* Custom controls (e.g. the designer's tools) need the room, so
-                      action labels then only show on very wide screens. */}
-                  <span className={children ? 'hidden 2xl:inline' : 'hidden sm:inline'}>{action.label}</span>
-                </button>
-              );
-            })}
+            {primaryActions.map((action) => (
+              <Button
+                key={action.id}
+                variant={action.variant}
+                icon={action.icon}
+                onClick={action.onClick}
+                disabled={action.disabled}
+                title={action.label}
+                aria-label={action.label}
+              >
+                {/* Custom controls (e.g. the designer's tools) need the room, so
+                    action labels then only show on very wide screens. */}
+                <span className={children ? 'hidden 2xl:inline' : 'hidden sm:inline'}>{action.label}</span>
+              </Button>
+            ))}
 
             {hasOverflow && (
               <div className="relative">
-                <button
-                  onClick={() => setMenuOpen((v) => !v)}
-                  className={`${baseButton} ${variantStyles.secondary}`}
-                >
-                  <MoreHorizontal className="w-4 h-4" />
+                <Button icon={MoreHorizontal} onClick={() => setMenuOpen((v) => !v)} aria-label="More actions">
                   <span className="hidden sm:inline">More</span>
-                </button>
+                </Button>
 
                 <AnimatePresence>
                   {menuOpen && (

@@ -10,7 +10,7 @@ import EmptyState from '../../components/admin/EmptyState';
 import { useSearch } from '../../context/SearchContext';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import AdminCard from '../../components/admin/AdminCard';
-import SubmitButton from '../../components/admin/SubmitButton';
+import Button from '../../components/Button';
 import Spinner from '../../components/admin/Spinner';
 import { confirmAction, notifyError } from '../../utils/feedback';
 
@@ -127,7 +127,7 @@ export default function AdminSchedule() {
             id: 'add-event',
             label: 'Add Major Event',
             icon: Calendar,
-            variant: 'primary',
+            variant: 'secondary',
             onClick: handleCreateEvent,
           },
         ]}
@@ -157,28 +157,22 @@ export default function AdminSchedule() {
                                   <p className="text-stone-500 text-sm break-words">{new Date(event.event_date).toLocaleDateString()} • {event.venue}</p>
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
-                                  <button aria-label="Edit Event" 
+                                  <Button size="icon-sm" icon={Edit} aria-label="Edit Event" title="Edit Event"
                                       onClick={() => handleEditEvent(event)}
-                                      className="p-2 text-stone-400 hover:text-[#A67B5B] rounded-lg transition-colors"
-                                      title="Edit Event"
-                                  >
-                                      <Edit className="w-4 h-4" />
-                                  </button>
-                                  <button aria-label="Delete Event" 
+                                  />
+                                  <Button variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete Event" title="Delete Event"
                                       onClick={() => handleDeleteEvent(event.id)}
-                                      className="p-2 text-stone-400 hover:text-red-500 rounded-lg transition-colors"
-                                      title="Delete Event"
-                                  >
-                                      <Trash2 className="w-4 h-4" />
-                                  </button>
+                                  />
                               </div>
                           </div>
-                          <button
+                          <Button
+                              variant="secondary"
+                              icon={Plus}
                               onClick={() => handleAddItem(event.id)}
-                              className="btn-secondary flex items-center justify-center gap-2 text-sm self-start sm:self-auto flex-shrink-0 whitespace-nowrap"
+                              className="self-start sm:self-auto flex-shrink-0"
                           >
-                              <Plus className="w-4 h-4" /> Add Item
-                          </button>
+                              Add Item
+                          </Button>
                       </div>
 
                       <div className="space-y-3">
@@ -195,18 +189,12 @@ export default function AdminSchedule() {
                                       </p>
                                   </div>
                                   <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                                      <button aria-label="Edit schedule item" 
+                                      <Button size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
                                           onClick={() => handleEditItem(item, event.id)}
-                                          className="p-2 text-stone-400 hover:text-[#A67B5B] rounded-lg"
-                                      >
-                                          <Edit className="w-4 h-4" />
-                                      </button>
-                                      <button aria-label="Delete schedule item" 
+                                      />
+                                      <Button variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete schedule item" title="Delete"
                                           onClick={() => handleDeleteItem(item.id)}
-                                          className="p-2 text-stone-400 hover:text-red-500 rounded-lg"
-                                      >
-                                          <Trash2 className="w-4 h-4" />
-                                      </button>
+                                      />
                                   </div>
                               </div>
                           ))}
@@ -288,7 +276,7 @@ function EventModal({ isOpen, onClose, onSave, event }) {
                 </div>
                 <AdminInput label="Venue Name" required value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
                 <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <SubmitButton loading={loading} icon={<Save className="w-4 h-4" />} label={event ? 'Update Event' : 'Create Event'} />
+                <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>{event ? 'Update Event' : 'Create Event'}</Button>
             </form>
         </AdminModal>
     );
@@ -347,7 +335,7 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
                 </div>
                 <AdminInput label="Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
                 <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <SubmitButton loading={loading} icon={<Save className="w-4 h-4" />} label="Save Event" />
+                <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Event</Button>
             </form>
         </AdminModal>
     );
