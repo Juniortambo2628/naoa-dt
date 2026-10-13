@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Link } from 'react-router-dom';
 import {
   Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical,
@@ -13,6 +14,12 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import { AdminInput } from '../../components/admin/AdminInput';
 import { notifyError } from '../../utils/feedback';
 import Button from '../../components/Button';
+import SegmentedControl from '../../components/SegmentedControl';
+
+const LIVE_TYPE_OPTIONS = ['normal', 'important', 'alert'].map((t) => ({
+  value: t,
+  label: t.charAt(0).toUpperCase() + t.slice(1),
+}));
 
 const STATUS_COLORS = {
   ok: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', dot: 'bg-green-500' },
@@ -345,18 +352,13 @@ export default function AdminTestLab() {
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
-              <div className="flex gap-2">
-                {['normal', 'important', 'alert'].map(t => (
-                  <Button
-                    key={t}
-                    variant={liveType === t ? 'secondary' : 'primary'}
-                    aria-pressed={liveType === t}
-                    onClick={() => setLiveType(t)}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </Button>
-                ))}
-              </div>
+              <SegmentedControl
+                aria-label="Live update type"
+                className="gap-2"
+                options={LIVE_TYPE_OPTIONS}
+                value={liveType}
+                onChange={setLiveType}
+              />
             </div>
             <Button
               variant="secondary"
@@ -563,11 +565,7 @@ export default function AdminTestLab() {
               <Button size="icon" icon={RefreshCw} aria-label="Generate a random code" title="Generate a random code" onClick={generateRandomCode} />
             </div>
             <div className="flex justify-center p-4 bg-white border border-stone-200 rounded-xl">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${testCode}`}
-                alt="QR Code"
-                className="w-28 h-28"
-              />
+              <QRCodeSVG value={testCode || ' '} size={112} title={`QR code for ${testCode}`} />
             </div>
             <Button variant="secondary" icon={CheckCircle} fullWidth onClick={handleVerifyCode} disabled={loading}>
               Verify RSVP Code

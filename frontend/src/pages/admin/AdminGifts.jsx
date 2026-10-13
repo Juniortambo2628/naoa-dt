@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Gift, Plus, Edit, Save, X, DollarSign, ExternalLink, LayoutGrid, List, CheckCircle, Trash2, ShoppingBag, Heart, ArrowUpRight, Undo2 } from 'lucide-react';
 import { useGifts } from '../../hooks/useApiHooks';
-import { giftService, getAssetUrl } from '../../services/api';
+import { giftService } from '../../services/api';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -15,6 +15,7 @@ import useCrudHandlers from '../../hooks/useCrudHandlers';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import Button from '../../components/Button';
+import GiftImage from '../../components/GiftImage';
 import Spinner from '../../components/admin/Spinner';
 import { toast } from 'react-hot-toast';
 import { confirmAction, notifyError } from '../../utils/feedback';
@@ -123,7 +124,7 @@ export default function AdminGifts() {
           />
         }
         summary={<AdminSummaryCards cards={statCards} columns={4} />}
-        search="Search gifts..."
+        search="Search gifts…"
         filters={{ view: { options: ['grid', 'list'], value: viewMode, onChange: setViewMode } }}
       >
         <AdminBulkActions
@@ -199,8 +200,8 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
           >
             {/* Image */}
             <div className="h-52 overflow-hidden relative">
-              <img
-                src={getAssetUrl(gift.image_url || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80')}
+              <GiftImage
+                src={gift.image_url}
                 alt={gift.name}
                 className={`w-full h-full object-cover transition-transform duration-500 ${isReserved ? 'grayscale-[0.3]' : 'group-hover:scale-110'}`}
               />
@@ -340,8 +341,8 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
               </div>
 
               <div className="flex items-center gap-3 min-w-0">
-                <img
-                  src={getAssetUrl(gift.image_url || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=100&q=80')}
+                <GiftImage
+                  src={gift.image_url}
                   alt={gift.name}
                   className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                 />

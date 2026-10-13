@@ -466,7 +466,7 @@ same code works on any driver.
    An entry added by hand in cPanel is detected and left alone; if `crontab` isn't available over SSH the deploy prints the exact line to add under cPanel → Cron Jobs.
    The scheduler runs nightly backups, flight-status checks and — because shared hosting has no long-running worker — drains the job queue every minute (`queue:work --stop-when-empty`), so queued schedule-change notifications are actually sent.
 3. The PHP `zip` extension must be enabled (standard on cPanel).
-4. Download a backup from the Backups page now and then and keep it off the server — backups on the same host do not protect against losing the host.
+4. Set up off-site copies (see 14.2) — backups on the same host do not protect against losing the host. Until then, download a backup from the Backups page now and then.
 
 ### 13.4 Shared building blocks (reuse these)
 
@@ -479,6 +479,47 @@ same code works on any driver.
 | Loading / empty / error states | `EmptyState` (`loading`, `action`), `QueryError` |
 | Unsaved edits | `useUnsavedChanges(value)` + `UnsavedChangesStatus` |
 | Header status or compact title | `AdminHeaderStatus` (portal), automatic via `AdminPageHero` |
+| Any button | `components/Button.jsx` (`variant` primary = white bordered, secondary = brown, danger; `size`; `icon`; `loading`; `as`; `font="serif"` for guest-site RSVP) |
+| One-of-N choice (tabs-like toggles, view switch) | `components/SegmentedControl.jsx` |
+| Gift photo | `components/GiftImage.jsx` (falls back to a placeholder) |
+
+---
+
+## 14. Buttons, Speed & Backup Safety (October 2026)
+
+### 14.1 Status
+
+| # | Improvement | Status |
+|---|-------------|--------|
+| 1 | Gift cards never show a broken image (`GiftImage` placeholder) | ✅ |
+| 2 | Test Lab QR generated in the browser (no external QR service) | ✅ |
+| 3 | Song "Played" can be undone (`PATCH …/played` with `played=false`) | ✅ |
+| 4 | Toolbar search placeholders short enough to read | ✅ |
+| 5 | Lighter first load: live-update libraries load only when configured; React/motion in cached vendor chunks (main bundle 583 kB → 188 kB) | ✅ |
+| 6 | `SegmentedControl` for one-of-N choices; pagination on `Button`; guard test extended | ✅ |
+| 7 | Serif typeface on guest-site RSVP buttons (`Button font="serif"`) | ✅ |
+| 8 | Visual tests workflow (`.github/workflows/visual.yml`): PRs, nightly, manual "update baselines" | ✅ |
+| 9 | Visual tests start with cookie banner and admin tour dismissed | ✅ |
+| 10 | Generated Playwright report no longer tracked | ✅ |
+| 11 | Off-site backup copies (disk and/or email) | ✅ |
+| 12 | Weekly restore verification + "Verify" on the Backups page | ✅ |
+
+### 14.2 Off-site backups (operator setup)
+
+Set in the server `.env` (nothing is sent until one is set):
+
+- `BACKUP_OFFSITE_DISK` — a disk from `config/filesystems.php` (e.g. `s3`, `ftp`, `sftp`) with its own credentials in `.env`; copies go under `BACKUP_OFFSITE_PATH` (default `backups`) and are pruned to the same keep count.
+- `BACKUP_OFFSITE_EMAIL` — comma-separated addresses that receive the nightly backup as an attachment (skipped above `BACKUP_OFFSITE_EMAIL_MAX_MB`, default 15).
+
+The nightly `backups:create --offsite` fails loudly (non-zero exit, reported) if a target fails; the local copy is always kept.
+
+### 14.3 Restore verification
+
+`backups:verify [name]` restores a backup into a throwaway in-memory database (the real one is untouched) and compares every table's row count with the backup's manifest. It runs every Sunday at 03:00 and from the shield button on the Backups page.
+
+### 14.4 Visual tests
+
+Run locally with `npm run test:visual`. After an intentional UI change, regenerate baselines either locally (`npm run test:visual:update`) or on GitHub: Actions → *Visual tests* → *Run workflow* with "update baselines" ticked, which commits the new screenshots to the chosen branch.
 
 ---
 

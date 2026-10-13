@@ -271,7 +271,7 @@ export default function AdminFAQ() {
                         icon={<HelpCircle className="w-5 h-5 text-[#A67B5B]" />}
                     />
                 }
-                search="Search FAQs..."
+                search="Search FAQs…"
                 filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
             >
                 <AdminBulkActions

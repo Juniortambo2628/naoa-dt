@@ -182,6 +182,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [BackupController::class, 'store']);
         Route::get('/{name}/download', [BackupController::class, 'download']);
         Route::post('/{name}/restore', [BackupController::class, 'restore']);
+        Route::post('/{name}/verify', [BackupController::class, 'verify']);
         Route::delete('/{name}', [BackupController::class, 'destroy']);
     });
 

@@ -10,9 +10,15 @@ import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import EmptyState from '../../components/admin/EmptyState';
 import DeleteButton from '../../components/admin/DeleteButton';
 import Button from '../../components/Button';
+import SegmentedControl from '../../components/SegmentedControl';
 import { useGallery } from '../../hooks/useApiHooks';
 import { useSearch } from '../../context/SearchContext';
 import { confirmAction, notifyError } from '../../utils/feedback';
+
+const POSITION_OPTIONS = ['top', 'left', 'center', 'right', 'bottom'].map((pos) => ({
+  value: pos,
+  label: pos.charAt(0).toUpperCase() + pos.slice(1),
+}));
 
 export default function GalleryManager() {
   const { data: fetchedItems, isLoading: loading, refetch: fetchGallery } = useGallery();
@@ -151,7 +157,7 @@ export default function GalleryManager() {
             icon={<ImageIcon className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        search="Search gallery..."
+        search="Search gallery…"
         filters={{ view: { options: ['grid', 'list'], value: viewMode, onChange: setViewMode } }}
       >
         {/* Multi-Upload Dropzone */}
@@ -220,19 +226,15 @@ export default function GalleryManager() {
               <form onSubmit={handleUpdate}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-stone-700 mb-2">Photo Position</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {['top', 'left', 'center', 'right', 'bottom'].map(pos => (
-                      <Button
-                        key={pos}
-                        size="sm"
-                        variant={(editingItem.object_position || 'center') === pos ? 'secondary' : 'primary'}
-                        aria-pressed={(editingItem.object_position || 'center') === pos}
-                        onClick={() => setEditingItem({ ...editingItem, object_position: pos })}
-                      >
-                        {pos.charAt(0).toUpperCase() + pos.slice(1)}
-                      </Button>
-                    ))}
-                  </div>
+                  <SegmentedControl
+                    aria-label="Photo position"
+                    size="sm"
+                    fullWidth
+                    className="gap-2"
+                    options={POSITION_OPTIONS}
+                    value={editingItem.object_position || 'center'}
+                    onChange={(pos) => setEditingItem({ ...editingItem, object_position: pos })}
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2">

@@ -76,6 +76,41 @@ class SongRequestTest extends TestCase
         $this->assertNotNull($song->played_at);
     }
 
+    public function test_admin_can_unmark_and_remark_a_played_song(): void
+    {
+        $song = SongRequest::factory()->create(['is_played' => false]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson("/api/song-requests-admin/{$song->id}/played", ['played' => true])
+            ->assertOk()
+            ->assertJsonPath('data.is_played', true);
+        $this->assertTrue($song->refresh()->is_played);
+        $this->assertNotNull($song->played_at);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson("/api/song-requests-admin/{$song->id}/played", ['played' => false])
+            ->assertOk()
+            ->assertJson(['success' => true, 'message' => 'Song marked as not played'])
+            ->assertJsonPath('data.is_played', false);
+        $song->refresh();
+        $this->assertFalse($song->is_played);
+        $this->assertNull($song->played_at);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson("/api/song-requests-admin/{$song->id}/played")
+            ->assertOk();
+        $this->assertTrue($song->refresh()->is_played);
+    }
+
+    public function test_played_flag_must_be_boolean(): void
+    {
+        $song = SongRequest::factory()->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson("/api/song-requests-admin/{$song->id}/played", ['played' => 'maybe'])
+            ->assertUnprocessable();
+    }
+
     public function test_admin_can_delete_song_request(): void
     {
         $song = SongRequest::factory()->create();

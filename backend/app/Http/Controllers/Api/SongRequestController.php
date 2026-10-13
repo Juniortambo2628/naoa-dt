@@ -84,14 +84,24 @@ class SongRequestController extends Controller
         );
     }
 
-    public function markPlayed(SongRequest $songRequest): JsonResponse
+    /**
+     * Mark a song as played, or un-mark it with `{"played": false}`.
+     * The body is optional; without it the song is marked as played.
+     */
+    public function markPlayed(Request $request, SongRequest $songRequest): JsonResponse
     {
+        $request->validate(['played' => 'sometimes|boolean']);
+        $played = $request->boolean('played', true);
+
         $songRequest->update([
-            'is_played' => true,
-            'played_at' => now(),
+            'is_played' => $played,
+            'played_at' => $played ? ($songRequest->is_played ? $songRequest->played_at : now()) : null,
         ]);
 
-        return $this->successResponse(null, 'Song marked as played');
+        return $this->successResponse(
+            ['id' => $songRequest->id, 'is_played' => $songRequest->is_played],
+            $played ? 'Song marked as played' : 'Song marked as not played'
+        );
     }
 
     public function destroy(SongRequest $songRequest): JsonResponse

@@ -3,6 +3,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, Check, ArrowRight, User, Mail, Phone, Users } from 'lucide-react';
 import Button from '../Button';
+import SegmentedControl from '../SegmentedControl';
+
+const RESOLUTION_OPTIONS = [
+    { value: 'skip', label: 'Keep Existing' },
+    { value: 'overwrite', label: 'Use New' },
+    { value: 'merge', label: 'Merge Fields' },
+];
 
 export default function ImportConflictModal({ isOpen, onClose, conflicts, validCount, onConfirm }) {
     const [resolutions, setResolutions] = useState(
@@ -109,25 +116,13 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
 
                             <div className="p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
                                 <span className="text-xs font-semibold text-stone-500 uppercase">Resolution:</span>
-                                <div className="flex bg-white rounded-lg border border-stone-200 p-1">
-                                    {[
-                                        { id: 'skip', label: 'Keep Existing' },
-                                        { id: 'overwrite', label: 'Use New' },
-                                        { id: 'merge', label: 'Merge Fields' }
-                                    ].map((opt) => (
-                                        <button
-                                            key={opt.id}
-                                            onClick={() => handleResolutionChange(index, opt.id)}
-                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                                resolutions[index] === opt.id 
-                                                ? 'bg-[#A67B5B] text-white shadow-sm' 
-                                                : 'text-stone-500 hover:text-stone-800'
-                                            }`}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
+                                <SegmentedControl
+                                    aria-label={`Resolution for ${conflict.existing.name}`}
+                                    size="sm"
+                                    options={RESOLUTION_OPTIONS}
+                                    value={resolutions[index]}
+                                    onChange={(value) => handleResolutionChange(index, value)}
+                                />
                             </div>
                         </div>
                     ))}

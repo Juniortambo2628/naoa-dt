@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SlidersHorizontal, List, Grid, LayoutGrid, RotateCcw, Check, Bookmark, BookmarkPlus, X } from 'lucide-react';
+import SegmentedControl from '../SegmentedControl';
 
 const viewIcons = {
   list: List,
@@ -111,32 +112,28 @@ export default function AdminToolbarFilters({ filters }) {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
                       {group.label || 'Show'}
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {group.options.map((option) => {
+                    <SegmentedControl
+                      aria-label={group.label || 'Show'}
+                      size="sm"
+                      className="flex-wrap"
+                      value={group.value}
+                      onChange={(id) => group.onChange?.(id)}
+                      options={group.options.map((option) => {
                         const active = group.value === option.id;
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => group.onChange?.(option.id)}
-                            aria-pressed={active}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                              active
-                                ? 'bg-[#A67B5B] text-white'
-                                : 'bg-stone-50 text-stone-600 hover:bg-stone-100'
-                            }`}
-                          >
-                            {active && <Check className="w-3.5 h-3.5" />}
-                            {option.label}
-                            {option.count !== undefined && (
-                              <span className={`text-xs ${active ? 'text-white/80' : 'text-stone-400'}`}>
-                                {option.count}
-                              </span>
-                            )}
-                          </button>
-                        );
+                        return {
+                          value: option.id,
+                          icon: active ? Check : undefined,
+                          label: (
+                            <>
+                              {option.label}
+                              {option.count !== undefined && (
+                                <span className={active ? 'text-white/80' : 'text-stone-400'}>{option.count}</span>
+                              )}
+                            </>
+                          ),
+                        };
                       })}
-                    </div>
+                    />
                   </div>
                 ))}
 
@@ -200,27 +197,15 @@ export default function AdminToolbarFilters({ filters }) {
       )}
 
       {view && (
-        <div className="bg-white/80 rounded-xl border border-stone-200/60 p-1 flex" role="group" aria-label="View mode">
-          {view.options.map((mode) => {
-            const Icon = viewIcons[mode] || List;
+        <SegmentedControl
+          aria-label="View mode"
+          value={view.value}
+          onChange={(mode) => view.onChange?.(mode)}
+          options={view.options.map((mode) => {
             const label = `${mode.charAt(0).toUpperCase()}${mode.slice(1)} view`;
-            return (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => view.onChange?.(mode)}
-                aria-pressed={view.value === mode}
-                aria-label={label}
-                title={label}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  view.value === mode ? 'bg-[#A67B5B] text-white shadow-sm' : 'text-stone-400 hover:text-stone-600'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-              </button>
-            );
+            return { value: mode, icon: viewIcons[mode] || List, ariaLabel: label, title: label };
           })}
-        </div>
+        />
       )}
     </>
   );

@@ -42,11 +42,11 @@ describe('AdminFloatingToolbar shared search & filters', () => {
     render(
       <AdminFloatingToolbar
         actions={[{ id: 'save', label: 'Save', icon: Save, onClick: vi.fn() }]}
-        search="Search guests..."
+        search="Search guests…"
         filters={{ groups: [{ id: 's', options: [{ id: 'all', label: 'All' }, { id: 'x', label: 'X' }], value: 'all', onChange: vi.fn() }] }}
       />
     )
-    expect(screen.getByPlaceholderText('Search guests...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search guests…')).toBeInTheDocument()
     expect(screen.getByTitle('Filter & sort')).toBeInTheDocument()
     expect(screen.getByText('Save')).toBeInTheDocument()
   })

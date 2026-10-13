@@ -14,6 +14,18 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     animation: 'disabled',
+    // Start every test with the cookie banner answered and the admin tour
+    // finished, so screenshots show the page itself rather than pop-ups.
+    storageState: {
+      cookies: [],
+      origins: [{
+        origin: 'http://localhost:5180',
+        localStorage: [
+          { name: 'cookie-consent', value: 'accepted' },
+          { name: 'admin-tutorial-complete', value: 'true' },
+        ],
+      }],
+    },
   },
 
   projects: [

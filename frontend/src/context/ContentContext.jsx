@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import { getWeddingInfo } from '../utils/weddingInfo';
-import './../echo'; // Ensure Echo is initialized
+import { getEcho } from '../echo';
 
 const ContentContext = createContext();
 
@@ -44,27 +44,34 @@ export const ContentProvider = ({ children }) => {
         fetchContents();
         fetchSettings();
 
-        // Listen for real-time updates via Echo/Pusher if available
-        if (window.Echo) {
-            window.Echo.channel('content-updates')
+        // Poll for content/settings changes; switch to live updates (Echo)
+        // instead if broadcasting is configured and loads.
+        let cancelled = false;
+        let echo = null;
+        let interval = setInterval(() => {
+            fetchContents();
+            fetchSettings();
+        }, 30000);
+
+        getEcho().then((instance) => {
+            if (cancelled || !instance) return;
+            echo = instance;
+            clearInterval(interval);
+            interval = null;
+            echo.channel('content-updates')
                 .listen('.content.updated', (e) => {
                     setContents(prev => ({
                         ...prev,
                         [e.content.section_key]: e.content
                     }));
                 });
+        });
 
-            return () => {
-                window.Echo.leave('content-updates');
-            };
-        }
-
-        // Fallback: poll for content/settings changes when Echo is unavailable.
-        const interval = setInterval(() => {
-            fetchContents();
-            fetchSettings();
-        }, 30000);
-        return () => clearInterval(interval);
+        return () => {
+            cancelled = true;
+            if (interval) clearInterval(interval);
+            echo?.leave('content-updates');
+        };
     }, [fetchContents, fetchSettings]);
 
     const getContent = useCallback((section, field, lang = 'en', fallback = '') => {

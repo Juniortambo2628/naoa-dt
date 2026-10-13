@@ -8,7 +8,7 @@ import {
   DollarSign, ShoppingBag, Sparkles, ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { giftService, getAssetUrl } from '../services/api';
+import { giftService } from '../services/api';
 import { 
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
@@ -17,6 +17,8 @@ import {
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
 import Button from '../components/Button';
+import GiftImage from '../components/GiftImage';
+import SegmentedControl from '../components/SegmentedControl';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
@@ -398,18 +400,13 @@ export default function GiftRegistry() {
             </div>
 
             {/* Categories */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <Button
-                  key={cat}
-                  variant={category === cat ? 'secondary' : 'primary'}
-                  aria-pressed={category === cat}
-                  onClick={() => setCategory(cat)}
-                >
-                  {cat === 'All' ? t('gifts.cat_all') : cat}
-                </Button>
-              ))}
-            </div>
+            <SegmentedControl
+              aria-label="Gift category"
+              className="flex-wrap gap-2"
+              options={categories.map((cat) => ({ value: cat, label: cat === 'All' ? t('gifts.cat_all') : cat }))}
+              value={category}
+              onChange={setCategory}
+            />
           </motion.div>
 
           <motion.div
@@ -437,8 +434,8 @@ export default function GiftRegistry() {
                 >
                   {/* Image */}
                   <div className="relative h-56 overflow-hidden">
-                    <img
-                      src={getAssetUrl(gift.image_url)}
+                    <GiftImage
+                      src={gift.image_url}
                       alt={gift.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />

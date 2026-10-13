@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Button from '../Button';
 
 /** Page numbers to show: first, last and a window around the current page. */
 // eslint-disable-next-line react-refresh/only-export-components
@@ -40,7 +41,6 @@ export default function AdminPagination({
 
   const from = (currentPage - 1) * pageSize + 1;
   const to = Math.min(currentPage * pageSize, totalItems);
-  const navButton = 'inline-flex items-center justify-center min-w-9 h-9 px-2 rounded-lg text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5">
@@ -65,41 +65,37 @@ export default function AdminPagination({
 
       {totalPages > 1 && (
         <nav className="flex items-center gap-1" aria-label="Pagination">
-          <button
-            type="button"
+          <Button
+            size="icon-sm"
+            icon={ChevronLeft}
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className={`${navButton} text-stone-500 hover:bg-stone-100`}
             aria-label="Previous page"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+          />
           {pageWindow(currentPage, totalPages).map((p) => (
             typeof p === 'string' ? (
               <span key={p} className="px-1 text-stone-300">…</span>
             ) : (
-              <button
+              <Button
                 key={p}
-                type="button"
+                size="sm"
+                variant={p === currentPage ? 'secondary' : 'primary'}
                 onClick={() => onPageChange(p)}
                 aria-current={p === currentPage ? 'page' : undefined}
-                className={`${navButton} font-medium ${
-                  p === currentPage ? 'bg-[#A67B5B] text-white' : 'text-stone-700 hover:bg-stone-100'
-                }`}
+                aria-label={`Page ${p}`}
+                className="min-w-8"
               >
                 {p}
-              </button>
+              </Button>
             )
           ))}
-          <button
-            type="button"
+          <Button
+            size="icon-sm"
+            icon={ChevronRight}
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className={`${navButton} text-stone-500 hover:bg-stone-100`}
             aria-label="Next page"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          />
         </nav>
       )}
     </div>

@@ -49,6 +49,25 @@ class BackupController extends Controller
         });
     }
 
+    /** Restore into a throwaway in-memory database and compare row counts. */
+    public function verify(string $name)
+    {
+        return $this->guard(function () use ($name) {
+            $result = $this->backups->verify($name);
+
+            if ($result['error'] !== null) {
+                return $this->errorResponse("Verification failed: {$result['error']}", 422, $result);
+            }
+
+            return $this->successResponse(
+                $result,
+                $result['ok']
+                    ? 'Backup verified: every table restored with the expected number of records.'
+                    : 'Backup verification found tables that did not restore completely.'
+            );
+        });
+    }
+
     public function destroy(string $name)
     {
         return $this->guard(function () use ($name) {

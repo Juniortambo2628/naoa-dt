@@ -83,7 +83,7 @@ export default function AdminUsers() {
             <AdminPageLayout
                 fill
                 actions={[{ id: 'add-user', label: 'Add User', icon: Plus, variant: 'secondary', onClick: () => openModal() }]}
-                search="Search users by name or email..."
+                search="Search users…"
                 hero={
                     <AdminPageHero
                         title="User Management"

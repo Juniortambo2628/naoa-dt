@@ -75,10 +75,10 @@ export default function AdminSongRequests() {
 
   const clearSelection = () => setSelectedIds([]);
 
-  const handleMarkPlayed = async (id) => {
+  const handleTogglePlayed = async (id, played) => {
     setProcessing(id, true);
     try {
-      await songRequestService.markPlayed(id);
+      await songRequestService.setPlayed(id, played);
       refetch();
     } catch (err) {
       console.error('Failed to update song', err);
@@ -96,7 +96,7 @@ export default function AdminSongRequests() {
     const ids = [...selectedIds];
     setProcessingIds(prev => new Set([...prev, ...ids]));
     try {
-      await Promise.all(ids.map(id => songRequestService.markPlayed(id)));
+      await Promise.all(ids.map(id => songRequestService.setPlayed(id, true)));
       clearSelection();
       refetch();
     } catch (err) {
@@ -182,7 +182,7 @@ export default function AdminSongRequests() {
             />
           </div>
         }
-        search="Search songs or artists..."
+        search="Search songs…"
         filters={{
           groups: [{
             id: 'status',
@@ -214,7 +214,7 @@ export default function AdminSongRequests() {
               songs={filteredSongs}
               selectedIds={selectedIds}
               onToggleSelect={toggleSelection}
-              onMarkPlayed={handleMarkPlayed}
+              onTogglePlayed={handleTogglePlayed}
               onDelete={handleLocalDelete}
               isProcessing={isProcessing}
             />
@@ -290,11 +290,10 @@ export default function AdminSongRequests() {
                           size="sm"
                           variant={song.is_played ? 'secondary' : 'primary'}
                           icon={Check}
-                          onClick={() => handleMarkPlayed(song.id)}
-                          disabled={song.is_played}
+                          onClick={() => handleTogglePlayed(song.id, !song.is_played)}
                           loading={isProcessing(song.id)}
                           aria-pressed={!!song.is_played}
-                          title={song.is_played ? 'Played' : 'Mark as Played'}
+                          title={song.is_played ? 'Mark as not played' : 'Mark as played'}
                         >
                           <span className="hidden sm:inline">Played</span>
                         </Button>
@@ -317,7 +316,7 @@ export default function AdminSongRequests() {
   );
 }
 
-function SongGrid({ songs, selectedIds, onToggleSelect, onMarkPlayed, onDelete, isProcessing }) {
+function SongGrid({ songs, selectedIds, onToggleSelect, onTogglePlayed, onDelete, isProcessing }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {songs.map((song) => {
@@ -377,11 +376,10 @@ function SongGrid({ songs, selectedIds, onToggleSelect, onMarkPlayed, onDelete, 
                   variant={song.is_played ? 'secondary' : 'primary'}
                   icon={Check}
                   className="flex-1"
-                  onClick={(e) => { e.stopPropagation(); onMarkPlayed(song.id); }}
-                  disabled={song.is_played}
+                  onClick={(e) => { e.stopPropagation(); onTogglePlayed(song.id, !song.is_played); }}
                   loading={isProcessing(song.id)}
                   aria-pressed={!!song.is_played}
-                  title={song.is_played ? 'Played' : 'Mark as Played'}
+                  title={song.is_played ? 'Mark as not played' : 'Mark as played'}
                 >
                   Played
                 </Button>

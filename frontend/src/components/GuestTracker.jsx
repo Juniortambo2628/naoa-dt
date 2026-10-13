@@ -4,6 +4,12 @@ import { Users, Clock, Search, Filter, UserCheck, User } from 'lucide-react';
 import { checkinService } from '../services/api';
 import NameBadge, { NameBadgeCompact } from './NameBadge';
 import { useSmartPolling } from '../hooks/useSmartPolling';
+import SegmentedControl from './SegmentedControl';
+
+const VIEW_MODES = [
+  { value: 'badges', label: 'Badges' },
+  { value: 'list', label: 'List' },
+];
 
 const GROUP_FILTERS = [
   { value: 'all', label: 'All Guests' },
@@ -149,24 +155,13 @@ export default function GuestTracker({ embedded = false, _guestCode }) {
         </div>
 
         {/* View toggle */}
-        <div className="flex items-center bg-stone-100 rounded-lg p-1">
-          <button
-            onClick={() => setViewMode('badges')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              viewMode === 'badges' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500'
-            }`}
-          >
-            Badges
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500'
-            }`}
-          >
-            List
-          </button>
-        </div>
+        <SegmentedControl
+          aria-label="View mode"
+          size="sm"
+          options={VIEW_MODES}
+          value={viewMode}
+          onChange={setViewMode}
+        />
       </div>
 
       {/* Quick stats */}

@@ -363,7 +363,7 @@ export default function SeatingChart() {
             icon={<Armchair className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        search="Search unassigned guests..."
+        search="Search guests…"
       >
         <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
 
