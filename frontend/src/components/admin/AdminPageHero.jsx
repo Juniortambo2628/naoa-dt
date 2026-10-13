@@ -80,7 +80,7 @@ export default function AdminPageHero({ title, description, breadcrumb, icon }) 
   );
 
   return (
-    <div className="pt-2" ref={heroRef}>
+    <div className="admin-page-hero pt-2" ref={heroRef}>
       {compactTitle}
       {/* Breadcrumb */}
       {crumbs && crumbs.length > 0 && (

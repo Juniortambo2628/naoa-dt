@@ -11,6 +11,7 @@ export const INVITATION_SECTIONS = [
   { id: 'where', label: 'Where (venue)', hint: 'Venue name card.' },
   { id: 'rsvp', label: 'RSVP button & status', hint: 'Respond button, or the guest\'s current RSVP status.' },
   { id: 'calendar', label: 'Add to Calendar', hint: 'Calendar download button.' },
+  { id: 'download', label: 'Download invitation (PDF)', hint: 'Lets the guest save their personalised invitation card as a PDF.' },
   { id: 'programme', label: 'Live programme', hint: 'Happening now / up next widget.' },
   { id: 'dressCode', label: 'Dress code palette', hint: 'Wedding colours, shades and combinations.' },
   { id: 'map', label: 'Map & directions', hint: 'Venue map with travel estimate.' },

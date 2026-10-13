@@ -439,6 +439,7 @@ so new pages reuse them rather than re-implementing.
 | 8 | Accessibility | Admin-scoped contrast fix for light grey text, visible keyboard focus rings, reduced-motion support (`.admin-theme` + `MotionConfig`); accessible names for icon-only buttons; table headers with `aria-sort` | ✅ |
 | 9 | Upkeep | Playwright page list fixed (several paths pointed at routes that don't exist) and screenshot baselines regenerated for the new layout | ✅ |
 | 10 | Backups | See 13.2 | ✅ |
+| 11 | Guest invitation page | "Download Invitation (PDF)" on the digital invitation: guests save the same personalised multi-page PDF the couple sends (exporter lazy-loaded on click). Admins can hide it under Settings → Guest Invitation Page | ✅ |
 
 ### 13.2 Backups
 

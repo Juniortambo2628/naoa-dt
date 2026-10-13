@@ -52,7 +52,7 @@ export default function AdminTestLab() {
 
   // API Health states
   const [health, setHealth] = useState(null);
-  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthLoading, setHealthLoading] = useState(true); // the check runs on mount
   const [entityCounts, setEntityCounts] = useState(null);
   const fetchedHealthRef = useRef(false);
 
@@ -66,6 +66,7 @@ export default function AdminTestLab() {
     addLog('Running API health check...', 'info');
     try {
       const res = await testLabService.healthCheck();
+      if (!res.data?.checks) throw new Error('No health data returned');
       setHealth(res.data);
       const failed = Object.entries(res.data.checks).filter(([, v]) => v.status === 'error');
       if (failed.length === 0) {
@@ -314,9 +315,13 @@ export default function AdminTestLab() {
               </div>
             )}
           </div>
-        ) : (
-          <div className="flex items-center gap-2 text-stone-400">
+        ) : healthLoading ? (
+          <div className="flex items-center gap-2 text-stone-500" role="status">
             <RefreshCw className="w-4 h-4 animate-spin" /> Loading health status...
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-stone-600" role="status">
+            <AlertTriangle className="w-4 h-4 text-amber-600" /> Health status unavailable — see the logs below and run the check again.
           </div>
         )}
       </AdminCard>

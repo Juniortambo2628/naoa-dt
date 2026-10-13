@@ -10,7 +10,7 @@ test.describe('Admin Components - Visual Regression', () => {
     await navigateToAdminPage(page, '/admin/dashboard');
     await waitForPageReady(page);
     
-    const hero = page.locator('.my-8').first();
+    const hero = page.locator('.admin-page-hero').first();
     await expect(hero).toHaveScreenshot('admin-page-hero-default.png');
   });
 
@@ -18,7 +18,7 @@ test.describe('Admin Components - Visual Regression', () => {
     await navigateToAdminPage(page, '/admin/dashboard/guests');
     await waitForPageReady(page);
     
-    const hero = page.locator('.my-8').first();
+    const hero = page.locator('.admin-page-hero').first();
     await expect(hero).toHaveScreenshot('admin-page-hero-with-icon.png');
   });
 

@@ -13,6 +13,7 @@ import EmergencyNumbers from '../components/EmergencyNumbers';
 import GuestQuickActions from '../components/GuestQuickActions';
 import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
+import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import { resolveInvitationSections } from '../utils/invitationSections';
 
 export default function DigitalInvitation() {
@@ -54,6 +55,7 @@ export default function DigitalInvitation() {
 
     const weddingDateText = getWeddingDateText(content, 'en', settings);
     const coupleNames = weddingInfo.couple_names;
+    const cardSettings = { wedding_date: weddingDate, couple_names: coupleNames, venue_name: venueName, venue_address: venueAddress, venue_lat: venueLat, venue_lng: venueLng };
 
     const getEventDetails = () => {
         // Parse wedding date (YYYY-MM-DD)
@@ -176,7 +178,7 @@ export default function DigitalInvitation() {
                                     design={pageDesign}
                                     mode="view"
                                     guest={guest}
-                                    weddingSettings={{ wedding_date: weddingDate, couple_names: coupleNames, venue_name: venueName, venue_address: venueAddress, venue_lat: venueLat, venue_lng: venueLng }}
+                                    weddingSettings={cardSettings}
                                 />
                             </div>
                             <p className="text-center text-stone-400 text-xs mt-3 font-medium uppercase tracking-[0.2em]">
@@ -258,6 +260,15 @@ export default function DigitalInvitation() {
                     </div>
                     )}
                     
+                    {show.download && (
+                        <InvitationDownloadButton
+                            design={design}
+                            guest={guest}
+                            weddingSettings={cardSettings}
+                            className="w-full px-8 py-4 rounded-2xl font-bold text-palette-cinnamon bg-white border-2 border-palette-cinnamon/30 hover:bg-palette-cinnamon/5 disabled:opacity-70 disabled:cursor-wait transition-colors flex items-center justify-center gap-3"
+                        />
+                    )}
+
                     {show.rsvp && guest.rsvp_status !== 'pending' && (
                          <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
