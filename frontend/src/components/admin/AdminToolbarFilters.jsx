@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { SlidersHorizontal, List, Grid, LayoutGrid, RotateCcw, Check } from 'lucide-react';
+import { SlidersHorizontal, List, Grid, LayoutGrid, RotateCcw, Check, Bookmark, BookmarkPlus, X } from 'lucide-react';
 
 const viewIcons = {
   list: List,
@@ -26,6 +26,7 @@ export function countActiveFilters(filters) {
  * @param {object} [filters.sort]   - { options: [{ id, label }], value, onChange, defaultValue? }
  * @param {object} [filters.view]   - { options: ['list' | 'grid' | 'spreadsheet'], value, onChange }
  * @param {ReactNode} [filters.extra] - Custom controls shown at the bottom of the panel
+ * @param {object} [filters.views]  - Saved views: { items: [{ id, name }], onApply(id), onSave(), onDelete(id) }
  */
 export default function AdminToolbarFilters({ filters }) {
   const [open, setOpen] = useState(false);
@@ -50,7 +51,8 @@ export default function AdminToolbarFilters({ filters }) {
   const groups = (filters.groups || []).filter((g) => g.options?.length > 0);
   const sort = filters.sort?.options?.length > 0 ? filters.sort : null;
   const view = filters.view?.options?.length > 1 ? filters.view : null;
-  const hasPanel = groups.length > 0 || !!sort || !!filters.extra;
+  const views = filters.views || null;
+  const hasPanel = groups.length > 0 || !!sort || !!filters.extra || !!views;
   if (!hasPanel && !view) return null;
 
   const activeCount = countActiveFilters(filters);
@@ -106,7 +108,7 @@ export default function AdminToolbarFilters({ filters }) {
               >
                 {groups.map((group) => (
                   <div key={group.id}>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
                       {group.label || 'Show'}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -140,7 +142,7 @@ export default function AdminToolbarFilters({ filters }) {
 
                 {sort && (
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
                       {sort.label || 'Sort by'}
                     </p>
                     <select
@@ -157,6 +159,29 @@ export default function AdminToolbarFilters({ filters }) {
                 )}
 
                 {filters.extra && <div className="space-y-2">{filters.extra}</div>}
+
+                {views && (
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-2">Saved views</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {views.items.map((view) => (
+                        <span key={view.id} className="inline-flex items-center rounded-lg bg-stone-50 text-sm text-stone-700">
+                          <button type="button" onClick={() => { views.onApply(view.id); setOpen(false); }} className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 hover:text-[#A67B5B]">
+                            <Bookmark className="w-3.5 h-3.5 text-[#A67B5B]" />
+                            {view.name}
+                          </button>
+                          <button type="button" onClick={() => views.onDelete(view.id)} className="p-1.5 text-stone-400 hover:text-red-500" aria-label={`Delete saved view ${view.name}`}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                      <button type="button" onClick={views.onSave} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-dashed border-[#A67B5B]/40 text-sm text-[#A67B5B] hover:bg-[#A67B5B]/5">
+                        <BookmarkPlus className="w-3.5 h-3.5" />
+                        Save current view
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {canReset && (
                   <button

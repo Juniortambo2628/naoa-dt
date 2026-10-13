@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Bell, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings, PieChart, UserCheck } from 'lucide-react';
 import HeaderAccountMenu from './HeaderAccountMenu';
@@ -45,6 +45,7 @@ function NotificationIcon({ icon }) {
 
 export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, statusSlotRef }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -141,7 +142,7 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
           })}
         </nav>
 
-        <button
+        <button aria-label="Restart Dashboard Tour"
           id="header-restart"
           onClick={onRestartTutorial}
           className="p-2 rounded-xl text-[#8B7B6B] hover:bg-black/5 transition-colors"
@@ -182,19 +183,24 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
                       const title = n.title || 'Notification';
                       const message = n.message || '';
                       return (
-                        <div key={n.id} className="px-4 py-3 hover:bg-[#FAF7F2] border-b border-stone-50 last:border-0 cursor-pointer transition-colors" onClick={() => setShowNotifications(false)}>
+                        <button
+                          type="button"
+                          key={n.id}
+                          className="w-full text-left px-4 py-3 hover:bg-[#FAF7F2] focus:bg-[#FAF7F2] focus:outline-none border-b border-stone-50 last:border-0 transition-colors"
+                          onClick={() => { setShowNotifications(false); if (n.link) navigate(n.link); }}
+                        >
                           <div className="flex items-start gap-3">
                             <div className="mt-0.5 p-1.5 rounded-lg bg-[#A67B5B]/10 shrink-0">
                               <NotificationIcon icon={n.icon} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={`text-sm ${!n.read_at ? 'font-bold text-stone-900' : 'font-medium text-stone-700'}`}>{title}</p>
-                              {message && <p className="text-xs text-stone-500 mt-0.5 truncate">{message}</p>}
-                              <p className="text-xs text-stone-400 mt-1">{timeAgo(n.created_at)}</p>
+                              {message && <p className="text-xs text-stone-600 mt-0.5 truncate">{message}</p>}
+                              <p className="text-xs text-stone-500 mt-1">{timeAgo(n.created_at)}</p>
                             </div>
-                            {!n.read_at && <span className="w-2 h-2 rounded-full bg-[#A67B5B] shrink-0 mt-1.5" />}
+                            {!n.read_at && <span className="w-2 h-2 rounded-full bg-[#A67B5B] shrink-0 mt-1.5" aria-label="Unread" />}
                           </div>
-                        </div>
+                        </button>
                       );
                     }) : (
                       <div className="px-4 py-8 text-center text-xs text-stone-400 italic">No notifications yet</div>

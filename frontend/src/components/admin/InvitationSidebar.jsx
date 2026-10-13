@@ -10,6 +10,7 @@ import ImageUpload from './ImageUpload';
 import WeddingPalettePicker from './WeddingPalettePicker';
 import { Skeleton } from '../Skeleton';
 import { ELEMENT_KINDS } from './invitationElements';
+import InvitationLayers from './InvitationLayers';
 
 export default function InvitationSidebar({
   loading,
@@ -20,6 +21,8 @@ export default function InvitationSidebar({
   setEditorLang,
   selectedItemId,
   setSelectedItemId,
+  selectedIds = [],
+  onSelect,
   updateDesign,
   handleDesignUpdate,
   addItem,
@@ -95,41 +98,15 @@ export default function InvitationSidebar({
               <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
                 <div className="space-y-4">
                   <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-[0.2em]" style={{ fontFamily: 'Lato, sans-serif' }}>Layers</h3>
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 scrollbar-hide">
-                    {design.items.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0)).map((item) => {
-                      return (
-                        <div
-                          key={item.id}
-                          className={`group flex items-center gap-3 p-3 bg-white border rounded-xl transition-all cursor-pointer ${selectedItemId === item.id ? 'border-[#A67B5B] ring-1 ring-[#A67B5B] shadow-sm' : 'border-stone-100 hover:border-stone-200'}`}
-                          onClick={() => setSelectedItemId(item.id)}
-                        >
-                          <div className="p-2 bg-stone-50 rounded-lg text-stone-400 group-hover:text-[#A67B5B] transition-colors">
-                            {item.type === 'text' ? <FileText className="w-4 h-4" /> :
-                              item.type === 'image' ? <FileImage className="w-4 h-4" /> :
-                                item.type === 'frame' ? <SquareDashedMousePointer className="w-4 h-4" /> :
-                                  item.type === 'venue_location' ? <MapPin className="w-4 h-4" /> :
-                                    item.type === 'calendar_link' ? <Calendar className="w-4 h-4" /> :
-                                      <Move className="w-4 h-4" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-stone-700 truncate font-sans">
-                              {item.type === 'text' ? (item.textKey === 'title' ? 'Main Title' : item.textKey === 'message' ? 'Message Text' : 'Custom Text') :
-                                item.type === 'rsvp_code' ? 'RSVP Code' :
-                                  item.type === 'frame' ? 'Interactive Frame' :
-                                    item.type === 'calendar_link' ? 'Save the Date' :
-                                      item.type === 'venue_location' ? 'Venue Location' : 'Image ' + item.id.split('_')[1]}
-                            </p>
-                          </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
-                            className="p-1.5 opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <p className="text-xs text-stone-500">Drag to restack · Shift-click to select several</p>
+                  <InvitationLayers
+                    items={design.items}
+                    selectedIds={selectedIds}
+                    onSelect={onSelect}
+                    onReorder={(ids) => handleDesignUpdate('reorder_layers', ids)}
+                    onToggleLock={(item) => handleDesignUpdate('update_item', { id: item.id, locked: !item.locked })}
+                    onDelete={deleteItem}
+                  />
                 </div>
 
                 {selectedItemId && (
@@ -449,7 +426,7 @@ export default function InvitationSidebar({
                     <div key={item.id} className="space-y-2 p-3 bg-stone-50 rounded-lg border border-stone-100 font-sans">
                       <div className="flex justify-between items-center text-xs text-stone-500 font-sans">
                         <span className="font-bold">Text Element ({item.id})</span>
-                        <button
+                        <button aria-label="Delete element"
                           onClick={() => deleteItem(item.id)}
                           className="text-red-400 hover:text-red-600"
                         >

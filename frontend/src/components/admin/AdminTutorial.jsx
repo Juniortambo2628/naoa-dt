@@ -261,7 +261,7 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
                     <span className="bg-[#A67B5B]/10 text-[#A67B5B] text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md">New Feature</span>
                 )}
             </div>
-            <button 
+            <button aria-label="Close tour" 
               onClick={handleComplete}
               className="p-1.5 hover:bg-stone-50 rounded-lg text-stone-300 hover:text-stone-500 transition-colors"
             >
@@ -289,7 +289,7 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
 
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-stone-100">
             <div className="flex gap-1.5">
-              <button
+              <button aria-label="Previous step"
                 onClick={handleBack}
                 disabled={currentStep === 0}
                 className={`p-1.5 rounded-lg transition-all ${

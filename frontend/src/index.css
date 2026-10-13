@@ -814,3 +814,29 @@ textarea:focus-visible,
   0%, 100% { opacity: 0.8; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.02); }
 }
+
+/* ---- Admin accessibility (class set on <html> by AdminShell) ----------- */
+/* Light greys used for meaningful text fall below WCAG AA on white/cream;
+   darken them in the admin only (Tailwind v4 utilities read these vars). */
+.admin-theme {
+  --color-stone-400: #79716b; /* ≈4.7:1 on white (was ≈2.5:1) */
+  --color-stone-500: #66605a; /* keeps 400 → 500 → 600 hierarchy */
+}
+
+/* Always show where keyboard focus is, even where a component removes the
+   default outline (unlayered, so it wins over utilities). */
+.admin-theme :focus-visible {
+  outline: 2px solid #A67B5B;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme *,
+  .admin-theme *::before,
+  .admin-theme *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

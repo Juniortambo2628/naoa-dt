@@ -22,7 +22,7 @@ class GuestTrackerExport implements WithMultipleSheets
     {
         $guests = Guest::query()
             ->whereNull('parent_guest_id') // plus-ones are invited through their primary guest
-            ->when($this->group, fn ($q) => $q->where('group', $this->group))
+            ->when($this->group, fn ($q) => $q->where('group', Guest::normalizeGroup($this->group)))
             ->with('invitation')
             ->orderBy('name')
             ->get();

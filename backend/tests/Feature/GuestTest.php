@@ -228,7 +228,7 @@ class GuestTest extends TestCase
             ->assertJson(['success' => true]);
 
         foreach ($guests as $guest) {
-            $this->assertDatabaseHas('guests', ['id' => $guest->id, 'group' => 'family']);
+            $this->assertDatabaseHas('guests', ['id' => $guest->id, 'group' => 'Family']);
         }
     }
 
@@ -342,5 +342,20 @@ class GuestTest extends TestCase
             ->deleteJson("/api/guests/{$guest->id}/whatsapp-invite")
             ->assertOk();
         $this->assertSame('opened', $guest->fresh()->invitation->status);
+    }
+
+    public function test_admin_can_bulk_delete_and_restore_guests(): void
+    {
+        $guests = Guest::factory()->count(3)->create();
+        $ids = $guests->pluck('id')->take(2)->all();
+
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/guests/bulk-delete', ['ids' => $ids])
+            ->assertOk()->assertJsonPath('data.deleted', 2);
+        $this->assertSoftDeleted('guests', ['id' => $ids[0]]);
+
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/guests/restore', ['ids' => $ids])
+            ->assertOk()->assertJsonPath('data.restored', 2);
+        $this->assertNotSoftDeleted('guests', ['id' => $ids[0]]);
+        $this->assertSame(3, Guest::count());
     }
 }

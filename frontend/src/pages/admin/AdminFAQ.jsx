@@ -21,6 +21,7 @@ import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
 import { toast } from 'react-hot-toast';
+import { confirmAction, notifyError } from '../../utils/feedback';
 
 registerPlugin(FilePondPluginImagePreview);
 
@@ -55,14 +56,14 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
                 <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-stone-50 to-transparent pointer-events-none"></div>
             </div>
             <div className="flex gap-2 shrink-0">
-                <button
+                <button aria-label={`Edit FAQ: ${faq.question}`}
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onEdit(faq); }}
                     className="p-2 text-[#A67B5B] bg-[#A67B5B]/10 rounded-lg hover:bg-[#A67B5B]/20 transition-colors"
                 >
                     <Edit className="w-4 h-4" />
                 </button>
-                <button
+                <button aria-label={`Delete FAQ: ${faq.question}`}
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onDelete(faq.id); }}
                     className="p-2 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
@@ -130,7 +131,7 @@ export default function AdminFAQ() {
     };
 
     const handleBulkDelete = async () => {
-        if (!window.confirm(`Delete ${selectedIds.length} selected FAQs?`)) return;
+        if (!await confirmAction(`Delete ${selectedIds.length} selected FAQs?`)) return;
         try {
             await Promise.all(selectedIds.map(id => faqService.delete(id)));
             toast.success(`${selectedIds.length} FAQs deleted`);
@@ -191,7 +192,7 @@ export default function AdminFAQ() {
             setModalOpen(false);
         } catch (err) {
             console.error(err);
-            alert("Failed to save FAQ.");
+            notifyError("Failed to save FAQ.");
         }
     };
 
@@ -276,7 +277,7 @@ export default function AdminFAQ() {
                     {loading ? (
                         <EmptyState loading />
                     ) : filteredFaqs.length === 0 ? (
-                        <EmptyState icon={HelpCircle} message={searchQuery ? 'No matching FAQs found' : 'No FAQs added yet'} searchQuery={searchQuery} />
+                        <EmptyState icon={HelpCircle} message="No FAQs added yet" searchQuery={searchQuery} action={{ label: 'Add a FAQ', onClick: handleAdd }} />
                     ) : viewMode === 'list' ? (
                         <Reorder.Group axis="y" values={filteredFaqs} onReorder={handleReorder} className="divide-y divide-stone-100">
                             {filteredFaqs.map((faq) => (

@@ -21,15 +21,17 @@ export const ADMIN_PAGES = [
   { name: 'settings', path: '/admin/dashboard/settings', title: 'System Settings' },
   { name: 'analytics', path: '/admin/dashboard/analytics', title: 'Analytics & Reports' },
   { name: 'content', path: '/admin/dashboard/content', title: 'CMS - Content Management' },
-  { name: 'faq', path: '/admin/dashboard/faq', title: 'FAQ Management' },
-  { name: 'song-requests', path: '/admin/dashboard/song-requests', title: 'Song Requests' },
-  { name: 'guestbook', path: '/admin/dashboard/guestbook', title: 'Guestbook' },
+  { name: 'faq', path: '/admin/dashboard/faqs', title: 'FAQ Management' },
+  { name: 'song-requests', path: '/admin/dashboard/songs', title: 'Song Requests' },
+  { name: 'guestbook', path: '/admin/dashboard/guestbook', title: 'Guestbook Messages' },
   { name: 'enquiries', path: '/admin/dashboard/enquiries', title: 'Enquiries' },
   { name: 'seating', path: '/admin/dashboard/seating', title: 'Seating Chart' },
-  { name: 'check-in', path: '/admin/dashboard/check-in', title: 'Guest Check-In' },
+  { name: 'check-in', path: '/admin/dashboard/checkin', title: 'Guest Check-In' },
   { name: 'modules', path: '/admin/dashboard/modules', title: 'Module Management' },
-  { name: 'test-lab', path: '/admin/dashboard/test-lab', title: 'Test Lab' },
-  { name: 'invitation-designer', path: '/admin/dashboard/invitation-designer', title: 'Invitation Designer' },
+  { name: 'users', path: '/admin/dashboard/users', title: 'User Management' },
+  { name: 'backups', path: '/admin/dashboard/backups', title: 'Backups' },
+  { name: 'test-lab', path: '/admin/dashboard/test', title: 'Test Lab' },
+  { name: 'invitation-designer', path: '/admin/dashboard/design', title: 'Invitation Designer' },
 ];
 
 /**

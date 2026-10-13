@@ -13,6 +13,7 @@ import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
 import { toast } from 'react-hot-toast';
+import { confirmAction } from '../../utils/feedback';
 
 export default function AdminGuestbook() {
   const { data, isLoading: loading, refetch } = useGuestbook();
@@ -41,7 +42,7 @@ export default function AdminGuestbook() {
   const clearSelection = () => setSelectedIds([]);
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selectedIds.length} selected messages?`)) return;
+    if (!await confirmAction(`Delete ${selectedIds.length} selected messages?`)) return;
     try {
       await Promise.all(selectedIds.map((id) => guestbookService.delete(id)));
       toast.success(`${selectedIds.length} messages deleted`);
@@ -209,7 +210,7 @@ function GuestbookGrid({ entries, selectedIds, onToggleSelect, onDelete }) {
               </div>
 
               {/* Delete button */}
-              <button
+              <button aria-label="Delete Message"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(entry.id, { confirmMessage: 'Delete this message?' });

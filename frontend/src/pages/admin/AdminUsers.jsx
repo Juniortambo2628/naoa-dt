@@ -13,6 +13,7 @@ import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import { AdminInput } from '../../components/admin/AdminInput';
+import { confirmAction } from '../../utils/feedback';
 
 const EMPTY_FORM = { name: '', email: '', password: '' };
 const matchesUser = (user, q) => `${user.name} ${user.email}`.toLowerCase().includes(q);
@@ -60,7 +61,7 @@ export default function AdminUsers() {
     };
 
     const handleDelete = async (user) => {
-        if (!window.confirm(`Remove ${user.name}'s admin access?`)) return;
+        if (!await confirmAction(`Remove ${user.name}'s admin access?`)) return;
         try {
             await userService.delete(user.id);
             toast.success('User Removed');
@@ -93,7 +94,7 @@ export default function AdminUsers() {
             >
                 <AdminListPanel plain>
                   {filtered.length === 0 ? (
-                      <EmptyState icon={UserCog} message="No users found" searchQuery={searchQuery} loading={isLoading} />
+                      <EmptyState icon={UserCog} message="No users yet" searchQuery={searchQuery} loading={isLoading} action={{ label: 'Add a user', onClick: () => openModal() }} />
                   ) : (
                       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                           {filtered.map((user) => {

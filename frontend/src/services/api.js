@@ -88,6 +88,9 @@ export const guestService = {
   // Get all guests (admin)
   getAll: (params) => api.get('/guests', { params }),
 
+  bulkDelete: (ids) => api.post('/guests/bulk-delete', { ids }),
+  restore: (ids) => api.post('/guests/restore', { ids }),
+
   // Duplicate detection & merging (admin)
   getDuplicates: () => api.get('/guests/duplicates'),
   merge: (keepId, mergeIds) => api.post('/guests/merge', { keep_id: keepId, merge_ids: mergeIds }),
@@ -317,6 +320,15 @@ export const userService = {
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
+};
+
+// Backups (admin)
+export const backupService = {
+  getAll: () => api.get('/backups'),
+  create: (includeUploads = false) => api.post('/backups', { include_uploads: includeUploads }),
+  download: (name) => api.get(`/backups/${encodeURIComponent(name)}/download`, { responseType: 'blob' }),
+  restore: (name) => api.post(`/backups/${encodeURIComponent(name)}/restore`),
+  delete: (name) => api.delete(`/backups/${encodeURIComponent(name)}`),
 };
 
 // Polaroid services

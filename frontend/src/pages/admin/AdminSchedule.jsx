@@ -12,6 +12,7 @@ import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import AdminCard from '../../components/admin/AdminCard';
 import SubmitButton from '../../components/admin/SubmitButton';
 import Spinner from '../../components/admin/Spinner';
+import { confirmAction, notifyError } from '../../utils/feedback';
 
 export default function AdminSchedule() {
   const { data: events = [], isLoading: loading, refetch } = useSchedule();
@@ -45,13 +46,13 @@ export default function AdminSchedule() {
   };
 
   const handleDeleteEvent = async (eventId) => {
-      if (window.confirm('Are you sure you want to delete this event? This will also delete all its schedule items.')) {
+      if (await confirmAction('Are you sure you want to delete this event? This will also delete all its schedule items.')) {
           try {
               await scheduleService.deleteEvent(eventId);
               refetch();
           } catch (err) {
               console.error(err);
-              alert('Failed to delete event');
+              notifyError('Failed to delete event');
           }
       }
   };
@@ -63,13 +64,13 @@ export default function AdminSchedule() {
   };
 
   const handleDeleteItem = async (itemId) => {
-    if (window.confirm('Delete this schedule item?')) {
+    if (await confirmAction('Delete this schedule item?')) {
       try {
         await scheduleService.deleteItem(itemId); 
         refetch();
       } catch (err) {
         console.error(err);
-        alert('Failed to delete item');
+        notifyError('Failed to delete item');
       }
     }
   };
@@ -93,7 +94,7 @@ export default function AdminSchedule() {
         refetch();
       } catch (e) {
         console.error(e);
-        alert('Failed to save event');
+        notifyError('Failed to save event');
       }
   };
 
@@ -144,7 +145,7 @@ export default function AdminSchedule() {
           {loading ? (
           <EmptyState loading />
         ) : filteredEvents.length === 0 ? (
-          <EmptyState icon={Calendar} message={searchQuery ? 'No matching schedule items found' : 'No events yet'} searchQuery={searchQuery} />
+          <EmptyState icon={Calendar} message="No events yet" searchQuery={searchQuery} action={{ label: 'Add an event', onClick: handleCreateEvent }} />
         ) : (
           <div className="space-y-8">
               {filteredEvents.map(event => (
@@ -156,14 +157,14 @@ export default function AdminSchedule() {
                                   <p className="text-stone-500 text-sm break-words">{new Date(event.event_date).toLocaleDateString()} • {event.venue}</p>
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
-                                  <button 
+                                  <button aria-label="Edit Event" 
                                       onClick={() => handleEditEvent(event)}
                                       className="p-2 text-stone-400 hover:text-[#A67B5B] rounded-lg transition-colors"
                                       title="Edit Event"
                                   >
                                       <Edit className="w-4 h-4" />
                                   </button>
-                                  <button 
+                                  <button aria-label="Delete Event" 
                                       onClick={() => handleDeleteEvent(event.id)}
                                       className="p-2 text-stone-400 hover:text-red-500 rounded-lg transition-colors"
                                       title="Delete Event"
@@ -194,13 +195,13 @@ export default function AdminSchedule() {
                                       </p>
                                   </div>
                                   <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                                      <button 
+                                      <button aria-label="Edit schedule item" 
                                           onClick={() => handleEditItem(item, event.id)}
                                           className="p-2 text-stone-400 hover:text-[#A67B5B] rounded-lg"
                                       >
                                           <Edit className="w-4 h-4" />
                                       </button>
-                                      <button 
+                                      <button aria-label="Delete schedule item" 
                                           onClick={() => handleDeleteItem(item.id)}
                                           className="p-2 text-stone-400 hover:text-red-500 rounded-lg"
                                       >
@@ -332,7 +333,7 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
         try {
             await onSave(formData);
             onClose();
-        } catch(e) { console.error(e); alert('Failed to save'); }
+        } catch(e) { console.error(e); notifyError('Failed to save'); }
         setLoading(false);
     };
 

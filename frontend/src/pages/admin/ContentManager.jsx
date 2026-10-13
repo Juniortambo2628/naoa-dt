@@ -8,6 +8,7 @@ import ToggleButton from '../../components/admin/ToggleButton';
 import Spinner from '../../components/admin/Spinner';
 import { useContent } from '../../context/ContentContext';
 import { toast } from 'react-hot-toast';
+import { notifyError } from '../../utils/feedback';
 
 const LANGUAGES = [
     { code: 'en', label: 'English' },
@@ -260,7 +261,7 @@ export default function ContentManager() {
           : sectionContent[fieldKey]?.['en'];
 
       if (!sourceText) {
-          alert('Please enter English text first.');
+          notifyError('Please enter English text first.');
           return;
       }
 
@@ -293,7 +294,7 @@ export default function ContentManager() {
           setContents(newContents);
       } catch (err) {
           console.error(err);
-          alert('Translation failed. Please try again.');
+          notifyError('Translation failed. Please try again.');
       }
       setTranslating(null);
   };
@@ -308,7 +309,7 @@ export default function ContentManager() {
           });
           setTimeout(() => setSaving(null), 1000);
       } catch {
-          alert('Failed to save.');
+          notifyError('Failed to save.');
           setSaving(null);
       }
   };

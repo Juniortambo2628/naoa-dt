@@ -19,6 +19,7 @@ import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
 import usePolling from '../../hooks/usePolling';
+import { confirmAction } from '../../utils/feedback';
 
 export default function AdminSongRequests() {
   const { data, isLoading: loading, refetch } = useSongRequests();
@@ -110,7 +111,7 @@ export default function AdminSongRequests() {
 
   const handleBulkDelete = async () => {
     const ids = [...selectedIds];
-    if (!window.confirm(`Are you sure you want to delete ${ids.length} selected requests?`)) return;
+    if (!await confirmAction(`Are you sure you want to delete ${ids.length} selected requests?`)) return;
     setProcessingIds(prev => new Set([...prev, ...ids]));
     try {
       await Promise.all(ids.map(id => songRequestService.delete(id)));

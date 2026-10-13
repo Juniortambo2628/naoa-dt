@@ -136,4 +136,29 @@ class NotificationTest extends TestCase
         $unreadNotification->refresh();
         $this->assertNotNull($unreadNotification->read_at);
     }
+
+    public function test_notifications_link_to_the_related_admin_page(): void
+    {
+        $guest = \App\Models\Guest::factory()->create(['name' => 'Jane Doe']);
+        foreach ([
+            ['App\\Notifications\\RSVPReceived', ['title' => 'New RSVP', 'guest_id' => $guest->id]],
+            ['GiftClaimed', ['title' => 'Gift']],
+            ['Unknown', ['title' => 'Other']],
+        ] as [$type, $data]) {
+            Notification::create([
+                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'type' => $type,
+                'notifiable_type' => User::class,
+                'notifiable_id' => $this->admin->id,
+                'data' => $data,
+            ]);
+        }
+
+        $links = collect($this->actingAs($this->admin, 'sanctum')->getJson('/api/notifications')->json('data'))
+            ->pluck('link', 'title');
+
+        $this->assertSame('/admin/dashboard/guests?status=all&q=Jane%20Doe', $links['New RSVP']);
+        $this->assertSame('/admin/dashboard/gifts', $links['Gift']);
+        $this->assertNull($links['Other']);
+    }
 }

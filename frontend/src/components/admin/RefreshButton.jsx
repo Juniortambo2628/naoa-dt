@@ -10,7 +10,7 @@ import { RefreshCw } from 'lucide-react';
  */
 export default function RefreshButton({ onClick, loading, title = 'Refresh' }) {
   return (
-    <button 
+    <button aria-label={title} 
       onClick={onClick}
       className="p-2 text-stone-500 hover:bg-stone-100 rounded-full transition-colors"
       title={title}

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\CheckInController;
 use App\Http\Controllers\Api\EmergencyNumberController;
@@ -163,6 +164,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/import-confirm', [GuestController::class, 'importConfirm']);
         Route::post('/bulk-update', [GuestController::class, 'bulkUpdate']);
         Route::get('/duplicates', [GuestController::class, 'duplicates']);
+        Route::post('/bulk-delete', [GuestController::class, 'bulkDestroy']);
+        Route::post('/restore', [GuestController::class, 'restore']);
         Route::post('/merge', [GuestController::class, 'merge']);
         Route::post('/', [GuestController::class, 'store']);
         Route::put('/{guest}', [GuestController::class, 'update']);
@@ -171,6 +174,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{guest}/whatsapp-invite', [GuestController::class, 'unmarkWhatsappSent']);
         Route::post('/{guest}/reset-rsvp', [GuestController::class, 'resetRsvp']);
         Route::post('/bulk-resend-confirmation', [GuestController::class, 'resendConfirmationBulk']);
+    });
+
+    // Backups (admin)
+    Route::group(['prefix' => 'backups'], function () {
+        Route::get('/', [BackupController::class, 'index']);
+        Route::post('/', [BackupController::class, 'store']);
+        Route::get('/{name}/download', [BackupController::class, 'download']);
+        Route::post('/{name}/restore', [BackupController::class, 'restore']);
+        Route::delete('/{name}', [BackupController::class, 'destroy']);
     });
 
     // Invitation Management (admin)

@@ -16,6 +16,12 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+    | Automatic safety backups before restores, merges and imports
+    | (see App\Services\BackupService::snapshot). Disabled in the test suite.
+    */
+    'auto_backups' => env('AUTO_BACKUPS', true),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

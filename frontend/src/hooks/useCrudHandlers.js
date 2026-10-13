@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { confirmAction, notifyError } from '../utils/feedback';
 
 /**
  * Reusable CRUD handlers for admin pages.
@@ -29,7 +30,7 @@ export default function useCrudHandlers({ service, onRefresh }) {
   const handleDelete = useCallback(async (id, opts = {}) => {
     const { confirmMessage = 'Delete this item?', deleteFn } = opts;
 
-    if (!window.confirm(confirmMessage)) return;
+    if (!await confirmAction(confirmMessage)) return;
     setProcessing(id);
     try {
       if (deleteFn) {
@@ -40,7 +41,7 @@ export default function useCrudHandlers({ service, onRefresh }) {
       onRefresh?.();
     } catch (err) {
       console.error(err);
-      alert('Failed to delete');
+      notifyError('Failed to delete');
     }
     setProcessing(null);
   }, [service, onRefresh]);
@@ -57,7 +58,7 @@ export default function useCrudHandlers({ service, onRefresh }) {
       onRefresh?.();
     } catch (err) {
       console.error(err);
-      alert('Failed to save');
+      notifyError('Failed to save');
       throw err;
     }
   }, [selectedItem, service, onRefresh]);

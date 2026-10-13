@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
 import { SearchProvider, useSearch } from '../../context/SearchContext';
 import { AdminChromeProvider } from '../../context/AdminChromeContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AdminTutorial from './AdminTutorial';
+import ConfirmHost from './ConfirmHost';
 
 // Each page starts with an empty search so a query typed on one list never
 // silently filters the next page.
@@ -29,7 +30,15 @@ export default function AdminShell({ children }) {
   const [titleSlot, setTitleSlot] = useState(null);
   const [statusSlot, setStatusSlot] = useState(null);
 
+  // Admin-only accessibility styles (contrast, focus rings, reduced motion) —
+  // on <html> so portalled toolbars, menus and dialogs get them too.
+  useEffect(() => {
+    document.documentElement.classList.add('admin-theme');
+    return () => document.documentElement.classList.remove('admin-theme');
+  }, []);
+
   return (
+    <MotionConfig reducedMotion="user">
     <SearchProvider>
     <AdminChromeProvider value={{ titleSlot, statusSlot }}>
       <ResetSearchOnNavigate pathname={location.pathname} />
@@ -47,6 +56,8 @@ export default function AdminShell({ children }) {
             statusSlotRef={setStatusSlot}
           />
           
+          <ConfirmHost />
+
           <AdminTutorial 
             key={restartTutorial ? 'restarted' : 'initial'} 
             isRestarted={restartTutorial}
@@ -67,5 +78,6 @@ export default function AdminShell({ children }) {
       </div>
     </AdminChromeProvider>
     </SearchProvider>
+    </MotionConfig>
   );
 }

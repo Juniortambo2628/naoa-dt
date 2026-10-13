@@ -85,7 +85,7 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
 
         {hasOverflow && (
           <div className="relative" ref={menuRef}>
-            <button
+            <button aria-label="More actions"
               onClick={() => setMenuOpen((v) => !v)}
               className={`${baseButton} ${variantStyles.secondary}`}
             >
@@ -122,7 +122,7 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
           </div>
         )}
 
-        <button
+        <button aria-label="Clear selection"
           onClick={onClearSelection}
           className="p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-white transition-colors"
           title="Clear selection"
