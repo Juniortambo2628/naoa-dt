@@ -45,6 +45,37 @@ class Guest extends Model
         'location_lng' => 'float',
     ];
 
+    /** Acronym groups kept upper-case; everything else is Title Case. */
+    private const GROUP_ACRONYMS = ['VIP', 'VVIP', 'MC'];
+
+    /**
+     * One spelling per group, so "family", " Family " and "FAMILY" are counted
+     * together everywhere (lists, filters, analytics).
+     */
+    public static function normalizeGroup(?string $group): ?string
+    {
+        $group = trim(preg_replace('/\s+/', ' ', (string) $group));
+        if ($group === '') {
+            return null;
+        }
+        $upper = mb_strtoupper($group);
+        if (in_array($upper, self::GROUP_ACRONYMS, true)) {
+            return $upper;
+        }
+        // Single-case input ("family", "FAMILY") is re-cased; deliberate mixed
+        // case ("McKenzie's") is kept apart from capitalising each word.
+        $words = explode(' ', $group === $upper || $group === mb_strtolower($group) ? mb_strtolower($group) : $group);
+
+        return implode(' ', array_map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)).mb_substr($w, 1), $words));
+    }
+
+    protected function group(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            set: fn (?string $value) => self::normalizeGroup($value),
+        );
+    }
+
     // --- Query Scopes ---
 
     public function scopeConfirmed(Builder $query): Builder

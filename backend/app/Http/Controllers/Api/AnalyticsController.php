@@ -26,14 +26,23 @@ class AnalyticsController extends Controller
             ['name' => 'Declined', 'value' => $rsvpCounts->get('declined', 0), 'color' => '#ef4444'],
         ];
 
-        // Group breakdown via DB aggregation
-        $groups = Guest::selectRaw('`group` as grp, COUNT(*) as count')
-            ->groupBy('grp')
-            ->pluck('count', 'grp')
-            ->map(fn ($count, $name) => [
-                'name' => $name ?: 'Unassigned',
-                'value' => $count,
-            ])
+        // Group breakdown with each group's RSVP split (sorted by size)
+        $groups = Guest::selectRaw('`group` as grp, rsvp_status, COUNT(*) as count')
+            ->groupBy('grp', 'rsvp_status')
+            ->get()
+            ->groupBy(fn ($row) => Guest::normalizeGroup($row->grp) ?? 'No group')
+            ->map(function ($rows, $name) {
+                $by = fn ($status) => (int) $rows->where('rsvp_status', $status)->sum('count');
+
+                return [
+                    'name' => $name,
+                    'value' => (int) $rows->sum('count'),
+                    'confirmed' => $by('confirmed'),
+                    'pending' => $by('pending'),
+                    'declined' => $by('declined'),
+                ];
+            })
+            ->sortByDesc('value')
             ->values()
             ->toArray();
 

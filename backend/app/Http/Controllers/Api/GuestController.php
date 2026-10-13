@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\GuestResource;
 use App\Models\Guest;
 use App\Models\Invitation;
+use App\Services\BackupService;
 use App\Services\GuestImportService;
 use App\Services\GuestMergeService;
 use App\Services\GuestService;
@@ -59,7 +60,7 @@ class GuestController extends Controller
 
         // Filter by group
         if ($request->has('group')) {
-            $query->where('group', $request->group);
+            $query->where('group', Guest::normalizeGroup($request->group));
         }
 
         // Filter by RSVP status
@@ -349,6 +350,36 @@ class GuestController extends Controller
     }
 
     /**
+     * Delete several guests at once (admin only). Soft deletes, so they can be restored.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:guests,id',
+        ]);
+
+        $count = Guest::whereIn('id', $validated['ids'])->get()->each->delete()->count();
+
+        return $this->successResponse(['deleted' => $count], "{$count} guests deleted");
+    }
+
+    /**
+     * Undo deletes: restore soft-deleted guests (admin only).
+     */
+    public function restore(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $count = Guest::onlyTrashed()->whereIn('id', $validated['ids'])->get()->each->restore()->count();
+
+        return $this->successResponse(['restored' => $count], "{$count} guests restored");
+    }
+
+    /**
      * Get statistics (admin only)
      */
     public function statistics()
@@ -431,6 +462,8 @@ class GuestController extends Controller
             'conflicts' => 'array',
         ]);
 
+        app(BackupService::class)->snapshot('pre-import');
+
         try {
             $results = $this->importService->confirmImport(
                 $request->input('valid', []),
@@ -461,6 +494,9 @@ class GuestController extends Controller
         // Only allow updating specific fields in bulk for safety
         $allowedFields = ['group', 'invitation_via', 'rsvp_status', 'plus_ones_allowed', 'rsvp_message', 'dietary_notes'];
         $updateData = array_intersect_key($data, array_flip($allowedFields));
+        if (array_key_exists('group', $updateData)) {
+            $updateData['group'] = Guest::normalizeGroup($updateData['group']); // query-builder update skips the mutator
+        }
 
         if (empty($updateData)) {
             return $this->errorResponse('No valid fields provided for update', 400);
@@ -497,6 +533,8 @@ class GuestController extends Controller
             'merge_ids' => 'required|array|min:1',
             'merge_ids.*' => 'integer|distinct|exists:guests,id|different:keep_id',
         ]);
+
+        app(BackupService::class)->snapshot('pre-merge');
 
         try {
             $guest = $mergeService->merge(Guest::findOrFail($validated['keep_id']), $validated['merge_ids']);

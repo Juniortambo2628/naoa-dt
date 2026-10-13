@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Check flight statuses every 30 minutes
 Schedule::command('flights:check-status')->everyThirtyMinutes();
+
+// Nightly database backup (keeps the last 14); needs the cPanel cron for schedule:run
+Schedule::command('backups:create --label=scheduled --keep=14')->dailyAt('02:15');

@@ -64,7 +64,8 @@ class AnalyticsTest extends TestCase
 
     public function test_analytics_group_breakdown(): void
     {
-        Guest::factory()->count(3)->create(['group' => 'family']);
+        Guest::factory()->count(2)->create(['group' => 'family', 'rsvp_status' => 'confirmed']);
+        Guest::factory()->create(['group' => ' FAMILY ', 'rsvp_status' => 'pending']);
         Guest::factory()->count(2)->create(['group' => 'friends']);
 
         $response = $this->actingAs($this->admin, 'sanctum')
@@ -73,10 +74,13 @@ class AnalyticsTest extends TestCase
         $response->assertOk();
         $groups = $response->json('data.groups');
 
-        $family = collect($groups)->firstWhere('name', 'family');
-        $this->assertEquals(3, $family['value']);
+        // Spelling variants are counted as one group, largest first.
+        $this->assertSame('Family', $groups[0]['name']);
+        $this->assertEquals(3, $groups[0]['value']);
+        $this->assertEquals(2, $groups[0]['confirmed']);
+        $this->assertEquals(1, $groups[0]['pending']);
 
-        $friends = collect($groups)->firstWhere('name', 'friends');
+        $friends = collect($groups)->firstWhere('name', 'Friends');
         $this->assertEquals(2, $friends['value']);
     }
 
