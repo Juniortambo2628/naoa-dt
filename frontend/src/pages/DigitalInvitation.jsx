@@ -9,6 +9,8 @@ import { getWeddingInfo, getWeddingDateText } from '../utils/weddingInfo';
 import WeatherWidget from '../components/WeatherWidget';
 import MapsETA from '../components/MapsETA';
 import Loader from '../components/Loader';
+import Button from '../components/Button';
+import { buttonClass } from '../components/buttonStyles';
 import EmergencyNumbers from '../components/EmergencyNumbers';
 import GuestQuickActions from '../components/GuestQuickActions';
 import LiveEventWidget from '../components/LiveEventWidget';
@@ -136,12 +138,9 @@ export default function DigitalInvitation() {
                     </div>
                     <h1 className="text-2xl font-bold text-stone-800 mb-2">Invitation Not Found</h1>
                     <p className="text-stone-500 mb-8">We couldn't find an invitation matching that code. Please check your link and try again.</p>
-                    <button 
-                        onClick={() => navigate('/')}
-                        className="w-full bg-palette-cinnamon text-white py-4 rounded-xl font-bold hover:bg-palette-rust transition-colors"
-                    >
+                    <Button variant="secondary" size="lg" fullWidth onClick={() => navigate('/')}>
                         Go to Homepage
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
@@ -237,24 +236,22 @@ export default function DigitalInvitation() {
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
                         {/* Only prompt for RSVP while the guest hasn't responded yet. */}
                         {showRsvpButton && (
-                            <button
+                            <Button
+                                variant="secondary"
+                                size="lg"
                                 onClick={() => navigate(`/rsvp/${guest.unique_code}`)}
-                                className="flex-1 bg-palette-cinnamon text-white px-8 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-palette-rust hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-palette-cinnamon/20 group"
+                                className="flex-1"
                             >
                                 Respond to RSVP
-                                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </button>
+                                <ChevronRight />
+                            </Button>
                         )}
 
                         {show.calendar && (
                         <div className="flex flex-col gap-2 flex-1">
-                            <button
-                                onClick={downloadIcs}
-                                className="px-8 py-5 rounded-2xl font-bold text-palette-forest border-2 border-palette-forest/30 hover:bg-palette-forest/5 transition-colors flex items-center justify-center gap-3 text-center"
-                            >
-                                <Calendar className="w-5 h-5" />
+                            <Button size="lg" icon={Calendar} onClick={downloadIcs}>
                                 Add to Calendar
-                            </button>
+                            </Button>
                         </div>
                         )}
                     </div>
@@ -265,7 +262,7 @@ export default function DigitalInvitation() {
                             design={design}
                             guest={guest}
                             weddingSettings={cardSettings}
-                            className="w-full px-8 py-4 rounded-2xl font-bold text-palette-cinnamon bg-white border-2 border-palette-cinnamon/30 hover:bg-palette-cinnamon/5 disabled:opacity-70 disabled:cursor-wait transition-colors flex items-center justify-center gap-3"
+                            className={buttonClass({ variant: 'primary', size: 'lg', fullWidth: true })}
                         />
                     )}
 

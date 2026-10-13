@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, ChevronRight, X, ArrowLeft } from 'lucide-react';
 import { faqService } from '../services/api';
 import Navbar from '../components/Navbar';
+import Button from '../components/Button';
+import { buttonClass } from '../components/buttonStyles';
 import { useTranslation } from 'react-i18next';
 import { Navigate, Link } from 'react-router-dom';
 import { useContent } from '../context/ContentContext';
@@ -69,7 +71,8 @@ export default function Faq() {
                         titleSpan.innerText = 'Table Data';
                         
                         const expandBtn = document.createElement('button');
-                        expandBtn.className = 'expand-table-btn text-xs bg-white border border-[#A67B5B] text-[#A67B5B] px-2.5 py-1 rounded-full flex items-center gap-1 hover:bg-[#A67B5B] hover:text-white transition-colors font-medium shadow-sm';
+                        expandBtn.type = 'button';
+                        expandBtn.className = buttonClass({ variant: 'primary', size: 'sm', className: 'expand-table-btn' });
                         expandBtn.innerHTML = `
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                             View
@@ -180,12 +183,13 @@ export default function Faq() {
                                             className="flex-1 flex flex-col min-h-0"
                                         >
                                             <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-3 shrink-0">
-                                                <button
+                                                <Button
+                                                    size="icon"
+                                                    icon={ArrowLeft}
                                                     onClick={handleBackToList}
-                                                    className="p-2 -ml-2 rounded-full hover:bg-stone-100 transition-colors text-[#A67B5B]"
-                                                >
-                                                    <ArrowLeft className="w-5 h-5" />
-                                                </button>
+                                                    aria-label="Back to topics"
+                                                    title="Back to topics"
+                                                />
                                                 <span className="font-serif text-sm text-stone-500 truncate">
                                                     {activeFaq?.question}
                                                 </span>
@@ -282,12 +286,9 @@ export default function Faq() {
                             className="mt-3 text-center shrink-0"
                         >
                             <p className="text-stone-500 mb-2 text-sm">Still have questions?</p>
-                            <Link 
-                                to="/contact" 
-                                className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-[#A67B5B] text-[#A67B5B] rounded-full hover:bg-[#A67B5B] hover:text-white transition-all shadow-sm active:scale-95 text-sm"
-                            >
-                                <MessageSquare className="w-3.5 h-3.5" /> Enquire Now
-                            </Link>
+                            <Button as={Link} to="/contact" icon={MessageSquare}>
+                                Enquire Now
+                            </Button>
                         </motion.div>
                     )}
                 </div>

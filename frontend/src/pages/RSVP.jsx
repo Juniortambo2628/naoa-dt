@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowRight, Users, UtensilsCrossed, MessageSquare, 
-  CheckCircle2, Heart, Loader2, AlertCircle, HelpCircle, UserCheck, Mail
+  CheckCircle2, Heart, AlertCircle, HelpCircle, UserCheck, Mail
 } from 'lucide-react';
 import { guestService, contentService } from '../services/api';
 import { 
@@ -16,6 +16,7 @@ import {
   PulsingHeartLogo,
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
+import Button from '../components/Button';
 import { Skeleton } from '../components/Skeleton';
 import SpotifySongSearch from '../components/SpotifySongSearch';
 
@@ -259,20 +260,10 @@ export default function RSVP() {
                         )}
                       </div>
 
-                      <button 
-                        type="submit" 
-                        disabled={loading}
-                        className="btn-primary w-full flex items-center justify-center gap-2"
-                      >
-                        {loading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <>
-                            {t('rsvp.find_button')}
-                            <ArrowRight className="w-5 h-5" />
-                          </>
-                        )}
-                      </button>
+                      <Button type="submit" variant="secondary" size="lg" fullWidth loading={loading}>
+                        {t('rsvp.find_button')}
+                        {!loading && <ArrowRight />}
+                      </Button>
                     </form>
                   ) : step === 2 ? (
                     // Step 2: RSVP Summary (for existing)
@@ -334,18 +325,15 @@ export default function RSVP() {
                         </div>
 
                         <div className="flex flex-col gap-3 pt-4 border-t border-stone-100">
-                            <Link to={`/invitation/${guestData?.unique_code}`} className="w-full btn-primary flex justify-center items-center gap-2">
-                                <Mail className="w-5 h-5" /> View Invitation Details
-                            </Link>
-                            <Link to="/faq" className="w-full btn-secondary flex justify-center items-center gap-2">
-                                <HelpCircle className="w-5 h-5" /> Visit FAQ for More Details
-                            </Link>
-                            <button 
-                                onClick={() => navigate('/')} 
-                                className="w-full btn-secondary text-stone-500 hover:text-stone-800"
-                            >
+                            <Button as={Link} to={`/invitation/${guestData?.unique_code}`} variant="secondary" size="lg" fullWidth icon={Mail}>
+                                View Invitation Details
+                            </Button>
+                            <Button as={Link} to="/faq" size="lg" fullWidth icon={HelpCircle}>
+                                Visit FAQ for More Details
+                            </Button>
+                            <Button size="lg" fullWidth onClick={() => navigate('/')}>
                                 Return Home
-                            </button>
+                            </Button>
                         </div>
                     </div>
                   ) : (
@@ -515,24 +503,12 @@ export default function RSVP() {
                       </div>
 
                       <div className="flex gap-4">
-                        <button
-                          type="button"
-                          onClick={() => { setStep(0); setGuestData(null); }}
-                          className="btn-secondary flex-1"
-                        >
+                        <Button size="lg" className="flex-1" onClick={() => { setStep(0); setGuestData(null); }}>
                           {t('common.back')}
-                        </button>
-                        <button 
-                          type="submit"
-                          disabled={loading}
-                          className="btn-primary flex-1 flex items-center justify-center gap-2"
-                        >
-                          {loading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            t('rsvp.submit_button')
-                          )}
-                        </button>
+                        </Button>
+                        <Button type="submit" variant="secondary" size="lg" className="flex-1" loading={loading}>
+                          {t('rsvp.submit_button')}
+                        </Button>
                       </div>
                     </form>
                   )}
@@ -573,12 +549,12 @@ export default function RSVP() {
                     {t('rsvp.success_message')}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link to={`/invitation/${guestData?.unique_code}`} className="btn-primary flex items-center justify-center gap-2">
-                      <Mail className="w-4 h-4" /> View Invitation Details
-                    </Link>
-                    <Link to="/" className="btn-secondary">
+                    <Button as={Link} to={`/invitation/${guestData?.unique_code}`} variant="secondary" size="lg" icon={Mail}>
+                      View Invitation Details
+                    </Button>
+                    <Button as={Link} to="/" size="lg">
                       Return Home
-                    </Link>
+                    </Button>
                   </div>
                 </div>
               </motion.div>

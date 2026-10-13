@@ -2,7 +2,7 @@ import Overlay from '../components/Overlay';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Loader2, Check, Smartphone } from 'lucide-react';
+import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Check, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { galleryService, getAssetUrl } from '../services/api';
 import api from '../services/api';
@@ -12,6 +12,7 @@ import {
   FlowerDivider,
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
+import Button from '../components/Button';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
@@ -229,30 +230,19 @@ export default function Gallery() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Upload className="w-5 h-5" />
+              <Button variant="secondary" size="lg" icon={Upload} onClick={() => setShowUploadModal(true)}>
                 {t('gallery.upload') || 'Share a Photo'}
-              </button>
+              </Button>
               {images.length > 0 && (
-                <button
+                <Button
+                  size="lg"
+                  icon={slideshowActive ? Pause : Play}
                   onClick={slideshowActive ? stopSlideshow : startSlideshow}
-                  className="btn-secondary flex items-center gap-2"
                 >
-                  {slideshowActive ? (
-                    <>
-                      <Pause className="w-5 h-5" />
-                      {t('gallery.stop_slideshow') || 'Stop Slideshow'}
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-5 h-5" />
-                      {t('gallery.start_slideshow') || 'Start Slideshow'}
-                    </>
-                  )}
-                </button>
+                  {slideshowActive
+                    ? t('gallery.stop_slideshow') || 'Stop Slideshow'
+                    : t('gallery.start_slideshow') || 'Start Slideshow'}
+                </Button>
               )}
             </div>
           </motion.div>
@@ -503,20 +493,17 @@ export default function Gallery() {
 
 
 
-                  <button
+                  <Button
                     type="submit"
-                    disabled={uploading || !uploadFile || !guestName.trim()}
-                    className="btn-primary w-full flex items-center justify-center gap-2"
+                    variant="secondary"
+                    size="lg"
+                    fullWidth
+                    icon={Upload}
+                    loading={uploading}
+                    disabled={!uploadFile || !guestName.trim()}
                   >
-                    {uploading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Upload className="w-5 h-5" />
-                        {t('gallery.upload_button') || 'Share Photo'}
-                      </>
-                    )}
-                  </button>
+                    {t('gallery.upload_button') || 'Share Photo'}
+                  </Button>
                 </form>
               )}
             </motion.div>
