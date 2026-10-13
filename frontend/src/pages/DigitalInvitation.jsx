@@ -10,7 +10,6 @@ import WeatherWidget from '../components/WeatherWidget';
 import MapsETA from '../components/MapsETA';
 import Loader from '../components/Loader';
 import Button from '../components/Button';
-import { buttonClass } from '../components/buttonStyles';
 import EmergencyNumbers from '../components/EmergencyNumbers';
 import GuestQuickActions from '../components/GuestQuickActions';
 import LiveEventWidget from '../components/LiveEventWidget';
@@ -262,7 +261,7 @@ export default function DigitalInvitation() {
                             design={design}
                             guest={guest}
                             weddingSettings={cardSettings}
-                            className={buttonClass({ variant: 'primary', size: 'lg', fullWidth: true })}
+                            fullWidth
                         />
                     )}
 

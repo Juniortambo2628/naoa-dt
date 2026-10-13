@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Radio, Clock, MapPin, ChevronRight, Megaphone, CalendarHeart, Hammer } from 'lucide-react';
 import { scheduleService } from '../services/api';
 import { getLiveStatus, formatTime } from '../utils/liveEvent';
+import Button from './Button';
 
 const POLL_MS = 30000;
 const RECENT_UPDATE_MS = 2 * 3600 * 1000;
@@ -121,13 +122,9 @@ export default function LiveEventWidget({ programmeVisible = true, weddingDate, 
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => navigate('/programme')}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-palette-forest/30 text-palette-forest font-semibold text-sm hover:bg-palette-forest/5 transition-colors"
-        >
-          View full programme <ChevronRight className="w-4 h-4" />
-        </button>
+        <Button fullWidth onClick={() => navigate('/programme')}>
+          View full programme <ChevronRight />
+        </Button>
       </div>
     </section>
   );

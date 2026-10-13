@@ -6,6 +6,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import api from '../services/api';
 import { useSmartPolling } from '../hooks/useSmartPolling';
+import Button from './Button';
 
 // Custom marker icons by group
 const createIcon = (group = 'default') => {
@@ -147,12 +148,13 @@ export default function PublicGuestMap({ venueCoords = [-1.2921, 36.8219] }) {
           </div>
           
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              size="icon-sm"
+              icon={RefreshCw}
               onClick={fetchLocations}
-              className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
-            >
-              <RefreshCw className="w-4 h-4 text-stone-400" />
-            </button>
+              aria-label="Refresh"
+              title="Refresh"
+            />
           </div>
         </div>
       </div>

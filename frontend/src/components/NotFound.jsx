@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, Home, ArrowLeft } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import Button from './Button';
 
 export default function NotFound() {
   return (
@@ -47,17 +48,12 @@ export default function NotFound() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/" className="btn-primary flex items-center justify-center gap-2">
-                <Home className="w-5 h-5" />
+              <Button as={Link} to="/" variant="secondary" size="lg" icon={Home}>
                 Back to Home
-              </Link>
-              <button 
-                onClick={() => window.history.back()}
-                className="btn-secondary flex items-center justify-center gap-2"
-              >
-                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <Button size="lg" icon={ArrowLeft} onClick={() => window.history.back()}>
                 Go Back
-              </button>
+              </Button>
             </div>
 
             <div className="mt-16 flex items-center justify-center gap-2 opacity-30">

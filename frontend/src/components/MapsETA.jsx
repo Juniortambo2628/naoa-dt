@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import { MapPin, Navigation, Car, Footprints, ExternalLink } from 'lucide-react';
+import Button from './Button';
 
 function haversineDistance(lat1, lng1, lat2, lng2) {
     const R = 6371;
@@ -152,13 +153,13 @@ export default function MapsETA({ venueName, venueAddress, venueLat, venueLng })
                     <p className="text-[11px] text-stone-400 italic">Enable location for distance estimate</p>
                 )}
 
-                <button
+                <Button
+                    fullWidth
+                    icon={ExternalLink}
                     onClick={() => window.open(mapsUrl, '_blank', 'noopener,noreferrer')}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-[#A67B5B] border border-[#A67B5B]/20 hover:bg-[#A67B5B]/5 transition-colors"
                 >
-                    <ExternalLink className="w-4 h-4" />
                     Get Directions
-                </button>
+                </Button>
             </div>
         </div>
     );

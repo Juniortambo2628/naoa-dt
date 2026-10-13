@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Cookie, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Button from './Button';
 
 export default function CookieConsent() {
     const [isVisible, setIsVisible] = useState(false);
@@ -53,19 +54,13 @@ export default function CookieConsent() {
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={handleAccept}
-                                    className="w-full py-2.5 bg-[#A67B5B] text-white rounded-xl font-medium hover:bg-[#8D6548] transition-colors shadow-lg shadow-[#A67B5B]/20"
-                                >
+                                <Button variant="secondary" fullWidth onClick={handleAccept}>
                                     Accept All
-                                </button>
+                                </Button>
                                 <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={handleDecline}
-                                        className="flex-1 py-2 text-stone-500 text-sm font-medium hover:text-stone-800 transition-colors"
-                                    >
+                                    <Button onClick={handleDecline} className="flex-1">
                                         Decline
-                                    </button>
+                                    </Button>
                                     <Link 
                                         to="/privacy-policy" 
                                         className="flex-1 py-2 text-[#A67B5B] text-sm font-medium text-center hover:underline"

@@ -1,7 +1,8 @@
 import { lazy, Suspense, useRef, useState } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { toast } from 'react-hot-toast';
+import Button from './Button';
 
 // The PDF exporter (html-to-image + jsPDF) is only loaded when a guest asks
 // for their invitation, keeping the invitation page itself light.
@@ -14,8 +15,19 @@ const safeName = (text) => String(text || '').replace(/[\\/:*?"<>|]+/g, '').trim
  * Lets a guest download their personalised invitation as a PDF — the same
  * file the couple sends from the admin (every page, clickable calendar and
  * map links).
+ *
+ * Renders the shared <Button>; `variant`, `size` and `fullWidth` are passed
+ * through, `className` is for layout only.
  */
-export default function InvitationDownloadButton({ design, guest, weddingSettings, className = '' }) {
+export default function InvitationDownloadButton({
+  design,
+  guest,
+  weddingSettings,
+  variant = 'primary',
+  size = 'lg',
+  fullWidth = false,
+  className = '',
+}) {
   const [active, setActive] = useState(false); // exporter mounted
   const [busy, setBusy] = useState(false);
   const exporterRef = useRef(null);
@@ -45,16 +57,17 @@ export default function InvitationDownloadButton({ design, guest, weddingSetting
 
   return (
     <>
-      <button
-        type="button"
+      <Button
+        variant={variant}
+        size={size}
+        fullWidth={fullWidth}
+        icon={Download}
+        loading={busy}
         onClick={download}
-        disabled={busy}
-        aria-busy={busy}
         className={className}
       >
-        {busy ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : <Download className="w-5 h-5" aria-hidden="true" />}
         {busy ? 'Preparing your invitation…' : 'Download Invitation (PDF)'}
-      </button>
+      </Button>
 
       {active && (
         <Suspense fallback={null}>

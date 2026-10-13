@@ -6,6 +6,7 @@ import {
   ExternalLink, Loader2 
 } from 'lucide-react';
 import api from '../services/api';
+import Button from './Button';
 
 const iconMap = {
   phone: Phone,
@@ -174,12 +175,13 @@ export default function EmergencyNumbers({ compact = false }) {
             <p className="text-3xl font-bold">999</p>
             <p className="text-sm opacity-80">Police • Ambulance • Fire</p>
           </div>
-          <button
+          <Button
+            size="icon"
+            icon={Phone}
             onClick={() => handleCall('999')}
-            className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-          >
-            <Phone className="w-7 h-7" />
-          </button>
+            aria-label="Call 999"
+            title="Call 999"
+          />
         </div>
       </div>
 

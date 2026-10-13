@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { guestService, flightService } from '../services/api';
 import { getAssetUrl } from '../utils/assetUrl';
+import Button from './Button';
 
 const TRANSPORT_OPTIONS = [
   { value: 'rental-car', label: 'Rental Car', icon: '🚗' },
@@ -444,13 +445,14 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
                   }`} />
                   <span className="text-sm font-medium capitalize">{flightStatus.status || 'Unknown'}</span>
                 </div>
-                <button
+                <Button
+                  size="icon-sm"
+                  icon={RefreshCw}
+                  loading={refreshingFlight}
                   onClick={handleRefreshFlightStatus}
-                  disabled={refreshingFlight}
-                  className="p-1.5 rounded-lg hover:bg-white/50 transition-colors"
-                >
-                  <RefreshCw className={`w-4 h-4 text-stone-500 ${refreshingFlight ? 'animate-spin' : ''}`} />
-                </button>
+                  aria-label="Refresh flight status"
+                  title="Refresh flight status"
+                />
               </div>
 
               <div className="grid grid-cols-3 gap-4 text-center">
@@ -518,19 +520,16 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
                   placeholder="e.g. KQ 100"
                   className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B]"
                 />
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  icon={Search}
+                  loading={lookingUpFlight}
                   onClick={() => handleFlightLookup(flight.number)}
-                  disabled={lookingUpFlight || !flight.number || flight.number.length < 3}
-                  className="px-3 py-2 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6B4B] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                  disabled={!flight.number || flight.number.length < 3}
+                  aria-label="Lookup flight"
                 >
-                  {lookingUpFlight ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Search className="w-4 h-4" />
-                  )}
-                  <span className="text-xs hidden sm:inline">Lookup</span>
-                </button>
+                  <span className="hidden sm:inline">Lookup</span>
+                </Button>
               </div>
               {flightLookupError && (
                 <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
@@ -706,22 +705,24 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <a
+                <Button
+                  as="a"
+                  size="icon"
+                  icon={Download}
                   href={getAssetUrl(`/storage/${ticket.path}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Download ticket"
-                  className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
-                >
-                  <Download className="w-4 h-4 text-stone-600" />
-                </a>
-                <button
+                  title="Download ticket"
+                />
+                <Button
+                  variant="danger"
+                  size="icon"
+                  icon={Trash2}
                   onClick={handleTicketDelete}
                   aria-label="Delete ticket"
-                  className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4 text-red-500" />
-                </button>
+                  title="Delete ticket"
+                />
               </div>
             </div>
           ) : (
@@ -779,20 +780,16 @@ export default function GuestTravelForm({ guestCode, onSuccess }) {
         </AnimatePresence>
 
         {/* Save button */}
-        <button
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          icon={Check}
+          loading={saving}
           onClick={handleSave}
-          disabled={saving}
-          className="w-full py-3 bg-gradient-to-r from-[#A67B5B] to-[#C8A68E] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {saving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <>
-              <Check className="w-5 h-5" />
-              Save Travel Details
-            </>
-          )}
-        </button>
+          Save Travel Details
+        </Button>
       </div>
     </motion.div>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
+import Button from './Button';
 
 /**
  * Reusable two-column tabbed layout, matching the FAQ page's design language:
@@ -108,14 +109,13 @@ export default function TabbedTwoColumn({
               className="flex-1 flex flex-col min-h-0"
             >
               <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-3 shrink-0">
-                <button
-                  type="button"
+                <Button
+                  size="icon-sm"
+                  icon={ArrowLeft}
                   onClick={() => setMobileView('list')}
                   aria-label="Back to menu"
-                  className="p-2 -ml-2 rounded-full hover:bg-stone-100 transition-colors text-[#A67B5B]"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
+                  title="Back to menu"
+                />
                 <span className="font-serif text-sm text-stone-500 truncate">{activeItem?.label}</span>
               </div>
               <div className="flex-1 overflow-y-auto p-5">{renderContent?.(activeItem)}</div>
