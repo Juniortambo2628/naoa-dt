@@ -16,14 +16,10 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined;
             if (/[\\/]node_modules[\\/](jspdf|jszip|html-to-image|html2canvas|file-saver)[\\/]/.test(id)) return 'vendor-export';
-            if (/[\\/]node_modules[\\/](leaflet|react-leaflet|@react-leaflet)[\\/]/.test(id)) return 'vendor-maps';
-            if (/[\\/]node_modules[\\/](recharts|d3-|victory-)/.test(id)) return 'vendor-charts';
-            if (/[\\/]node_modules[\\/](react-quill-new|quill|react-moveable|moveable|@daybrush)[\\/]/.test(id)) return 'vendor-editor';
-            if (/[\\/]node_modules[\\/](filepond|react-filepond|browser-image-compression)/.test(id)) return 'vendor-upload';
             if (/[\\/]node_modules[\\/]html5-qrcode[\\/]/.test(id)) return 'vendor-qr';
-            // Core libraries every page needs: kept apart so they stay cached across deploys.
-            if (/[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|@remix-run)[\\/]/.test(id)) return 'vendor-react';
-            if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'vendor-motion';
+            // React-dependent libraries are left to Rollup: forcing them into manual
+            // chunks created a circular import where vendor-charts ran before React
+            // was initialised ("Cannot read properties of undefined (reading 'forwardRef')").
             return undefined;
           },
         },
