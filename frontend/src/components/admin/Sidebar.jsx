@@ -1,17 +1,16 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Users, Calendar, Gift, Mail, Settings, Image,
-  LogOut, X, Edit, PieChart, UserCheck, Music, MessageSquare, FlaskConical, HelpCircle, CheckCircle, UserCog
+  LayoutDashboard, Users, Calendar, Gift, Mail, Image,
+  X, Edit, Music, MessageSquare, HelpCircle, CheckCircle
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
+// Analytics, Check-In, Email Templates and Test Lab live in the header's quick
+// links; Users, Settings and sign-out in its account menu.
 const navItems = [
   { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', id: 'sidebar-dashboard' },
-  { path: '/admin/dashboard/analytics', icon: PieChart, label: 'Analytics', id: 'sidebar-analytics' },
   { path: '/admin/dashboard/guests', icon: Users, label: 'Guests', id: 'sidebar-guests' },
   { path: '/admin/dashboard/rsvps', icon: CheckCircle, label: 'RSVPs & Messages', id: 'sidebar-rsvps' },
-  { path: '/admin/dashboard/checkin', icon: UserCheck, label: 'Check-In', id: 'sidebar-checkin' },
   { path: '/admin/dashboard/seating', icon: Users, label: 'Seating Chart', id: 'sidebar-seating' },
   { path: '/admin/dashboard/design', icon: Mail, label: 'Design Invitations', id: 'sidebar-design' },
   { path: '/admin/dashboard/gallery', icon: Image, label: 'Gallery', id: 'sidebar-gallery' },
@@ -23,21 +22,10 @@ const navItems = [
   { path: '/admin/dashboard/enquiries', icon: Mail, label: 'Enquiries', id: 'sidebar-enquiries' },
   { path: '/admin/dashboard/faqs', icon: HelpCircle, label: 'FAQs', id: 'sidebar-faqs' },
   { path: '/admin/dashboard/gifts', icon: Gift, label: 'Gifts', id: 'sidebar-gifts' },
-  { path: '/admin/dashboard/emails', icon: Mail, label: 'Email Templates', id: 'sidebar-emails' },
-  { path: '/admin/dashboard/test', icon: FlaskConical, label: 'Test Lab', id: 'sidebar-test' },
-  { path: '/admin/dashboard/users', icon: UserCog, label: 'Users', id: 'sidebar-users' },
-  { path: '/admin/dashboard/settings', icon: Settings, label: 'Settings', id: 'sidebar-settings' },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
-  const { logout, user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/admin');
-  };
 
   return (
     <>
@@ -116,35 +104,6 @@ export default function Sidebar({ isOpen, onClose }) {
             })}
           </nav>
 
-          {/* User & Logout */}
-          <div className="p-3 border-t border-white/10">
-            <div 
-              className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl"
-              style={{ 
-                background: 'rgba(255, 249, 245, 0.85)',
-                backdropFilter: 'blur(8px)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              }}
-            >
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                style={{ background: '#A67B5B' }}
-              >
-                {user?.name?.charAt(0) || 'A'}
-              </div>
-              <div className="min-w-0">
-                <p className="font-medium text-sm truncate" style={{ color: '#4A3F35' }}>{user?.name || 'Admin'}</p>
-                <p className="text-xs truncate" style={{ color: '#8B7D6B' }}>{user?.email}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all text-sm"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="font-medium">Logout</span>
-            </button>
-          </div>
         </div>
       </motion.aside>
     </>

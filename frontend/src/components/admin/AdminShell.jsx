@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SearchProvider, useSearch } from '../../context/SearchContext';
+import { AdminChromeProvider } from '../../context/AdminChromeContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AdminTutorial from './AdminTutorial';
@@ -24,9 +25,13 @@ export default function AdminShell({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [restartTutorial, setRestartTutorial] = useState(false);
   const location = useLocation();
+  // Header slots pages portal into (compact title, status) — see AdminChromeContext.
+  const [titleSlot, setTitleSlot] = useState(null);
+  const [statusSlot, setStatusSlot] = useState(null);
 
   return (
     <SearchProvider>
+    <AdminChromeProvider value={{ titleSlot, statusSlot }}>
       <ResetSearchOnNavigate pathname={location.pathname} />
       <div 
         className="min-h-screen"
@@ -38,6 +43,8 @@ export default function AdminShell({ children }) {
           <Header 
             onMenuClick={() => setSidebarOpen(true)} 
             onRestartTutorial={() => setRestartTutorial(prev => !prev)}
+            titleSlotRef={setTitleSlot}
+            statusSlotRef={setStatusSlot}
           />
           
           <AdminTutorial 
@@ -58,6 +65,7 @@ export default function AdminShell({ children }) {
           </main>
         </div>
       </div>
+    </AdminChromeProvider>
     </SearchProvider>
   );
 }

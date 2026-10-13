@@ -1,20 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { settingService, contentService } from '../../services/api';
 import { getWeddingInfo } from '../../utils/weddingInfo';
 import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
-import { Reorder } from 'framer-motion';
 import {
     Palette, Sliders, Undo2, Redo2,
     Maximize, Minimize,
-    FileImage, FileText, Plus, Copy, Trash2, ChevronLeft, ChevronRight,
-    Pencil, GripVertical
+    FileImage, FileText, Grid3x3, Magnet, RectangleHorizontal, RectangleVertical,
 } from 'lucide-react';
 import { PortalWhen } from '../../components/Overlay';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
-import InvitationToolbar from '../../components/admin/InvitationToolbar';
 import InvitationSidebar from '../../components/admin/InvitationSidebar';
+import InvitationSaveStatus from '../../components/admin/InvitationSaveStatus';
+import InvitationPageMenu from '../../components/admin/InvitationPageMenu';
+import InvitationAddMenu from '../../components/admin/InvitationAddMenu';
+import ContextMenu from '../../components/admin/ContextMenu';
+import { buildItemMenu, buildPageMenu } from '../../components/admin/invitationMenus';
+import { elementPreset } from '../../components/admin/invitationElements';
+import { AdminHeaderStatus } from '../../context/AdminChromeContext';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
@@ -37,8 +41,9 @@ export default function InvitationDesigner() {
   const [editorLang, setEditorLang] = useState('en');
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [editingPageId, setEditingPageId] = useState(null); // page whose name is being edited
-  const [pageNameDraft, setPageNameDraft] = useState('');
+  // Open right-click menu: { kind: 'item' | 'page', itemId?, position: { x, y } }
+  const [contextMenu, setContextMenu] = useState(null);
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
   const exporterRef = useRef(null);
   const titleRef = useRef(null);
   const messageRef = useRef(null);
@@ -103,7 +108,6 @@ export default function InvitationDesigner() {
 
   // Flattened design for the currently-active page (what the canvas & sidebar consume).
   const activePageDesign = getPageDesign(design, currentPage);
-  const totalPages = design.pages?.length || 1;
 
   useEffect(() => {
     const loadDesign = async () => {
@@ -484,6 +488,40 @@ export default function InvitationDesigner() {
       setSelectedItemId(null);
   };
 
+  // Insert one of the shared element presets (sidebar, toolbar, right-click).
+  const addElement = (kind) => {
+      const preset = elementPreset(kind, activePageDesign);
+      if (!preset) return;
+      addItem(preset.type, preset.extra);
+      if (preset.text) updateContent(editorLang, preset.extra.textKey, preset.text);
+  };
+
+  const duplicateItem = (id) => {
+      const newId = `${Date.now()}`;
+      setDesign(prev => {
+          const page = prev.pages[currentPage];
+          const source = page.items.find(i => i.id === id);
+          if (!source) return prev;
+          const maxZ = Math.max(...page.items.map(i => i.zIndex || 0), 10);
+          const copy = { ...source, id: newId, x: (source.x || 0) + 15, y: (source.y || 0) + 15, zIndex: maxZ + 1 };
+          let content = page.content;
+          // Custom text lines keep their wording under their own key.
+          if (source.type === 'text' && source.textKey && source.textKey.startsWith('final_')) {
+              copy.textKey = `final_${newId}`;
+              content = Object.fromEntries(Object.entries(page.content || {}).map(([lang, values]) => [
+                  lang, { ...values, [copy.textKey]: values?.[source.textKey] },
+              ]));
+          }
+          const newState = {
+              ...prev,
+              pages: prev.pages.map((p, i) => i === currentPage ? { ...p, content, items: [...p.items, copy] } : p),
+          };
+          addToHistory(newState);
+          return newState;
+      });
+      setSelectedItemId(newId);
+  };
+
   const updateContent = (lang, key, value) => {
       setDesign(prev => {
           const newState = {
@@ -569,8 +607,6 @@ export default function InvitationDesigner() {
       }
   };
 
-  const pageLabel = (pg, idx) => (pg?.name && pg.name.trim()) || `Page ${idx + 1}`;
-
   const renamePage = (index, rawName) => {
       const name = (rawName || '').trim();
       setDesign(prev => {
@@ -589,22 +625,7 @@ export default function InvitationDesigner() {
       });
   };
 
-  const startRenaming = (index) => {
-      const pg = design.pages[index];
-      if (!pg) return;
-      setEditingPageId(pg.id);
-      setPageNameDraft(pg.name || `Page ${index + 1}`);
-  };
-
-  const commitRename = () => {
-      if (!editingPageId) return;
-      const index = design.pages.findIndex(p => p.id === editingPageId);
-      if (index !== -1) renamePage(index, pageNameDraft);
-      setEditingPageId(null);
-      setPageNameDraft('');
-  };
-
-  // Drag-to-reorder from the page bar. Driven by stable page ids (framer-motion
+  // Drag-to-reorder from the page menu. Driven by stable page ids (framer-motion
   // Reorder) and keeps the current page selected by id across the reorder.
   const reorderPages = (newIds) => {
       const activeId = design.pages[currentPage]?.id;
@@ -635,26 +656,75 @@ export default function InvitationDesigner() {
 
   const presetColors = ['#A67B5B', '#8B9A7D', '#D4A59A', '#4A3F35', '#2C3E50', '#E74C3C'];
 
+  const canvasSize = design.orientation === 'landscape' ? { width: 625, height: 500 } : { width: 500, height: 625 };
+  const selectedItem = activePageDesign.items?.find(i => i.id === selectedItemId);
+  const openTab = (tab) => { setActiveTab(tab); setContextMenu(null); };
+
+  // Keyboard shortcuts: undo/redo, duplicate and delete the selected element.
+  useEffect(() => {
+      const onKeyDown = (e) => {
+          const t = e.target;
+          if (t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
+          const mod = e.ctrlKey || e.metaKey;
+          const key = e.key.toLowerCase();
+          if (mod && key === 'z' && !e.shiftKey) { e.preventDefault(); handleUndo(); }
+          else if (mod && (key === 'y' || (key === 'z' && e.shiftKey))) { e.preventDefault(); handleRedo(); }
+          else if (mod && key === 'd' && selectedItemId) { e.preventDefault(); duplicateItem(selectedItemId); }
+          else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItemId) { e.preventDefault(); deleteItem(selectedItemId); }
+          else if (e.key === 'Escape' && selectedItemId) setSelectedItemId(null);
+      };
+      document.addEventListener('keydown', onKeyDown);
+      return () => document.removeEventListener('keydown', onKeyDown);
+  });
+
+  const contextItem = contextMenu?.kind === 'item'
+      ? activePageDesign.items?.find(i => i.id === contextMenu.itemId)
+      : null;
+  const contextMenuItems = !contextMenu ? [] : contextItem
+      ? buildItemMenu(contextItem, {
+          update: (id, changes) => handleDesignUpdate('update_item', { id, ...changes }),
+          move: (id, direction) => handleDesignUpdate('move_item', { id, direction }),
+          duplicate: duplicateItem,
+          remove: deleteItem,
+          editProperties: () => openTab(contextItem.type === 'text' || contextItem.type === 'frame' ? 'text' : 'layers'),
+          canvas: canvasSize,
+          presetColors,
+          accentColor: design.accentColor,
+      })
+      : contextMenu.kind === 'page'
+      ? buildPageMenu({
+          design: { ...activePageDesign, showGrid: design.showGrid, snapToGrid: design.snapToGrid },
+          addElement,
+          updateDesign,
+          openTab,
+          presetColors,
+      })
+      : [];
+
+  const toggleButton = (active) => `p-2 rounded-xl transition-all ${active ? 'bg-[#A67B5B]/15 text-[#8B5E3C]' : 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]'}`;
+  const divider = <div className="w-px h-6 bg-stone-200/70 mx-0.5" />;
+
   return (
     <>
+      <AdminHeaderStatus>
+        <InvitationSaveStatus status={saveStatus} />
+      </AdminHeaderStatus>
+
       <AdminPageLayout
+        fill
         hero={
           <AdminPageHero
             title="Invitation Designer"
-            description="Design your digital wedding invitations and Save the Date cards."
+            description="Design your digital wedding invitations and Save the Date cards. Right-click any element for quick adjustments."
             breadcrumb="Designer"
             icon={<Palette className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
       >
-        <div className="flex flex-col gap-4 lg:h-[calc(100vh-140px)]">
-          <InvitationToolbar
-            saveStatus={saveStatus}
-            isExporting={isExporting}
-            onTestExport={handleTestExport}
-          />
-
-        <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:overflow-hidden">
+        {/* Fits the viewport on desktop (like other editors): only the side
+            panel scrolls, so its tabs and the canvas always stay in view. */}
+        <div className="flex flex-col gap-4 lg:h-[calc(100vh-140px)] fit:h-auto fit:flex-1 fit:min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:overflow-hidden">
          <InvitationSidebar
             loading={loading}
             activeTab={activeTab}
@@ -667,6 +737,7 @@ export default function InvitationDesigner() {
             updateDesign={updateDesign}
             handleDesignUpdate={handleDesignUpdate}
             addItem={addItem}
+            onAddElement={addElement}
             deleteItem={deleteItem}
             updateContent={updateContent}
             insertPlaceholder={insertPlaceholder}
@@ -706,6 +777,8 @@ export default function InvitationDesigner() {
                     showGrid={design.showGrid}
                     snapToGrid={design.snapToGrid}
                     weddingSettings={weddingInfo}
+                    onItemContextMenu={(item, position) => setContextMenu({ kind: 'item', itemId: item.id, position })}
+                    onCanvasContextMenu={(position) => setContextMenu({ kind: 'page', position })}
                 />
             )}
 
@@ -724,6 +797,9 @@ export default function InvitationDesigner() {
         </div>
         </div>
       </AdminPageLayout>
+
+      <ContextMenu position={contextMenu?.position || null} items={contextMenuItems} onClose={closeContextMenu} />
+
       <AdminFloatingToolbar
         z={isFullscreen ? 'z-[110]' : 'z-50'}
         actions={[
@@ -745,127 +821,20 @@ export default function InvitationDesigner() {
       >
         {!loading && (
           <>
-            {/* Page controls */}
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage <= 0}
-              className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-              title="Previous page"
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <Reorder.Group
-              as="div"
-              axis="x"
-              values={design.pages.map(p => p.id)}
+            {/* Pages: switch, reorder, rename, duplicate, delete, add */}
+            <InvitationPageMenu
+              pages={design.pages}
+              currentPage={currentPage}
+              onGoTo={goToPage}
+              onAdd={addPage}
+              onDuplicate={duplicatePage}
+              onDelete={deletePage}
+              onMove={movePage}
               onReorder={reorderPages}
-              className="flex items-center gap-1 overflow-x-auto scrollbar-hide max-w-[260px] px-0.5"
-            >
-              {design.pages.map((pg, idx) => {
-                const isActive = currentPage === idx;
-                const isEditing = editingPageId === pg.id;
-                return (
-                  <Reorder.Item
-                    as="div"
-                    key={pg.id}
-                    value={pg.id}
-                    dragListener={!isEditing}
-                    whileDrag={{ scale: 1.06, zIndex: 5 }}
-                    onClick={() => { if (!isEditing) goToPage(idx); }}
-                    onDoubleClick={() => startRenaming(idx)}
-                    title={isEditing ? undefined : `${pageLabel(pg, idx)} — click to open, double-click to rename, drag to reorder`}
-                    className={`group flex items-center gap-1 h-7 px-2 rounded-lg text-xs font-bold whitespace-nowrap select-none transition-colors ${isEditing ? 'cursor-text' : 'cursor-grab active:cursor-grabbing'} ${isActive ? 'bg-[#A67B5B] text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
-                  >
-                    {isEditing ? (
-                      <input
-                        autoFocus
-                        value={pageNameDraft}
-                        onChange={(e) => setPageNameDraft(e.target.value)}
-                        onBlur={commitRename}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
-                          else if (e.key === 'Escape') { setEditingPageId(null); setPageNameDraft(''); }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-28 bg-white text-stone-700 rounded px-1 py-0.5 text-xs font-bold outline-none ring-1 ring-[#A67B5B]"
-                        maxLength={40}
-                        placeholder={`Page ${idx + 1}`}
-                      />
-                    ) : (
-                      <>
-                        <GripVertical className={`w-3 h-3 flex-shrink-0 ${isActive ? 'text-white/60' : 'text-stone-300 group-hover:text-stone-400'}`} />
-                        <span className={`text-[9px] font-extrabold ${isActive ? 'text-white/70' : 'text-stone-400'}`}>{idx + 1}</span>
-                        <span className="max-w-[96px] truncate">{pageLabel(pg, idx)}</span>
-                      </>
-                    )}
-                  </Reorder.Item>
-                );
-              })}
-            </Reorder.Group>
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-              className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-[#A67B5B] hover:bg-stone-100' : 'text-stone-300 cursor-not-allowed'}`}
-              title="Next page"
-              aria-label="Next page"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={addPage}
-              className="p-2 rounded-xl text-[#A67B5B] hover:bg-[#A67B5B]/10 transition-all flex items-center gap-1"
-              title="Add a new page"
-              aria-label="Add a new page"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Add Page</span>
-            </button>
-            <button
-              onClick={() => duplicatePage(currentPage)}
-              className="p-2 rounded-xl text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B] transition-all"
-              title="Duplicate current page"
-              aria-label="Duplicate current page"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => startRenaming(currentPage)}
-              className="p-2 rounded-xl text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B] transition-all"
-              title="Rename current page"
-              aria-label="Rename current page"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => movePage(currentPage, -1)}
-              disabled={currentPage <= 0}
-              className={`p-2 rounded-xl transition-all ${currentPage > 0 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
-              title="Move page left"
-              aria-label="Move page left"
-            >
-              <ChevronLeft className="w-4 h-4" strokeWidth={3} />
-            </button>
-            <button
-              onClick={() => movePage(currentPage, 1)}
-              disabled={currentPage >= totalPages - 1}
-              className={`p-2 rounded-xl transition-all ${currentPage < totalPages - 1 ? 'text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B]' : 'text-stone-200 cursor-not-allowed'}`}
-              title="Move page right"
-              aria-label="Move page right"
-            >
-              <ChevronRight className="w-4 h-4" strokeWidth={3} />
-            </button>
-            <button
-              onClick={() => deletePage(currentPage)}
-              disabled={totalPages <= 1}
-              className={`p-2 rounded-xl transition-all ${totalPages > 1 ? 'text-stone-400 hover:bg-red-50 hover:text-red-500' : 'text-stone-200 cursor-not-allowed'}`}
-              title="Delete current page"
-              aria-label="Delete current page"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+              onRename={renamePage}
+            />
 
-            <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+            {divider}
 
             {/* Undo / redo */}
             <button
@@ -887,26 +856,67 @@ export default function InvitationDesigner() {
               <Redo2 className="w-4 h-4" />
             </button>
 
+            {divider}
+
+            {/* Design tools */}
+            <InvitationAddMenu onAdd={addElement} />
+            <button
+              onClick={() => updateDesign('showGrid', !design.showGrid)}
+              aria-pressed={!!design.showGrid}
+              className={toggleButton(design.showGrid)}
+              title="Show grid"
+              aria-label="Show grid"
+            >
+              <Grid3x3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => updateDesign('snapToGrid', !design.snapToGrid)}
+              aria-pressed={!!design.snapToGrid}
+              className={toggleButton(design.snapToGrid)}
+              title="Snap to grid"
+              aria-label="Snap to grid"
+            >
+              <Magnet className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => updateDesign('orientation', design.orientation === 'landscape' ? 'portrait' : 'landscape')}
+              className={toggleButton(false)}
+              title={`Orientation: ${design.orientation === 'landscape' ? 'landscape' : 'portrait'} (click to switch)`}
+              aria-label={`Switch to ${design.orientation === 'landscape' ? 'portrait' : 'landscape'} orientation`}
+            >
+              {design.orientation === 'landscape' ? <RectangleHorizontal className="w-4 h-4" /> : <RectangleVertical className="w-4 h-4" />}
+            </button>
+            <label className="relative p-2 rounded-xl text-stone-400 hover:bg-stone-100 cursor-pointer" title="Accent colour">
+              <span className="block w-4 h-4 rounded-full border border-white shadow-sm" style={{ background: design.accentColor }} />
+              <input
+                type="color"
+                value={design.accentColor || '#A67B5B'}
+                onChange={(e) => updateDesign('accentColor', e.target.value)}
+                aria-label="Accent colour"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </label>
+
             {/* Selected element opacity */}
-            {selectedItemId && (
+            {selectedItem && (
               <>
-                <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+                {divider}
                 <div className="flex items-center gap-2 px-1" title="Element opacity">
                   <Sliders className="w-4 h-4 text-[#A67B5B]" />
                   <input
                     type="range"
                     min="0" max="100"
                     aria-label="Element opacity"
-                    value={activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}
+                    value={selectedItem.opacity ?? 100}
                     onChange={(e) => handleDesignUpdate('update_item', { id: selectedItemId, opacity: parseInt(e.target.value) })}
                     className="w-20 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#A67B5B]"
                   />
-                  <span className="text-[10px] font-bold text-stone-500 w-6">{activePageDesign.items.find(i => i.id === selectedItemId)?.opacity ?? 100}%</span>
+                  <span className="text-[10px] font-bold text-stone-500 w-6">{selectedItem.opacity ?? 100}%</span>
                 </div>
               </>
             )}
 
-            <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+            {divider}
 
             {/* Design type + fullscreen */}
             <select

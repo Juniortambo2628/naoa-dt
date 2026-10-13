@@ -14,7 +14,9 @@ export default function InvitationCanvas({
   showGrid = false, 
   _snapToGrid = false,
   isExport = false,
-  weddingSettings = null
+  weddingSettings = null,
+  onItemContextMenu,
+  onCanvasContextMenu,
 }) {
   const containerRef = useRef(null);
   const [target, setTarget] = useState(null);
@@ -249,6 +251,12 @@ export default function InvitationCanvas({
                  if (mode === 'edit') onSelectExclusively?.(null);
                }
             }}
+            onContextMenu={(e) => {
+               if (mode !== 'edit' || !onCanvasContextMenu) return;
+               e.preventDefault();
+               onSelectExclusively?.(null);
+               onCanvasContextMenu({ x: e.clientX, y: e.clientY });
+            }}
         >
             {/* Background Image Layer */}
             {design.bgImage && (
@@ -318,6 +326,13 @@ export default function InvitationCanvas({
                         onClick={(e) => {
                             e.stopPropagation();
                             if (mode === 'edit') onSelectExclusively(item.id);
+                        }}
+                        onContextMenu={(e) => {
+                            if (mode !== 'edit' || !onItemContextMenu) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onSelectExclusively(item.id);
+                            onItemContextMenu(item, { x: e.clientX, y: e.clientY });
                         }}
                     >
                         {mode === 'edit' && selectedId === item.id && (

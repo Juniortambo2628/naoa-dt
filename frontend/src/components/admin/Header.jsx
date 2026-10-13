@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings } from 'lucide-react';
+import { Menu, Bell, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings, PieChart, UserCheck } from 'lucide-react';
+import HeaderAccountMenu from './HeaderAccountMenu';
 import { notificationService } from '../../services/api';
 
 const ICON_MAP = {
@@ -29,12 +30,21 @@ function timeAgo(dateStr) {
   return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Operational pages reachable from the header (they used to crowd the sidebar).
+const QUICK_LINKS = [
+  { path: '/admin/dashboard/analytics', icon: PieChart, label: 'Analytics', id: 'header-analytics' },
+  { path: '/admin/dashboard/checkin', icon: UserCheck, label: 'Check-In', id: 'header-checkin' },
+  { path: '/admin/dashboard/emails', icon: Mail, label: 'Email Templates', id: 'header-emails' },
+  { path: '/admin/dashboard/test', icon: FlaskConical, label: 'Test Lab', id: 'header-test' },
+];
+
 function NotificationIcon({ icon }) {
   const IconComp = ICON_MAP[icon] || BellRing;
   return <IconComp className="w-4 h-4 text-[#A67B5B]" />;
 }
 
-export default function Header({ onMenuClick, onRestartTutorial }) {
+export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, statusSlotRef }) {
+  const { pathname } = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -85,31 +95,51 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
 
   return (
     <header 
-      className="sticky top-0 z-30 h-16 px-6 flex items-center justify-between"
+      id="header"
+      className="sticky top-0 z-30 h-16 px-3 sm:px-6 flex items-center justify-between gap-3"
       style={{ 
         background: 'rgba(255, 249, 245, 0.95)',
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid rgba(166, 123, 91, 0.1)',
       }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         <button
           onClick={onMenuClick}
           aria-label="Open sidebar menu"
-          className="lg:hidden p-2 rounded-lg hover:bg-black/5"
+          className="lg:hidden p-2 rounded-lg hover:bg-black/5 shrink-0"
         >
           <Menu className="w-6 h-6 text-[#4A3F35]" />
         </button>
+        {/* Compact page title, filled by AdminPageHero once it scrolls away */}
+        <div ref={titleSlotRef} className="min-w-0 flex-1" />
       </div>
 
-      <div className="flex items-center gap-4">
-        <Link 
-          to="/admin/dashboard/test" 
-          className="p-2 rounded-xl text-[#A67B5B] bg-[#A67B5B]/10 hover:bg-[#A67B5B]/20 transition-colors"
-          title="Open Test Lab"
-        >
-          <FlaskConical className="w-5 h-5" />
-        </Link>
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {/* Page status (e.g. the designer's save indicator) */}
+        <div ref={statusSlotRef} className="flex items-center empty:hidden mr-1" />
+
+        <nav aria-label="Quick links" className="hidden md:flex items-center gap-1 pr-2 mr-1 border-r border-stone-200/70">
+          {QUICK_LINKS.map((link) => {
+            const active = pathname.startsWith(link.path);
+            return (
+              <Link
+                key={link.path}
+                id={link.id}
+                to={link.path}
+                title={link.label}
+                aria-label={link.label}
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center gap-2 p-2 2xl:px-3 rounded-xl text-sm font-medium transition-colors ${
+                  active ? 'bg-[#A67B5B] text-white' : 'text-[#6B5D52] hover:bg-[#A67B5B]/10 hover:text-[#A67B5B]'
+                }`}
+              >
+                <link.icon className="w-5 h-5" />
+                <span className="hidden 2xl:inline">{link.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
         <button
           id="header-restart"
@@ -174,6 +204,8 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
             )}
           </AnimatePresence>
         </div>
+
+        <HeaderAccountMenu compactLinks={QUICK_LINKS} />
       </div>
     </header>
   );

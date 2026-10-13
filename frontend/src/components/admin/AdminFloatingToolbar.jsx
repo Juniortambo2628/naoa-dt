@@ -113,7 +113,9 @@ export default function AdminFloatingToolbar({
                   title={action.label}
                 >
                   {Icon && <Icon className="w-4 h-4" />}
-                  <span className="hidden sm:inline">{action.label}</span>
+                  {/* Custom controls (e.g. the designer's tools) need the room, so
+                      action labels then only show on very wide screens. */}
+                  <span className={children ? 'hidden 2xl:inline' : 'hidden sm:inline'}>{action.label}</span>
                 </button>
               );
             })}

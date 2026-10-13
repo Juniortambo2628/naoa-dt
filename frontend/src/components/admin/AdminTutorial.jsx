@@ -19,8 +19,8 @@ const steps = [
   {
     title: "Analytics & Progress",
     content: "Get a bird's eye view of your wedding progress, RSVP statuses, and gift contributions here.",
-    target: "sidebar-analytics",
-    position: "right"
+    target: "header-analytics",
+    position: "bottom"
   },
   {
     title: "Guest Management",
@@ -31,8 +31,8 @@ const steps = [
   {
     title: "Check-In Scanner",
     content: "On the big day, use this tool to scan guest QR codes and manage their arrival in real-time.",
-    target: "sidebar-checkin",
-    position: "right"
+    target: "header-checkin",
+    position: "bottom"
   },
   {
     title: "Seating Chart",
@@ -85,14 +85,14 @@ const steps = [
   {
     title: "Email Templates",
     content: "Customize the automated emails for RSVPs, thank-yous, and special announcements.",
-    target: "sidebar-emails",
-    position: "right"
+    target: "header-emails",
+    position: "bottom"
   },
   {
-    title: "System Settings",
-    content: "Manage security, 2FA, and general application preferences to keep your information safe.",
-    target: "sidebar-settings",
-    position: "right"
+    title: "Your Account & Settings",
+    content: "Open your account menu for Users, System Settings (security, 2FA and preferences) and to log out.",
+    target: "header-account",
+    position: "bottom"
   },
   {
     title: "Need help again?",
