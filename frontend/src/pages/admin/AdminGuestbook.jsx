@@ -9,6 +9,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import DeleteButton from '../../components/admin/DeleteButton';
+import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
@@ -210,16 +211,18 @@ function GuestbookGrid({ entries, selectedIds, onToggleSelect, onDelete }) {
               </div>
 
               {/* Delete button */}
-              <button aria-label="Delete Message"
+              <Button
+                variant="danger"
+                size="icon-sm"
+                icon={Trash2}
+                aria-label="Delete Message"
+                title="Delete Message"
+                className="absolute top-4 right-4"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(entry.id, { confirmMessage: 'Delete this message?' });
                 }}
-                className="absolute top-4 right-4 p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                title="Delete Message"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              />
 
               <div className="pt-8">
                 <div className="flex items-center gap-2 mb-3">

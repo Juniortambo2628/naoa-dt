@@ -8,7 +8,7 @@ import { normalizePages } from '../../utils/invitationPages';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminCard from '../../components/admin/AdminCard';
-import Spinner from '../../components/admin/Spinner';
+import Button from '../../components/Button';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
@@ -150,7 +150,7 @@ export default function AdminEmails() {
               id: 'bulk-send',
               label: 'Send to All Pending',
               icon: Send,
-              variant: 'primary',
+              variant: 'secondary',
               onClick: handleBulkSend,
               disabled: loading,
             }
@@ -158,7 +158,7 @@ export default function AdminEmails() {
               id: 'save-templates',
               label: 'Save Templates',
               icon: Save,
-              variant: 'primary',
+              variant: 'secondary',
               onClick: handleSaveSettings,
               disabled: savingSettings,
             },
@@ -206,16 +206,16 @@ export default function AdminEmails() {
                           <Mail className="w-5 h-5 text-[#A67B5B]" />
                       </div>
                         <div className="mt-4 flex gap-2">
-                           <button 
+                           <Button
+                               size="sm"
                                onClick={() => {
                                    setPreviewType('invitation');
                                    setDesign(invitationDesign);
                                    setShowPreview(true);
                                }}
-                               className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-stone-200 hover:bg-stone-50"
                            >
                                Preview
-                           </button>
+                           </Button>
                        </div>
                   </div>
 
@@ -228,29 +228,30 @@ export default function AdminEmails() {
                           <Clock className="w-5 h-5 text-[#A67B5B]" />
                       </div>
                         <div className="mt-4 flex gap-2">
-                           <button 
+                           <Button
+                               size="sm"
                                onClick={() => {
                                    setPreviewType('save_the_date');
                                    setDesign(saveTheDateDesign);
                                    setShowPreview(true);
                                }}
-                               className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-stone-200 hover:bg-stone-50"
                            >
                                Preview
-                           </button>
+                           </Button>
                        </div>
                   </div>
               </div>
 
                <div className="mt-6 pt-6 border-t border-stone-100">
-                  <button 
+                  <Button
+                      variant="secondary"
+                      fullWidth
+                      icon={Send}
+                      loading={loading}
                       onClick={handleBulkSend}
-                      disabled={loading}
-                      className="btn-primary w-full flex justify-center items-center gap-2"
                   >
-                      {loading ? <Spinner size="sm" /> : <Send className="w-5 h-5" />}
                       Send to All Pending Guests
-                  </button>
+                  </Button>
                   <p className="text-center text-xs text-stone-400 mt-2">Will send via email to guests who haven't received an invite yet.</p>
               </div>
           </AdminCard>
