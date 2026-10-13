@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Heart } from 'lucide-react';
 
 import LanguageSwitcher from './LanguageSwitcher';
+import Button from './Button';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
 
@@ -105,31 +106,18 @@ export default function Navbar() {
             )}
 
             {isVisible('rsvp') && (
-                <Link
-                    to="/rsvp"
-                    className="px-6 py-2 rounded-full font-medium text-sm uppercase tracking-wider transition-all"
-                    style={{
-                    background: 'linear-gradient(135deg, #A67B5B 0%, #C8A68E 100%)',
-                    color: 'white',
-                    fontFamily: "'Cormorant Garamond', serif",
-                    boxShadow: '0 4px 15px rgba(166, 123, 91, 0.25)',
-                    }}
-                >
+                <Button as={Link} to="/rsvp" variant="secondary">
                     {t('nav.rsvp')}
-                </Link>
+                </Button>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
             {isVisible('rsvp') && (
-                <Link
-                    to="/rsvp"
-                    className="px-4 py-1.5 rounded-full font-medium text-xs uppercase tracking-wider bg-[#A67B5B] text-white shadow-sm"
-                    style={{ fontFamily: "'Cormorant Garamond', serif" }}
-                >
+                <Button as={Link} to="/rsvp" variant="secondary" size="sm">
                     RSVP
-                </Link>
+                </Button>
             )}
             {isVisible('language_switcher') && <LanguageSwitcher />}
             <button
@@ -184,13 +172,16 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <Link
+                  <Button
+                    as={Link}
                     to="/rsvp"
                     onClick={() => setIsOpen(false)}
-                    className="btn-primary btn-rsvp mt-8"
+                    variant="secondary"
+                    size="lg"
+                    className="mt-8"
                   >
                     RSVP Now
-                  </Link>
+                  </Button>
                 </motion.div>
               )}
             </div>

@@ -4,7 +4,7 @@ import { Save, Trash2 } from 'lucide-react'
 
 describe('AdminFloatingToolbar', () => {
   const actions = [
-    { id: 'save', label: 'Save', icon: Save, onClick: vi.fn(), variant: 'primary' },
+    { id: 'save', label: 'Save', icon: Save, onClick: vi.fn(), variant: 'secondary' },
     { id: 'delete', label: 'Delete', icon: Trash2, onClick: vi.fn(), variant: 'danger' },
   ]
 
@@ -21,7 +21,7 @@ describe('AdminFloatingToolbar', () => {
 
   it('calls onClick when action clicked', () => {
     const onClick = vi.fn()
-    const acts = [{ id: 'save', label: 'Save', icon: Save, onClick, variant: 'primary' }]
+    const acts = [{ id: 'save', label: 'Save', icon: Save, onClick, variant: 'secondary' }]
     render(<AdminFloatingToolbar actions={acts} />)
     fireEvent.click(screen.getByText('Save'))
     expect(onClick).toHaveBeenCalledTimes(1)

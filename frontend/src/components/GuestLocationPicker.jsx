@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Navigation, Check, Loader2, ChevronDown, X, Locate } from 'lucide-react';
+import { MapPin, Navigation, Check, ChevronDown, X, Locate } from 'lucide-react';
 import { guestService, settingService } from '../services/api';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import Button from './Button';
 
 // Custom marker icon
 const createIcon = (color = '#A67B5B') => L.divIcon({
@@ -92,13 +93,14 @@ function GetCurrentLocationButton({ onLocate }) {
   };
 
   return (
-    <button
+    <Button
+      size="icon"
+      icon={Locate}
       onClick={handleClick}
-      className="absolute top-4 right-4 z-[1000] p-3 bg-white rounded-xl shadow-lg hover:bg-stone-50 transition-colors"
+      className="absolute top-4 right-4 z-[1000]"
       title="Use my GPS location"
-    >
-      <Locate className="w-5 h-5 text-[#A67B5B]" />
-    </button>
+      aria-label="Use my GPS location"
+    />
   );
 }
 
@@ -358,20 +360,17 @@ export default function GuestLocationPicker({ guestCode, onSuccess }) {
         </AnimatePresence>
 
         {/* Submit button */}
-        <button
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          icon={MapPin}
+          loading={loading}
           onClick={handleSubmit}
-          disabled={loading || (!selectedZone && !gpsPosition)}
-          className="w-full py-3 bg-gradient-to-r from-[#A67B5B] to-[#C8A68E] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!selectedZone && !gpsPosition}
         >
-          {loading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <>
-              <MapPin className="w-5 h-5" />
-              {currentLocation ? 'Update My Location' : 'Share My Location'}
-            </>
-          )}
-        </button>
+          {currentLocation ? 'Update My Location' : 'Share My Location'}
+        </Button>
 
         {/* Current location indicator */}
         {currentLocation && !success && (

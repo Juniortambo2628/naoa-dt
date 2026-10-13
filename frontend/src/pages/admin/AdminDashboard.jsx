@@ -92,7 +92,7 @@ function DashboardOverview() {
   return (
     <AdminPageLayout
       actions={[
-        { id: 'guests', label: 'Guest List', icon: Users, variant: 'primary', onClick: () => navigate('/admin/dashboard/guests') },
+        { id: 'guests', label: 'Guest List', icon: Users, variant: 'secondary', onClick: () => navigate('/admin/dashboard/guests') },
         { id: 'analytics', label: 'Analytics', icon: PieChart, onClick: () => navigate('/admin/dashboard/analytics') },
         { id: 'checkin', label: 'Check-In', icon: CheckCircle, onClick: () => navigate('/admin/dashboard/checkin') },
       ]}

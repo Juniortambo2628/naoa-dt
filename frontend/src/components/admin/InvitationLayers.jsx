@@ -50,23 +50,22 @@ export default function InvitationLayers({ items, selectedIds, onSelect, onReord
               <span className="p-1.5 bg-stone-50 rounded-lg text-stone-500 group-hover:text-[#A67B5B]"><Icon className="w-4 h-4" /></span>
               <span className={`text-xs font-bold truncate ${item.locked ? 'text-stone-500' : 'text-stone-700'}`}>{name}</span>
             </button>
-            <button
-              type="button"
+            <Button
+              size="icon-sm"
+              icon={item.locked ? Lock : Unlock}
               onClick={() => onToggleLock(item)}
-              className={`p-1.5 rounded-lg transition-colors ${item.locked ? 'text-[#A67B5B]' : 'text-stone-300 opacity-0 group-hover:opacity-100 focus:opacity-100'} hover:bg-stone-100`}
+              className={item.locked ? '' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'}
               aria-label={item.locked ? `Unlock ${name}` : `Lock ${name}`}
               title={item.locked ? 'Unlock' : 'Lock position'}
-            >
-              {item.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              type="button"
+            />
+            <Button
+              size="icon-sm"
+              variant="danger"
+              icon={X}
               onClick={() => onDelete(id)}
-              className="p-1.5 rounded-lg text-stone-300 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-red-500 hover:bg-red-50"
+              className="opacity-0 group-hover:opacity-100 focus:opacity-100"
               aria-label={`Delete ${name}`}
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            />
           </Reorder.Item>
         );
       })}

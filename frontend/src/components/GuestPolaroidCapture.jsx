@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Check, Loader2, RefreshCw, Upload } from 'lucide-react';
+import { Camera, Check, RefreshCw, Upload } from 'lucide-react';
 import { galleryService } from '../services/api';
 import { useGuestByCode } from '../hooks/useApiHooks';
+import Button from './Button';
 
 /**
  * Downscale a captured photo so uploads stay snappy and within the backend's
@@ -136,14 +137,9 @@ export default function GuestPolaroidCapture({ guestCode }) {
           <p className="text-stone-500 text-sm max-w-xs mb-6">
             Take a quick photo to add to the couple&apos;s wedding gallery.
           </p>
-          <button
-            type="button"
-            onClick={openCamera}
-            className="inline-flex items-center gap-2 bg-gradient-to-br from-[#A67B5B] to-[#8C6A4D] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#A67B5B]/30 hover:scale-[1.02] active:scale-[0.98] transition-transform"
-          >
-            <Camera className="w-5 h-5" />
+          <Button variant="secondary" size="lg" icon={Camera} onClick={openCamera}>
             Open camera
-          </button>
+          </Button>
         </>
       )}
 
@@ -165,33 +161,18 @@ export default function GuestPolaroidCapture({ guestCode }) {
             {error && <p className="text-sm text-red-600">{error}</p>}
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={reset}
-                disabled={isUploading}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-stone-600 border border-stone-200 hover:bg-stone-50 transition-colors disabled:opacity-60"
-              >
-                <RefreshCw className="w-4 h-4" />
+              <Button icon={RefreshCw} onClick={reset} disabled={isUploading} className="flex-1">
                 Retake
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
+                icon={Upload}
+                loading={isUploading}
                 onClick={upload}
-                disabled={isUploading}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-br from-[#A67B5B] to-[#8C6A4D] shadow-lg shadow-[#A67B5B]/30 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-70 disabled:hover:scale-100"
+                className="flex-1"
               >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Uploading
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    {status === 'error' ? 'Try again' : 'Share photo'}
-                  </>
-                )}
-              </button>
+                {isUploading ? 'Uploading' : status === 'error' ? 'Try again' : 'Share photo'}
+              </Button>
             </div>
           </div>
         </>
@@ -215,14 +196,9 @@ export default function GuestPolaroidCapture({ guestCode }) {
           <p className="text-stone-500 text-sm max-w-xs mb-5">
             Thank you for sharing a moment with the couple.
           </p>
-          <button
-            type="button"
-            onClick={reset}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-white bg-gradient-to-br from-[#A67B5B] to-[#8C6A4D] shadow-lg shadow-[#A67B5B]/30 hover:scale-[1.02] active:scale-[0.98] transition-transform"
-          >
-            <Camera className="w-5 h-5" />
+          <Button variant="secondary" size="lg" icon={Camera} onClick={reset}>
             Take another
-          </button>
+          </Button>
         </>
       )}
     </div>

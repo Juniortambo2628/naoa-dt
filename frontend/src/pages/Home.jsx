@@ -22,6 +22,7 @@ import {
 } from '../components/CustomIllustrations';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useScrollAnimation';
 import { Skeleton } from '../components/Skeleton';
+import Button from '../components/Button';
 import { useContent } from '../context/ContentContext';
 
 // Polaroid Floating Image Component
@@ -245,12 +246,9 @@ function HeroSection({ content, settings, loading }) {
           transition={{ delay: 3.3, duration: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Link 
-            to="/rsvp" 
-            className="btn-primary btn-lg btn-rsvp"
-          >
+          <Button as={Link} to="/rsvp" variant="secondary" size="lg">
             {t('hero.rsvp_cta')}
-          </Link>
+          </Button>
         </motion.div>
       </motion.div>
       
@@ -923,10 +921,9 @@ function CTASection({ content, loading: cmsLoading }) {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <motion.div variants={staggerItem}>
-              <Link to="/rsvp" className="btn-primary btn-rsvp inline-flex items-center gap-2">
-                <Heart className="w-5 h-5" />
+              <Button as={Link} to="/rsvp" variant="secondary" icon={Heart}>
                 {t('rsvp.respond')}
-              </Link>
+              </Button>
             </motion.div>
           </motion.div>
         </motion.div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, X, Trophy, Sparkles } from 'lucide-react';
+import Button from '../Button';
 
 const steps = [
   {
@@ -289,24 +290,17 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
 
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-stone-100">
             <div className="flex gap-1.5">
-              <button aria-label="Previous step"
+              <Button
+                size="icon"
+                icon={ChevronLeft}
+                aria-label="Previous step"
                 onClick={handleBack}
                 disabled={currentStep === 0}
-                className={`p-1.5 rounded-lg transition-all ${
-                  currentStep === 0 
-                    ? 'text-stone-300' 
-                    : 'text-[#8B7B6B] hover:bg-stone-50'
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleNext}
-                className="flex items-center gap-2 bg-[#A67B5B] text-white px-4 py-2 rounded-lg hover:bg-[#8B5E3C] transition-all shadow-md shadow-[#A67B5B]/20 font-medium text-sm"
-              >
+              />
+              <Button variant="secondary" onClick={handleNext}>
                 {currentStep === steps.length - 1 ? 'Finish Tour' : 'Next Step'}
-                <ChevronRight className="w-4 h-4" />
-              </button>
+                <ChevronRight />
+              </Button>
             </div>
             
             <button 

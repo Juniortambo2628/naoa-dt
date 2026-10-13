@@ -7,6 +7,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 import AdminListPanel from '../../components/admin/AdminListPanel';
 import EmptyState from '../../components/admin/EmptyState';
+import Button from '../../components/Button';
 import { useBackups } from '../../hooks/useApiHooks';
 import { backupService } from '../../services/api';
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
@@ -109,7 +110,7 @@ export default function AdminBackups() {
         />
       }
       actions={[
-        { id: 'create', label: busy === 'create' ? 'Backing up…' : 'Back Up Now', icon: Plus, variant: 'primary', onClick: () => create(false), disabled: !!busy },
+        { id: 'create', label: busy === 'create' ? 'Backing up…' : 'Back Up Now', icon: Plus, variant: 'secondary', onClick: () => create(false), disabled: !!busy },
         { id: 'create-uploads', label: 'Back Up incl. Photos', icon: Images, onClick: () => create(true), disabled: !!busy },
       ]}
     >
@@ -148,15 +149,9 @@ export default function AdminBackups() {
                     <td className="px-4 py-3 text-stone-600">{formatSize(backup.size)}</td>
                     <td className="px-6 py-3">
                       <div className="flex justify-end gap-1">
-                        <button type="button" onClick={() => download(backup)} disabled={!!busy} className="p-2 rounded-lg text-stone-500 hover:bg-stone-100 hover:text-[#A67B5B]" aria-label={`Download ${backup.name}`} title="Download">
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button type="button" onClick={() => restore(backup)} disabled={!!busy} className="p-2 rounded-lg text-stone-500 hover:bg-amber-50 hover:text-amber-700" aria-label={`Restore ${backup.name}`} title="Restore">
-                          <RotateCcw className="w-4 h-4" />
-                        </button>
-                        <button type="button" onClick={() => remove(backup)} disabled={!!busy} className="p-2 rounded-lg text-stone-500 hover:bg-red-50 hover:text-red-600" aria-label={`Delete ${backup.name}`} title="Delete">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <Button size="icon-sm" icon={Download} onClick={() => download(backup)} disabled={!!busy} aria-label={`Download ${backup.name}`} title="Download" />
+                        <Button size="icon-sm" icon={RotateCcw} onClick={() => restore(backup)} disabled={!!busy} aria-label={`Restore ${backup.name}`} title="Restore" />
+                        <Button size="icon-sm" variant="danger" icon={Trash2} onClick={() => remove(backup)} disabled={!!busy} aria-label={`Delete ${backup.name}`} title="Delete" />
                       </div>
                     </td>
                   </tr>

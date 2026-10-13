@@ -2,6 +2,7 @@ import Overlay from '../Overlay';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Table as TableIcon, Plus, Trash2, Check } from 'lucide-react';
+import Button from '../Button';
 
 export default function TableInsertModal({ isOpen, onClose, onInsert }) {
     const [rows, setRows] = useState(3);
@@ -180,15 +181,12 @@ export default function TableInsertModal({ isOpen, onClose, onInsert }) {
                 </div>
 
                 <div className="p-6 border-t border-stone-100 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-6 py-2 text-stone-500 hover:bg-stone-50 rounded-xl transition-colors">
+                    <Button onClick={onClose}>
                         Cancel
-                    </button>
-                    <button 
-                        onClick={handleInsert}
-                        className="px-6 py-2 bg-[#8B9A7D] text-white rounded-xl font-bold hover:bg-[#78886D] transition-all shadow-lg shadow-[#8B9A7D]/30 flex items-center gap-2"
-                    >
-                        <Check className="w-4 h-4" /> Insert Table
-                    </button>
+                    </Button>
+                    <Button variant="secondary" icon={Check} onClick={handleInsert}>
+                        Insert Table
+                    </Button>
                 </div>
             </motion.div>
         </Overlay>

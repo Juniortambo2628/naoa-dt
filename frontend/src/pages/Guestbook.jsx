@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageSquare, User, Send, Loader2, Check } from 'lucide-react';
+import { Heart, MessageSquare, User, Send, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { 
@@ -10,6 +10,7 @@ import {
   FlowerDivider,
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
+import Button from '../components/Button';
 import { Skeleton, MessageSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
@@ -182,20 +183,17 @@ export default function Guestbook() {
                   />
                 </div>
 
-                <button
+                <Button
                   type="submit"
-                  disabled={submitting || !guestName.trim() || !message.trim()}
-                  className="btn-primary w-full flex items-center justify-center gap-2"
+                  variant="secondary"
+                  size="lg"
+                  fullWidth
+                  icon={Send}
+                  loading={submitting}
+                  disabled={!guestName.trim() || !message.trim()}
                 >
-                  {submitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      {t('guestbook.submit') || 'Send Message'}
-                    </>
-                  )}
-                </button>
+                  {t('guestbook.submit') || 'Send Message'}
+                </Button>
               </form>
             </div>
           </motion.div>

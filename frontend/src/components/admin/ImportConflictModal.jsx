@@ -2,6 +2,7 @@ import Overlay from '../Overlay';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, Check, ArrowRight, User, Mail, Phone, Users } from 'lucide-react';
+import Button from '../Button';
 
 export default function ImportConflictModal({ isOpen, onClose, conflicts, validCount, onConfirm }) {
     const [resolutions, setResolutions] = useState(
@@ -133,23 +134,17 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
                 </div>
 
                 <div className="p-6 border-t border-stone-100 bg-white flex items-center justify-between">
-                    <button 
-                        onClick={onClose}
-                        className="px-6 py-2 rounded-xl text-stone-600 hover:bg-stone-100 font-medium transition-colors"
-                    >
+                    <Button onClick={onClose}>
                         Cancel
-                    </button>
+                    </Button>
                     <div className="flex items-center gap-4">
                          <div className="text-right hidden sm:block">
                             <p className="text-xs text-stone-500 font-medium">Ready to import</p>
                             <p className="text-sm font-bold text-[#A67B5B]">{validCount + resolutions.filter(r => r !== 'skip').length} guests</p>
                         </div>
-                        <button 
-                            onClick={handleConfirm}
-                            className="px-8 py-3 rounded-2xl bg-[#A67B5B] text-white font-bold hover:bg-[#8B5E3C] transition-all shadow-lg shadow-[#A67B5B]/30 flex items-center gap-2 group"
-                        >
-                            Complete Import <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        <Button variant="secondary" size="lg" onClick={handleConfirm}>
+                            Complete Import <ArrowRight />
+                        </Button>
                     </div>
                 </div>
             </motion.div>

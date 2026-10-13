@@ -4,10 +4,9 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Copy, Pencil, Trash2, Plus, GripVertical, Check,
 } from 'lucide-react';
 import useDismiss from '../../hooks/useDismiss';
+import Button from '../Button';
 
 const pageLabel = (page, index) => (page?.name && page.name.trim()) || `Page ${index + 1}`;
-
-const iconButton = 'p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#A67B5B] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed';
 
 /**
  * Compact page switcher for the invitation designer toolbar: prev/next arrows
@@ -39,23 +38,19 @@ export default function InvitationPageMenu({
 
   return (
     <div className="flex items-center gap-0.5" ref={ref}>
-      <button type="button" onClick={() => onGoTo(currentPage - 1)} disabled={currentPage <= 0} className={iconButton} title="Previous page" aria-label="Previous page">
-        <ChevronLeft className="w-4 h-4" />
-      </button>
+      <Button size="icon" icon={ChevronLeft} onClick={() => onGoTo(currentPage - 1)} disabled={currentPage <= 0} title="Previous page" aria-label="Previous page" />
 
       <div className="relative">
-        <button
-          type="button"
+        <Button
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="menu"
           aria-expanded={open}
-          className="flex items-center gap-2 h-9 pl-3 pr-2 rounded-xl bg-[#A67B5B]/10 text-[#8B5E3C] text-sm font-semibold hover:bg-[#A67B5B]/15"
           title="Pages — switch, reorder, rename"
         >
           <span className="max-w-[7.5rem] truncate">{pageLabel(pages[currentPage], currentPage)}</span>
-          <span className="text-[11px] font-bold text-[#A67B5B]/70">{currentPage + 1}/{total}</span>
-          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
+          <span className="text-[11px] font-bold text-stone-400">{currentPage + 1}/{total}</span>
+          <ChevronDown className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        </Button>
 
         <AnimatePresence>
           {open && (
@@ -117,49 +112,39 @@ export default function InvitationPageMenu({
                           {active && <Check className="w-3.5 h-3.5 text-[#A67B5B] shrink-0" />}
                         </button>
                       )}
-                      <div className="flex items-center opacity-60 group-hover:opacity-100 group-focus-within:opacity-100">
-                        <button type="button" onClick={() => onMove(index, -1)} disabled={index === 0} className={iconButton} aria-label={`Move ${pageLabel(page, index)} up`} title="Move up">
-                          <ArrowUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button type="button" onClick={() => onMove(index, 1)} disabled={index === total - 1} className={iconButton} aria-label={`Move ${pageLabel(page, index)} down`} title="Move down">
-                          <ArrowDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button type="button" onClick={() => startRename(page, index)} className={iconButton} aria-label={`Rename ${pageLabel(page, index)}`} title="Rename">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button type="button" onClick={() => onDuplicate(index)} className={iconButton} aria-label={`Duplicate ${pageLabel(page, index)}`} title="Duplicate">
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
+                      <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100">
+                        <Button size="icon-sm" icon={ArrowUp} onClick={() => onMove(index, -1)} disabled={index === 0} aria-label={`Move ${pageLabel(page, index)} up`} title="Move up" />
+                        <Button size="icon-sm" icon={ArrowDown} onClick={() => onMove(index, 1)} disabled={index === total - 1} aria-label={`Move ${pageLabel(page, index)} down`} title="Move down" />
+                        <Button size="icon-sm" icon={Pencil} onClick={() => startRename(page, index)} aria-label={`Rename ${pageLabel(page, index)}`} title="Rename" />
+                        <Button size="icon-sm" icon={Copy} onClick={() => onDuplicate(index)} aria-label={`Duplicate ${pageLabel(page, index)}`} title="Duplicate" />
+                        <Button
+                          size="icon-sm"
+                          variant="danger"
+                          icon={Trash2}
                           onClick={() => onDelete(index)}
                           disabled={total <= 1}
-                          className={`${iconButton} hover:!text-red-500 hover:!bg-red-50`}
                           aria-label={`Delete ${pageLabel(page, index)}`}
                           title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        />
                       </div>
                     </Reorder.Item>
                   );
                 })}
               </Reorder.Group>
-              <button
-                type="button"
+              <Button
+                icon={Plus}
+                fullWidth
                 onClick={() => { onAdd(); close(); }}
-                className="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-dashed border-[#A67B5B]/40 text-sm font-medium text-[#A67B5B] hover:bg-[#A67B5B]/5"
+                className="mt-2"
               >
-                <Plus className="w-4 h-4" /> Add page
-              </button>
+                Add page
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <button type="button" onClick={() => onGoTo(currentPage + 1)} disabled={currentPage >= total - 1} className={iconButton} title="Next page" aria-label="Next page">
-        <ChevronRight className="w-4 h-4" />
-      </button>
+      <Button size="icon" icon={ChevronRight} onClick={() => onGoTo(currentPage + 1)} disabled={currentPage >= total - 1} title="Next page" aria-label="Next page" />
     </div>
   );
 }

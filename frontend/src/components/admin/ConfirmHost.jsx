@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 import Overlay from '../Overlay';
+import Button from '../Button';
 import { registerConfirmHost } from '../../utils/feedback';
 
 /** Renders the dialogs requested through confirmAction(). Mount once. */
@@ -86,18 +87,15 @@ export default function ConfirmHost() {
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => close(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100">
-                {opts.cancelLabel}
-              </button>
-              <button
+              <Button onClick={() => close(false)}>{opts.cancelLabel}</Button>
+              <Button
                 ref={confirmRef}
-                type="button"
+                variant={danger ? 'danger' : 'secondary'}
                 disabled={blocked}
                 onClick={() => close(true)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40 ${danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#A67B5B] hover:bg-[#8B5E3C]'}`}
               >
                 {opts.confirmLabel}
-              </button>
+              </Button>
             </div>
           </motion.div>
         </Overlay>

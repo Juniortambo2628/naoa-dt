@@ -8,6 +8,8 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import EmptyState from '../../components/admin/EmptyState';
+import DeleteButton from '../../components/admin/DeleteButton';
+import Button from '../../components/Button';
 import { useGallery } from '../../hooks/useApiHooks';
 import { useSearch } from '../../context/SearchContext';
 import { confirmAction, notifyError } from '../../utils/feedback';
@@ -117,7 +119,7 @@ export default function GalleryManager() {
       id: 'upload',
       label: 'Upload Photos',
       icon: Upload,
-      variant: 'primary',
+      variant: 'secondary',
       onClick: () => setUploaderOpen(open => !open),
       hidden: isReordering,
     },
@@ -132,7 +134,7 @@ export default function GalleryManager() {
       id: 'reorder',
       label: isReordering ? 'Save Order' : 'Reorder',
       icon: ArrowUpDown,
-      variant: isReordering ? 'primary' : 'secondary',
+      variant: isReordering ? 'secondary' : 'primary',
       onClick: () => isReordering ? saveOrder() : setIsReordering(!isReordering),
     },
   ];
@@ -220,25 +222,22 @@ export default function GalleryManager() {
                   <label className="block text-sm font-medium text-stone-700 mb-2">Photo Position</label>
                   <div className="grid grid-cols-5 gap-2">
                     {['top', 'left', 'center', 'right', 'bottom'].map(pos => (
-                      <button
+                      <Button
                         key={pos}
-                        type="button"
+                        size="sm"
+                        variant={(editingItem.object_position || 'center') === pos ? 'secondary' : 'primary'}
+                        aria-pressed={(editingItem.object_position || 'center') === pos}
                         onClick={() => setEditingItem({ ...editingItem, object_position: pos })}
-                        className={`p-2 text-xs rounded-lg border transition-all capitalize ${
-                          (editingItem.object_position || 'center') === pos
-                            ? 'border-[#A67B5B] bg-[#A67B5B]/10 text-[#A67B5B]'
-                            : 'border-stone-200 hover:border-stone-300 text-stone-600'
-                        }`}
                       >
-                        {pos}
-                      </button>
+                        {pos.charAt(0).toUpperCase() + pos.slice(1)}
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setEditingItem(null)} className="btn-secondary">Cancel</button>
-                  <button type="submit" className="btn-primary">Save Changes</button>
+                  <Button onClick={() => setEditingItem(null)}>Cancel</Button>
+                  <Button type="submit" variant="secondary">Save Changes</Button>
                 </div>
               </form>
             </div>
@@ -273,8 +272,8 @@ export default function GalleryManager() {
           selectedCount={selectedIds.length}
           onClearSelection={() => setSelectedIds([])}
           actions={[
-            { id: 'show', label: 'Show', icon: Eye, variant: 'primary', onClick: () => handleBulkVisibility(true) },
-            { id: 'hide', label: 'Hide', icon: EyeOff, variant: 'secondary', onClick: () => handleBulkVisibility(false) },
+            { id: 'show', label: 'Show', icon: Eye, variant: 'secondary', onClick: () => handleBulkVisibility(true) },
+            { id: 'hide', label: 'Hide', icon: EyeOff, variant: 'primary', onClick: () => handleBulkVisibility(false) },
             { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
           ]}
         />
@@ -308,25 +307,17 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
           <p className="text-white text-sm font-medium truncate">Uploaded by: {item.uploaded_by || 'Anonymous'}</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => onEdit(item)}
-            className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-lg backdrop-blur-sm flex-1 flex items-center justify-center gap-2"
-          >
-            <ImageIcon className="w-3 h-3" /> <span className="text-xs">Edit</span>
-          </button>
-          <button
+          <Button size="sm" icon={ImageIcon} className="flex-1" onClick={() => onEdit(item)}>
+            Edit
+          </Button>
+          <Button
+            size="icon"
+            icon={item.is_visible ? Eye : EyeOff}
             onClick={() => onToggleVisibility(item)}
-            className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-lg backdrop-blur-sm"
             title={item.is_visible ? 'Hide' : 'Show'}
-          >
-            {item.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-          </button>
-          <button aria-label="Delete photo"
-            onClick={() => onDelete(item.id)}
-            className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg backdrop-blur-sm"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+            aria-label={item.is_visible ? 'Hide photo' : 'Show photo'}
+          />
+          <DeleteButton onClick={() => onDelete(item.id)} title="Delete photo" />
         </div>
       </div>
 
@@ -453,24 +444,21 @@ function GalleryList({ items, uploadingFiles, selectedIds, onToggleSelection, on
               </div>
 
               <div className="flex items-center justify-end gap-2">
-                <button aria-label="Edit photo position"
+                <Button
+                  size="icon"
+                  icon={ImageIcon}
+                  aria-label="Edit photo position"
+                  title="Edit photo position"
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                  className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
-                >
-                  <ImageIcon className="w-4 h-4" />
-                </button>
-                <button
+                />
+                <Button
+                  size="icon"
+                  icon={item.is_visible ? Eye : EyeOff}
+                  aria-label={item.is_visible ? 'Hide photo' : 'Show photo'}
+                  title={item.is_visible ? 'Hide' : 'Show'}
                   onClick={(e) => { e.stopPropagation(); onToggleVisibility(item); }}
-                  className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
-                >
-                  {item.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                </button>
-                <button aria-label="Delete photo"
-                  onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                  className="p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                />
+                <DeleteButton onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} title="Delete photo" />
               </div>
             </div>
           );

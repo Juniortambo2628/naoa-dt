@@ -17,6 +17,7 @@ import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import AdminCard from '../../components/admin/AdminCard';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
+import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
@@ -56,20 +57,23 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
                 <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-stone-50 to-transparent pointer-events-none"></div>
             </div>
             <div className="flex gap-2 shrink-0">
-                <button aria-label={`Edit FAQ: ${faq.question}`}
+                <Button
+                    size="icon"
+                    icon={Edit}
+                    aria-label={`Edit FAQ: ${faq.question}`}
+                    title="Edit"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onEdit(faq); }}
-                    className="p-2 text-[#A67B5B] bg-[#A67B5B]/10 rounded-lg hover:bg-[#A67B5B]/20 transition-colors"
-                >
-                    <Edit className="w-4 h-4" />
-                </button>
-                <button aria-label={`Delete FAQ: ${faq.question}`}
+                />
+                <Button
+                    variant="danger"
+                    size="icon"
+                    icon={Trash2}
+                    aria-label={`Delete FAQ: ${faq.question}`}
+                    title="Delete"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onDelete(faq.id); }}
-                    className="p-2 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
+                />
             </div>
         </Reorder.Item>
     );
@@ -98,18 +102,23 @@ function FaqGridCard({ faq, isSelected, onToggleSelect, onEdit, onDelete }) {
                 dangerouslySetInnerHTML={{ __html: faq.answer }}
             />
             <div className="flex gap-2">
-                <button
+                <Button
+                    size="sm"
+                    icon={Edit}
+                    className="flex-1"
                     onClick={(e) => { e.stopPropagation(); onEdit(faq); }}
-                    className="flex-1 btn-secondary text-sm py-2 flex items-center justify-center gap-1.5"
                 >
-                    <Edit className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button
+                    Edit
+                </Button>
+                <Button
+                    variant="danger"
+                    size="sm"
+                    icon={Trash2}
+                    className="flex-1"
                     onClick={(e) => { e.stopPropagation(); onDelete(faq.id); }}
-                    className="flex-1 border border-red-200 text-red-500 hover:bg-red-50 rounded-xl text-sm py-2 flex items-center justify-center gap-1.5"
                 >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
+                    Delete
+                </Button>
             </div>
         </div>
     );
@@ -250,7 +259,7 @@ export default function AdminFAQ() {
                         id: 'add-faq',
                         label: 'Add FAQ',
                         icon: Plus,
-                        variant: 'primary',
+                        variant: 'secondary',
                         onClick: handleAdd,
                     },
                 ]}
@@ -362,34 +371,36 @@ export default function AdminFAQ() {
                                         />
                                         
                                         {uploadedFileUrl && (
-                                            <button
-                                                type="button"
+                                            <Button
+                                                fullWidth
+                                                icon={ImageIcon}
                                                 onClick={insertImageToQuill}
-                                                className="w-full mt-2 py-2 flex items-center justify-center gap-2 bg-[#8B9A7D] text-white rounded-lg hover:bg-[#78886D] transition-colors shadow-sm text-sm font-medium"
+                                                className="mt-2"
                                             >
-                                                <ImageIcon className="w-4 h-4" /> Insert Uploaded Image into Text
-                                            </button>
+                                                Insert Uploaded Image into Text
+                                            </Button>
                                         )}
 
-                                        <button
-                                            type="button"
+                                        <Button
+                                            fullWidth
+                                            icon={TableIcon}
                                             onClick={() => setTableModalOpen(true)}
-                                            className="w-full mt-2 py-2 flex items-center justify-center gap-2 bg-[#7D8B9A] text-white rounded-lg hover:bg-[#6D7888] transition-colors shadow-sm text-sm font-medium"
+                                            className="mt-2"
                                         >
-                                            <TableIcon className="w-4 h-4" /> Add Table to Answer
-                                        </button>
+                                            Add Table to Answer
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
                         <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
-                            <button type="button" onClick={() => setModalOpen(false)} className="px-6 py-2 rounded-xl text-stone-600 hover:bg-stone-100 font-medium transition-colors">
+                            <Button onClick={() => setModalOpen(false)}>
                                 Cancel
-                            </button>
-                            <button type="submit" className="px-6 py-2 rounded-xl bg-[#A67B5B] text-white font-medium hover:bg-[#8B5E3C] transition-colors shadow-lg shadow-[#A67B5B]/30 flex items-center gap-2">
-                                <Save className="w-4 h-4" /> Save FAQ
-                            </button>
+                            </Button>
+                            <Button type="submit" variant="secondary" icon={Save}>
+                                Save FAQ
+                            </Button>
                         </div>
                     </form>
                 </AdminModal>

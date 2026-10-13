@@ -1,4 +1,5 @@
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import Button from '../Button';
 
 /**
  * Shown when data failed to load — never fall back to made-up numbers.
@@ -18,9 +19,7 @@ export default function QueryError({ what = 'this data', onRetry, error }) {
         </p>
       </div>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-red-200 text-sm font-medium text-red-700 hover:bg-red-100">
-          <RefreshCw className="w-4 h-4" /> Retry
-        </button>
+        <Button variant="danger" icon={RefreshCw} onClick={onRetry}>Retry</Button>
       )}
     </div>
   );

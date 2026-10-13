@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Armchair, Users, MapPin, Maximize2, X, Search } from 'lucide-react';
 import { tableService } from '../services/api';
+import Button from './Button';
 
 const GROUP_COLORS = {
   family: { bg: 'bg-rose-100', border: 'border-rose-300', text: 'text-rose-700', dot: 'bg-rose-400' },
@@ -373,13 +374,13 @@ export default function PublicSeatingChart({ guestCode, embedded = true, showExp
         <div className="flex items-center gap-2">
           {/* Expand button */}
           {embedded && showExpand && (
-            <button
+            <Button
+              size="icon-sm"
+              icon={Maximize2}
               onClick={() => setIsExpanded(true)}
-              className="p-2 hover:bg-stone-100 rounded-lg transition-colors group"
               title="Expand to full view"
-            >
-              <Maximize2 className="w-4 h-4 text-stone-400 group-hover:text-[#A67B5B]" />
-            </button>
+              aria-label="Expand to full view"
+            />
           )}
         </div>
       </div>

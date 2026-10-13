@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Music, Play, Pause, X, Check } from 'lucide-react';
 import api from '../services/api';
+import Button from './Button';
 
 export default function SpotifySongSearch({ value, onChange, placeholder = "Search for a song..." }) {
     const [query, setQuery] = useState('');
@@ -121,27 +122,22 @@ export default function SpotifySongSearch({ value, onChange, placeholder = "Sear
                     </div>
                     <div className="flex items-center gap-2">
                         {selectedTrack.preview_url && (
-                            <button
-                                type="button"
+                            <Button
+                                variant="secondary"
+                                size="icon-sm"
+                                icon={playingPreview === selectedTrack.id ? Pause : Play}
                                 aria-label={playingPreview === selectedTrack.id ? 'Pause preview' : 'Play preview'}
+                                title={playingPreview === selectedTrack.id ? 'Pause preview' : 'Play preview'}
                                 onClick={() => playPreview(selectedTrack.preview_url, selectedTrack.id)}
-                                className="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
-                            >
-                                {playingPreview === selectedTrack.id ? (
-                                    <Pause className="w-4 h-4" />
-                                ) : (
-                                    <Play className="w-4 h-4" />
-                                )}
-                            </button>
+                            />
                         )}
-                        <button
-                            type="button"
+                        <Button
+                            size="icon-sm"
+                            icon={X}
                             aria-label="Clear selection"
+                            title="Clear selection"
                             onClick={clearSelection}
-                            className="p-2 rounded-full bg-stone-200 text-stone-600 hover:bg-stone-300 transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
+                        />
                     </div>
                 </div>
             ) : (

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { 
-  Gift, Search, Heart, Check, X, Loader2,
+  Gift, Search, Heart, Check, X,
   DollarSign, ShoppingBag, Sparkles, ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ import {
   FlowerDivider,
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
+import Button from '../components/Button';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
@@ -235,25 +236,16 @@ function ClaimModal({ gift, onClose, onSubmit }) {
                 />
               </div>
 
-              <button 
+              <Button
                 type="submit"
-                disabled={loading}
-                className="btn-primary w-full flex items-center justify-center gap-2"
+                variant="secondary"
+                size="lg"
+                fullWidth
+                loading={loading}
+                icon={gift.is_cash_fund ? Heart : ShoppingBag}
               >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : gift.is_cash_fund ? (
-                  <>
-                    <Heart className="w-5 h-5" />
-                    {t('gifts.contribute_action')}
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-5 h-5" />
-                    {t('gifts.reserve_action')}
-                  </>
-                )}
-              </button>
+                {gift.is_cash_fund ? t('gifts.contribute_action') : t('gifts.reserve_action')}
+              </Button>
             </form>
           </>
         ) : (
@@ -408,13 +400,14 @@ export default function GiftRegistry() {
             {/* Categories */}
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => (
-                <button
+                <Button
                   key={cat}
+                  variant={category === cat ? 'secondary' : 'primary'}
+                  aria-pressed={category === cat}
                   onClick={() => setCategory(cat)}
-                  className={`btn-tab ${category === cat ? 'active' : ''}`}
                 >
                   {cat === 'All' ? t('gifts.cat_all') : cat}
-                </button>
+                </Button>
               ))}
             </div>
           </motion.div>
@@ -527,24 +520,26 @@ export default function GiftRegistry() {
                       
                       <div className="flex gap-2">
                         {gift.product_link && !gift.claimed && (
-                            <a 
-                                href={gift.product_link} 
-                                target="_blank" 
+                            <Button
+                                as="a"
+                                size="sm"
+                                icon={ExternalLink}
+                                href={gift.product_link}
+                                target="_blank"
                                 rel="noopener noreferrer"
-                                className="btn-secondary btn-sm flex items-center gap-1"
                                 title="Buy Online"
                             >
-                                <ExternalLink className="w-3 h-3" />
                                 {t('gifts.btn_buy', 'Buy Online')}
-                            </a>
+                            </Button>
                         )}
-                        <button
+                        <Button
+                            variant={gift.claimed ? 'primary' : 'secondary'}
+                            size="sm"
                             onClick={() => !gift.claimed && setSelectedGift(gift)}
                             disabled={gift.claimed}
-                            className={gift.claimed ? 'btn-claimed btn-sm' : 'btn-primary btn-sm'}
                         >
                             {gift.claimed ? t('gifts.btn_reserved') : gift.is_cash_fund ? t('gifts.btn_contribute') : t('gifts.btn_reserve')}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>

@@ -8,6 +8,7 @@ import EmptyState from '../../components/admin/EmptyState';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
+import Button from '../../components/Button';
 
 export default function CheckInScanner() {
     const { data: statsData, refetch: refetchStats } = useCheckinStats();
@@ -81,7 +82,7 @@ export default function CheckInScanner() {
             actions={[
                 scanning
                     ? { id: 'stop-scan', label: 'Stop Scanning', icon: Square, variant: 'danger', onClick: stopScanning }
-                    : { id: 'start-scan', label: 'Start Scanning', icon: QrCode, variant: 'primary', onClick: startScanning },
+                    : { id: 'start-scan', label: 'Start Scanning', icon: QrCode, variant: 'secondary', onClick: startScanning },
                 { id: 'refresh', label: 'Refresh Stats', icon: RefreshCw, onClick: () => refetchStats() },
             ]}
             hero={
@@ -104,22 +105,16 @@ export default function CheckInScanner() {
                         <div className="text-center py-12">
                             <QrCode className="w-16 h-16 mx-auto mb-4 text-stone-300" />
                             <p className="text-stone-500 mb-4">Click below to start scanning</p>
-                            <button 
-                                onClick={startScanning}
-                                className="btn-primary"
-                            >
+                            <Button variant="secondary" onClick={startScanning}>
                                 Start Scanning
-                            </button>
+                            </Button>
                         </div>
                     ) : (
                         <div>
                             <div id="qr-reader" className="rounded-lg overflow-hidden"></div>
-                            <button 
-                                onClick={stopScanning}
-                                className="w-full mt-4 btn-secondary"
-                            >
+                            <Button fullWidth className="mt-4" onClick={stopScanning}>
                                 Stop Scanning
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -143,12 +138,9 @@ export default function CheckInScanner() {
                                     )}
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => { setResult(null); startScanning(); }}
-                                className="w-full mt-3 btn-primary"
-                            >
+                            <Button variant="secondary" fullWidth className="mt-3" onClick={() => { setResult(null); startScanning(); }}>
                                 Scan Next Guest
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </AdminCard>

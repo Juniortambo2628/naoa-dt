@@ -5,6 +5,7 @@ import {
 import AdminListPanel from './AdminListPanel';
 import AdminPagination from './AdminPagination';
 import EmptyState from './EmptyState';
+import Button from '../Button';
 import { confirmAction } from '../../utils/feedback';
 import { RSVP_STATUSES, RSVP_ORDER, rsvpStatus, isInviteSent } from '../../utils/rsvp';
 
@@ -32,8 +33,6 @@ function RsvpStatusSelect({ guest, onUpdateGuest }) {
   );
 }
 
-const iconButton = 'p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-[#A67B5B]';
-
 /** Invite / edit / reset / delete — shared by the table rows and mobile cards. */
 function GuestActions({ guest, onInviteRequest, onEdit, onUpdateGuest, onDelete }) {
   const resetRsvp = async () => {
@@ -41,21 +40,13 @@ function GuestActions({ guest, onInviteRequest, onEdit, onUpdateGuest, onDelete 
   };
   return (
     <div className="flex justify-end gap-1">
-      <button type="button" onClick={() => onInviteRequest(guest)} className={`${iconButton} hover:text-[#A67B5B] ${isInviteSent(guest) ? 'text-green-700' : ''}`} title={isInviteSent(guest) ? 'Invitation sent — manage' : 'Send invitation'} aria-label={`Invitation for ${guest.name}`}>
-        <Send className="w-4 h-4" />
-      </button>
+      <Button size="icon-sm" icon={Send} onClick={() => onInviteRequest(guest)} title={isInviteSent(guest) ? 'Invitation sent — manage' : 'Send invitation'} aria-label={`Invitation for ${guest.name}`} />
       {onEdit && (
-        <button type="button" onClick={() => onEdit(guest)} className={`${iconButton} hover:text-[#A67B5B]`} title="Edit" aria-label={`Edit ${guest.name}`}>
-          <Edit className="w-4 h-4" />
-        </button>
+        <Button size="icon-sm" icon={Edit} onClick={() => onEdit(guest)} title="Edit" aria-label={`Edit ${guest.name}`} />
       )}
-      <button type="button" onClick={resetRsvp} className={`${iconButton} hover:text-orange-600`} title="Reset RSVP" aria-label={`Reset RSVP for ${guest.name}`}>
-        <RotateCcw className="w-4 h-4" />
-      </button>
+      <Button size="icon-sm" icon={RotateCcw} onClick={resetRsvp} title="Reset RSVP" aria-label={`Reset RSVP for ${guest.name}`} />
       {onDelete && (
-        <button type="button" onClick={() => onDelete(guest.id)} className={`${iconButton} hover:text-red-600`} title="Delete" aria-label={`Delete ${guest.name}`}>
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <Button size="icon-sm" variant="danger" icon={Trash2} onClick={() => onDelete(guest.id)} title="Delete" aria-label={`Delete ${guest.name}`} />
       )}
     </div>
   );

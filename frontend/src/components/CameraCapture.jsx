@@ -1,4 +1,5 @@
 import Overlay from './Overlay';
+import Button from './Button';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, RotateCcw, Check, SwitchCamera } from 'lucide-react';
@@ -169,12 +170,9 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
             <Camera className="w-16 h-16 mb-4 opacity-50" />
             <p className="text-lg font-medium mb-2">Camera Unavailable</p>
             <p className="text-sm opacity-70">{error}</p>
-            <button
-              onClick={handleClose}
-              className="mt-6 px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-            >
+            <Button onClick={handleClose} className="mt-6">
               Close
-            </button>
+            </Button>
           </div>
         ) : capturedImage ? (
           <img
@@ -207,20 +205,21 @@ export default function CameraCapture({ onCapture, onClose, aspectRatio = '1:1' 
         <div className="flex items-center justify-center gap-8">
           {capturedImage ? (
             <>
-              <button
+              <Button
+                size="icon"
+                icon={RotateCcw}
                 aria-label="Retake photo"
+                title="Retake photo"
                 onClick={retakePhoto}
-                className="p-4 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-              >
-                <RotateCcw className="w-6 h-6 text-white" />
-              </button>
-              <button
+              />
+              <Button
+                variant="secondary"
+                size="icon"
+                icon={Check}
                 aria-label="Use photo"
+                title="Use photo"
                 onClick={confirmCapture}
-                className="p-4 bg-[#A67B5B] hover:bg-[#8B6A4E] rounded-full transition-colors"
-              >
-                <Check className="w-8 h-8 text-white" />
-              </button>
+              />
             </>
           ) : (
             <button

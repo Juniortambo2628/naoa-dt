@@ -12,7 +12,7 @@ import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
-import Spinner from '../../components/admin/Spinner';
+import Button from '../../components/Button';
 import DeleteButton from '../../components/admin/DeleteButton';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
@@ -252,16 +252,18 @@ export default function AdminEnquiries() {
                       </span>
                       <div className="flex items-center gap-1">
                         {enq.status !== 'replied' && (
-                          <button
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={Send}
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedEnquiry(enq);
                               setShowReplyModal(true);
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#A67B5B] text-white text-xs font-bold rounded-lg hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
                           >
-                            <Send className="w-3.5 h-3.5" /> Reply
-                          </button>
+                            Reply
+                          </Button>
                         )}
                         <span onClick={(e) => e.stopPropagation()}>
                           <DeleteButton
@@ -316,12 +318,14 @@ export default function AdminEnquiries() {
 
                     <div className="flex flex-row md:flex-col items-center gap-3 md:border-l md:border-stone-100 md:pl-6 min-w-[120px]">
                       {enq.status !== 'replied' && (
-                        <button
+                        <Button
+                          variant="secondary"
+                          icon={Send}
                           onClick={() => { setSelectedEnquiry(enq); setShowReplyModal(true); }}
-                          className="flex-1 md:w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#A67B5B] text-white text-sm font-bold rounded-xl hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
+                          className="flex-1 md:w-full"
                         >
-                          <Send className="w-4 h-4" /> Reply
-                        </button>
+                          Reply
+                        </Button>
                       )}
                       <DeleteButton
                         onClick={() => handleDelete(enq.id)}
@@ -364,26 +368,19 @@ export default function AdminEnquiries() {
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowReplyModal(false)}
-                    className="flex-1 py-3 border-2 border-stone-100 text-stone-500 font-bold rounded-2xl hover:bg-stone-50 transition-all"
-                  >
+                  <Button onClick={() => setShowReplyModal(false)} className="flex-1">
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    disabled={processing === selectedEnquiry.id || !replyMessage.trim()}
-                    className="flex-[2] py-3 bg-[#A67B5B] text-white font-bold rounded-2xl hover:bg-[#8B5E3C] transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                    variant="secondary"
+                    icon={Send}
+                    loading={processing === selectedEnquiry.id}
+                    disabled={!replyMessage.trim()}
+                    className="flex-[2]"
                   >
-                    {processing === selectedEnquiry.id ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" /> Send Reply
-                      </>
-                    )}
-                  </button>
+                    Send Reply
+                  </Button>
                 </div>
               </form>
             </>

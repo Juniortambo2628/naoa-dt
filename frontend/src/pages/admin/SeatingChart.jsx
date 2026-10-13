@@ -6,6 +6,7 @@ import { Plus, Users, MoreVertical, Trash2, Check, X, Search, Eye, Armchair } fr
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminCard from '../../components/admin/AdminCard';
+import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import { confirmAction, notifyError } from '../../utils/feedback';
 
@@ -58,13 +59,14 @@ function GuestItem({ guest, tables, onAssign }) {
                 </div>
             </div>
             
-            <button aria-label="Table options" 
+            <Button
                 ref={buttonRef}
-                onClick={handleToggleMenu} 
-                className="p-1.5 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-stone-600 transition-colors"
-            >
-                <MoreVertical className="w-4 h-4" />
-            </button>
+                size="icon-sm"
+                icon={MoreVertical}
+                aria-label="Table options"
+                title="Table options"
+                onClick={handleToggleMenu}
+            />
         </div>
 
         {/* Portal Menu */}
@@ -136,12 +138,15 @@ function TableCard({ table, onClick, onDelete }) {
                         <p className="text-xs text-stone-500 capitalize">{table.type} Table</p>
                     </div>
                 </div>
-                <button aria-label={`Delete ${table.name}`} 
+                <Button
+                    size="icon-sm"
+                    variant="danger"
+                    icon={Trash2}
+                    aria-label={`Delete ${table.name}`}
+                    title={`Delete ${table.name}`}
+                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                     onClick={(e) => { e.stopPropagation(); onDelete(table.id); }}
-                    className="p-1.5 bg-red-50 text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-500"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
+                />
             </div>
 
             <div className="space-y-3">
@@ -224,14 +229,16 @@ function TableDetailsModal({ table, onClose, onUnassign }) {
                                                 <p className="text-xs text-stone-500 capitalize">{guest.group}</p>
                                             </div>
                                         </div>
-                                        <button 
+                                        <Button
+                                            size="sm"
+                                            variant="danger"
+                                            icon={Trash2}
+                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                                             onClick={() => onUnassign(guest.id)}
-                                            className="p-1.5 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all text-xs flex items-center gap-1"
                                             title="Unassign Guest"
                                         >
-                                            <Trash2 className="w-3 h-3" />
                                             Remove
-                                        </button>
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
@@ -344,7 +351,7 @@ export default function SeatingChart() {
             id: 'add-table',
             label: 'Add Table',
             icon: Plus,
-            variant: 'primary',
+            variant: 'secondary',
             onClick: () => setIsAdding(true),
           },
         ]}
@@ -408,21 +415,13 @@ export default function SeatingChart() {
                           onChange={e => setNewTable({...newTable, capacity: parseInt(e.target.value)})}
                           placeholder="Cap"
                        />
-                       <button aria-label="Add table" onClick={handleAddTable} className="p-2 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6A4E]">
-                           <Check className="w-4 h-4" />
-                       </button>
-                       <button aria-label="Cancel adding table" onClick={() => setIsAdding(false)} className="p-2 bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200">
-                           <X className="w-4 h-4" />
-                       </button>
+                       <Button size="icon" variant="secondary" icon={Check} aria-label="Add table" title="Add table" onClick={handleAddTable} />
+                       <Button size="icon" icon={X} aria-label="Cancel adding table" title="Cancel" onClick={() => setIsAdding(false)} />
                   </div>
               ) : (
-                  <button 
-                      onClick={() => setIsAdding(true)}
-                      className="btn-primary flex items-center gap-2 shadow-lg"
-                  >
-                      <Plus className="w-4 h-4" />
+                  <Button variant="secondary" icon={Plus} onClick={() => setIsAdding(true)}>
                       Add Table
-                  </button>
+                  </Button>
               )}
           </div>
 

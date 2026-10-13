@@ -87,7 +87,7 @@ export default function AdminModules() {
     return (
         <AdminPageLayout
           actions={[
-            { id: 'enable-all', label: 'Enable All', icon: Eye, variant: 'primary', onClick: () => setAllModules(true), disabled: bulkSaving },
+            { id: 'enable-all', label: 'Enable All', icon: Eye, variant: 'secondary', onClick: () => setAllModules(true), disabled: bulkSaving },
             { id: 'disable-all', label: 'Disable All', icon: EyeOff, onClick: () => setAllModules(false), disabled: bulkSaving },
           ]}
           search="Search modules..."

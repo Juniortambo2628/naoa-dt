@@ -12,6 +12,7 @@ import {
 import { useContent } from '../context/ContentContext';
 import { fadeInUp, staggerContainer } from '../hooks/useScrollAnimation';
 import Loader from '../components/Loader';
+import Button from '../components/Button';
 import { useNavigate } from 'react-router-dom';
 
 const getContent = (content, section, field, i18n, fallback) => {
@@ -116,12 +117,9 @@ export default function Contact() {
                 <p className="text-stone-600 text-lg mb-8">
                   Thank you for reaching out. We have received your message and will get back to you shortly.
                 </p>
-                <button
-                  onClick={() => setSuccess(false)}
-                  className="px-10 py-4 bg-[#A67B5B] text-white rounded-full hover:bg-[#8B5E3C] transition-all shadow-lg active:scale-95 font-medium"
-                >
+                <Button variant="secondary" size="lg" onClick={() => setSuccess(false)}>
                   Send Another Message
-                </button>
+                </Button>
               </motion.div>
             ) : (
               <motion.div
@@ -214,20 +212,9 @@ export default function Contact() {
                   )}
 
                   <motion.div variants={fadeInUp} className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-5 bg-[#A67B5B] text-white rounded-2xl hover:bg-[#8B5E3C] transition-all shadow-lg active:scale-95 font-semibold text-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {loading ? (
-                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5" />
-                          Send Message
-                        </>
-                      )}
-                    </button>
+                    <Button type="submit" variant="secondary" size="lg" fullWidth icon={Send} loading={loading}>
+                      Send Message
+                    </Button>
                   </motion.div>
                 </form>
               </motion.div>

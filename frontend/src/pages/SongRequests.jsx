@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, Play, Check, User, Clock, Loader2 } from 'lucide-react';
+import { Music, Play, Check, User, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import SpotifySongSearch from '../components/SpotifySongSearch';
@@ -11,6 +11,7 @@ import {
   FlowerDivider,
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
+import Button from '../components/Button';
 import { Skeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
@@ -236,20 +237,17 @@ export default function SongRequests() {
                   />
                 </div>
 
-                <button
+                <Button
                   type="submit"
-                  disabled={submitting || !guestName.trim() || !songValue}
-                  className="btn-primary w-full flex items-center justify-center gap-2"
+                  variant="secondary"
+                  size="lg"
+                  fullWidth
+                  icon={Music}
+                  loading={submitting}
+                  disabled={!guestName.trim() || !songValue}
                 >
-                  {submitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Music className="w-5 h-5" />
-                      {t('songs.submit') || 'Request Song'}
-                    </>
-                  )}
-                </button>
+                  {t('songs.submit') || 'Request Song'}
+                </Button>
               </form>
             </motion.div>
 

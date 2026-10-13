@@ -14,6 +14,7 @@ import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import { AdminInput } from '../../components/admin/AdminInput';
 import { confirmAction } from '../../utils/feedback';
+import Button from '../../components/Button';
 
 const EMPTY_FORM = { name: '', email: '', password: '' };
 const matchesUser = (user, q) => `${user.name} ${user.email}`.toLowerCase().includes(q);
@@ -81,7 +82,7 @@ export default function AdminUsers() {
         <>
             <AdminPageLayout
                 fill
-                actions={[{ id: 'add-user', label: 'Add User', icon: Plus, variant: 'primary', onClick: () => openModal() }]}
+                actions={[{ id: 'add-user', label: 'Add User', icon: Plus, variant: 'secondary', onClick: () => openModal() }]}
                 search="Search users by name or email..."
                 hero={
                     <AdminPageHero
@@ -113,17 +114,20 @@ export default function AdminUsers() {
                                           </div>
                                       </div>
                                       <div className="flex gap-2">
-                                          <button onClick={() => openModal(user)} className="btn-secondary btn-sm flex-1">
-                                              <Edit /> Edit
-                                          </button>
-                                          <button
+                                          <Button size="sm" icon={Edit} className="flex-1" onClick={() => openModal(user)}>
+                                              Edit
+                                          </Button>
+                                          <Button
+                                              size="sm"
+                                              variant="danger"
+                                              icon={Trash2}
+                                              className="flex-1"
                                               onClick={() => handleDelete(user)}
                                               disabled={isSelf}
                                               title={isSelf ? 'You cannot delete your own account' : undefined}
-                                              className="btn-outline btn-sm flex-1 !text-red-500 !border-red-200"
                                           >
-                                              <Trash2 /> Delete
-                                          </button>
+                                              Delete
+                                          </Button>
                                       </div>
                                   </div>
                               );
@@ -145,9 +149,9 @@ export default function AdminUsers() {
                         autoComplete="new-password"
                         {...field('password')}
                     />
-                    <button type="submit" disabled={saving} className="btn-primary btn-full">
+                    <Button type="submit" variant="secondary" fullWidth loading={saving}>
                         {saving ? 'Saving...' : 'Save User'}
-                    </button>
+                    </Button>
                 </form>
             </AdminModal>
 

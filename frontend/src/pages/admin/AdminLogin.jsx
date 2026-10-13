@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Heart, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FloralCorner } from '../../components/FloralDecorations';
-import Spinner from '../../components/admin/Spinner';
+import Button from '../../components/Button';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -206,25 +206,9 @@ export default function AdminLogin() {
                 )}
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
-                style={{
-                  background: 'linear-gradient(135deg, #A67B5B 0%, #C8A68E 100%)',
-                  color: 'white',
-                  boxShadow: '0 4px 20px rgba(166, 123, 91, 0.4)',
-                }}
-              >
-                {loading ? (
-                  <>
-                    <Spinner size="sm" />
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign In'
-                )}
-              </button>
+              <Button type="submit" variant="secondary" size="lg" fullWidth loading={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Button>
             </form>
           ) : (
             <form onSubmit={handle2faVerify} className="space-y-6">
@@ -264,25 +248,9 @@ export default function AdminLogin() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
-                style={{
-                  background: 'linear-gradient(135deg, #A67B5B 0%, #C8A68E 100%)',
-                  color: 'white',
-                  boxShadow: '0 4px 20px rgba(166, 123, 91, 0.4)',
-                }}
-              >
-                {loading ? (
-                  <>
-                    <Spinner size="sm" />
-                    Verifying...
-                  </>
-                ) : (
-                  'Verify & Sign In'
-                )}
-              </button>
+              <Button type="submit" variant="secondary" size="lg" fullWidth loading={loading}>
+                {loading ? 'Verifying...' : 'Verify & Sign In'}
+              </Button>
 
               <button
                 type="button"

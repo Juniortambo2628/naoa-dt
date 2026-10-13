@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Sparkles, Home, Clock } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import Button from './Button';
 import { WeddingRingsIllustration } from './Illustrations';
 
 export default function ModuleDisabled() {
@@ -63,10 +64,9 @@ export default function ModuleDisabled() {
                 </div>
             </div>
 
-            <Link to="/" className="btn-primary inline-flex items-center gap-2">
-              <Home className="w-5 h-5" />
+            <Button as={Link} to="/" variant="secondary" size="lg" icon={Home}>
               Back to Home
-            </Link>
+            </Button>
           </motion.div>
         </div>
       </main>
