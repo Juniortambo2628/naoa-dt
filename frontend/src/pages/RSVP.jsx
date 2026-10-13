@@ -17,6 +17,7 @@ import {
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
 import Button from '../components/Button';
+import SegmentedControl from '../components/SegmentedControl';
 import { Skeleton } from '../components/Skeleton';
 import SpotifySongSearch from '../components/SpotifySongSearch';
 
@@ -434,24 +435,20 @@ export default function RSVP() {
                                 </p>
                             </div>
                             
-                            <div className="flex gap-4">
-                                <Button
-                                    variant={showSongRequest ? 'secondary' : 'primary'}
-                                    aria-pressed={showSongRequest}
-                                    onClick={() => setShowSongRequest(true)}
-                                    className="flex-1"
-                                >
-                                    Yes, I have a song!
-                                </Button>
-                                <Button
-                                    variant={!showSongRequest ? 'secondary' : 'primary'}
-                                    aria-pressed={!showSongRequest}
-                                    onClick={() => { setShowSongRequest(false); setSongRequest(''); }}
-                                    className="flex-1"
-                                >
-                                    No, thank you
-                                </Button>
-                            </div>
+                            <SegmentedControl
+                                aria-label="Would you like to dedicate a song to the couple?"
+                                fullWidth
+                                className="gap-4"
+                                options={[
+                                    { value: 'yes', label: 'Yes, I have a song!' },
+                                    { value: 'no', label: 'No, thank you' },
+                                ]}
+                                value={showSongRequest ? 'yes' : 'no'}
+                                onChange={(choice) => {
+                                    setShowSongRequest(choice === 'yes');
+                                    if (choice === 'no') setSongRequest('');
+                                }}
+                            />
 
                             {showSongRequest && (
                                 <motion.div 

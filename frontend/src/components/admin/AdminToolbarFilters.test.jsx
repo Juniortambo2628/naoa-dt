@@ -26,7 +26,7 @@ describe('AdminToolbarFilters', () => {
     render(<AdminToolbarFilters filters={{ groups: [statusGroup('active', onChange)] }} />)
 
     fireEvent.click(screen.getByTitle('Filter & sort'))
-    fireEvent.click(screen.getByRole('button', { name: /Declined/ }))
+    fireEvent.click(screen.getByRole('radio', { name: /Declined/ }))
     expect(onChange).toHaveBeenCalledWith('declined')
   })
 
@@ -44,7 +44,8 @@ describe('AdminToolbarFilters', () => {
     const onChange = vi.fn()
     render(<AdminToolbarFilters filters={{ view: { options: ['list', 'grid'], value: 'list', onChange } }} />)
 
-    fireEvent.click(screen.getByLabelText('Grid view'))
+    expect(screen.getByRole('radio', { name: 'List view' })).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(screen.getByRole('radio', { name: 'Grid view' }))
     expect(onChange).toHaveBeenCalledWith('grid')
     expect(screen.queryByTitle('Filter & sort')).not.toBeInTheDocument()
   })

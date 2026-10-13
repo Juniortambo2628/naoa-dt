@@ -18,6 +18,7 @@ import {
 import Loader from '../components/Loader';
 import Button from '../components/Button';
 import GiftImage from '../components/GiftImage';
+import SegmentedControl from '../components/SegmentedControl';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
@@ -399,18 +400,13 @@ export default function GiftRegistry() {
             </div>
 
             {/* Categories */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <Button
-                  key={cat}
-                  variant={category === cat ? 'secondary' : 'primary'}
-                  aria-pressed={category === cat}
-                  onClick={() => setCategory(cat)}
-                >
-                  {cat === 'All' ? t('gifts.cat_all') : cat}
-                </Button>
-              ))}
-            </div>
+            <SegmentedControl
+              aria-label="Gift category"
+              className="flex-wrap gap-2"
+              options={categories.map((cat) => ({ value: cat, label: cat === 'All' ? t('gifts.cat_all') : cat }))}
+              value={category}
+              onChange={setCategory}
+            />
           </motion.div>
 
           <motion.div

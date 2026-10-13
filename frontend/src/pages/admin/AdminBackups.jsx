@@ -20,7 +20,7 @@ const LABELS = {
   'pre-import': { text: 'Before import', className: 'bg-amber-50 text-amber-700' },
 };
 
-const formatSize = (bytes) => (bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
+const formatSize = (bytes) => (!bytes ? '0 KB' : bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
 export default function AdminBackups() {
   const { data: backups = [], isLoading, refetch } = useBackups();

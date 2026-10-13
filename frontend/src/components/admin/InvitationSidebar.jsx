@@ -12,6 +12,19 @@ import { Skeleton } from '../Skeleton';
 import { ELEMENT_KINDS } from './invitationElements';
 import InvitationLayers from './InvitationLayers';
 import Button from '../Button';
+import SegmentedControl from '../SegmentedControl';
+
+const H_ALIGN_OPTIONS = [
+  { value: 'left', icon: AlignLeft, ariaLabel: 'Align left' },
+  { value: 'center', icon: AlignCenter, ariaLabel: 'Align center' },
+  { value: 'right', icon: AlignRight, ariaLabel: 'Align right' },
+];
+
+const V_ALIGN_OPTIONS = [
+  { value: 'top', icon: ArrowUpToLine, ariaLabel: 'Align top' },
+  { value: 'middle', icon: AlignJustify, ariaLabel: 'Align middle' },
+  { value: 'bottom', icon: ArrowDownToLine, ariaLabel: 'Align bottom' },
+];
 
 export default function InvitationSidebar({
   loading,
@@ -229,20 +242,17 @@ export default function InvitationSidebar({
             {activeTab === 'text' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
                 {/* Language Selector */}
-                <div className="flex bg-stone-100 p-1 rounded-lg">
-                  {languages.map(lang => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setEditorLang(lang.code);
-                        updateDesign('editorLang', lang.code);
-                      }}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${editorLang === lang.code ? 'bg-white shadow-sm text-[#A67B5B]' : 'text-stone-500 hover:text-stone-700'}`}
-                    >
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  aria-label="Editing language"
+                  size="sm"
+                  fullWidth
+                  options={languages.map((lang) => ({ value: lang.code, label: lang.label }))}
+                  value={editorLang}
+                  onChange={(code) => {
+                    setEditorLang(code);
+                    updateDesign('editorLang', code);
+                  }}
+                />
 
                 {selectedItemId && design.items.find(i => i.id === selectedItemId)?.type === 'text' && (
                   <>
@@ -252,41 +262,25 @@ export default function InvitationSidebar({
                         {/* Horizontal Alignment */}
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-stone-500 font-sans">Horizontal</span>
-                          <div className="flex bg-white rounded-lg border border-stone-200 p-1">
-                            {[
-                              { id: 'left', icon: AlignLeft },
-                              { id: 'center', icon: AlignCenter },
-                              { id: 'right', icon: AlignRight }
-                            ].map(align => (
-                              <button
-                                key={align.id}
-                                onClick={() => handleDesignUpdate('update_item', { id: selectedItemId, textAlign: align.id })}
-                                className={`p-1.5 rounded transition-colors ${design.items.find(i => i.id === selectedItemId)?.textAlign === align.id ? 'bg-[#A67B5B] text-white' : 'text-stone-400 hover:bg-stone-50'}`}
-                              >
-                                <align.icon className="w-4 h-4" />
-                              </button>
-                            ))}
-                          </div>
+                          <SegmentedControl
+                            aria-label="Horizontal alignment"
+                            size="sm"
+                            options={H_ALIGN_OPTIONS}
+                            value={design.items.find(i => i.id === selectedItemId)?.textAlign}
+                            onChange={(value) => handleDesignUpdate('update_item', { id: selectedItemId, textAlign: value })}
+                          />
                         </div>
 
                         {/* Vertical Alignment */}
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-stone-500 font-sans">Vertical</span>
-                          <div className="flex bg-white rounded-lg border border-stone-200 p-1">
-                            {[
-                              { id: 'top', icon: ArrowUpToLine },
-                              { id: 'middle', icon: AlignJustify },
-                              { id: 'bottom', icon: ArrowDownToLine }
-                            ].map(valign => (
-                              <button
-                                key={valign.id}
-                                onClick={() => handleDesignUpdate('update_item', { id: selectedItemId, verticalAlign: valign.id })}
-                                className={`p-1.5 rounded transition-colors ${design.items.find(i => i.id === selectedItemId)?.verticalAlign === valign.id ? 'bg-[#A67B5B] text-white' : 'text-stone-400 hover:bg-stone-50'}`}
-                              >
-                                <valign.icon className="w-4 h-4 rotate-0" />
-                              </button>
-                            ))}
-                          </div>
+                          <SegmentedControl
+                            aria-label="Vertical alignment"
+                            size="sm"
+                            options={V_ALIGN_OPTIONS}
+                            value={design.items.find(i => i.id === selectedItemId)?.verticalAlign}
+                            onChange={(value) => handleDesignUpdate('update_item', { id: selectedItemId, verticalAlign: value })}
+                          />
                         </div>
 
                         {/* Indentation (Left Padding) */}
