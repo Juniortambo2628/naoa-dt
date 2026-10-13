@@ -177,10 +177,16 @@ jobs:
             # Tell any running queue workers to restart with the new code.
             php artisan queue:restart || true
 
-            echo "=== 12. Clean up archive ==="
+            echo "=== 12. Scheduler cron job (create if missing) ==="
+            # One per-minute `schedule:run` entry drives nightly backups,
+            # flight-status checks and the job queue. Idempotent: leaves an
+            # existing entry (including one added in cPanel) alone.
+            bash "$CORE/deploy/ensure-cron.sh" "$CORE" "$(command -v php)"
+
+            echo "=== 13. Clean up archive ==="
             rm -f "$ARCHIVE"
 
-            echo "=== 13. Verify expected structure ==="
+            echo "=== 14. Verify expected structure ==="
             FAIL=0
             for f in "$CORE/vendor/autoload.php" "$CORE/bootstrap/app.php" "$CORE/.env" "$PUBLIC/index.php"; do
               if [ -e "$f" ]; then echo "ok: $f"; else echo "MISSING: $f"; FAIL=1; fi
@@ -192,7 +198,7 @@ jobs:
             fi
             [ "$FAIL" = "0" ] || { echo "FATAL: structure verification failed"; exit 1; }
 
-            echo "=== 14. Smoke tests ==="
+            echo "=== 15. Smoke tests ==="
             php artisan --version
             php artisan about --only=environment || true
             # Hit the framework health endpoint through the public entrypoint.
@@ -208,3 +214,4 @@ jobs:
     #   Web root:  /home/zhpebukm/dnt-wed.okjtech.co.ke/api/public
     #   Uploads:   /home/zhpebukm/naoa-core/storage/app/public/uploads/
     #   Served at: https://api-dntwed.okjtech.co.ke/storage/uploads/...
+    #   Cron:      * * * * * cd <core> && php artisan schedule:run  (ensured by step 12)

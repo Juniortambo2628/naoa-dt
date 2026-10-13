@@ -461,8 +461,10 @@ same code works on any driver.
 ### 13.3 Deployment steps
 
 1. Migrations run automatically in the "Deploy Backend" workflow; `2026_10_13_000001_normalize_guest_groups` merges spelling variants of guest groups.
-2. Ensure the cPanel cron runs the scheduler every minute, otherwise nightly backups never run:
-   `* * * * * cd /path/to/backend && php artisan schedule:run >> /dev/null 2>&1`
+2. The scheduler cron job is checked on every deploy (step 12, `backend/deploy/ensure-cron.sh`) and created if missing:
+   `* * * * * cd /home/zhpebukm/naoa-core && <php> artisan schedule:run >> /dev/null 2>&1`.
+   An entry added by hand in cPanel is detected and left alone; if `crontab` isn't available over SSH the deploy prints the exact line to add under cPanel → Cron Jobs.
+   The scheduler runs nightly backups, flight-status checks and — because shared hosting has no long-running worker — drains the job queue every minute (`queue:work --stop-when-empty`), so queued schedule-change notifications are actually sent.
 3. The PHP `zip` extension must be enabled (standard on cPanel).
 4. Download a backup from the Backups page now and then and keep it off the server — backups on the same host do not protect against losing the host.
 
