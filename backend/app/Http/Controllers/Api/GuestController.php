@@ -7,6 +7,7 @@ use App\Http\Resources\GuestResource;
 use App\Models\Guest;
 use App\Models\Invitation;
 use App\Services\GuestImportService;
+use App\Services\GuestMergeService;
 use App\Services\GuestService;
 use App\Services\InvitationService;
 use App\Traits\ApiResponse;
@@ -468,6 +469,47 @@ class GuestController extends Controller
         Guest::whereIn('id', $ids)->update($updateData);
 
         return $this->successResponse(null, count($ids).' guests updated successfully');
+    }
+
+    /**
+     * List groups of guests that look like the same person (admin only)
+     */
+    public function duplicates(GuestMergeService $mergeService)
+    {
+        $groups = collect($mergeService->findDuplicateGroups())->map(fn ($group) => [
+            'reasons' => $group['reasons'],
+            'guests' => GuestResource::collection($group['guests'])->resolve(),
+        ]);
+
+        return $this->successResponse([
+            'groups' => $groups,
+            'duplicate_count' => $groups->sum(fn ($g) => count($g['guests']) - 1),
+        ]);
+    }
+
+    /**
+     * Merge duplicate guest records into one (admin only)
+     */
+    public function merge(Request $request, GuestMergeService $mergeService)
+    {
+        $validated = $request->validate([
+            'keep_id' => 'required|integer|exists:guests,id',
+            'merge_ids' => 'required|array|min:1',
+            'merge_ids.*' => 'integer|distinct|exists:guests,id|different:keep_id',
+        ]);
+
+        try {
+            $guest = $mergeService->merge(Guest::findOrFail($validated['keep_id']), $validated['merge_ids']);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        $count = count($validated['merge_ids']);
+
+        return $this->successResponse(
+            new GuestResource($guest),
+            "Merged {$count} duplicate ".($count === 1 ? 'record' : 'records')." into {$guest->name}."
+        );
     }
 
     /**
