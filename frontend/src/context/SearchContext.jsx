@@ -1,6 +1,10 @@
 import { createContext, useContext, useState } from 'react';
 
-const SearchContext = createContext();
+const SearchContext = createContext(null);
+
+// Outside a provider (e.g. a component rendered on its own in a test) search
+// is simply inert rather than crashing.
+const INERT_SEARCH = { searchQuery: '', setSearchQuery: () => {} };
 
 export function SearchProvider({ children }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,9 +18,5 @@ export function SearchProvider({ children }) {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useSearch() {
-  const context = useContext(SearchContext);
-  if (!context) {
-    throw new Error('useSearch must be used within a SearchProvider');
-  }
-  return context;
+  return useContext(SearchContext) ?? INERT_SEARCH;
 }

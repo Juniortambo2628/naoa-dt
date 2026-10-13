@@ -1,7 +1,7 @@
-import { Users, Send, Edit, Trash2, RotateCcw, MessageCircle, Mail } from 'lucide-react';
-import AdminCard from './AdminCard';
+import { Users, Send, Edit, Trash2, RotateCcw, MessageCircle, Mail, CopyCheck } from 'lucide-react';
+import AdminListPanel from './AdminListPanel';
+import AdminPagination from './AdminPagination';
 import EmptyState from './EmptyState';
-import Spinner from './Spinner';
 
 const RSVP_STYLES = {
   confirmed: 'bg-green-100 text-green-700 border-green-200',
@@ -42,9 +42,11 @@ export default function GuestList({
   viewMode,
   selectedIds,
   searchQuery,
-  totalPages,
   currentPage,
   itemsPerPage,
+  onSetItemsPerPage,
+  duplicateIds,
+  onReviewDuplicates,
   onToggleSelect,
   onToggleSelectAll,
   onInlineSave,
@@ -55,14 +57,39 @@ export default function GuestList({
   onUpdateGuest,
   onSetCurrentPage,
 }) {
+  const isDuplicate = (guest) => duplicateIds?.has(guest.id);
+  const duplicateBadge = (guest) => isDuplicate(guest) && (
+    <button
+      type="button"
+      onClick={() => onReviewDuplicates?.(guest)}
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] uppercase font-bold rounded whitespace-nowrap hover:bg-amber-200"
+      title="This guest may be listed more than once — review & merge"
+    >
+      <CopyCheck className="w-3 h-3" />
+      Duplicate?
+    </button>
+  );
+
   return (
-    <AdminCard padding={false} className="overflow-hidden">
+    <AdminListPanel
+      bodyClassName={viewMode === 'spreadsheet' ? 'max-h-[70vh] overflow-y-auto fit:max-h-none' : ''}
+      footer={!guestsLoading && filteredGuests.length > 0 && (
+        <AdminPagination
+          currentPage={currentPage}
+          pageSize={itemsPerPage}
+          totalItems={filteredGuests.length}
+          onPageChange={onSetCurrentPage}
+          pageSizeOptions={[15, 25, 50, 100]}
+          onPageSizeChange={onSetItemsPerPage}
+        />
+      )}
+    >
       {guestsLoading ? (
         <EmptyState loading />
       ) : filteredGuests.length === 0 ? (
         <EmptyState icon={Users} message="No guests found" searchQuery={searchQuery} />
       ) : viewMode === 'spreadsheet' ? (
-        <div className="overflow-x-auto relative" style={{ maxHeight: '70vh' }}>
+        <div className="relative">
           <table className="w-full text-sm border-collapse border-stone-200">
             <thead className="sticky top-0 bg-stone-50 z-10 shadow-sm border-b border-stone-200">
               <tr>
@@ -104,6 +131,17 @@ export default function GuestList({
                         className={`w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all font-medium text-stone-800 ${guest.parent_guest_id ? 'pl-8' : ''}`}
                         placeholder="Name"
                       />
+                      {isDuplicate(guest) && (
+                        <button
+                          type="button"
+                          onClick={() => onReviewDuplicates?.(guest)}
+                          className="absolute right-2 p-0.5 rounded text-amber-600 bg-amber-100 hover:bg-amber-200"
+                          title="Possible duplicate — review & merge"
+                          aria-label={`Review possible duplicate of ${guest.name}`}
+                        >
+                          <CopyCheck className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {guest.parent_guest_id && (
                         <div className="absolute left-2 text-purple-400 pointer-events-none" title="Plus One">
                           <Users className="w-4 h-4" />
@@ -245,9 +283,9 @@ export default function GuestList({
           </table>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div>
           <table className="w-full">
-            <thead className="bg-stone-50 border-b border-stone-100">
+            <thead className="sticky top-0 z-10 bg-stone-50 shadow-[inset_0_-1px_0_rgb(245_245_244)]">
               <tr>
                 <th className="px-6 py-4 text-left">
                   <input
@@ -282,6 +320,7 @@ export default function GuestList({
                       {guest.parent_guest_id && (
                         <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] uppercase font-bold rounded">Plus One</span>
                       )}
+                      {duplicateBadge(guest)}
                     </div>
                     <div className="text-[10px] font-mono text-stone-400 mt-0.5 uppercase tracking-wider">Code: {guest.unique_code || '—'}</div>
                     {guest.parent_guest_id && guest.parent_guest && (
@@ -358,32 +397,6 @@ export default function GuestList({
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-stone-100 bg-white px-4 py-3 sm:px-6 rounded-b-2xl">
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-stone-700">
-                Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredGuests.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredGuests.length)}</span> of <span className="font-medium">{filteredGuests.length}</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                <button onClick={() => onSetCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="relative inline-flex items-center rounded-l-md px-2 py-2 text-stone-400 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                  <span className="sr-only">Previous</span>
-                  &larr;
-                </button>
-                {[...Array(totalPages)].map((_, i) => (
-                  <button key={i + 1} onClick={() => onSetCurrentPage(i + 1)} className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === i + 1 ? 'z-10 bg-[#A67B5B] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A67B5B]' : 'text-stone-900 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0'}`}> {i + 1} </button>
-                ))}
-                <button onClick={() => onSetCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="relative inline-flex items-center rounded-r-md px-2 py-2 text-stone-400 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                  <span className="sr-only">Next</span>
-                  &rarr;
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
-    </AdminCard>
+    </AdminListPanel>
   );
 }

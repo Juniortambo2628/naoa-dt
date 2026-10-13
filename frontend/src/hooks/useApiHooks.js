@@ -19,6 +19,17 @@ export const useGuests = (params = {}) => {
   });
 };
 
+export const useGuestDuplicates = () => {
+  return useQuery({
+    queryKey: ['guest-duplicates'],
+    queryFn: async () => {
+      // The API client unwraps the { success, data } envelope.
+      const { data } = await guestService.getDuplicates();
+      return data?.groups ? data : { groups: [], duplicate_count: 0 };
+    },
+  });
+};
+
 export const useGuestByCode = (code) => {
   return useQuery({
     queryKey: ['guest', code],

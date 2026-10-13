@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music, Check, Clock,
-  PlayCircle, RefreshCw, CheckCircle, Trash2
+  PlayCircle, RefreshCw, CheckCircle, Trash2,
+  ListChecks,
 } from 'lucide-react';
 import { useSongRequests } from '../../hooks/useApiHooks';
 import { songRequestService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import StatCard from '../../components/admin/StatCard';
 import EmptyState from '../../components/admin/EmptyState';
@@ -24,7 +24,7 @@ export default function AdminSongRequests() {
   const { data, isLoading: loading, refetch } = useSongRequests();
   const songs = data?.songs || [];
   const stats = data?.stats || { total: 0, played: 0, pending: 0 };
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
   const [filter, setFilter] = useState('all');
   const [viewMode, setViewMode] = useState('list');
   const [selectedIds, setSelectedIds] = useState([]);
@@ -134,6 +134,23 @@ export default function AdminSongRequests() {
   return (
     <>
       <AdminPageLayout
+        fill
+        actions={[
+          {
+            id: 'refresh',
+            label: 'Refresh',
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            disabled: loading,
+          },
+          {
+            id: 'select-all',
+            label: selectedIds.length === filteredSongs.length && filteredSongs.length > 0 ? 'Deselect All' : 'Select All',
+            icon: ListChecks,
+            onClick: toggleSelectAll,
+            hidden: filteredSongs.length === 0,
+          },
+        ]}
         hero={
           <AdminPageHero
             title="Song Requests"
@@ -164,32 +181,21 @@ export default function AdminSongRequests() {
             />
           </div>
         }
-        toolbar={
-          <AdminToolbar
-            search={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search songs or artists..."
-            filters={[
+        search="Search songs or artists..."
+        filters={{
+          groups: [{
+            id: 'status',
+            label: 'Status',
+            options: [
               { id: 'all', label: 'All Requests' },
               { id: 'pending', label: 'Pending' },
-              { id: 'played', label: 'Played' }
-            ]}
-            activeFilter={filter}
-            onFilterChange={setFilter}
-            viewMode={viewMode}
-            viewOptions={['list', 'grid']}
-            onViewModeChange={setViewMode}
-          >
-            <button
-              onClick={toggleSelectAll}
-              className="text-sm font-medium text-[#A67B5B] hover:text-[#8B6B4D] transition-colors"
-            >
-              {selectedIds.length === filteredSongs.length && filteredSongs.length > 0
-                ? 'Deselect All'
-                : 'Select All'}
-            </button>
-          </AdminToolbar>
-        }
+              { id: 'played', label: 'Played' },
+            ],
+            value: filter,
+            onChange: setFilter,
+          }],
+          view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode },
+        }}
       >
         <AdminBulkActions
           selectedCount={selectedIds.length}
@@ -197,129 +203,120 @@ export default function AdminSongRequests() {
           actions={bulkActions}
         />
 
-        {loading && songs.length === 0 ? (
-          <EmptyState loading />
-        ) : songs.length === 0 ? (
-          <EmptyState icon={Music} message="No song requests yet" />
-        ) : viewMode === 'grid' ? (
-          <SongGrid
-            songs={filteredSongs}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onMarkPlayed={handleMarkPlayed}
-            onDelete={handleLocalDelete}
-            isProcessing={isProcessing}
-          />
-        ) : (
-          <AdminCard padding={false} className="overflow-hidden">
-            <div className="divide-y divide-stone-100">
-              <AnimatePresence>
-                {filteredSongs.map((song) => (
-                  <motion.div
-                    key={song.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => toggleSelection(song.id)}
-                    className={`p-4 flex items-center gap-4 transition-colors cursor-pointer ${
-                      selectedIds.includes(song.id)
-                        ? 'bg-[#A67B5B]/5'
-                        : song.is_played
-                          ? 'opacity-60 bg-stone-50 hover:bg-stone-50'
-                          : 'hover:bg-stone-50'
-                    }`}
-                  >
-                    {/* Selection Checkbox */}
-                    <div
-                      className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${
-                        selectedIds.includes(song.id) ? 'bg-[#A67B5B] border-[#A67B5B]' : 'border-stone-300'
+        <AdminListPanel plain>
+          {loading && songs.length === 0 ? (
+            <EmptyState loading />
+          ) : songs.length === 0 ? (
+            <EmptyState icon={Music} message="No song requests yet" />
+          ) : viewMode === 'grid' ? (
+            <SongGrid
+              songs={filteredSongs}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelection}
+              onMarkPlayed={handleMarkPlayed}
+              onDelete={handleLocalDelete}
+              isProcessing={isProcessing}
+            />
+          ) : (
+            <AdminCard padding={false} className="overflow-hidden">
+              <div className="divide-y divide-stone-100">
+                <AnimatePresence>
+                  {filteredSongs.map((song) => (
+                    <motion.div
+                      key={song.id}
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => toggleSelection(song.id)}
+                      className={`p-4 flex items-center gap-4 transition-colors cursor-pointer ${
+                        selectedIds.includes(song.id)
+                          ? 'bg-[#A67B5B]/5'
+                          : song.is_played
+                            ? 'opacity-60 bg-stone-50 hover:bg-stone-50'
+                            : 'hover:bg-stone-50'
                       }`}
-                      onClick={(e) => { e.stopPropagation(); toggleSelection(song.id); }}
                     >
-                      {selectedIds.includes(song.id) && <CheckCircle className="w-3.5 h-3.5 text-white" />}
-                    </div>
-
-                    {/* Status Icon */}
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      song.is_played
-                        ? 'bg-green-100 text-green-600'
-                        : 'bg-orange-100 text-orange-600'
-                    }`}>
-                      {song.is_played ? <Check className="w-5 h-5" /> : <Music className="w-5 h-5" />}
-                    </div>
-
-                    {/* Song Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className={`font-medium truncate ${song.is_played ? 'text-stone-500 line-through' : 'text-stone-800'}`}>
-                          {song.song_title}
-                        </h3>
-                        {song.song_data?.preview_url && (
-                          <a
-                            href={song.song_data.preview_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[#A67B5B] hover:text-[#8B6B4D]"
-                            title="Listen Preview"
-                          >
-                            <PlayCircle className="w-4 h-4" />
-                          </a>
-                        )}
+                      {/* Selection Checkbox */}
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${
+                          selectedIds.includes(song.id) ? 'bg-[#A67B5B] border-[#A67B5B]' : 'border-stone-300'
+                        }`}
+                        onClick={(e) => { e.stopPropagation(); toggleSelection(song.id); }}
+                      >
+                        {selectedIds.includes(song.id) && <CheckCircle className="w-3.5 h-3.5 text-white" />}
                       </div>
-                      <p className="text-sm text-stone-500 truncate">{song.artist}</p>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-stone-400">
-                        <span>Requested by: <span className="font-medium text-stone-600">{song.guest_name}</span></span>
-                        <span>•</span>
-                        <span>{song.requested_at}</span>
-                      </div>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      {!song.is_played && (
-                        <button
-                          onClick={() => handleMarkPlayed(song.id)}
-                          disabled={isProcessing(song.id)}
-                          className="btn-sm btn-secondary flex items-center gap-2"
-                          title="Mark as Played"
-                        >
-                          {isProcessing(song.id) ? (
-                            <Spinner size="sm" />
-                          ) : (
-                            <>
-                              <Check className="w-4 h-4" />
-                              <span className="hidden sm:inline">Played</span>
-                            </>
+                      {/* Status Icon */}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        song.is_played
+                          ? 'bg-green-100 text-green-600'
+                          : 'bg-orange-100 text-orange-600'
+                      }`}>
+                        {song.is_played ? <Check className="w-5 h-5" /> : <Music className="w-5 h-5" />}
+                      </div>
+
+                      {/* Song Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className={`font-medium truncate ${song.is_played ? 'text-stone-500 line-through' : 'text-stone-800'}`}>
+                            {song.song_title}
+                          </h3>
+                          {song.song_data?.preview_url && (
+                            <a
+                              href={song.song_data.preview_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[#A67B5B] hover:text-[#8B6B4D]"
+                              title="Listen Preview"
+                            >
+                              <PlayCircle className="w-4 h-4" />
+                            </a>
                           )}
-                        </button>
-                      )}
+                        </div>
+                        <p className="text-sm text-stone-500 truncate">{song.artist}</p>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-stone-400">
+                          <span>Requested by: <span className="font-medium text-stone-600">{song.guest_name}</span></span>
+                          <span>•</span>
+                          <span>{song.requested_at}</span>
+                        </div>
+                      </div>
 
-                      <DeleteButton
-                        onClick={() => handleLocalDelete(song.id, { confirmMessage: 'Are you sure you want to remove this request?' })}
-                        processing={isProcessing(song.id)}
-                        title="Remove"
-                      />
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </AdminCard>
-        )}
+                      {/* Actions */}
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {!song.is_played && (
+                          <button
+                            onClick={() => handleMarkPlayed(song.id)}
+                            disabled={isProcessing(song.id)}
+                            className="btn-sm btn-secondary flex items-center gap-2"
+                            title="Mark as Played"
+                          >
+                            {isProcessing(song.id) ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <>
+                                <Check className="w-4 h-4" />
+                                <span className="hidden sm:inline">Played</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        <DeleteButton
+                          onClick={() => handleLocalDelete(song.id, { confirmMessage: 'Are you sure you want to remove this request?' })}
+                          processing={isProcessing(song.id)}
+                          title="Remove"
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </AdminCard>
+          )}
+        </AdminListPanel>
       </AdminPageLayout>
-      <AdminFloatingToolbar
-        actions={[
-          {
-            id: 'refresh',
-            label: 'Refresh',
-            icon: RefreshCw,
-            onClick: () => refetch(),
-            disabled: loading,
-          },
-        ]}
-      />
     </>
   );
 }

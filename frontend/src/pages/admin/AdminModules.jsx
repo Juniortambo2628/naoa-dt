@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useSearch } from '../../context/SearchContext';
 import { contentService } from '../../services/api';
-import { Layout, Check, X, Save, Sparkles, Home, Calendar, Users, Image as ImageIcon, Gift, Music, MessageSquare, HelpCircle, FileText, Globe, Clock, Mail, Languages } from 'lucide-react';
+import { Layout, Check, X, Save, Eye, EyeOff, Sparkles, Home, Calendar, Users, Image as ImageIcon, Gift, Music, MessageSquare, HelpCircle, FileText, Globe, Clock, Mail, Languages } from 'lucide-react';
 import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -30,6 +31,31 @@ const MODULES = [
 export default function AdminModules() {
     const { contents, loading, isVisible, updateLocalContent } = useContent();
     const [, setSaving] = useState(null);
+    const { searchQuery } = useSearch();
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [bulkSaving, setBulkSaving] = useState(false);
+
+    const searchLower = (searchQuery || '').trim().toLowerCase();
+    const visibleModules = MODULES.filter(m =>
+        (!searchLower || `${m.label} ${m.description}`.toLowerCase().includes(searchLower))
+        && (statusFilter === 'all' || (statusFilter === 'enabled') === isVisible(m.key)));
+
+    const setAllModules = async (enabled) => {
+        const targets = MODULES.filter(m => isVisible(m.key) !== enabled);
+        if (targets.length === 0) return;
+        if (!window.confirm(`${enabled ? 'Enable' : 'Disable'} ${targets.length} modules?`)) return;
+        setBulkSaving(true);
+        targets.forEach(m => updateLocalContent(m.key, { is_visible: enabled }));
+        const results = await Promise.allSettled(targets.map(m => contentService.update(m.key, {
+            is_visible: enabled,
+            content: contents[m.key]?.content || {},
+        })));
+        const failed = targets.filter((m, i) => results[i].status === 'rejected');
+        failed.forEach(m => updateLocalContent(m.key, { is_visible: !enabled }));
+        if (failed.length) toast.error(`Failed to update ${failed.length} modules`);
+        else toast.success(`All modules ${enabled ? 'enabled' : 'disabled'}`);
+        setBulkSaving(false);
+    };
 
     const toggleModule = async (key, currentStatus) => {
         const newStatus = !currentStatus;
@@ -58,6 +84,24 @@ export default function AdminModules() {
 
     return (
         <AdminPageLayout
+          actions={[
+            { id: 'enable-all', label: 'Enable All', icon: Eye, variant: 'primary', onClick: () => setAllModules(true), disabled: bulkSaving },
+            { id: 'disable-all', label: 'Disable All', icon: EyeOff, onClick: () => setAllModules(false), disabled: bulkSaving },
+          ]}
+          search="Search modules..."
+          filters={{
+            groups: [{
+              id: 'status',
+              label: 'Status',
+              options: [
+                { id: 'all', label: 'All' },
+                { id: 'enabled', label: 'Enabled' },
+                { id: 'disabled', label: 'Disabled' },
+              ],
+              value: statusFilter,
+              onChange: setStatusFilter,
+            }],
+          }}
           hero={
             <AdminPageHero
               title="Module Management"
@@ -69,7 +113,7 @@ export default function AdminModules() {
         >
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {MODULES.map(module => {
+                {visibleModules.map(module => {
                     const active = isVisible(module.key);
 
                     return (
@@ -102,7 +146,10 @@ export default function AdminModules() {
                     );
                 })}
             </div>
-            
+            {visibleModules.length === 0 && (
+                <p className="text-center py-8 text-stone-400">No modules match your search or filter.</p>
+            )}
+
             <div className="bg-[#A67B5B]/5 border border-[#A67B5B]/10 p-6 rounded-2xl flex items-start gap-4">
                 <div className="p-2 bg-white rounded-lg shadow-sm">
                     <HelpCircle className="w-5 h-5 text-[#A67B5B]" />

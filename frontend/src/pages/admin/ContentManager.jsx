@@ -4,8 +4,6 @@ import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Lan
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import ToggleButton from '../../components/admin/ToggleButton';
 import Spinner from '../../components/admin/Spinner';
 import { useContent } from '../../context/ContentContext';
@@ -320,6 +318,15 @@ export default function ContentManager() {
   return (
     <>
     <AdminPageLayout
+      actions={PAGES.map(page => ({
+        id: page.id,
+        label: page.label,
+        variant: activePage === page.id ? 'primary' : 'secondary',
+        onClick: () => {
+          setActivePage(page.id);
+          setExpandedSection(page.sections[0]);
+        },
+      }))}
       hero={
         <AdminPageHero
           title="CMS - Content Management"
@@ -328,27 +335,15 @@ export default function ContentManager() {
           icon={<Edit className="w-5 h-5 text-[#A67B5B]" />}
         />
       }
-      toolbar={
-        <AdminToolbar
-          children={
-            <div className="flex bg-white rounded-lg p-1 shadow-sm border border-stone-200">
-              {LANGUAGES.map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => setActiveLang(lang.code)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    activeLang === lang.code
-                      ? 'bg-[#A67B5B] text-white shadow-md'
-                      : 'text-stone-500 hover:bg-stone-50'
-                  }`}
-                >
-                  {lang.label}
-                </button>
-              ))}
-            </div>
-          }
-        />
-      }
+      filters={{
+        groups: [{
+          id: 'language',
+          label: 'Language',
+          options: LANGUAGES.map(lang => ({ id: lang.code, label: lang.label })),
+          value: activeLang,
+          onChange: setActiveLang,
+        }],
+      }}
     >
        <div className="space-y-4">
            {SECTIONS.filter(s => PAGES.find(p => p.id === activePage)?.sections.includes(s.key)).map(section => {
@@ -526,17 +521,6 @@ export default function ContentManager() {
         </div>
 
     </AdminPageLayout>
-    <AdminFloatingToolbar
-      actions={PAGES.map(page => ({
-        id: page.id,
-        label: page.label,
-        variant: activePage === page.id ? 'primary' : 'secondary',
-        onClick: () => {
-          setActivePage(page.id);
-          setExpandedSection(page.sections[0]);
-        },
-      }))}
-    />
     </>
   );
 }

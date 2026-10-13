@@ -15,10 +15,10 @@ export default function AdminPageHero({ title, description, breadcrumb, icon }) 
     ? breadcrumb
     : [{ label: 'Dashboard', path: '/admin/dashboard' }, { label: breadcrumb || title }];
   return (
-    <div className="my-8">
+    <div className="pt-2">
       {/* Breadcrumb */}
       {crumbs && crumbs.length > 0 && (
-        <nav className="flex items-center gap-1.5 text-sm mb-3">
+        <nav className="flex items-center gap-1.5 text-sm mb-2">
           {crumbs.map((crumb, idx) => {
             const isLast = idx === crumbs.length - 1;
             return (

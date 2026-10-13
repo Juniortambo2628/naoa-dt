@@ -162,6 +162,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/validate-import', [GuestController::class, 'validateImport']);
         Route::post('/import-confirm', [GuestController::class, 'importConfirm']);
         Route::post('/bulk-update', [GuestController::class, 'bulkUpdate']);
+        Route::get('/duplicates', [GuestController::class, 'duplicates']);
+        Route::post('/merge', [GuestController::class, 'merge']);
         Route::post('/', [GuestController::class, 'store']);
         Route::put('/{guest}', [GuestController::class, 'update']);
         Route::delete('/{guest}', [GuestController::class, 'destroy']);

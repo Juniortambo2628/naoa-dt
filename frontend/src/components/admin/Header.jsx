@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, Search, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings } from 'lucide-react';
-import { useSearch } from '../../context/SearchContext';
+import { Menu, Bell, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings } from 'lucide-react';
 import { notificationService } from '../../services/api';
 
 const ICON_MAP = {
@@ -39,7 +38,6 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const { searchQuery, setSearchQuery } = useSearch();
   const fetchedRef = useRef(false);
 
   const fetchNotifications = async () => {
@@ -102,21 +100,6 @@ export default function Header({ onMenuClick, onRestartTutorial }) {
         >
           <Menu className="w-6 h-6 text-[#4A3F35]" />
         </button>
-        
-        <div className="relative hidden md:block">
-          <Search 
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7B6B]"
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search globally..."
-            aria-label="Search globally"
-            className="w-64 pl-10 pr-4 py-2 rounded-xl border-2 bg-white focus:outline-none transition-all focus:ring-2 focus:ring-[#A67B5B]/50"
-            style={{ borderColor: '#E8D4C8' }}
-          />
-        </div>
       </div>
 
       <div className="flex items-center gap-4">

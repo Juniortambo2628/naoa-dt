@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Users, Plus, Edit, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks, Download } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Users, Plus, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks, Download, UserCheck, Clock, UserX, Send, CopyCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
@@ -9,17 +9,72 @@ import InvitationActionModal from '../../components/admin/InvitationActionModal'
 import WhatsAppChecklistModal from '../../components/admin/WhatsAppChecklistModal';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
+import GuestMergeModal, { groupKey } from '../../components/admin/GuestMergeModal';
 import Spinner from '../../components/admin/Spinner';
 import GuestList from '../../components/admin/GuestList';
 import GuestBulkActions from '../../components/admin/GuestBulkActions';
-import { useGuests, useSettings, useContent } from '../../hooks/useApiHooks';
+import { useGuests, useGuestDuplicates, useSettings, useContent } from '../../hooks/useApiHooks';
 import { getWeddingInfo, getCoupleNames } from '../../utils/weddingInfo';
 import { renderWhatsAppMessage } from '../../utils/whatsappMessage';
 import { useSearch } from '../../context/SearchContext';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+
+const DEFAULT_FILTER = 'active';
+const STATUS_FILTERS = [
+  { id: 'active', label: 'Pending + Confirmed' },
+  { id: 'all', label: 'All' },
+  { id: 'confirmed', label: 'Confirmed' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'declined', label: 'Declined' },
+];
+const SENT_STATUSES = ['sent', 'opened', 'responded'];
+const IGNORED_DUPLICATES_KEY = 'admin.guests.ignoredDuplicates';
+
+function matchesStatusFilter(guest, filter) {
+  const status = guest.rsvp_status || 'pending';
+  if (filter === 'all') return true;
+  if (filter === 'active') return status !== 'declined';
+  return status === filter;
+}
+
+function guestStats(guests) {
+  const count = (fn) => guests.filter(fn).length;
+  const confirmed = count(g => g.rsvp_status === 'confirmed');
+  const declined = count(g => g.rsvp_status === 'declined');
+  const plusOnes = count(g => g.parent_guest_id);
+  return {
+    total: guests.length,
+    primary: guests.length - plusOnes,
+    plusOnes,
+    confirmed,
+    declined,
+    pending: guests.length - confirmed - declined,
+    responded: confirmed + declined,
+    invitesSent: count(g => SENT_STATUSES.includes(g.invitation?.status)),
+  };
+}
+
+const percent = (part, whole) => (whole ? `${Math.round((part / whole) * 100)}%` : '0%');
+
+// "Not duplicates" decisions are a per-browser convenience.
+function loadIgnoredDuplicates() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(IGNORED_DUPLICATES_KEY) || '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveIgnoredDuplicates(keys) {
+  try {
+    localStorage.setItem(IGNORED_DUPLICATES_KEY, JSON.stringify(keys));
+  } catch {
+    // Storage unavailable (private mode); the choice lasts for this visit.
+  }
+}
 
 export default function AdminGuests() {
   const { data: guestsData, isLoading: guestsLoading, refetch: refetchGuests } = useGuests();
@@ -30,11 +85,15 @@ export default function AdminGuests() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
   const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'alpha'
-  const [filter, setFilter] = useState('all'); // all, confirmed, pending, declined
+  // Default view: everyone still expected (pending + confirmed); declined are one tap away.
+  const [filter, setFilter] = useState(DEFAULT_FILTER); // active, all, confirmed, pending, declined
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const { data: duplicateData, refetch: refetchDuplicates } = useGuestDuplicates();
+  const [ignoredDuplicateKeys, setIgnoredDuplicateKeys] = useState(loadIgnoredDuplicates);
+  const [mergeModal, setMergeModal] = useState({ open: false, focusGuestId: null });
   const [, setSendingId] = useState(null);
   const [design, setDesign] = useState(null);
   const [exportingGuest, setExportingGuest] = useState(null);
@@ -63,6 +122,43 @@ export default function AdminGuests() {
       setGuests(Array.isArray(gData) ? gData : []);
     }
   }, [guestsData]);
+
+  // Any change to the list (add, import, edit, merge) can create or resolve duplicates.
+  useEffect(() => {
+    if (guestsData) refetchDuplicates();
+  }, [guestsData, refetchDuplicates]);
+
+  const duplicateGroups = useMemo(
+    () => (duplicateData?.groups || []).filter((g) => !ignoredDuplicateKeys.includes(groupKey(g))),
+    [duplicateData, ignoredDuplicateKeys]
+  );
+  const duplicateIds = useMemo(
+    () => new Set(duplicateGroups.flatMap((g) => g.guests.map((guest) => guest.id))),
+    [duplicateGroups]
+  );
+  const extraDuplicateRecords = duplicateGroups.reduce((n, g) => n + g.guests.length - 1, 0);
+
+  const openMergeModal = (guest = null) => setMergeModal({ open: true, focusGuestId: guest?.id ?? null });
+
+  const handleMerge = async (keepId, mergeIds) => {
+    try {
+      const res = await guestService.merge(keepId, mergeIds);
+      const count = mergeIds.length;
+      toast.success(`Merged ${count} duplicate ${count === 1 ? 'record' : 'records'}${res.data?.name ? ` into ${res.data.name}` : ''}`);
+      setSelectedIds((ids) => ids.filter((id) => !mergeIds.includes(id)));
+      await refetchGuests();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to merge guests');
+    }
+  };
+
+  const handleIgnoreDuplicates = (group) => {
+    const next = [...ignoredDuplicateKeys, groupKey(group)];
+    setIgnoredDuplicateKeys(next);
+    saveIgnoredDuplicates(next);
+    toast.success('Marked as different guests');
+  };
 
   useEffect(() => {
     if (settingsData && settingsData.invitation_theme) {
@@ -631,17 +727,76 @@ ${rows.join('\n')}
   };
 
   // Filter and Search logic
+  const searchLower = (searchQuery || '').trim().toLowerCase();
+  const searchDigits = searchLower.replace(/\D/g, '');
   const filteredGuests = guests.filter(guest => {
-      const activeSearch = searchQuery || '';
-      const searchLower = activeSearch.toLowerCase();
-      const matchesSearch = guest.name.toLowerCase().includes(searchLower) || 
-                            (guest.email && guest.email.toLowerCase().includes(searchLower));
-      const matchesFilter = filter === 'all' ? true : guest.rsvp_status === filter;
-      return matchesSearch && matchesFilter;
+      const matchesSearch = !searchLower
+        || [guest.name, guest.email, guest.group, guest.unique_code]
+            .some(v => v && String(v).toLowerCase().includes(searchLower))
+        || (searchDigits.length >= 3 && String(guest.phone || '').replace(/\D/g, '').includes(searchDigits));
+      return matchesSearch && matchesStatusFilter(guest, filter);
   }).sort((a, b) => {
       if (sortBy === 'alpha') return a.name.localeCompare(b.name);
       return b.id - a.id; // latest added first
   });
+
+  const stats = useMemo(() => guestStats(guests), [guests]);
+
+  const changeFilter = (f) => { setFilter(f); setCurrentPage(1); setSelectedIds([]); };
+
+  const summaryCards = [
+    {
+      label: 'Invited',
+      value: stats.total,
+      icon: Users,
+      color: '#A67B5B',
+      hint: `${stats.plusOnes} plus-ones`,
+      onClick: () => changeFilter('all'),
+      active: filter === 'all',
+    },
+    {
+      label: 'Confirmed',
+      value: stats.confirmed,
+      icon: UserCheck,
+      color: '#6B8E5A',
+      hint: `${percent(stats.confirmed, stats.total)} · headcount`,
+      onClick: () => changeFilter('confirmed'),
+      active: filter === 'confirmed',
+    },
+    {
+      label: 'Pending',
+      value: stats.pending,
+      icon: Clock,
+      color: '#D4935A',
+      hint: `${percent(stats.responded, stats.total)} replied`,
+      onClick: () => changeFilter('pending'),
+      active: filter === 'pending',
+    },
+    {
+      label: 'Declined',
+      value: stats.declined,
+      icon: UserX,
+      color: '#C0756B',
+      hint: `${percent(stats.declined, stats.total)} of invited`,
+      onClick: () => changeFilter('declined'),
+      active: filter === 'declined',
+    },
+    {
+      label: 'Invites Sent',
+      value: stats.invitesSent,
+      icon: Send,
+      color: '#7D8FA6',
+      hint: `${stats.total - stats.invitesSent} not sent`,
+    },
+    {
+      label: 'Duplicates',
+      value: extraDuplicateRecords,
+      icon: CopyCheck,
+      color: extraDuplicateRecords > 0 ? '#C9962B' : '#8B9A7D',
+      hint: extraDuplicateRecords > 0 ? 'Review & merge' : 'None found',
+      onClick: () => openMergeModal(),
+    },
+  ];
 
   const totalPages = Math.ceil(filteredGuests.length / itemsPerPage);
   
@@ -660,6 +815,13 @@ ${rows.join('\n')}
       icon: Plus,
       variant: 'primary',
       onClick: handleAdd,
+    },
+    {
+      id: 'merge-duplicates',
+      label: `Merge Duplicates (${extraDuplicateRecords})`,
+      icon: CopyCheck,
+      onClick: () => openMergeModal(),
+      hidden: extraDuplicateRecords === 0,
     },
     {
       id: 'import-excel',
@@ -714,38 +876,38 @@ ${rows.join('\n')}
   return (
     <>
       <AdminPageLayout
+        fill
         hero={
           <AdminPageHero
             title="Guest List"
-            description={`${guests.length} total guests`}
+            description={`${filteredGuests.length} of ${guests.length} guests shown`}
             breadcrumb="Guests"
             icon={<Users className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        toolbar={
-          <AdminToolbar
-            search={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search guests by name, email, group..."
-            filters={[
-              { id: 'all', label: 'All' },
-              { id: 'confirmed', label: 'Confirmed' },
-              { id: 'pending', label: 'Pending' },
-              { id: 'declined', label: 'Declined' },
-            ]}
-            activeFilter={filter}
-            onFilterChange={(f) => { setFilter(f); setCurrentPage(1); setSelectedIds([]); }}
-            viewMode={viewMode}
-            viewOptions={['list', 'spreadsheet']}
-            onViewModeChange={setViewMode}
-            sortOptions={[
-              { id: 'latest', label: 'Latest Added' },
-              { id: 'alpha', label: 'A → Z' },
-            ]}
-            activeSort={sortBy}
-            onSortChange={setSortBy}
-          />
-        }
+        summary={<AdminSummaryCards cards={summaryCards} columns={6} />}
+        actions={toolbarActions}
+        toolbarHidden={selectedIds.length > 0}
+        search="Search name, email, phone, group, code..."
+        filters={{
+          groups: [{
+            id: 'status',
+            label: 'RSVP status',
+            defaultValue: DEFAULT_FILTER,
+            value: filter,
+            onChange: changeFilter,
+            options: STATUS_FILTERS.map(f => ({ ...f, count: guests.filter(g => matchesStatusFilter(g, f.id)).length })),
+          }],
+          sort: {
+            options: [
+              { id: 'latest', label: 'Latest added' },
+              { id: 'alpha', label: 'Name A → Z' },
+            ],
+            value: sortBy,
+            onChange: setSortBy,
+          },
+          view: { options: ['list', 'spreadsheet'], value: viewMode, onChange: setViewMode },
+        }}
       >
         <input 
           type="file" 
@@ -796,9 +958,11 @@ ${rows.join('\n')}
         viewMode={viewMode}
         selectedIds={selectedIds}
         searchQuery={searchQuery}
-        totalPages={totalPages}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
+        onSetItemsPerPage={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+        duplicateIds={duplicateIds}
+        onReviewDuplicates={openMergeModal}
         onToggleSelect={toggleSelect}
         onToggleSelectAll={toggleSelectAll}
         onInlineSave={handleInlineSave}
@@ -856,8 +1020,15 @@ ${rows.join('\n')}
             onConfirm={handleConfirmImport}
           />
       )}
+      <GuestMergeModal
+        isOpen={mergeModal.open}
+        onClose={() => setMergeModal({ open: false, focusGuestId: null })}
+        groups={duplicateGroups}
+        focusGuestId={mergeModal.focusGuestId}
+        onMerge={handleMerge}
+        onIgnore={handleIgnoreDuplicates}
+      />
       </AdminPageLayout>
-      {selectedIds.length === 0 && <AdminFloatingToolbar actions={toolbarActions} />}
     </>
   );
 }

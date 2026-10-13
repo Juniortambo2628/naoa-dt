@@ -12,8 +12,7 @@ import { useFAQs } from '../../hooks/useApiHooks';
 import { faqService, contentService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import AdminCard from '../../components/admin/AdminCard';
@@ -117,7 +116,7 @@ function FaqGridCard({ faq, isSelected, onToggleSelect, onEdit, onDelete }) {
 
 export default function AdminFAQ() {
     const { data: faqs = [], isLoading: loading, refetch } = useFAQs();
-    const { searchQuery, setSearchQuery } = useSearch();
+    const { searchQuery } = useSearch();
     const quillRef = useRef(null);
     const [reorderableFaqs, setReorderableFaqs] = useState([]);
     const [, setOrder] = useState(0);
@@ -244,6 +243,16 @@ export default function AdminFAQ() {
     return (
         <>
             <AdminPageLayout
+              fill
+              actions={[
+                    {
+                        id: 'add-faq',
+                        label: 'Add FAQ',
+                        icon: Plus,
+                        variant: 'primary',
+                        onClick: handleAdd,
+                    },
+                ]}
                 hero={
                     <AdminPageHero
                         title="FAQ Management"
@@ -252,16 +261,8 @@ export default function AdminFAQ() {
                         icon={<HelpCircle className="w-5 h-5 text-[#A67B5B]" />}
                     />
                 }
-                toolbar={
-                    <AdminToolbar
-                        search={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        searchPlaceholder="Search FAQs..."
-                        viewMode={viewMode}
-                        viewOptions={['list', 'grid']}
-                        onViewModeChange={setViewMode}
-                    />
-                }
+                search="Search FAQs..."
+                filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
             >
                 <AdminBulkActions
                     selectedCount={selectedIds.length}
@@ -271,7 +272,7 @@ export default function AdminFAQ() {
                     ]}
                 />
 
-                <AdminCard padding={false} className="overflow-hidden">
+                <AdminListPanel>
                     {loading ? (
                         <EmptyState loading />
                     ) : filteredFaqs.length === 0 ? (
@@ -304,7 +305,7 @@ export default function AdminFAQ() {
                             ))}
                         </div>
                     )}
-                </AdminCard>
+                </AdminListPanel>
 
                 <AdminModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedFaq ? 'Edit FAQ' : 'Add New FAQ'} size="2xl">
                     <form onSubmit={handleSave} className="space-y-6">
@@ -399,17 +400,6 @@ export default function AdminFAQ() {
                     />
                 )}
             </AdminPageLayout>
-            <AdminFloatingToolbar
-                actions={[
-                    {
-                        id: 'add-faq',
-                        label: 'Add FAQ',
-                        icon: Plus,
-                        variant: 'primary',
-                        onClick: handleAdd,
-                    },
-                ]}
-            />
         </>
     );
 }

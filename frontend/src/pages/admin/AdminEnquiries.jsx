@@ -8,9 +8,8 @@ import { useEnquiries } from '../../hooks/useApiHooks';
 import { enquiryService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
+import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import Spinner from '../../components/admin/Spinner';
@@ -28,7 +27,7 @@ export default function AdminEnquiries() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [viewMode, setViewMode] = useState('list');
   const [selectedIds, setSelectedIds] = useState([]);
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
 
   const filteredEnquiries = useFilteredItems(enquiries, searchQuery, (enq, searchLower) => {
     const matchesSearch = (enq.name || '').toLowerCase().includes(searchLower) || 
@@ -138,6 +137,16 @@ export default function AdminEnquiries() {
   return (
     <>
       <AdminPageLayout
+        fill
+        actions={[
+          {
+            id: 'refresh',
+            label: 'Refresh',
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            disabled: loading,
+          },
+        ]}
         hero={
           <AdminPageHero
             title="Enquiries"
@@ -146,24 +155,22 @@ export default function AdminEnquiries() {
             icon={<Mail className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        toolbar={
-          <AdminToolbar
-            search={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search enquiries..."
-            filters={[
+        search="Search enquiries..."
+        filters={{
+          groups: [{
+            id: 'type',
+            label: 'Type',
+            options: [
               { id: 'all', label: 'All Enquiries' },
               { id: 'guest', label: 'Guests' },
               { id: 'vendor', label: 'Vendors' },
               { id: 'other', label: 'Other' },
-            ]}
-            activeFilter={typeFilter}
-            onFilterChange={setTypeFilter}
-            viewMode={viewMode}
-            viewOptions={['list', 'grid']}
-            onViewModeChange={setViewMode}
-          />
-        }
+            ],
+            value: typeFilter,
+            onChange: setTypeFilter,
+          }],
+          view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode },
+        }}
       >
         <AnimatePresence>
           {selectedIds.length > 0 && (
@@ -192,139 +199,141 @@ export default function AdminEnquiries() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4">
-          {loading && enquiries.length === 0 ? (
-            <EmptyState loading />
-          ) : filteredEnquiries.length === 0 ? (
-            <EmptyState icon={Mail} message="No enquiries yet" searchQuery={searchQuery} />
-          ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredEnquiries.map((enq) => (
-                <motion.div
-                  key={enq.id}
-                  layout
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  onClick={() => toggleSelection(enq.id)}
-                  className={`bg-white p-5 rounded-2xl border shadow-sm cursor-pointer transition-all ${
-                    selectedIds.includes(enq.id)
-                      ? 'border-[#A67B5B]/50 ring-1 ring-[#A67B5B]/20'
-                      : 'border-stone-100 hover:border-stone-200'
-                  }`}
-                >
-                  <div className="flex items-start gap-3 mb-4">
-                    <input
-                      type="checkbox"
-                      aria-label="Select enquiry"
-                      checked={selectedIds.includes(enq.id)}
-                      onChange={() => toggleSelection(enq.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mt-1 w-4 h-4 accent-[#A67B5B] cursor-pointer"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-stone-800 truncate">{enq.name}</p>
-                      <p className="text-sm text-stone-500 truncate">{enq.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <TypeBadge type={enq.type} />
-                    <StatusBadge status={enq.status} />
-                  </div>
-
-                  <h3 className="font-bold text-stone-800 mb-2 truncate">{enq.subject || 'No Subject'}</h3>
-                  <p className="text-stone-600 text-sm bg-stone-50 p-3 rounded-xl italic line-clamp-3 mb-4">
-                    "{enq.message}"
-                  </p>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-                    <span className="text-xs text-stone-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {new Date(enq.created_at).toLocaleDateString()}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {enq.status !== 'replied' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedEnquiry(enq);
-                            setShowReplyModal(true);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#A67B5B] text-white text-xs font-bold rounded-lg hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
-                        >
-                          <Send className="w-3.5 h-3.5" /> Reply
-                        </button>
-                      )}
-                      <span onClick={(e) => e.stopPropagation()}>
-                        <DeleteButton
-                          onClick={() => handleDelete(enq.id)}
-                          processing={processing === enq.id}
-                          title="Delete Enquiry"
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredEnquiries.map((enq) => (
-                <motion.div
-                  key={enq.id}
-                  layout
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className={`bg-white p-6 rounded-2xl border ${enq.status === 'replied' ? 'border-stone-100' : 'border-[#A67B5B]/30 shadow-sm'} flex flex-col md:flex-row gap-6`}
-                >
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-3">
+        <AdminListPanel plain>
+          <div className="grid grid-cols-1 gap-4">
+            {loading && enquiries.length === 0 ? (
+              <EmptyState loading />
+            ) : filteredEnquiries.length === 0 ? (
+              <EmptyState icon={Mail} message="No enquiries yet" searchQuery={searchQuery} />
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredEnquiries.map((enq) => (
+                  <motion.div
+                    key={enq.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    onClick={() => toggleSelection(enq.id)}
+                    className={`bg-white p-5 rounded-2xl border shadow-sm cursor-pointer transition-all ${
+                      selectedIds.includes(enq.id)
+                        ? 'border-[#A67B5B]/50 ring-1 ring-[#A67B5B]/20'
+                        : 'border-stone-100 hover:border-stone-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3 mb-4">
                       <input
                         type="checkbox"
                         aria-label="Select enquiry"
                         checked={selectedIds.includes(enq.id)}
                         onChange={() => toggleSelection(enq.id)}
-                        className="w-4 h-4 accent-[#A67B5B] cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 w-4 h-4 accent-[#A67B5B] cursor-pointer"
                       />
-                      <span className="font-bold text-stone-800">{enq.name}</span>
-                      <span className="text-sm text-stone-500 font-medium">{enq.email}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-stone-800 truncate">{enq.name}</p>
+                        <p className="text-sm text-stone-500 truncate">{enq.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
                       <TypeBadge type={enq.type} />
                       <StatusBadge status={enq.status} />
-                      <span className="text-xs text-stone-400 flex items-center gap-1 ml-auto">
+                    </div>
+
+                    <h3 className="font-bold text-stone-800 mb-2 truncate">{enq.subject || 'No Subject'}</h3>
+                    <p className="text-stone-600 text-sm bg-stone-50 p-3 rounded-xl italic line-clamp-3 mb-4">
+                      "{enq.message}"
+                    </p>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                      <span className="text-xs text-stone-400 flex items-center gap-1">
                         <Clock className="w-3 h-3" /> {new Date(enq.created_at).toLocaleDateString()}
                       </span>
-                    </div>
-                    
-                    <h3 className="font-bold text-stone-800 mb-2">{enq.subject || 'No Subject'}</h3>
-                    <p className="text-stone-600 bg-stone-50 p-4 rounded-xl italic">"{enq.message}"</p>
-                    
-                    {enq.reply_message && (
-                      <div className="mt-4 pl-4 border-l-4 border-green-100">
-                        <p className="text-xs font-bold text-green-600 uppercase mb-1">Your Reply</p>
-                        <p className="text-stone-500 text-sm">{enq.reply_message}</p>
+                      <div className="flex items-center gap-1">
+                        {enq.status !== 'replied' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEnquiry(enq);
+                              setShowReplyModal(true);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#A67B5B] text-white text-xs font-bold rounded-lg hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
+                          >
+                            <Send className="w-3.5 h-3.5" /> Reply
+                          </button>
+                        )}
+                        <span onClick={(e) => e.stopPropagation()}>
+                          <DeleteButton
+                            onClick={() => handleDelete(enq.id)}
+                            processing={processing === enq.id}
+                            title="Delete Enquiry"
+                          />
+                        </span>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredEnquiries.map((enq) => (
+                  <motion.div
+                    key={enq.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={`bg-white p-6 rounded-2xl border ${enq.status === 'replied' ? 'border-stone-100' : 'border-[#A67B5B]/30 shadow-sm'} flex flex-col md:flex-row gap-6`}
+                  >
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-3">
+                        <input
+                          type="checkbox"
+                          aria-label="Select enquiry"
+                          checked={selectedIds.includes(enq.id)}
+                          onChange={() => toggleSelection(enq.id)}
+                          className="w-4 h-4 accent-[#A67B5B] cursor-pointer"
+                        />
+                        <span className="font-bold text-stone-800">{enq.name}</span>
+                        <span className="text-sm text-stone-500 font-medium">{enq.email}</span>
+                        <TypeBadge type={enq.type} />
+                        <StatusBadge status={enq.status} />
+                        <span className="text-xs text-stone-400 flex items-center gap-1 ml-auto">
+                          <Clock className="w-3 h-3" /> {new Date(enq.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    
+                      <h3 className="font-bold text-stone-800 mb-2">{enq.subject || 'No Subject'}</h3>
+                      <p className="text-stone-600 bg-stone-50 p-4 rounded-xl italic">"{enq.message}"</p>
+                    
+                      {enq.reply_message && (
+                        <div className="mt-4 pl-4 border-l-4 border-green-100">
+                          <p className="text-xs font-bold text-green-600 uppercase mb-1">Your Reply</p>
+                          <p className="text-stone-500 text-sm">{enq.reply_message}</p>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="flex flex-row md:flex-col items-center gap-3 md:border-l md:border-stone-100 md:pl-6 min-w-[120px]">
-                    {enq.status !== 'replied' && (
-                      <button
-                        onClick={() => { setSelectedEnquiry(enq); setShowReplyModal(true); }}
-                        className="flex-1 md:w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#A67B5B] text-white text-sm font-bold rounded-xl hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
-                      >
-                        <Send className="w-4 h-4" /> Reply
-                      </button>
-                    )}
-                    <DeleteButton
-                      onClick={() => handleDelete(enq.id)}
-                      processing={processing === enq.id}
-                      title="Delete Enquiry"
-                    />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
+                    <div className="flex flex-row md:flex-col items-center gap-3 md:border-l md:border-stone-100 md:pl-6 min-w-[120px]">
+                      {enq.status !== 'replied' && (
+                        <button
+                          onClick={() => { setSelectedEnquiry(enq); setShowReplyModal(true); }}
+                          className="flex-1 md:w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#A67B5B] text-white text-sm font-bold rounded-xl hover:bg-[#8B5E3C] transition-all shadow-sm active:scale-95"
+                        >
+                          <Send className="w-4 h-4" /> Reply
+                        </button>
+                      )}
+                      <DeleteButton
+                        onClick={() => handleDelete(enq.id)}
+                        processing={processing === enq.id}
+                        title="Delete Enquiry"
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </AdminListPanel>
 
         {/* Reply Modal */}
         <AdminModal isOpen={showReplyModal} onClose={() => setShowReplyModal(false)} title="Reply to Enquiry" size="lg">
@@ -380,17 +389,6 @@ export default function AdminEnquiries() {
           )}
         </AdminModal>
       </AdminPageLayout>
-      <AdminFloatingToolbar
-        actions={[
-          {
-            id: 'refresh',
-            label: 'Refresh',
-            icon: RefreshCw,
-            onClick: () => refetch(),
-            disabled: loading,
-          },
-        ]}
-      />
     </>
   );
 }

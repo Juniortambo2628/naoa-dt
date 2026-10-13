@@ -8,7 +8,6 @@ import { normalizePages } from '../../utils/invitationPages';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminCard from '../../components/admin/AdminCard';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import Spinner from '../../components/admin/Spinner';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 
@@ -137,6 +136,25 @@ export default function AdminEmails() {
   return (
     <>
     <AdminPageLayout
+      actions={[
+        activeTab === 'compose'
+          ? {
+              id: 'bulk-send',
+              label: 'Send to All Pending',
+              icon: Send,
+              variant: 'primary',
+              onClick: handleBulkSend,
+              disabled: loading,
+            }
+          : {
+              id: 'save-templates',
+              label: 'Save Templates',
+              icon: Save,
+              variant: 'primary',
+              onClick: handleSaveSettings,
+              disabled: savingSettings,
+            },
+      ]}
       hero={
         <AdminPageHero
           title="Email Management"
@@ -363,27 +381,6 @@ export default function AdminEmails() {
       )}
       </div>
     </AdminPageLayout>
-    <AdminFloatingToolbar
-      actions={[
-        activeTab === 'compose'
-          ? {
-              id: 'bulk-send',
-              label: 'Send to All Pending',
-              icon: Send,
-              variant: 'primary',
-              onClick: handleBulkSend,
-              disabled: loading,
-            }
-          : {
-              id: 'save-templates',
-              label: 'Save Templates',
-              icon: Save,
-              variant: 'primary',
-              onClick: handleSaveSettings,
-              disabled: savingSettings,
-            },
-      ]}
-    />
     </>
   );
 }
