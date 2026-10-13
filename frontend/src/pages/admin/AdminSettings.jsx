@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Save, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate } from 'lucide-react';
+import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -92,7 +92,9 @@ export default function AdminSettings() {
     }
   }, [user]);
 
-  useEffect(() => {
+  const formRef = useRef(null);
+
+  const loadSettings = () => {
     if (settingsData) {
         setSettings({
           rsvp_enabled: String(settingsData.rsvp_enabled) === 'true',
@@ -111,7 +113,14 @@ export default function AdminSettings() {
           invitation_sections: resolveInvitationSections(settingsData.invitation_sections),
         });
     }
-  }, [settingsData]);
+  };
+
+  useEffect(loadSettings, [settingsData]);
+
+  const handleDiscard = () => {
+    loadSettings();
+    toast('Unsaved changes discarded');
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -174,6 +183,23 @@ export default function AdminSettings() {
 
   return (
     <AdminPageLayout
+      actions={[
+        {
+          id: 'save-settings',
+          label: updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes',
+          icon: Save,
+          variant: 'primary',
+          onClick: () => formRef.current?.requestSubmit(),
+          disabled: updateSettingsMutation.isPending,
+        },
+        {
+          id: 'discard-settings',
+          label: 'Discard Changes',
+          icon: RotateCcw,
+          onClick: handleDiscard,
+          disabled: updateSettingsMutation.isPending,
+        },
+      ]}
       hero={
         <AdminPageHero
           title="System Settings"
@@ -186,7 +212,7 @@ export default function AdminSettings() {
       <div className="grid lg:grid-cols-3 gap-8 items-start">
         {/* Left Column: Settings Form */}
         <div className="lg:col-span-2 space-y-6">
-          <form onSubmit={handleSave} className="space-y-6">
+          <form ref={formRef} onSubmit={handleSave} className="space-y-6">
             {/* Wedding Details — single source of truth for date, names & venue */}
             <SettingsCard icon={Heart} title="Wedding Details" description="The couple, date and venue — used across the site, invitations and emails.">
               <div className="space-y-5">
@@ -405,6 +431,7 @@ export default function AdminSettings() {
               <button
                 type="button"
                 className="btn-secondary"
+                onClick={handleDiscard}
                 disabled={updateSettingsMutation.isPending}
               >
                 Cancel

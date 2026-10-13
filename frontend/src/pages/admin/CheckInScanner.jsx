@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { QrCode, UserCheck, Users, AlertCircle, CheckCircle } from 'lucide-react';
+import { QrCode, UserCheck, Users, AlertCircle, CheckCircle, RefreshCw, Square } from 'lucide-react';
 import { useCheckinStats } from '../../hooks/useApiHooks';
 import { checkinService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
@@ -78,6 +78,12 @@ export default function CheckInScanner() {
 
     return (
         <AdminPageLayout
+            actions={[
+                scanning
+                    ? { id: 'stop-scan', label: 'Stop Scanning', icon: Square, variant: 'danger', onClick: stopScanning }
+                    : { id: 'start-scan', label: 'Start Scanning', icon: QrCode, variant: 'primary', onClick: startScanning },
+                { id: 'refresh', label: 'Refresh Stats', icon: RefreshCw, onClick: () => refetchStats() },
+            ]}
             hero={
                 <AdminPageHero
                     title="Guest Check-In"

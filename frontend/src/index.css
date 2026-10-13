@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+/* "fit": desktop viewports tall enough for the fixed-height admin listing
+   layout (AdminPageLayout `fill`), where only the list rows scroll. */
+@custom-variant fit (@media (min-width: 64rem) and (min-height: 40rem));
+
 /* Local Fonts */
 @font-face {
   font-family: 'Great Vibes';

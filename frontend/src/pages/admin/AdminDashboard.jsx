@@ -47,6 +47,7 @@ function DashboardOverview() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -82,6 +83,11 @@ function DashboardOverview() {
 
   return (
     <AdminPageLayout
+      actions={[
+        { id: 'guests', label: 'Guest List', icon: Users, variant: 'primary', onClick: () => navigate('/admin/dashboard/guests') },
+        { id: 'analytics', label: 'Analytics', icon: PieChart, onClick: () => navigate('/admin/dashboard/analytics') },
+        { id: 'checkin', label: 'Check-In', icon: CheckCircle, onClick: () => navigate('/admin/dashboard/checkin') },
+      ]}
       hero={
         <AdminPageHero
           title="Welcome Back!"

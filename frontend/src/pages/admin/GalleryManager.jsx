@@ -6,8 +6,6 @@ import { Reorder } from 'framer-motion';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import EmptyState from '../../components/admin/EmptyState';
 import { useGallery } from '../../hooks/useApiHooks';
@@ -20,7 +18,7 @@ export default function GalleryManager() {
   const [isReordering, setIsReordering] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [uploadingFiles, setUploadingFiles] = useState([]);
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
   const [viewMode, setViewMode] = useState('grid');
 
   useEffect(() => {
@@ -96,8 +94,11 @@ export default function GalleryManager() {
     }
   };
 
+  // Search by caption or uploader; reordering always works on the full set.
+  const searchLower = (searchQuery || '').trim().toLowerCase();
   const filteredItems = items
-    .filter(() => true)
+    .filter(item => isReordering || !searchLower
+      || [item.caption, item.uploaded_by].some(v => v && String(v).toLowerCase().includes(searchLower)))
     .sort((a, b) => b.id - a.id);
 
   const toolbarActions = [
@@ -120,6 +121,7 @@ export default function GalleryManager() {
   return (
     <>
       <AdminPageLayout
+        actions={toolbarActions}
         hero={
           <AdminPageHero
             title="Gallery Management"
@@ -128,16 +130,8 @@ export default function GalleryManager() {
             icon={<ImageIcon className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        toolbar={
-          <AdminToolbar
-            search={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search gallery..."
-            viewMode={viewMode}
-            viewOptions={['grid', 'list']}
-            onViewModeChange={setViewMode}
-          />
-        }
+        search="Search gallery..."
+        filters={{ view: { options: ['grid', 'list'], value: viewMode, onChange: setViewMode } }}
       >
         {/* Multi-Upload Dropzone */}
         {!isReordering && (
@@ -261,7 +255,6 @@ export default function GalleryManager() {
           ]}
         />
       </AdminPageLayout>
-      <AdminFloatingToolbar actions={toolbarActions} />
     </>
   );
 }

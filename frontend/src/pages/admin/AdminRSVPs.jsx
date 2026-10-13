@@ -4,8 +4,8 @@ import { CheckCircle, XCircle, MessageSquare, Utensils, Users, LayoutGrid, List 
 import { useGuests } from '../../hooks/useApiHooks';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
-import AdminToolbar from '../../components/admin/AdminToolbar';
 import AdminCard from '../../components/admin/AdminCard';
 import EmptyState from '../../components/admin/EmptyState';
 import { useSearch } from '../../context/SearchContext';
@@ -13,7 +13,7 @@ import { Skeleton } from '../../components/Skeleton';
 
 export default function AdminRSVPs() {
     const { data: guestsData, isLoading } = useGuests();
-    const { searchQuery, setSearchQuery } = useSearch();
+    const { searchQuery } = useSearch();
     const [rsvps, setRsvps] = useState([]);
     const [filter, setFilter] = useState('all');
     const [viewMode, setViewMode] = useState('list');
@@ -102,6 +102,7 @@ export default function AdminRSVPs() {
 
     return (
         <AdminPageLayout
+            fill
             hero={
                 <AdminPageHero
                     title="RSVP Responses & Messages"
@@ -111,27 +112,29 @@ export default function AdminRSVPs() {
                 />
             }
             summary={<AdminSummaryCards cards={statCards} columns={4} />}
-            toolbar={
-                <AdminToolbar
-                    filters={[
-                        { id: 'all', label: 'All Responses' },
-                        { id: 'with_messages', label: 'With Messages' },
-                    ]}
-                    activeFilter={filter}
-                    onFilterChange={setFilter}
-                    search={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    searchPlaceholder="Search guests, messages, or dietary notes..."
-                    viewMode={viewMode}
-                    viewOptions={['list', 'grid']}
-                    onViewModeChange={setViewMode}
-                />
-            }
+            search="Search guests, messages, or dietary notes..."
+            filters={{
+              groups: [{
+                id: 'responses',
+                label: 'Show',
+                options: [
+                  { id: 'all', label: 'All Responses' },
+                  { id: 'with_messages', label: 'With Messages' },
+                ],
+                value: filter,
+                onChange: setFilter,
+              }],
+              view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode },
+            }}
         >
-                <AdminCard padding={false} className="overflow-hidden">
-                <div className="p-6 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-stone-800">Recent Responses</h2>
-                </div>
+                <AdminListPanel
+                    header={
+                        <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-stone-800">Recent Responses</h2>
+                            <span className="text-sm text-stone-400">{filteredRsvps.length} shown</span>
+                        </div>
+                    }
+                >
 
                 {filteredRsvps.length === 0 ? (
                     <EmptyState
@@ -241,7 +244,7 @@ export default function AdminRSVPs() {
                         ))}
                     </div>
                 )}
-            </AdminCard>
+            </AdminListPanel>
         </AdminPageLayout>
     );
 }

@@ -4,7 +4,7 @@ import {
   Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical,
   Radio, Camera, Wifi, Database, HardDrive, Server, Bell,
   AlertTriangle, Check, X, Activity, Zap, BarChart3,
-  Cloud, Map, ExternalLink, Settings, Plane
+  Cloud, Map, ExternalLink, Settings, Plane, Trash2
 } from 'lucide-react';
 import api, { guestService, testLabService, weatherService, tableService, settingService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
@@ -234,6 +234,20 @@ export default function AdminTestLab() {
 
   return (
     <AdminPageLayout
+      actions={[
+        {
+          id: 'health-check',
+          label: healthLoading ? 'Checking...' : 'Run Health Check',
+          icon: Activity,
+          variant: 'primary',
+          onClick: runHealthCheck,
+          disabled: healthLoading,
+        },
+        { id: 'test-weather', label: 'Test Weather', icon: Cloud, onClick: handleTestWeather, disabled: loading },
+        { id: 'test-seating', label: 'Test Seating', icon: Map, onClick: handleTestSeating, disabled: loading },
+        { id: 'test-settings', label: 'Test Settings', icon: Settings, onClick: handleTestSettings, disabled: loading },
+        { id: 'clear-logs', label: 'Clear Logs', icon: Trash2, variant: 'danger', onClick: () => setLogs([]), hidden: logs.length === 0 },
+      ]}
       hero={
         <AdminPageHero
           title="Test Lab"

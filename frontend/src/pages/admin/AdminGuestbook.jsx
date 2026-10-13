@@ -6,8 +6,7 @@ import { guestbookService } from '../../services/api';
 import EmptyState from '../../components/admin/EmptyState';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import DeleteButton from '../../components/admin/DeleteButton';
 import { useSearch } from '../../context/SearchContext';
@@ -18,7 +17,7 @@ import { toast } from 'react-hot-toast';
 export default function AdminGuestbook() {
   const { data, isLoading: loading, refetch } = useGuestbook();
   const entries = data?.entries || [];
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
 
   const { processing, handleDelete } = useCrudHandlers({
     service: guestbookService,
@@ -61,53 +60,7 @@ export default function AdminGuestbook() {
   return (
     <>
       <AdminPageLayout
-        hero={
-          <AdminPageHero
-            title="Guestbook Messages"
-            description={`${entries.length} messages received`}
-            breadcrumb="Guestbook"
-            icon={<MessageSquare className="w-5 h-5 text-[#A67B5B]" />}
-          />
-        }
-        toolbar={
-          <AdminToolbar
-            search={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search messages or guest names..."
-            viewMode={viewMode}
-            viewOptions={['list', 'grid']}
-            onViewModeChange={setViewMode}
-          />
-        }
-      >
-        <AdminBulkActions
-          selectedCount={selectedIds.length}
-          onClearSelection={clearSelection}
-          actions={bulkActions}
-        />
-
-        {loading && entries.length === 0 ? (
-          <EmptyState loading />
-        ) : filteredEntries.length === 0 ? (
-          <EmptyState icon={MessageSquare} message="No messages yet" searchQuery={searchQuery} />
-        ) : viewMode === 'grid' ? (
-          <GuestbookGrid
-            entries={filteredEntries}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onDelete={handleDelete}
-          />
-        ) : (
-          <GuestbookList
-            entries={filteredEntries}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onDelete={handleDelete}
-            processing={processing}
-          />
-        )}
-      </AdminPageLayout>
-      <AdminFloatingToolbar
+        fill
         actions={[
           {
             id: 'refresh',
@@ -117,7 +70,46 @@ export default function AdminGuestbook() {
             disabled: loading,
           },
         ]}
-      />
+        hero={
+          <AdminPageHero
+            title="Guestbook Messages"
+            description={`${entries.length} messages received`}
+            breadcrumb="Guestbook"
+            icon={<MessageSquare className="w-5 h-5 text-[#A67B5B]" />}
+          />
+        }
+        search="Search messages or guest names..."
+        filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
+      >
+        <AdminBulkActions
+          selectedCount={selectedIds.length}
+          onClearSelection={clearSelection}
+          actions={bulkActions}
+        />
+
+        <AdminListPanel plain>
+          {loading && entries.length === 0 ? (
+            <EmptyState loading />
+          ) : filteredEntries.length === 0 ? (
+            <EmptyState icon={MessageSquare} message="No messages yet" searchQuery={searchQuery} />
+          ) : viewMode === 'grid' ? (
+            <GuestbookGrid
+              entries={filteredEntries}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelection}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <GuestbookList
+              entries={filteredEntries}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelection}
+              onDelete={handleDelete}
+              processing={processing}
+            />
+          )}
+        </AdminListPanel>
+      </AdminPageLayout>
     </>
   );
 }

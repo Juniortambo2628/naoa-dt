@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Users, UserCheck, Clock, BarChart2 } from 'lucide-react';
+import { Users, UserCheck, Clock, BarChart2, RefreshCw } from 'lucide-react';
 import { useAnalytics } from '../../hooks/useApiHooks';
 import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
@@ -10,7 +10,7 @@ import EmptyState from '../../components/admin/EmptyState';
 const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 
 export default function AnalyticsCharts() {
-    const { data, isLoading } = useAnalytics();
+    const { data, isLoading, isFetching, refetch } = useAnalytics();
 
     if (isLoading) {
         return <EmptyState loading />;
@@ -30,6 +30,7 @@ export default function AnalyticsCharts() {
 
     return (
         <AdminPageLayout
+            actions={[{ id: 'refresh', label: isFetching ? 'Refreshing...' : 'Refresh', icon: RefreshCw, onClick: () => refetch(), disabled: isFetching }]}
             hero={
                 <AdminPageHero
                     title="Analytics & Reports"

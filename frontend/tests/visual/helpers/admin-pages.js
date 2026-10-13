@@ -338,7 +338,7 @@ export async function takeViewportScreenshot(page, name) {
  * Assert that AdminPageLayout structure is present.
  */
 export async function assertAdminPageLayout(page) {
-  const layout = page.locator('.space-y-8');
+  const layout = page.locator('.admin-page-layout');
   await expect(layout.first()).toBeVisible();
 }
 

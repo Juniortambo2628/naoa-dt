@@ -5,8 +5,6 @@ import { guestService, tableService } from '../../services/api';
 import { Plus, Users, MoreVertical, Trash2, Check, X, Search, Eye, Armchair } from 'lucide-react';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import AdminCard from '../../components/admin/AdminCard';
 import { useSearch } from '../../context/SearchContext';
 
@@ -253,7 +251,7 @@ export default function SeatingChart() {
   const [guests, setGuests] = useState([]);
   const [tables, setTables] = useState([]);
   const [, setLoading] = useState(true);
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
   
   // New Table Form
   const [newTable, setNewTable] = useState({ name: '', capacity: 10, type: 'round' });
@@ -340,6 +338,15 @@ export default function SeatingChart() {
   return (
     <>
       <AdminPageLayout
+        actions={[
+          {
+            id: 'add-table',
+            label: 'Add Table',
+            icon: Plus,
+            variant: 'primary',
+            onClick: () => setIsAdding(true),
+          },
+        ]}
         hero={
           <AdminPageHero
             title="Seating Chart"
@@ -348,13 +355,7 @@ export default function SeatingChart() {
             icon={<Armchair className="w-5 h-5 text-[#A67B5B]" />}
           />
         }
-        toolbar={
-          <AdminToolbar
-            search={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search unassigned guests..."
-          />
-        }
+        search="Search unassigned guests..."
       >
         <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
 
@@ -460,17 +461,6 @@ export default function SeatingChart() {
        </div>
       </div>
       </AdminPageLayout>
-      <AdminFloatingToolbar
-        actions={[
-          {
-            id: 'add-table',
-            label: 'Add Table',
-            icon: Plus,
-            variant: 'primary',
-            onClick: () => setIsAdding(true),
-          },
-        ]}
-      />
     </>
   );
 }

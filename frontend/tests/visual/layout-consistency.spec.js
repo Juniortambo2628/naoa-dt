@@ -92,8 +92,8 @@ test.describe('Layout Metrics Consistency', () => {
       await navigateToAdminPage(page, pageConfig.path);
       await waitForPageReady(page);
 
-      await page.locator('.space-y-8').first().waitFor({ state: 'visible', timeout: 10000 });
-      const metrics = await getLayoutMetrics(page, '.space-y-8');
+      await page.locator('.admin-page-layout').first().waitFor({ state: 'visible', timeout: 10000 });
+      const metrics = await getLayoutMetrics(page, '.admin-page-layout');
       spacingResults.push({ page: pageName, ...metrics });
     }
 

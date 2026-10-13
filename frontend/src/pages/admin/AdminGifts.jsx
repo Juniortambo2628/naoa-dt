@@ -5,8 +5,7 @@ import { giftService, getAssetUrl } from '../../services/api';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminToolbar from '../../components/admin/AdminToolbar';
-import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
+import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
@@ -21,7 +20,7 @@ import { toast } from 'react-hot-toast';
 
 export default function AdminGifts() {
   const { data: gifts = [], isLoading: loading, refetch } = useGifts();
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
   const { selectedItem, modalOpen, setModalOpen, handleAdd, handleEdit, handleDelete, handleSave } = useCrudHandlers({
     service: giftService,
     onRefresh: refetch,
@@ -104,6 +103,16 @@ export default function AdminGifts() {
   return (
     <>
       <AdminPageLayout
+        fill
+        actions={[
+          {
+            id: 'add-gift',
+            label: 'Add Gift',
+            icon: Plus,
+            variant: 'primary',
+            onClick: handleAdd,
+          },
+        ]}
         hero={
           <AdminPageHero
             title="Gift Registry"
@@ -113,16 +122,8 @@ export default function AdminGifts() {
           />
         }
         summary={<AdminSummaryCards cards={statCards} columns={4} />}
-        toolbar={
-          <AdminToolbar
-            search={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search gifts..."
-            viewMode={viewMode}
-            viewOptions={['grid', 'list']}
-            onViewModeChange={setViewMode}
-          />
-        }
+        search="Search gifts..."
+        filters={{ view: { options: ['grid', 'list'], value: viewMode, onChange: setViewMode } }}
       >
         <AdminBulkActions
           selectedCount={selectedIds.length}
@@ -130,29 +131,31 @@ export default function AdminGifts() {
           actions={bulkActions}
         />
 
-        {loading ? (
-          <EmptyState loading />
-        ) : filteredGifts.length === 0 ? (
-          <EmptyState icon={Gift} message="No matching gifts found" searchQuery={searchQuery} />
-        ) : viewMode === 'grid' ? (
-          <GiftGrid
-            gifts={filteredGifts}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewClaims={(gift) => setClaimsGiftId(gift.id)}
-          />
-        ) : (
-          <GiftList
-            gifts={filteredGifts}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelection}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewClaims={(gift) => setClaimsGiftId(gift.id)}
-          />
-        )}
+        <AdminListPanel plain>
+          {loading ? (
+            <EmptyState loading />
+          ) : filteredGifts.length === 0 ? (
+            <EmptyState icon={Gift} message="No matching gifts found" searchQuery={searchQuery} />
+          ) : viewMode === 'grid' ? (
+            <GiftGrid
+              gifts={filteredGifts}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelection}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewClaims={(gift) => setClaimsGiftId(gift.id)}
+            />
+          ) : (
+            <GiftList
+              gifts={filteredGifts}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelection}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewClaims={(gift) => setClaimsGiftId(gift.id)}
+            />
+          )}
+        </AdminListPanel>
 
         <GiftModal
           isOpen={modalOpen}
@@ -168,17 +171,6 @@ export default function AdminGifts() {
           onRemoveClaim={handleRemoveClaim}
         />
       </AdminPageLayout>
-      <AdminFloatingToolbar
-        actions={[
-          {
-            id: 'add-gift',
-            label: 'Add Gift',
-            icon: Plus,
-            variant: 'primary',
-            onClick: handleAdd,
-          },
-        ]}
-      />
     </>
   );
 }

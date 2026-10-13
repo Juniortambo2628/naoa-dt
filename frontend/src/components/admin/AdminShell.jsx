@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { SearchProvider } from '../../context/SearchContext';
+import { SearchProvider, useSearch } from '../../context/SearchContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AdminTutorial from './AdminTutorial';
+
+// Each page starts with an empty search so a query typed on one list never
+// silently filters the next page.
+function ResetSearchOnNavigate({ pathname }) {
+  const { setSearchQuery } = useSearch();
+  useEffect(() => { setSearchQuery(''); }, [pathname, setSearchQuery]);
+  return null;
+}
 
 /**
  * AdminShell — the single-source-of-truth layout shell for all admin pages.
@@ -19,6 +27,7 @@ export default function AdminShell({ children }) {
 
   return (
     <SearchProvider>
+      <ResetSearchOnNavigate pathname={location.pathname} />
       <div 
         className="min-h-screen"
         style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}

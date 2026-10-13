@@ -87,6 +87,10 @@ export const guestService = {
   
   // Get all guests (admin)
   getAll: (params) => api.get('/guests', { params }),
+
+  // Duplicate detection & merging (admin)
+  getDuplicates: () => api.get('/guests/duplicates'),
+  merge: (keepId, mergeIds) => api.post('/guests/merge', { keep_id: keepId, merge_ids: mergeIds }),
   
   // Create guest
   create: (data) => api.post('/guests', data),
