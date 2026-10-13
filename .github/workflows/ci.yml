@@ -10,6 +10,9 @@ on:
     branches: [ main ]
   push:
     branches: [ main ]
+  # Manual runs (Actions → CI → Run workflow), e.g. when a push to a PR
+  # branch didn't start the checks.
+  workflow_dispatch:
 
 # Pint auto-fixes are committed back to the PR branch, which needs write access.
 permissions:
