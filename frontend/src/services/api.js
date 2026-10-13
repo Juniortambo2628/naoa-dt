@@ -294,7 +294,9 @@ export const notificationService = {
 // Song Request Admin services
 export const songRequestService = {
   getAll: () => api.get('/song-requests'),
-  markPlayed: (id) => api.patch(`/song-requests-admin/${id}/played`),
+  // Toggle the played flag; `played = false` un-marks a song.
+  setPlayed: (id, played = true) => api.patch(`/song-requests-admin/${id}/played`, { played }),
+  markPlayed: (id) => api.patch(`/song-requests-admin/${id}/played`, { played: true }),
   delete: (id) => api.delete(`/song-requests-admin/${id}`),
 };
 
