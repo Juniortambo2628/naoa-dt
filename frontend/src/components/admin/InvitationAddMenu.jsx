@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, ChevronDown } from 'lucide-react';
 import useDismiss from '../../hooks/useDismiss';
+import Button from '../Button';
 import { ELEMENT_KINDS } from './invitationElements';
 
 /** "Add" dropdown in the designer toolbar for inserting page elements. */
@@ -13,18 +14,16 @@ export default function InvitationAddMenu({ onAdd }) {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
+      <Button
+        icon={Plus}
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-medium text-[#4A3F35] bg-white/80 border border-stone-200/60 hover:bg-white"
         title="Add an element to this page"
       >
-        <Plus className="w-4 h-4 text-[#A67B5B]" />
         <span className="hidden sm:inline">Add</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+        <ChevronDown className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </Button>
       <AnimatePresence>
         {open && (
           <motion.div

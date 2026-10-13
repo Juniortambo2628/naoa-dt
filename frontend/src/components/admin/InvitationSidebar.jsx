@@ -11,6 +11,7 @@ import WeddingPalettePicker from './WeddingPalettePicker';
 import { Skeleton } from '../Skeleton';
 import { ELEMENT_KINDS } from './invitationElements';
 import InvitationLayers from './InvitationLayers';
+import Button from '../Button';
 
 export default function InvitationSidebar({
   loading,
@@ -80,13 +81,14 @@ export default function InvitationSidebar({
 
                     <div className="grid grid-cols-2 gap-2">
                       {ELEMENT_KINDS.map(kind => (
-                        <button
+                        <Button
                           key={kind.id}
+                          icon={kind.icon}
                           onClick={() => onAddElement(kind.id)}
-                          className="p-3 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] text-sm text-stone-600 flex flex-col items-center gap-2"
+                          className="flex-col"
                         >
-                          <kind.icon className="w-5 h-5" /> {kind.label}
-                        </button>
+                          {kind.label}
+                        </Button>
                       ))}
                     </div>
                   </div>
@@ -113,34 +115,42 @@ export default function InvitationSidebar({
                   <div className="space-y-4 p-4 bg-stone-50 rounded-xl border border-stone-200 animate-in fade-in slide-in-from-top-4">
                     <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider font-sans">Layering Control</h3>
                     <div className="grid grid-cols-4 gap-1">
-                      <button
+                      <Button
+                        size="sm"
+                        icon={ChevronUp}
                         onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'to_front' })}
                         title="Bring to Front"
-                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                        className="flex-col gap-1 px-1"
                       >
-                        <ChevronUp className="w-4 h-4" /> <span className="text-[8px] font-sans">Front</span>
-                      </button>
-                      <button
+                        Front
+                      </Button>
+                      <Button
+                        size="sm"
+                        icon={ArrowUp}
                         onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'forward' })}
                         title="Bring Forward"
-                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                        className="flex-col gap-1 px-1"
                       >
-                        <ArrowUp className="w-4 h-4" /> <span className="text-[8px] font-sans">Up</span>
-                      </button>
-                      <button
+                        Up
+                      </Button>
+                      <Button
+                        size="sm"
+                        icon={ArrowDown}
                         onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'backward' })}
                         title="Send Backward"
-                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                        className="flex-col gap-1 px-1"
                       >
-                        <ArrowDown className="w-4 h-4" /> <span className="text-[8px] font-sans">Down</span>
-                      </button>
-                      <button
+                        Down
+                      </Button>
+                      <Button
+                        size="sm"
+                        icon={ChevronDown}
                         onClick={() => handleDesignUpdate('move_item', { id: selectedItemId, direction: 'to_back' })}
                         title="Send to Back"
-                        className="p-2 bg-white border border-stone-200 rounded-lg hover:border-[#A67B5B] flex flex-col items-center gap-1"
+                        className="flex-col gap-1 px-1"
                       >
-                        <ChevronDown className="w-4 h-4" /> <span className="text-[8px] font-sans">Back</span>
-                      </button>
+                        Back
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -387,16 +397,19 @@ export default function InvitationSidebar({
                     <div className="flex justify-between items-center text-xs text-stone-500 mb-1 font-sans">
                       <span>Invitation Title</span>
                       <div className="flex gap-1">
-                        <button onClick={() => insertPlaceholder('title', '{{name}}')} title="Insert Guest Name" className="p-1 hover:bg-[#A67B5B]/10 rounded text-[#A67B5B] border border-[#A67B5B]/20 flex items-center gap-1 font-sans">
-                          <User className="w-3 h-3" /> <span className="text-[9px]">Name</span>
-                        </button>
+                        <Button size="sm" icon={User} onClick={() => insertPlaceholder('title', '{{name}}')} title="Insert Guest Name">
+                          Name
+                        </Button>
                       </div>
                     </div>
                     {!design.items.some(i => i.textKey === 'title') && (
                       <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg animate-in fade-in slide-in-from-top-2">
                         <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
                         <span className="text-[11px] text-amber-700 font-medium flex-1">Layer missing from canvas</span>
-                        <button
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          icon={Plus}
                           onClick={() => {
                             addItem('text', {
                               id: 'title_1',
@@ -405,10 +418,9 @@ export default function InvitationSidebar({
                               fontStyle: 'cursive', fontSize: 52, zIndex: 50
                             });
                           }}
-                          className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-md transition-colors flex items-center gap-1 whitespace-nowrap"
                         >
-                          <Plus className="w-3 h-3" /> Add to Design
-                        </button>
+                          Add to Design
+                        </Button>
                       </div>
                     )}
                     <input
@@ -426,12 +438,14 @@ export default function InvitationSidebar({
                     <div key={item.id} className="space-y-2 p-3 bg-stone-50 rounded-lg border border-stone-100 font-sans">
                       <div className="flex justify-between items-center text-xs text-stone-500 font-sans">
                         <span className="font-bold">Text Element ({item.id})</span>
-                        <button aria-label="Delete element"
+                        <Button
+                          size="icon-sm"
+                          variant="danger"
+                          icon={Trash2}
                           onClick={() => deleteItem(item.id)}
-                          className="text-red-400 hover:text-red-600"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                          aria-label="Delete element"
+                          title="Delete element"
+                        />
                       </div>
                       <input
                         className="w-full p-2 border border-stone-200 rounded text-sm focus:ring-2 focus:ring-[#A67B5B]/20 outline-none font-sans"
@@ -447,22 +461,25 @@ export default function InvitationSidebar({
                     <div className="flex justify-between items-center text-xs text-stone-500 mb-1 font-sans">
                       <span>Invitation Message</span>
                       <div className="flex gap-1">
-                        <button onClick={() => insertPlaceholder('message', '{{name}}')} title="Insert Guest Name" className="p-1 hover:bg-[#A67B5B]/10 rounded text-[#A67B5B] border border-[#A67B5B]/20 flex items-center gap-1 font-sans">
-                          <User className="w-3 h-3" /> <span className="text-[9px]">Name</span>
-                        </button>
-                        <button onClick={() => insertPlaceholder('message', '{{code}}')} title="Insert RSVP Code" className="p-1 hover:bg-[#A67B5B]/10 rounded text-[#A67B5B] border border-[#A67B5B]/20 flex items-center gap-1 font-sans">
-                          <Hash className="w-3 h-3" /> <span className="text-[9px]">Code</span>
-                        </button>
-                        <button onClick={() => insertPlaceholder('message', '{{table}}')} title="Insert Table Name" className="p-1 hover:bg-[#A67B5B]/10 rounded text-[#A67B5B] border border-[#A67B5B]/20 flex items-center gap-1 font-sans">
-                          <TableIcon className="w-3 h-3" /> <span className="text-[9px]">Table</span>
-                        </button>
+                        <Button size="sm" icon={User} onClick={() => insertPlaceholder('message', '{{name}}')} title="Insert Guest Name">
+                          Name
+                        </Button>
+                        <Button size="sm" icon={Hash} onClick={() => insertPlaceholder('message', '{{code}}')} title="Insert RSVP Code">
+                          Code
+                        </Button>
+                        <Button size="sm" icon={TableIcon} onClick={() => insertPlaceholder('message', '{{table}}')} title="Insert Table Name">
+                          Table
+                        </Button>
                       </div>
                     </div>
                     {!design.items.some(i => i.textKey === 'message') && (
                       <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg animate-in fade-in slide-in-from-top-2">
                         <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
                         <span className="text-[11px] text-amber-700 font-medium flex-1">Layer missing from canvas</span>
-                        <button
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          icon={Plus}
                           onClick={() => {
                             addItem('text', {
                               id: 'message_1',
@@ -471,10 +488,9 @@ export default function InvitationSidebar({
                               fontStyle: 'serif', fontSize: 17, letterSpacing: 0, zIndex: 25
                             });
                           }}
-                          className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-md transition-colors flex items-center gap-1 whitespace-nowrap"
                         >
-                          <Plus className="w-3 h-3" /> Add to Design
-                        </button>
+                          Add to Design
+                        </Button>
                       </div>
                     )}
                     <textarea

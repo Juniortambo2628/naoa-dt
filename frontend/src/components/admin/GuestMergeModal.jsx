@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, CopyCheck, Merge, EyeOff, Loader2, Mail, Phone } from 'lucide-react';
+import { X, CopyCheck, Merge, EyeOff, Mail, Phone } from 'lucide-react';
 import Overlay from '../Overlay';
+import Button from '../Button';
 
 const RSVP_STYLES = {
   confirmed: 'bg-green-100 text-green-700',
@@ -73,15 +74,14 @@ function DuplicateGroup({ group, highlighted, onMerge, onIgnore }) {
             </span>
           ))}
         </div>
-        <button
-          type="button"
+        <Button
+          size="sm"
+          icon={EyeOff}
           onClick={() => onIgnore(group)}
-          className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600"
           title="These are different people — stop flagging them"
         >
-          <EyeOff className="w-3.5 h-3.5" />
           Not duplicates
-        </button>
+        </Button>
       </div>
 
       <div className="overflow-x-auto">
@@ -155,15 +155,15 @@ function DuplicateGroup({ group, highlighted, onMerge, onIgnore }) {
           Keeps <strong>{keeper?.name}</strong> and fills in any missing details, RSVP answer,
           invitation and plus-ones from the merged {toMerge.length === 1 ? 'record' : 'records'}.
         </p>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          icon={Merge}
+          loading={busy}
           onClick={handleMerge}
-          disabled={busy || toMerge.length === 0}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#A67B5B] text-white text-sm font-medium hover:bg-[#8B5E3C] disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={toMerge.length === 0}
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Merge className="w-4 h-4" />}
           Merge {toMerge.length} into kept record
-        </button>
+        </Button>
       </div>
     </div>
   );

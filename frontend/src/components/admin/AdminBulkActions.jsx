@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MoreHorizontal, Trash2, Mail, CheckCircle, Download, Users } from 'lucide-react';
+import Button from '../Button';
 
 /**
  * AdminBulkActions — reusable bulk-selection action bar for admin list pages.
@@ -37,13 +38,6 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
   const overflowActions = actions.slice(3);
   const hasOverflow = overflowActions.length > 0;
 
-  const baseButton = 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all';
-  const variantStyles = {
-    primary: 'bg-[#A67B5B] text-white hover:bg-[#8B5E3C] shadow-sm',
-    secondary: 'bg-white text-[#4A3F35] hover:bg-stone-50 border border-stone-200',
-    danger: 'bg-white text-red-600 hover:bg-red-50 border border-stone-200',
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -66,31 +60,26 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {primaryActions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <button
-              key={action.id}
-              onClick={action.onClick}
-              disabled={action.disabled}
-              className={`${baseButton} ${variantStyles[action.variant || 'secondary']} ${
-                action.disabled ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {Icon && <Icon className="w-4 h-4" />}
-              <span className="hidden sm:inline">{action.label}</span>
-            </button>
-          );
-        })}
+        {primaryActions.map((action) => (
+          <Button
+            key={action.id}
+            variant={action.variant || 'primary'}
+            icon={action.icon}
+            onClick={action.onClick}
+            disabled={action.disabled}
+          >
+            <span className="hidden sm:inline">{action.label}</span>
+          </Button>
+        ))}
 
         {hasOverflow && (
           <div className="relative" ref={menuRef}>
-            <button aria-label="More actions"
+            <Button
+              size="icon"
+              icon={MoreHorizontal}
+              aria-label="More actions"
               onClick={() => setMenuOpen((v) => !v)}
-              className={`${baseButton} ${variantStyles.secondary}`}
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
+            />
 
             <AnimatePresence>
               {menuOpen && (
@@ -138,14 +127,14 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
 // eslint-disable-next-line react-refresh/only-export-components
 export const bulkActionPresets = {
   guests: ({ onDelete, onExport, onEmail, onWhatsApp, onConfirm }) => [
-    { id: 'confirm', label: 'Confirm RSVP', icon: CheckCircle, variant: 'primary', onClick: onConfirm },
-    { id: 'email', label: 'Send Email', icon: Mail, variant: 'secondary', onClick: onEmail },
-    { id: 'export', label: 'Export', icon: Download, variant: 'secondary', onClick: onExport },
-    { id: 'whatsapp', label: 'WhatsApp', icon: Mail, variant: 'secondary', onClick: onWhatsApp },
+    { id: 'confirm', label: 'Confirm RSVP', icon: CheckCircle, variant: 'secondary', onClick: onConfirm },
+    { id: 'email', label: 'Send Email', icon: Mail, variant: 'primary', onClick: onEmail },
+    { id: 'export', label: 'Export', icon: Download, variant: 'primary', onClick: onExport },
+    { id: 'whatsapp', label: 'WhatsApp', icon: Mail, variant: 'primary', onClick: onWhatsApp },
     { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: onDelete },
   ],
   gifts: ({ onDelete, onToggleAvailability }) => [
-    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'primary', onClick: onToggleAvailability },
+    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'secondary', onClick: onToggleAvailability },
     { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: onDelete },
   ],
   default: ({ onDelete }) => [

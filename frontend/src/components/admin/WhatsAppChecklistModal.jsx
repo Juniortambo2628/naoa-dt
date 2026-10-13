@@ -1,6 +1,7 @@
 import Overlay from '../Overlay';
 import { useMemo, useState } from 'react';
-import { X, FileText, MessageCircle, Loader2, Search } from 'lucide-react';
+import { X, FileText, MessageCircle, Search } from 'lucide-react';
+import Button from '../Button';
 
 const SENT_STATUSES = ['sent', 'opened', 'responded'];
 
@@ -129,23 +130,27 @@ export default function WhatsAppChecklistModal({ isOpen, onClose, guests, onDown
                   <p className="text-sm font-semibold text-stone-800 truncate">{guest.name}</p>
                   <p className="text-[11px] text-stone-500 font-mono truncate">{guest.phone} · {guest.unique_code}</p>
                 </div>
-                <button
+                <Button
+                  size="sm"
+                  icon={FileText}
+                  loading={busyId === guest.id}
                   onClick={() => downloadPdf(guest)}
                   disabled={busyId !== null}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-stone-200 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-50 shrink-0"
+                  className="shrink-0"
                   title="Download this guest's PDF"
                 >
-                  {busyId === guest.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                   <span className="hidden sm:inline">PDF</span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  icon={MessageCircle}
                   onClick={() => onOpenChat(guest)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-green-500 text-white text-xs hover:bg-green-600 shrink-0"
+                  className="shrink-0"
                   title="Open WhatsApp chat"
                 >
-                  <MessageCircle className="w-4 h-4" />
                   <span className="hidden sm:inline">Chat</span>
-                </button>
+                </Button>
               </li>
             );
           })}

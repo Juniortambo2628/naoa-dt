@@ -2,6 +2,7 @@ import Overlay from '../Overlay';
 import { useState, useEffect } from 'react';
 import { Mail, MessageCircle, X, Loader2, Send, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Button from '../Button';
 
 export default function InvitationActionModal({ isOpen, onClose, guest, onSendEmail, onPrepareWhatsApp, onShareWhatsApp, onUpdateGuest }) {
     const [isSending, setIsSending] = useState(false);
@@ -127,12 +128,15 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
                                         )}
                                     </div>
                                 </div>
-                                <button 
+                                <Button
+                                    size="sm"
+                                    variant={isEditing ? 'secondary' : 'primary'}
+                                    icon={isEditing ? Save : null}
                                     onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}
-                                    className="absolute top-4 right-4 text-xs font-bold uppercase tracking-wider text-[#A67B5B] hover:text-[#8C6A4D]"
+                                    className="absolute top-4 right-4"
                                 >
                                     {isEditing ? 'Save' : 'Update Info'}
-                                </button>
+                                </Button>
                             </div>
 
                             {/* Action Buttons */}

@@ -1,6 +1,7 @@
 import Overlay from '../Overlay';
 import { useState, useEffect } from 'react';
 import { X, Save, UserPlus } from 'lucide-react';
+import Button from '../Button';
 
 export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests = [] }) {
   const [formData, setFormData] = useState({
@@ -313,21 +314,12 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
           )}
 
           <div className="pt-4 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-100 transition-colors"
-            >
+            <Button onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 rounded-lg bg-[#A67B5B] text-white hover:bg-[#8B6A4E] transition-colors flex items-center gap-2"
-            >
-              <Save className="w-4 h-4" />
+            </Button>
+            <Button type="submit" variant="secondary" icon={Save} loading={loading}>
               {loading ? 'Saving...' : 'Save Guest'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
