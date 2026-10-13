@@ -47,3 +47,8 @@ tmp_replace.js
 *.njsproj
 *.sln
 *.sw?
+
+# Local Playwright override (pre-installed browser)
+frontend/playwright.local.config.mjs
+frontend/tests/visual/test-results/*
+!frontend/tests/visual/test-results/.last-run.json

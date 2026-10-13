@@ -1,24 +1,23 @@
-import { Users, Send, Edit, Trash2, RotateCcw, MessageCircle, Mail, CopyCheck } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import {
+  Users, Send, Edit, Trash2, RotateCcw, MessageCircle, Mail, CopyCheck, ArrowUp, ArrowDown, ArrowUpDown, Check, AlertCircle, Loader2,
+} from 'lucide-react';
 import AdminListPanel from './AdminListPanel';
 import AdminPagination from './AdminPagination';
 import EmptyState from './EmptyState';
+import { confirmAction } from '../../utils/feedback';
+import { RSVP_STATUSES, RSVP_ORDER, rsvpStatus, isInviteSent } from '../../utils/rsvp';
 
-const RSVP_STYLES = {
-  confirmed: 'bg-green-100 text-green-700 border-green-200',
-  declined: 'bg-red-100 text-red-700 border-red-200',
-  pending: 'bg-orange-100 text-orange-700 border-orange-200',
-};
+const RESET_RSVP = { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null };
 
 // Lets admins record RSVPs received verbally (call, in person, etc.).
 function RsvpStatusSelect({ guest, onUpdateGuest }) {
   const status = guest.rsvp_status || 'pending';
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const next = e.target.value;
     if (next === status) return;
-    if (!window.confirm(`Mark ${guest.name} as ${next}?`)) return;
-    onUpdateGuest(guest, next === 'pending'
-      ? { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null }
-      : { rsvp_status: next });
+    if (!await confirmAction(`Mark ${guest.name} as ${RSVP_STATUSES[next].label.toLowerCase()}?`)) return;
+    onUpdateGuest(guest, next === 'pending' ? RESET_RSVP : { rsvp_status: next });
   };
   return (
     <select
@@ -26,49 +25,314 @@ function RsvpStatusSelect({ guest, onUpdateGuest }) {
       onChange={handleChange}
       title="Set RSVP status manually"
       aria-label={`RSVP status for ${guest.name}`}
-      className={`px-2 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#A67B5B] ${RSVP_STYLES[status] || RSVP_STYLES.pending}`}
+      className={`px-2 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#A67B5B] ${rsvpStatus(status).badge}`}
     >
-      <option value="pending">Pending</option>
-      <option value="confirmed">Confirmed</option>
-      <option value="declined">Declined</option>
+      {RSVP_ORDER.map((id) => <option key={id} value={id}>{RSVP_STATUSES[id].label}</option>)}
     </select>
   );
 }
 
-export default function GuestList({
-  guestsLoading,
-  filteredGuests,
-  pagedGuests,
-  viewMode,
-  selectedIds,
-  searchQuery,
-  currentPage,
-  itemsPerPage,
-  onSetItemsPerPage,
-  duplicateIds,
-  onReviewDuplicates,
-  onToggleSelect,
-  onToggleSelectAll,
-  onInlineSave,
-  onInlineCreate,
-  onInviteRequest,
-  onEdit,
-  onDelete,
-  onUpdateGuest,
-  onSetCurrentPage,
-}) {
-  const isDuplicate = (guest) => duplicateIds?.has(guest.id);
-  const duplicateBadge = (guest) => isDuplicate(guest) && (
+const iconButton = 'p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-[#A67B5B]';
+
+/** Invite / edit / reset / delete — shared by the table rows and mobile cards. */
+function GuestActions({ guest, onInviteRequest, onEdit, onUpdateGuest, onDelete }) {
+  const resetRsvp = async () => {
+    if (await confirmAction(`Reset RSVP status for ${guest.name}?`)) onUpdateGuest(guest, RESET_RSVP);
+  };
+  return (
+    <div className="flex justify-end gap-1">
+      <button type="button" onClick={() => onInviteRequest(guest)} className={`${iconButton} hover:text-[#A67B5B] ${isInviteSent(guest) ? 'text-green-700' : ''}`} title={isInviteSent(guest) ? 'Invitation sent — manage' : 'Send invitation'} aria-label={`Invitation for ${guest.name}`}>
+        <Send className="w-4 h-4" />
+      </button>
+      {onEdit && (
+        <button type="button" onClick={() => onEdit(guest)} className={`${iconButton} hover:text-[#A67B5B]`} title="Edit" aria-label={`Edit ${guest.name}`}>
+          <Edit className="w-4 h-4" />
+        </button>
+      )}
+      <button type="button" onClick={resetRsvp} className={`${iconButton} hover:text-orange-600`} title="Reset RSVP" aria-label={`Reset RSVP for ${guest.name}`}>
+        <RotateCcw className="w-4 h-4" />
+      </button>
+      {onDelete && (
+        <button type="button" onClick={() => onDelete(guest.id)} className={`${iconButton} hover:text-red-600`} title="Delete" aria-label={`Delete ${guest.name}`}>
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function DuplicateBadge({ guest, onReview, compact = false }) {
+  return (
     <button
       type="button"
-      onClick={() => onReviewDuplicates?.(guest)}
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] uppercase font-bold rounded whitespace-nowrap hover:bg-amber-200"
+      onClick={() => onReview?.(guest)}
+      className={compact
+        ? 'p-0.5 rounded text-amber-700 bg-amber-100 hover:bg-amber-200'
+        : 'inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] uppercase font-bold rounded whitespace-nowrap hover:bg-amber-200'}
       title="This guest may be listed more than once — review & merge"
+      aria-label={`Review possible duplicate of ${guest.name}`}
     >
-      <CopyCheck className="w-3 h-3" />
-      Duplicate?
+      <CopyCheck className={compact ? 'w-3.5 h-3.5' : 'w-3 h-3'} />
+      {!compact && 'Duplicate?'}
     </button>
   );
+}
+
+function ContactLines({ guest }) {
+  if (!guest.email && !guest.phone) return <span className="text-xs text-stone-500 italic">No contact info</span>;
+  return (
+    <div className="space-y-1 text-xs">
+      {guest.email && <div className="flex items-center gap-1.5 text-stone-600"><Mail className="w-3 h-3 text-stone-400" aria-hidden="true" />{guest.email}</div>}
+      {guest.phone && <div className="flex items-center gap-1.5 text-stone-700 font-medium"><MessageCircle className="w-3 h-3 text-green-600" aria-hidden="true" />{guest.phone}</div>}
+    </div>
+  );
+}
+
+/** Column header that sorts the list (aria-sort for screen readers). */
+function SortHeader({ label, sortKey, sort, onSort, className = '' }) {
+  if (!sortKey || !onSort) return <th scope="col" className={className}>{label}</th>;
+  const active = sort?.key === sortKey;
+  const Icon = !active ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
+  return (
+    <th scope="col" className={className} aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button type="button" onClick={() => onSort(sortKey)} className={`inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#A67B5B] ${active ? 'text-[#8B5E3C]' : ''}`}>
+        {label}
+        <Icon className={`w-3 h-3 ${active ? '' : 'opacity-40'}`} aria-hidden="true" />
+      </button>
+    </th>
+  );
+}
+
+/** Per-cell save state for the spreadsheet: saving → saved ✓ / error !. */
+function useCellStatus(onInlineSave) {
+  const [status, setStatus] = useState({});
+  const timers = useRef({});
+  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
+
+  const save = async (guest, field, value) => {
+    const key = `${guest.id}:${field}`;
+    setStatus((s) => ({ ...s, [key]: 'saving' }));
+    try {
+      const result = await onInlineSave(guest, field, value);
+      setStatus((s) => ({ ...s, [key]: result === 'unchanged' ? undefined : 'saved' }));
+      clearTimeout(timers.current[key]);
+      timers.current[key] = setTimeout(() => setStatus((s) => ({ ...s, [key]: undefined })), 1800);
+    } catch {
+      setStatus((s) => ({ ...s, [key]: 'error' }));
+    }
+  };
+  return [status, save];
+}
+
+function CellStatus({ state }) {
+  if (!state) return null;
+  const map = {
+    saving: { Icon: Loader2, className: 'text-stone-400 animate-spin', label: 'Saving' },
+    saved: { Icon: Check, className: 'text-green-600', label: 'Saved' },
+    error: { Icon: AlertCircle, className: 'text-red-600', label: 'Not saved — edit again to retry' },
+  }[state];
+  return (
+    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" title={map.label} role="status" aria-label={map.label}>
+      <map.Icon className={`w-3.5 h-3.5 ${map.className}`} />
+    </span>
+  );
+}
+
+const cellInput = 'w-full h-10 px-3 pr-6 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-700';
+
+/** Spreadsheet columns — headers, rows and quick-add rows all come from this. */
+const SHEET_COLUMNS = [
+  { key: 'name', label: 'Name', input: 'text', quickAdd: true, className: 'font-medium text-stone-800' },
+  { key: 'email', label: 'Email', input: 'email', quickAdd: true },
+  { key: 'phone', label: 'Phone', input: 'text', quickAdd: true },
+  { key: 'group', label: 'Group', input: 'text' },
+  { key: 'invitation_via', label: 'Invitation Via', input: 'select', options: [['whatsapp', 'WhatsApp'], ['email', 'Email']], fallback: 'whatsapp' },
+  { key: 'plus_ones_allowed', label: 'Extra Plus Ones', input: 'number', fallback: 0, className: 'font-mono' },
+  { key: 'unique_code', label: 'RSVP Code', render: (g) => <span className="font-mono text-xs text-stone-600">{g.unique_code || '—'}</span> },
+  { key: 'invite', label: 'Invite', render: (g, p) => <GuestActions guest={g} onInviteRequest={p.onInviteRequest} onUpdateGuest={p.onUpdateGuest} /> },
+  { key: 'rsvp_status', label: 'RSVP Status', render: (g, p) => <RsvpStatusSelect guest={g} onUpdateGuest={p.onUpdateGuest} /> },
+  { key: 'rsvp_message', label: 'Message', input: 'text' },
+  { key: 'dietary_notes', label: 'Dietary', input: 'text' },
+];
+
+const columnLetter = (i) => String.fromCharCode(65 + i);
+
+function SheetCell({ column, guest, cellStatus, onSave, props }) {
+  if (column.render) return <td className="px-3 py-2 border-r border-stone-200">{column.render(guest, props)}</td>;
+  const state = cellStatus[`${guest.id}:${column.key}`];
+  const value = guest[column.key] ?? column.fallback ?? '';
+  const common = {
+    'aria-label': `${column.label} for ${guest.name}`,
+    className: `${cellInput} ${column.className || ''} ${state === 'error' ? 'ring-2 ring-inset ring-red-300' : ''}`,
+  };
+  return (
+    <td className="p-0 border-r border-stone-200 relative">
+      {column.input === 'select' ? (
+        <select {...common} value={value} onChange={(e) => onSave(guest, column.key, e.target.value)} className={`${common.className} appearance-none`}>
+          {column.options.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+        </select>
+      ) : (
+        <input
+          {...common}
+          type={column.input}
+          min={column.input === 'number' ? 0 : undefined}
+          defaultValue={value}
+          placeholder={column.label}
+          onBlur={(e) => onSave(guest, column.key, e.target.value)}
+        />
+      )}
+      <CellStatus state={state} />
+    </td>
+  );
+}
+
+function SpreadsheetView({ props, cellStatus, saveCell }) {
+  const { pagedGuests, selectedIds, onToggleSelect, onInlineCreate, duplicateIds, onReviewDuplicates } = props;
+  const headCell = 'px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100 whitespace-nowrap';
+  return (
+    <table className="w-full text-sm border-collapse">
+      <thead className="sticky top-0 bg-stone-50 z-10 shadow-sm">
+        <tr>
+          <th scope="col" className="px-2 py-3 w-10 border-r border-stone-200 bg-stone-100"><span className="sr-only">Select</span></th>
+          <th scope="col" className="px-2 py-3 w-12 text-center font-mono text-stone-500 border-r border-stone-200 bg-stone-100">#</th>
+          {SHEET_COLUMNS.map((c, i) => <th key={c.key} scope="col" className={headCell}>{columnLetter(i)} - {c.label}</th>)}
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-stone-200">
+        {pagedGuests.map((guest, index) => (
+          <tr key={guest.id} className={`hover:bg-[#A67B5B]/5 ${selectedIds.includes(guest.id) ? 'bg-[#A67B5B]/10' : ''}`}>
+            <td className="px-2 py-2 text-center border-r border-stone-200">
+              <input type="checkbox" aria-label={`Select ${guest.name}`} className="w-3.5 h-3.5 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]" checked={selectedIds.includes(guest.id)} onChange={() => onToggleSelect(guest.id)} />
+            </td>
+            <td className="px-2 py-2 text-center text-stone-500 bg-stone-50 border-r border-stone-200 select-none relative">
+              {index + 1}
+              {duplicateIds?.has(guest.id) && <span className="absolute -right-1 top-1"><DuplicateBadge guest={guest} onReview={onReviewDuplicates} compact /></span>}
+            </td>
+            {SHEET_COLUMNS.map((c) => <SheetCell key={c.key} column={c} guest={guest} cellStatus={cellStatus} onSave={saveCell} props={props} />)}
+          </tr>
+        ))}
+
+        {/* Empty rows for quick adding */}
+        {[...Array(5)].map((_, index) => (
+          <tr key={`empty-${index}`} className="hover:bg-green-50/30">
+            <td className="border-r border-stone-200 bg-stone-50" />
+            <td className="px-2 py-2 text-center text-stone-400 bg-stone-50 border-r border-stone-200 select-none text-xs italic">New</td>
+            {SHEET_COLUMNS.map((c) => (c.quickAdd ? (
+              <td key={c.key} className="p-0 border-r border-stone-200">
+                <input
+                  type={c.input}
+                  aria-label={`New guest ${c.label.toLowerCase()}`}
+                  onBlur={(e) => {
+                    if (e.target.value.trim()) {
+                      onInlineCreate(index, c.key, e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  className={`${cellInput} placeholder-stone-400`}
+                  placeholder={c.key === 'name' ? '+ Add name…' : `${c.label}…`}
+                />
+              </td>
+            ) : <td key={c.key} className="border-r border-stone-200 bg-stone-50/50" />))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function GuestName({ guest, onReviewDuplicates, duplicate }) {
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-stone-800">{guest.name}</span>
+        {guest.parent_guest_id && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] uppercase font-bold rounded">Plus One</span>}
+        {duplicate && <DuplicateBadge guest={guest} onReview={onReviewDuplicates} />}
+      </div>
+      <div className="text-[10px] font-mono text-stone-500 mt-0.5 uppercase tracking-wider">Code: {guest.unique_code || '—'}</div>
+      {guest.parent_guest_id && guest.parent_guest && <div className="text-[10px] text-stone-500 italic">Guest of: {guest.parent_guest.name}</div>}
+    </>
+  );
+}
+
+const plusOnesText = (guest) => (guest.plus_ones?.length ? guest.plus_ones.map((po) => po.name).join(', ') : null);
+
+function TableView({ props }) {
+  const { filteredGuests, pagedGuests, selectedIds, onToggleSelect, onToggleSelectAll, duplicateIds, onReviewDuplicates, sort, onSort } = props;
+  const th = 'px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider';
+  return (
+    <table className="w-full hidden md:table">
+      <thead className="sticky top-0 z-10 bg-stone-50 shadow-[inset_0_-1px_0_rgb(245_245_244)]">
+        <tr>
+          <th scope="col" className="px-6 py-4 text-left">
+            <input type="checkbox" aria-label="Select all guests in this list" className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]" checked={selectedIds.length === filteredGuests.length && filteredGuests.length > 0} onChange={onToggleSelectAll} />
+          </th>
+          <SortHeader label="Name" sortKey="name" sort={sort} onSort={onSort} className={th} />
+          <SortHeader label="Contact" className={th} />
+          <SortHeader label="Group" sortKey="group" sort={sort} onSort={onSort} className={th} />
+          <SortHeader label="Plus Ones" sortKey="plus_ones" sort={sort} onSort={onSort} className={th} />
+          <SortHeader label="RSVP Status" sortKey="status" sort={sort} onSort={onSort} className={th} />
+          <th scope="col" className={`${th} text-right`}>Actions</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-stone-100">
+        {pagedGuests.map((guest) => (
+          <tr key={guest.id} className={`hover:bg-stone-50/50 ${selectedIds.includes(guest.id) ? 'bg-stone-50' : ''}`}>
+            <td className="px-6 py-4">
+              <input type="checkbox" aria-label={`Select ${guest.name}`} className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]" checked={selectedIds.includes(guest.id)} onChange={() => onToggleSelect(guest.id)} />
+            </td>
+            <td className="px-6 py-4"><GuestName guest={guest} duplicate={duplicateIds?.has(guest.id)} onReviewDuplicates={onReviewDuplicates} /></td>
+            <td className="px-6 py-4"><ContactLines guest={guest} /></td>
+            <td className="px-6 py-4">
+              {guest.group && <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-700">{guest.group}</span>}
+            </td>
+            <td className="px-6 py-4">
+              {plusOnesText(guest) ? (
+                <div>
+                  <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">+{guest.plus_ones.length}</span>
+                  <div className="text-xs text-stone-600 mt-1">{plusOnesText(guest)}</div>
+                </div>
+              ) : <span className="text-xs text-stone-500">None</span>}
+            </td>
+            <td className="px-6 py-4"><RsvpStatusSelect guest={guest} onUpdateGuest={props.onUpdateGuest} /></td>
+            <td className="px-6 py-4"><GuestActions guest={guest} {...props} /></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/** Small screens: one card per guest instead of a sideways-scrolling table. */
+function CardView({ props }) {
+  const { pagedGuests, selectedIds, onToggleSelect, duplicateIds, onReviewDuplicates } = props;
+  return (
+    <ul className="md:hidden divide-y divide-stone-100">
+      {pagedGuests.map((guest) => (
+        <li key={guest.id} className={`p-4 ${selectedIds.includes(guest.id) ? 'bg-stone-50' : ''}`}>
+          <div className="flex items-start gap-3">
+            <input type="checkbox" aria-label={`Select ${guest.name}`} className="mt-1 w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]" checked={selectedIds.includes(guest.id)} onChange={() => onToggleSelect(guest.id)} />
+            <div className="flex-1 min-w-0 space-y-2">
+              <GuestName guest={guest} duplicate={duplicateIds?.has(guest.id)} onReviewDuplicates={onReviewDuplicates} />
+              <ContactLines guest={guest} />
+              <div className="flex flex-wrap items-center gap-2 text-xs text-stone-600">
+                {guest.group && <span className="px-2 py-0.5 rounded-full bg-stone-100 font-semibold">{guest.group}</span>}
+                {plusOnesText(guest) && <span>+{guest.plus_ones.length}: {plusOnesText(guest)}</span>}
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <RsvpStatusSelect guest={guest} onUpdateGuest={props.onUpdateGuest} />
+                <GuestActions guest={guest} {...props} />
+              </div>
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function GuestList(props) {
+  const { guestsLoading, filteredGuests, viewMode, searchQuery, currentPage, itemsPerPage, onSetItemsPerPage, onSetCurrentPage, onInlineSave } = props;
+  const [cellStatus, saveCell] = useCellStatus(onInlineSave);
 
   return (
     <AdminListPanel
@@ -85,318 +349,17 @@ export default function GuestList({
       )}
     >
       {guestsLoading ? (
-        <EmptyState loading />
+        <EmptyState loading rows={8} />
       ) : filteredGuests.length === 0 ? (
-        <EmptyState icon={Users} message="No guests found" searchQuery={searchQuery} />
+        <EmptyState icon={Users} message="No guests match these filters" searchQuery={searchQuery} action={props.onAdd && { label: 'Add a guest', onClick: props.onAdd }} />
       ) : viewMode === 'spreadsheet' ? (
-        <div className="relative">
-          <table className="w-full text-sm border-collapse border-stone-200">
-            <thead className="sticky top-0 bg-stone-50 z-10 shadow-sm border-b border-stone-200">
-              <tr>
-                <th className="px-2 py-3 w-10 text-center border-r border-stone-200 bg-stone-100"></th>
-                <th className="px-2 py-3 text-center font-mono text-stone-500 w-12 border-r border-stone-200 bg-stone-100">#</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">A - Name</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">B - Email</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">C - Phone</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">D - Group</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">E - Invitation Via</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">F - Extra Plus Ones Allowed</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">G - RSVP Code</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100 text-center">H - Invite</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">I - RSVP Status</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider border-r border-stone-200 bg-stone-100">J - Message</th>
-                <th className="px-3 py-3 text-left font-mono font-semibold text-stone-600 uppercase tracking-wider bg-stone-100">K - Dietary</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-200">
-              {pagedGuests.map((guest, index) => (
-                <tr key={guest.id} className={`hover:bg-blue-50/30 group ${selectedIds.includes(guest.id) ? 'bg-blue-50/50' : ''}`}>
-                  <td className="px-2 py-2 text-center border-r border-stone-200">
-                    <input
-                      type="checkbox"
-                      className="w-3.5 h-3.5 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]"
-                      checked={selectedIds.includes(guest.id)}
-                      onChange={() => onToggleSelect(guest.id)}
-                    />
-                  </td>
-                  <td className="px-2 py-2 text-center text-stone-400 bg-stone-50 border-r border-stone-200 select-none">
-                    {index + 1}
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        defaultValue={guest.name}
-                        onBlur={(e) => onInlineSave(guest, 'name', e.target.value)}
-                        className={`w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all font-medium text-stone-800 ${guest.parent_guest_id ? 'pl-8' : ''}`}
-                        placeholder="Name"
-                      />
-                      {isDuplicate(guest) && (
-                        <button
-                          type="button"
-                          onClick={() => onReviewDuplicates?.(guest)}
-                          className="absolute right-2 p-0.5 rounded text-amber-600 bg-amber-100 hover:bg-amber-200"
-                          title="Possible duplicate — review & merge"
-                          aria-label={`Review possible duplicate of ${guest.name}`}
-                        >
-                          <CopyCheck className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {guest.parent_guest_id && (
-                        <div className="absolute left-2 text-purple-400 pointer-events-none" title="Plus One">
-                          <Users className="w-4 h-4" />
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <input
-                      type="email"
-                      defaultValue={guest.email || ''}
-                      onBlur={(e) => onInlineSave(guest, 'email', e.target.value)}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600"
-                      placeholder="Email"
-                    />
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <input
-                      type="text"
-                      defaultValue={guest.phone || ''}
-                      onBlur={(e) => onInlineSave(guest, 'phone', e.target.value)}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600"
-                      placeholder="Phone"
-                    />
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <input
-                      type="text"
-                      defaultValue={guest.group || ''}
-                      onBlur={(e) => onInlineSave(guest, 'group', e.target.value)}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 capitalize"
-                      placeholder="Group"
-                    />
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <select
-                      value={guest.invitation_via || 'whatsapp'}
-                      onChange={(e) => onInlineSave(guest, 'invitation_via', e.target.value)}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 appearance-none"
-                    >
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="email">Email</option>
-                    </select>
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <input
-                      type="number"
-                      defaultValue={guest.plus_ones_allowed || 0}
-                      min="0"
-                      onBlur={(e) => onInlineSave(guest, 'plus_ones_allowed', e.target.value)}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all font-mono text-stone-600"
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-stone-600 border-r border-stone-200 font-mono text-xs">
-                    {guest.unique_code || '—'}
-                  </td>
-                  <td className="px-3 py-2 border-r border-stone-200 text-center">
-                    <button
-                      onClick={() => onInviteRequest(guest)}
-                      className={`p-1 rounded-md transition-all ${guest.invitation?.status === 'sent' || guest.invitation?.status === 'responded' ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-400 hover:bg-[#A67B5B]/10 hover:text-[#A67B5B]'}`}
-                      title="Invite guest"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </td>
-                  <td className="px-3 py-2 text-xs">
-                    <RsvpStatusSelect guest={guest} onUpdateGuest={onUpdateGuest} />
-                  </td>
-                  <td className="px-3 py-2 text-center border-r border-stone-200">
-                    <button
-                      onClick={() => {
-                        if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
-                          onUpdateGuest(guest, { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
-                        }
-                      }}
-                      className="p-1 text-stone-400 hover:text-orange-500"
-                      title="Reset RSVP"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {/* Extra empty rows for quick adding */}
-              {[...Array(5)].map((_, index) => (
-                <tr key={`empty-${index}`} className="hover:bg-green-50/30 group">
-                  <td className="px-2 py-2 text-center text-stone-300 bg-stone-50 border-r border-stone-200 select-none text-xs italic">
-                    New
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <input
-                      type="text"
-                      onBlur={(e) => {
-                        if (e.target.value.trim()) {
-                          onInlineCreate(index, 'name', e.target.value);
-                          e.target.value = '';
-                        }
-                      }}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all font-medium text-stone-800 placeholder-stone-300"
-                      placeholder="+ Add Name..."
-                    />
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <input
-                      type="email"
-                      onBlur={(e) => {
-                        if (e.target.value.trim()) {
-                          onInlineCreate(index, 'email', e.target.value);
-                          e.target.value = '';
-                        }
-                      }}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 placeholder-stone-300"
-                      placeholder="Email..."
-                    />
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative">
-                    <input
-                      type="text"
-                      onBlur={(e) => {
-                        if (e.target.value.trim()) {
-                          onInlineCreate(index, 'phone', e.target.value);
-                          e.target.value = '';
-                        }
-                      }}
-                      className="w-full h-10 px-3 bg-transparent outline-none focus:bg-white focus:ring-inset focus:ring-2 focus:ring-[#A67B5B]/50 transition-all text-stone-600 placeholder-stone-300"
-                      placeholder="Phone..."
-                    />
-                  </td>
-                  <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
-                  <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
-                  <td className="p-0 border-r border-stone-200 relative bg-stone-50/50"></td>
-                  <td className="px-3 py-2 text-stone-400 border-r border-stone-200 font-mono text-xs bg-stone-50/50"></td>
-                  <td className="px-3 py-2 text-stone-400 border-r border-stone-200 font-mono text-xs bg-stone-50/50"></td>
-                  <td className="px-3 py-2 text-xs bg-stone-50/50"></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SpreadsheetView props={props} cellStatus={cellStatus} saveCell={saveCell} />
       ) : (
-        <div>
-          <table className="w-full">
-            <thead className="sticky top-0 z-10 bg-stone-50 shadow-[inset_0_-1px_0_rgb(245_245_244)]">
-              <tr>
-                <th className="px-6 py-4 text-left">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]"
-                    checked={selectedIds.length === filteredGuests.length && filteredGuests.length > 0}
-                    onChange={onToggleSelectAll}
-                  />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Group</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Plus Ones</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">RSVP Status</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {pagedGuests.map(guest => (
-                <tr key={guest.id} className={`hover:bg-stone-50/50 ${selectedIds.includes(guest.id) ? 'bg-stone-50' : ''}`}>
-                  <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]"
-                      checked={selectedIds.includes(guest.id)}
-                      onChange={() => onToggleSelect(guest.id)}
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium text-stone-800">{guest.name}</div>
-                      {guest.parent_guest_id && (
-                        <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] uppercase font-bold rounded">Plus One</span>
-                      )}
-                      {duplicateBadge(guest)}
-                    </div>
-                    <div className="text-[10px] font-mono text-stone-400 mt-0.5 uppercase tracking-wider">Code: {guest.unique_code || '—'}</div>
-                    {guest.parent_guest_id && guest.parent_guest && (
-                      <div className="text-[10px] text-stone-400 italic">Guest of: {guest.parent_guest.name}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      {guest.email && (
-                        <div className="flex items-center gap-1.5 text-xs text-stone-500">
-                          <Mail className="w-2.5 h-2.5 text-stone-400" />
-                          {guest.email}
-                        </div>
-                      )}
-                      {guest.phone && (
-                        <div className="flex items-center gap-1.5 text-xs text-stone-600 font-medium">
-                          <MessageCircle className="w-2.5 h-2.5 text-green-500" />
-                          {guest.phone}
-                        </div>
-                      )}
-                      {!guest.email && !guest.phone && <span className="text-[10px] text-stone-300 italic">No contact info</span>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-600 capitalize">
-                      {guest.group}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {guest.plus_ones && guest.plus_ones.length > 0 ? (
-                      <div>
-                        <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700">
-                          +{guest.plus_ones.length}
-                        </span>
-                        <div className="text-xs text-stone-500 mt-1">
-                          {guest.plus_ones.map(po => po.name).join(', ')}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-stone-400">None</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <RsvpStatusSelect guest={guest} onUpdateGuest={onUpdateGuest} />
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => onInviteRequest(guest)}
-                        className="p-1 text-stone-400 hover:text-[#A67B5B]"
-                        title="Manage Invitation"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => onEdit(guest)} className="p-1 text-stone-400 hover:text-[#A67B5B]"><Edit className="w-4 h-4" /></button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Reset RSVP status for ${guest.name}?`)) {
-                            onUpdateGuest(guest, { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
-                          }
-                        }}
-                        className="p-1 text-stone-400 hover:text-orange-500"
-                        title="Reset RSVP"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => onDelete(guest.id)} className="p-1 text-stone-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <TableView props={props} />
+          <CardView props={props} />
+        </>
       )}
-
     </AdminListPanel>
   );
 }

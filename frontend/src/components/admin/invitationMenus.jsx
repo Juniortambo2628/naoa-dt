@@ -3,6 +3,8 @@ import {
   AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter, Crosshair, AlignLeft, AlignCenter, AlignRight,
   ArrowUpToLine, ArrowDownToLine, AlignJustify, CaseSensitive, Italic, Palette, Droplet, RotateCw, RotateCcw,
   Plus, Grid3x3, Magnet, RectangleHorizontal, RectangleVertical, ImageOff, LayoutTemplate, Square,
+  Lock, Unlock, Paintbrush, ClipboardPaste, BoxSelect, AlignStartVertical, AlignEndVertical,
+  AlignStartHorizontal, AlignEndHorizontal, AlignHorizontalSpaceAround, AlignVerticalSpaceAround,
 } from 'lucide-react';
 import { ELEMENT_KINDS } from './invitationElements';
 
@@ -46,29 +48,27 @@ function ColorRow({ value, presets, onChange }) {
  * for that element type, grouped into submenus.
  */
 export function buildItemMenu(item, ctx) {
-  const { update, move, duplicate, remove, editProperties, canvas, presetColors, accentColor } = ctx;
+  const { update, move, duplicate, remove, editProperties, presetColors, accentColor } = ctx;
   const isText = item.type === 'text';
   const isFrame = item.type === 'frame';
   const set = (changes) => update(item.id, changes);
   const opacity = item.opacity ?? 100;
   const color = item.color || accentColor;
 
-  const place = (pos) => {
-    const x = { left: 0, center: (canvas.width - item.width) / 2, right: canvas.width - item.width };
-    const y = { top: 0, middle: (canvas.height - item.height) / 2, bottom: canvas.height - item.height };
-    return {
-      h: { x: Math.round(x.center) },
-      v: { y: Math.round(y.middle) },
-      both: { x: Math.round(x.center), y: Math.round(y.middle) },
-      left: { x: 0 }, right: { x: Math.round(x.right) },
-      top: { y: 0 }, bottom: { y: Math.round(y.bottom) },
-    }[pos];
+  const align = (mode) => ctx.align([item], mode);
+  const centre = () => {
+    const [h] = ctx.alignUpdates([item], 'center');
+    const [v] = ctx.alignUpdates([item], 'middle');
+    if (h || v) ctx.updateItems([{ ...h, ...v }]);
   };
 
   return [
     { type: 'header', label: isText ? `Text · ${FONT_NAMES[item.fontStyle] || 'Serif'} ${item.fontSize || 16}px` : itemName(item) },
     { label: isText ? 'Edit text…' : 'Edit properties…', icon: isText ? Type : Sliders, onSelect: editProperties },
     { label: 'Duplicate', icon: Copy, shortcut: 'Ctrl+D', onSelect: () => duplicate(item.id) },
+    { label: item.locked ? 'Unlock' : 'Lock position', icon: item.locked ? Unlock : Lock, onSelect: () => set({ locked: !item.locked }) },
+    { label: 'Copy style', icon: Paintbrush, onSelect: () => ctx.copyStyle(item) },
+    { label: 'Paste style', icon: ClipboardPaste, disabled: !ctx.pasteStyle, onSelect: () => ctx.pasteStyle?.([item]) },
     { type: 'separator' },
     {
       label: 'Arrange', icon: Layers, submenu: [
@@ -80,14 +80,14 @@ export function buildItemMenu(item, ctx) {
     },
     {
       label: 'Position on page', icon: Crosshair, submenu: [
-        { label: 'Centre horizontally', icon: AlignHorizontalJustifyCenter, onSelect: () => set(place('h')) },
-        { label: 'Centre vertically', icon: AlignVerticalJustifyCenter, onSelect: () => set(place('v')) },
-        { label: 'Centre on page', icon: Crosshair, onSelect: () => set(place('both')) },
+        { label: 'Centre horizontally', icon: AlignHorizontalJustifyCenter, onSelect: () => align('center') },
+        { label: 'Centre vertically', icon: AlignVerticalJustifyCenter, onSelect: () => align('middle') },
+        { label: 'Centre on page', icon: Crosshair, onSelect: centre },
         { type: 'separator' },
-        { label: 'Left edge', onSelect: () => set(place('left')) },
-        { label: 'Right edge', onSelect: () => set(place('right')) },
-        { label: 'Top edge', onSelect: () => set(place('top')) },
-        { label: 'Bottom edge', onSelect: () => set(place('bottom')) },
+        { label: 'Left edge', icon: AlignStartVertical, onSelect: () => align('left') },
+        { label: 'Right edge', icon: AlignEndVertical, onSelect: () => align('right') },
+        { label: 'Top edge', icon: AlignStartHorizontal, onSelect: () => align('top') },
+        { label: 'Bottom edge', icon: AlignEndHorizontal, onSelect: () => align('bottom') },
       ],
     },
     isText && {
@@ -143,11 +143,47 @@ export function buildItemMenu(item, ctx) {
   ].filter(Boolean);
 }
 
+/** Right-click menu when several elements are selected. */
+export function buildSelectionMenu(items, ctx) {
+  const ids = items.map((i) => i.id);
+  const allLocked = items.every((i) => i.locked);
+  return [
+    { type: 'header', label: `${items.length} elements selected` },
+    {
+      label: 'Align', icon: AlignCenter, submenu: [
+        { label: 'Left edges', icon: AlignStartVertical, onSelect: () => ctx.align(items, 'left') },
+        { label: 'Centres', icon: AlignHorizontalJustifyCenter, onSelect: () => ctx.align(items, 'center') },
+        { label: 'Right edges', icon: AlignEndVertical, onSelect: () => ctx.align(items, 'right') },
+        { type: 'separator' },
+        { label: 'Top edges', icon: AlignStartHorizontal, onSelect: () => ctx.align(items, 'top') },
+        { label: 'Middles', icon: AlignVerticalJustifyCenter, onSelect: () => ctx.align(items, 'middle') },
+        { label: 'Bottom edges', icon: AlignEndHorizontal, onSelect: () => ctx.align(items, 'bottom') },
+      ],
+    },
+    {
+      label: 'Distribute', icon: AlignHorizontalSpaceAround, disabled: items.length < 3, submenu: [
+        { label: 'Horizontally', icon: AlignHorizontalSpaceAround, onSelect: () => ctx.distribute(items, 'horizontal') },
+        { label: 'Vertically', icon: AlignVerticalSpaceAround, onSelect: () => ctx.distribute(items, 'vertical') },
+      ],
+    },
+    { label: 'Paste style', icon: ClipboardPaste, disabled: !ctx.pasteStyle, onSelect: () => ctx.pasteStyle?.(items) },
+    { label: allLocked ? 'Unlock all' : 'Lock all', icon: allLocked ? Unlock : Lock, onSelect: () => ctx.updateItems(ids.map((id) => ({ id, locked: !allLocked }))) },
+    {
+      label: 'Opacity', icon: Droplet, submenu: [100, 75, 50, 25].map((o) => ({
+        label: `${o}%`, onSelect: () => ctx.updateItems(ids.map((id) => ({ id, opacity: o }))),
+      })),
+    },
+    { type: 'separator' },
+    { label: `Delete ${items.length} elements`, icon: Trash2, danger: true, shortcut: 'Del', onSelect: () => ctx.remove(ids) },
+  ];
+}
+
 /** Right-click menu for empty canvas space: page-level adjustments. */
 export function buildPageMenu(ctx) {
   const { design, addElement, updateDesign, openTab, presetColors } = ctx;
   return [
     { type: 'header', label: 'Page' },
+    { label: 'Select all elements', icon: BoxSelect, shortcut: 'Ctrl+A', onSelect: ctx.selectAll },
     { label: 'Add element', icon: Plus, submenu: ELEMENT_KINDS.map((kind) => ({ label: kind.label, icon: kind.icon, onSelect: () => addElement(kind.id) })) },
     { type: 'separator' },
     {

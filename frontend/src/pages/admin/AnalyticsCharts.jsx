@@ -1,19 +1,26 @@
 import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Users, UserCheck, Clock, BarChart2, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAnalytics } from '../../hooks/useApiHooks';
+import { RSVP_STATUSES, RSVP_ORDER, guestListLink } from '../../utils/rsvp';
 import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 import EmptyState from '../../components/admin/EmptyState';
+import QueryError from '../../components/admin/QueryError';
 
-const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 
 export default function AnalyticsCharts() {
-    const { data, isLoading, isFetching, refetch } = useAnalytics();
+    const { data, isLoading, isFetching, isError, error, refetch } = useAnalytics();
+    const navigate = useNavigate();
 
     if (isLoading) {
         return <EmptyState loading />;
+    }
+
+    if (isError && !data) {
+        return <div className="pt-8"><QueryError what="analytics" error={error} onRetry={refetch} /></div>;
     }
 
     if (!data) {
@@ -58,8 +65,8 @@ export default function AnalyticsCharts() {
                                 dataKey="value"
                                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                             >
-                                {rsvpStatus.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                                {rsvpStatus.map((entry) => (
+                                    <Cell key={entry.name} fill={RSVP_STATUSES[entry.name.toLowerCase()]?.color || '#A67B5B'} />
                                 ))}
                             </Pie>
                             <Tooltip />
@@ -67,20 +74,38 @@ export default function AnalyticsCharts() {
                     </ResponsiveContainer>
                 </AdminCard>
 
-                {/* Group Distribution */}
+                {/* Group Distribution — RSVP split per group; click a bar to open that group */}
                 <AdminCard>
-                    <h3 className="text-lg font-medium text-stone-800 mb-4">Guest Groups</h3>
+                    <h3 className="text-lg font-medium text-stone-800">Guest Groups</h3>
+                    <p className="text-xs text-stone-500 mb-4">RSVP status within each group. Click a group to see its guests.</p>
                     {groups.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={groups}>
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Bar dataKey="value" fill="#8B9A7D" radius={[4, 4, 0, 0]} />
+                        <ResponsiveContainer width="100%" height={Math.max(250, groups.length * 40)}>
+                            <BarChart
+                                data={groups}
+                                layout="vertical"
+                                margin={{ left: 8, right: 16 }}
+                                onClick={(e) => e?.activeLabel && navigate(guestListLink({ group: e.activeLabel, status: 'all' }))}
+                                className="cursor-pointer"
+                            >
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f5f5f4" />
+                                <XAxis type="number" allowDecimals={false} stroke="#8B7B6B" fontSize={12} />
+                                <YAxis type="category" dataKey="name" width={110} stroke="#8B7B6B" fontSize={12} />
+                                <Tooltip cursor={{ fill: 'rgba(166, 123, 91, 0.06)' }} />
+                                <Legend />
+                                {RSVP_ORDER.map((status, index) => (
+                                    <Bar
+                                        key={status}
+                                        dataKey={status}
+                                        name={RSVP_STATUSES[status].label}
+                                        stackId="rsvp"
+                                        fill={RSVP_STATUSES[status].color}
+                                        radius={index === RSVP_ORDER.length - 1 ? [0, 4, 4, 0] : 0}
+                                    />
+                                ))}
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex items-center justify-center h-[250px] text-stone-400 text-sm">
+                        <div className="flex items-center justify-center h-[250px] text-stone-500 text-sm">
                             No guest groups found
                         </div>
                     )}

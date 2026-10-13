@@ -3,11 +3,13 @@ import { useSearch } from '../../context/SearchContext';
 import { contentService } from '../../services/api';
 import { Layout, Check, X, Save, Eye, EyeOff, Sparkles, Home, Calendar, Users, Image as ImageIcon, Gift, Music, MessageSquare, HelpCircle, FileText, Globe, Clock, Mail, Languages } from 'lucide-react';
 import AdminCard from '../../components/admin/AdminCard';
+import EmptyState from '../../components/admin/EmptyState';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import ToggleButton from '../../components/admin/ToggleButton';
 import { toast } from 'react-hot-toast';
 import { useContent } from '../../context/ContentContext';
+import { confirmAction } from '../../utils/feedback';
 
 const MODULES = [
     { key: 'home_hero', label: 'Home Hero', icon: Home, description: 'Main landing section with couple names and venue.' },
@@ -43,7 +45,7 @@ export default function AdminModules() {
     const setAllModules = async (enabled) => {
         const targets = MODULES.filter(m => isVisible(m.key) !== enabled);
         if (targets.length === 0) return;
-        if (!window.confirm(`${enabled ? 'Enable' : 'Disable'} ${targets.length} modules?`)) return;
+        if (!await confirmAction(`${enabled ? 'Enable' : 'Disable'} ${targets.length} modules?`)) return;
         setBulkSaving(true);
         targets.forEach(m => updateLocalContent(m.key, { is_visible: enabled }));
         const results = await Promise.allSettled(targets.map(m => contentService.update(m.key, {
@@ -80,7 +82,7 @@ export default function AdminModules() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-stone-500">Loading modules...</div>;
+    if (loading) return <EmptyState loading rows={6} />;
 
     return (
         <AdminPageLayout

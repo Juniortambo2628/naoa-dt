@@ -1,13 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, LogOut, Settings, UserCog } from 'lucide-react';
+import { ChevronDown, DatabaseBackup, LogOut, Settings, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import useDismiss from '../../hooks/useDismiss';
 
 const ACCOUNT_LINKS = [
   { path: '/admin/dashboard/users', icon: UserCog, label: 'Users', id: 'header-users' },
   { path: '/admin/dashboard/settings', icon: Settings, label: 'Settings', id: 'header-settings' },
+  { path: '/admin/dashboard/backups', icon: DatabaseBackup, label: 'Backups', id: 'header-backups' },
 ];
 
 /**

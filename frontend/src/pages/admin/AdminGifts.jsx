@@ -17,6 +17,7 @@ import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import SubmitButton from '../../components/admin/SubmitButton';
 import Spinner from '../../components/admin/Spinner';
 import { toast } from 'react-hot-toast';
+import { confirmAction, notifyError } from '../../utils/feedback';
 
 export default function AdminGifts() {
   const { data: gifts = [], isLoading: loading, refetch } = useGifts();
@@ -34,7 +35,7 @@ export default function AdminGifts() {
   const claimsGift = claimsGiftId ? gifts.find((g) => g.id === claimsGiftId) : null;
 
   const handleRemoveClaim = async (claimId) => {
-    if (!confirm('Remove this claim? The gift will become available again.')) return;
+    if (!await confirmAction('Remove this claim? The gift will become available again.')) return;
     try {
       await giftService.removeClaim(claimId);
       toast.success('Claim removed');
@@ -70,7 +71,7 @@ export default function AdminGifts() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selectedIds.length} selected gifts?`)) return;
+    if (!await confirmAction(`Delete ${selectedIds.length} selected gifts?`)) return;
     try {
       await Promise.all(selectedIds.map(id => giftService.delete(id)));
       toast.success(`${selectedIds.length} gifts deleted`);
@@ -135,7 +136,7 @@ export default function AdminGifts() {
           {loading ? (
             <EmptyState loading />
           ) : filteredGifts.length === 0 ? (
-            <EmptyState icon={Gift} message="No matching gifts found" searchQuery={searchQuery} />
+            <EmptyState icon={Gift} message="No gifts in the registry yet" searchQuery={searchQuery} action={{ label: 'Add a gift', onClick: handleAdd }} />
           ) : viewMode === 'grid' ? (
             <GiftGrid
               gifts={filteredGifts}
@@ -363,7 +364,7 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
 
               <div className="flex items-center justify-end gap-2">
                 {claimCount > 0 && (
-                  <button
+                  <button aria-label={gift.is_cash_fund ? `${claimCount} contributions` : 'Undo reservation'}
                     onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
                     title={gift.is_cash_fund ? `${claimCount} contributions` : 'Undo reservation'}
                     className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
@@ -371,13 +372,13 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                     <Undo2 className="w-4 h-4" />
                   </button>
                 )}
-                <button
+                <button aria-label={`Edit ${gift.name}`}
                   onClick={(e) => { e.stopPropagation(); onEdit(gift); }}
                   className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
-                <button
+                <button aria-label={`Delete ${gift.name}`}
                   onClick={(e) => { e.stopPropagation(); onDelete(gift.id); }}
                   className="p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                 >
@@ -431,7 +432,7 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
     try {
       await onSave(formData);
       onClose();
-    } catch (e) { console.error(e); alert('Error saving gift'); }
+    } catch (e) { console.error(e); notifyError('Error saving gift'); }
     setLoading(false);
   };
 

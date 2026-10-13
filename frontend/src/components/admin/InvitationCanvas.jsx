@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Moveable from 'react-moveable';
+import { Lock } from 'lucide-react';
 import { getAssetUrl } from '../../services/api';
 import { getMapUrl, getCalendarUrl } from '../../utils/weddingInfo';
 import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
@@ -7,8 +8,10 @@ import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 export default function InvitationCanvas({ 
   design, 
   onUpdateDesign, 
-  selectedId, 
-  onSelectExclusively, 
+ selectedIds = [],
+  onSelect, // (id | null, { additive }) — Shift-click adds to the selection
+  zoom = 'fit', // 'fit' or a scale factor (edit mode)
+  onFitScaleChange, 
   mode = 'edit', 
   guest = null, 
   showGrid = false, 
@@ -19,24 +22,34 @@ export default function InvitationCanvas({
   onCanvasContextMenu,
 }) {
   const containerRef = useRef(null);
-  const [target, setTarget] = useState(null);
+  const [targets, setTargets] = useState([]);
+  const [guidelines, setGuidelines] = useState([]);
+  const isSelected = (id) => selectedIds.includes(id);
+  const selectionKey = selectedIds.join(',');
 
   const isLandscape = design.orientation === 'landscape';
   const CANVAS_WIDTH = isLandscape ? 625 : 500;
   const CANVAS_HEIGHT = isLandscape ? 500 : 625;
 
-  // Update target when selectedId changes
+  // Moveable targets: selected, unlocked elements. Snap guides: every other
+  // element. Resolved after render so newly added elements exist in the DOM.
   useEffect(() => {
-        if (!selectedId) {
-            setTarget(null);
-            return;
-        }
-        // Small timeout to allow DOM to update if item was just added
-        setTimeout(() => {
-            const el = document.getElementById(`item-${selectedId}`);
-            setTarget(el);
-        }, 0);
-  }, [selectedId, design.items]);
+    const timer = setTimeout(() => {
+      const element = (id) => document.getElementById(`item-${id}`);
+      const locked = new Set(design.items.filter((i) => i.locked).map((i) => i.id));
+      setTargets(selectedIds.filter((id) => !locked.has(id)).map(element).filter(Boolean));
+      setGuidelines(design.items.filter((i) => !selectedIds.includes(i.id)).map((i) => element(i.id)).filter(Boolean));
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectionKey stands in for selectedIds
+  }, [selectionKey, design.items]);
+
+  // Read translate(x, y) back from an element's inline transform.
+  const readTranslate = (el) => {
+    const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(el.style.transform);
+    return match ? { x: parseFloat(match[1]), y: parseFloat(match[2]) } : null;
+  };
+  const idOf = (el) => el.id.replace(/^item-/, '');
 
   const containerStyle = {
     backgroundColor: design.backgroundColor || 'transparent',
@@ -70,11 +83,6 @@ export default function InvitationCanvas({
   const currentLangCode = design.editorLang || 'en';
   const content = design.content?.[currentLangCode] || {};
   
-  // Collect all element refs for snapping guidelines
-  const elementGuidelines = useMemo(() => {
-      return design.items.map(i => document.querySelector(`#item-${i.id}`)).filter(Boolean);
-  }, [design.items]);
-
   const renderItemContent = (item) => {
       if (item.type === 'image') {
         return (
@@ -219,20 +227,28 @@ export default function InvitationCanvas({
         const { width, height } = entry.contentRect;
         const scaleX = width / CANVAS_WIDTH;
         const scaleY = height / CANVAS_HEIGHT;
-        const newScale = Math.min(scaleX, scaleY, 1.2); // Cap at 1.2x to avoid over-scaling
-        setScale(Math.max(newScale, 0.3));
+        const newScale = Math.max(Math.min(scaleX, scaleY, 1.2), 0.3); // Cap at 1.2x to avoid over-scaling
+        setScale(newScale);
+        onFitScaleChange?.(newScale);
       }
     });
     resizeObserver.observe(outerRef.current);
     return () => resizeObserver.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- report-only callback
   }, [isExport, CANVAS_WIDTH, CANVAS_HEIGHT]);
+
+  // Edit mode can zoom past "fit"; the canvas then scrolls inside its frame.
+  const editing = mode === 'edit' && !isExport;
+  const appliedScale = editing && zoom !== 'fit' ? zoom : scale;
 
   return (
     <div 
         ref={outerRef}
-        className={isExport ? `w-[${CANVAS_WIDTH}px] h-[${CANVAS_HEIGHT}px]` : 'w-full h-full flex items-center justify-center'} 
+        className={isExport ? `w-[${CANVAS_WIDTH}px] h-[${CANVAS_HEIGHT}px]` : editing ? 'w-full h-full overflow-auto flex' : 'w-full h-full flex items-center justify-center'} 
         style={{ padding: '0', display: isExport ? 'block' : 'flex' }}
     >
+      {/* In edit mode a sizer takes the scaled size so zoomed canvases scroll instead of clipping. */}
+      <div style={editing ? { width: CANVAS_WIDTH * appliedScale, height: CANVAS_HEIGHT * appliedScale, margin: 'auto', flexShrink: 0 } : { display: 'contents' }}>
         <div 
             ref={containerRef}
             className={isExport ? `w-[${CANVAS_WIDTH}px] h-[${CANVAS_HEIGHT}px]` : `shadow-2xl ring-8 ring-stone-200/50 rounded-lg`}
@@ -241,20 +257,27 @@ export default function InvitationCanvas({
                 width: `${CANVAS_WIDTH}px`,
                 height: `${CANVAS_HEIGHT}px`,
                 flexShrink: 0, 
-                transform: isExport ? 'none' : `scale(${scale})`, 
-                transformOrigin: 'center center',
+                transform: isExport ? 'none' : `scale(${appliedScale})`, 
+                transformOrigin: editing ? 'top left' : 'center center',
                 margin: 0,
                 padding: 0
             }}
             onClick={(e) => {
                if (e.target === containerRef.current || e.target.classList.contains('absolute-bg')) {
-                 if (mode === 'edit') onSelectExclusively?.(null);
+                 if (mode === 'edit') onSelect?.(null);
                }
             }}
             onContextMenu={(e) => {
                if (mode !== 'edit' || !onCanvasContextMenu) return;
                e.preventDefault();
-               onSelectExclusively?.(null);
+               // The selection box (group drag area) sits above the elements:
+               // a right-click on it is about the selection, not the page.
+               const primary = design.items.find((i) => i.id === selectedIds[selectedIds.length - 1]);
+               if (primary && onItemContextMenu && e.target.closest?.('.moveable-control-box')) {
+                 onItemContextMenu(primary, { x: e.clientX, y: e.clientY });
+                 return;
+               }
+               onSelect?.(null);
                onCanvasContextMenu({ x: e.clientX, y: e.clientY });
             }}
         >
@@ -314,29 +337,35 @@ export default function InvitationCanvas({
                     <div
                         key={item.id}
                         id={`item-${item.id}`}
-                        className={`absolute ${selectedId === item.id ? 'z-[999]' : ''}`}
+                        className={`absolute ${isSelected(item.id) ? 'z-[999]' : ''}`}
                         style={{
                             width: item.width,
                             height: item.height,
                             transform: `translate(${item.x}px, ${item.y}px) rotate(${item.rotate || 0}deg)`,
-                            zIndex: selectedId === item.id ? 999 : (item.zIndex || 10),
-                            cursor: mode === 'edit' ? 'pointer' : 'default',
+                            zIndex: isSelected(item.id) ? 999 : (item.zIndex || 10),
+                            cursor: mode === 'edit' ? (item.locked ? 'not-allowed' : 'pointer') : 'default',
                             opacity: (item.type !== 'frame' ? (item.opacity ?? 100) / 100 : 1), // Frame has internal opacity
                         }}
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (mode === 'edit') onSelectExclusively(item.id);
+                            if (mode === 'edit') onSelect?.(item.id, { additive: e.shiftKey || e.metaKey || e.ctrlKey });
                         }}
                         onContextMenu={(e) => {
                             if (mode !== 'edit' || !onItemContextMenu) return;
                             e.preventDefault();
                             e.stopPropagation();
-                            onSelectExclusively(item.id);
+                            // Keep a multi-selection when right-clicking one of its members.
+                            if (!isSelected(item.id)) onSelect?.(item.id);
                             onItemContextMenu(item, { x: e.clientX, y: e.clientY });
                         }}
                     >
-                        {mode === 'edit' && selectedId === item.id && (
+                        {mode === 'edit' && isSelected(item.id) && (
                             <div className="element-active-ring" style={{ '--accent-color': design.accentColor || '#A67B5B' }} />
+                        )}
+                        {mode === 'edit' && item.locked && (
+                            <span className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center" title="Locked — unlock from the right-click menu or Layers">
+                                <Lock className="w-3 h-3 text-stone-600" aria-label="Locked" />
+                            </span>
                         )}
                         {renderItemContent(item)}
                     </div>
@@ -344,17 +373,17 @@ export default function InvitationCanvas({
             </div>
 
             {/* React Moveable Control - Only in Edit Mode */}
-            {mode === 'edit' && target && (
+            {mode === 'edit' && targets.length > 0 && (
                 <Moveable
-                    target={target}
+                    target={targets.length === 1 ? targets[0] : targets}
                     container={containerRef.current}
                     draggable={true}
-                    resizable={true}
-                    rotatable={true}
+                    resizable={targets.length === 1}
+                    rotatable={targets.length === 1}
                     snappable={true}
                     bounds={{ left: 0, top: 0, right: CANVAS_WIDTH, bottom: CANVAS_HEIGHT }}
                     snapDirections={{ top: true, left: true, bottom: true, right: true, center: true, middle: true }}
-                    elementGuidelines={elementGuidelines}
+                    elementGuidelines={guidelines}
                     snapGap={false}
                     isDisplaySnapDigit={true}
                     isDisplayInnerSnapDigit={true}
@@ -368,13 +397,13 @@ export default function InvitationCanvas({
                     onDrag={e => { e.target.style.transform = e.transform; }}
                     onDragEnd={e => {
                          e.target.style.cursor = 'pointer';
-                         const transform = e.target.style.transform;
-                         const translateMatch = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(transform);
-                         if (translateMatch) {
-                             const x = parseFloat(translateMatch[1]);
-                             const y = parseFloat(translateMatch[2]);
-                             onUpdateDesign('update_item', { id: selectedId, x, y });
-                         }
+                         const pos = readTranslate(e.target);
+                         if (pos) onUpdateDesign('update_item', { id: idOf(e.target), ...pos });
+                    }}
+                    onDragGroup={e => { e.events.forEach(ev => { ev.target.style.transform = ev.transform; }); }}
+                    onDragGroupEnd={e => {
+                         const updates = e.targets.map(el => ({ id: idOf(el), ...readTranslate(el) })).filter(u => u.x !== undefined);
+                         if (updates.length) onUpdateDesign('update_items', updates);
                     }}
                     
                     onResize={e => {
@@ -390,7 +419,7 @@ export default function InvitationCanvas({
                              updates.x = parseFloat(translateMatch[1]);
                              updates.y = parseFloat(translateMatch[2]);
                          }
-                         onUpdateDesign('update_item', { id: selectedId, ...updates });
+                         onUpdateDesign('update_item', { id: idOf(e.target), ...updates });
                     }}
                     
                     onRotate={e => { e.target.style.transform = e.drag.transform; }}
@@ -398,7 +427,7 @@ export default function InvitationCanvas({
                          const transform = e.target.style.transform;
                          const rotateMatch = /rotate\(([-\d.]+)deg\)/.exec(transform);
                          if (rotateMatch) {
-                             onUpdateDesign('update_item', { id: selectedId, rotate: parseFloat(rotateMatch[1]) });
+                             onUpdateDesign('update_item', { id: idOf(e.target), rotate: parseFloat(rotateMatch[1]) });
                          }
                     }}
                 />
@@ -424,6 +453,7 @@ export default function InvitationCanvas({
                 )}
             </div>
         </div>
+      </div>
     </div>
   );
 }

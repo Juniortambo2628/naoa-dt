@@ -5,7 +5,7 @@ import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 import {
     Palette, Sliders, Undo2, Redo2,
     Maximize, Minimize,
-    FileImage, FileText, Grid3x3, Magnet, RectangleHorizontal, RectangleVertical,
+    FileImage, FileText, Grid3x3, Magnet, RectangleHorizontal, RectangleVertical, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { PortalWhen } from '../../components/Overlay';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
@@ -16,7 +16,8 @@ import InvitationSaveStatus from '../../components/admin/InvitationSaveStatus';
 import InvitationPageMenu from '../../components/admin/InvitationPageMenu';
 import InvitationAddMenu from '../../components/admin/InvitationAddMenu';
 import ContextMenu from '../../components/admin/ContextMenu';
-import { buildItemMenu, buildPageMenu } from '../../components/admin/invitationMenus';
+import { buildItemMenu, buildPageMenu, buildSelectionMenu } from '../../components/admin/invitationMenus';
+import { canvasSize, nudgeItems, alignItems, distributeItems, layerOrder, pickStyle, applyStyle } from '../../utils/invitationItems';
 import { elementPreset } from '../../components/admin/invitationElements';
 import { AdminHeaderStatus } from '../../context/AdminChromeContext';
 import AdminPageHero from '../../components/admin/AdminPageHero';
@@ -25,6 +26,7 @@ import AdminFloatingToolbar from '../../components/admin/AdminFloatingToolbar';
 import { saveAs } from 'file-saver';
 import { Skeleton } from '../../components/Skeleton';
 import { toast } from 'react-hot-toast';
+import { confirmAction, notifyError } from '../../utils/feedback';
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);
@@ -39,7 +41,20 @@ export default function InvitationDesigner() {
   const [activeTab, setActiveTab] = useState('style'); // style, text, layout, items
   const [designType, setDesignType] = useState('invitation'); // invitation, save_the_date
   const [editorLang, setEditorLang] = useState('en');
-  const [selectedItemId, setSelectedItemId] = useState(null);
+  // Selection: several elements with Shift-click; the last one is the
+  // "primary" the side panel edits.
+  const [selectedIds, setSelectedIds] = useState([]);
+  const selectedItemId = selectedIds[selectedIds.length - 1] ?? null;
+  const setSelectedItemId = useCallback((id) => setSelectedIds(id ? [id] : []), []);
+  const handleSelect = useCallback((id, { additive = false } = {}) => {
+      if (!id) return setSelectedIds([]);
+      setSelectedIds(prev => (additive
+          ? (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+          : [id]));
+  }, []);
+  const [zoom, setZoom] = useState('fit'); // 'fit' or a scale factor
+  const [fitScale, setFitScale] = useState(1);
+  const [copiedStyle, setCopiedStyle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   // Open right-click menu: { kind: 'item' | 'page', itemId?, position: { x, y } }
   const [contextMenu, setContextMenu] = useState(null);
@@ -203,7 +218,7 @@ export default function InvitationDesigner() {
         setLoading(false);
     };
     loadDesign();
-  }, [designType]);
+  }, [designType, setSelectedItemId]);
 
   // Load the dynamic wedding details once so the Save-the-Date and Location
   // elements render the real configured date/venue/coordinates.
@@ -272,7 +287,7 @@ export default function InvitationDesigner() {
           }
       } catch (err) {
           console.error("Test export failed", err);
-          alert("Failed to export test invitation.");
+          notifyError("Failed to export test invitation.");
       } finally {
           setIsExporting(false);
       }
@@ -392,6 +407,20 @@ export default function InvitationDesigner() {
           addToHistory(newState);
           return newState;
       });
+    } else if (type === 'update_items') {
+      // Several elements in one undo step (group drag, align, nudge, paste style).
+      if (!payload?.length) return;
+      const byId = Object.fromEntries(payload.map(({ id, ...changes }) => [id, changes]));
+      setDesign(prev => {
+          const newState = replaceActivePage(prev, p => ({
+              ...p,
+              items: p.items.map(item => (byId[item.id] ? { ...item, ...byId[item.id] } : item)),
+          }));
+          addToHistory(newState);
+          return newState;
+      });
+    } else if (type === 'reorder_layers') {
+      handleDesignUpdate('update_items', layerOrder(payload));
     } else if (type === 'move_item') {
         setDesign(prev => {
             const { id, direction } = payload;
@@ -476,11 +505,12 @@ export default function InvitationDesigner() {
             });
         };
 
-  const deleteItem = (id) => {
+  const deleteItem = (idOrIds) => {
+      const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
       setDesign(prev => {
           const newState = {
               ...prev,
-              pages: prev.pages.map((p, i) => i === currentPage ? { ...p, items: p.items.filter(item => item.id !== id) } : p)
+              pages: prev.pages.map((p, i) => i === currentPage ? { ...p, items: p.items.filter(item => !ids.includes(item.id)) } : p)
           };
           addToHistory(newState);
           return newState;
@@ -576,9 +606,9 @@ export default function InvitationDesigner() {
       setSelectedItemId(null);
   };
 
-  const deletePage = (index) => {
+  const deletePage = async (index) => {
       if ((design.pages?.length || 1) <= 1) return; // keep at least one page
-      if (!window.confirm(`Delete page ${index + 1}? This cannot be undone with the page bar (use Undo).`)) return;
+      if (!await confirmAction(`Delete page ${index + 1}? This cannot be undone with the page bar (use Undo).`)) return;
       setDesign(prev => {
           if (prev.pages.length <= 1) return prev;
           const pages = prev.pages.filter((_, i) => i !== index);
@@ -656,40 +686,70 @@ export default function InvitationDesigner() {
 
   const presetColors = ['#A67B5B', '#8B9A7D', '#D4A59A', '#4A3F35', '#2C3E50', '#E74C3C'];
 
-  const canvasSize = design.orientation === 'landscape' ? { width: 625, height: 500 } : { width: 500, height: 625 };
-  const selectedItem = activePageDesign.items?.find(i => i.id === selectedItemId);
+  const canvas = canvasSize(design.orientation);
+  const pageItems = activePageDesign.items || [];
+  const selectedItem = pageItems.find(i => i.id === selectedItemId);
+  const selectedItems = pageItems.filter(i => selectedIds.includes(i.id));
   const openTab = (tab) => { setActiveTab(tab); setContextMenu(null); };
+  const updateItems = (updates) => handleDesignUpdate('update_items', updates);
 
-  // Keyboard shortcuts: undo/redo, duplicate and delete the selected element.
+  const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+  const currentScale = zoom === 'fit' ? fitScale : zoom;
+  const zoomBy = (direction) => {
+      const next = direction > 0 ? ZOOM_STEPS.find(z => z > currentScale + 0.01) : [...ZOOM_STEPS].reverse().find(z => z < currentScale - 0.01);
+      if (next) setZoom(next);
+  };
+
+  // Keyboard: undo/redo, select all, duplicate, delete, nudge (Shift = 10px), zoom.
   useEffect(() => {
       const onKeyDown = (e) => {
           const t = e.target;
           if (t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
           const mod = e.ctrlKey || e.metaKey;
           const key = e.key.toLowerCase();
+          const arrows = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
           if (mod && key === 'z' && !e.shiftKey) { e.preventDefault(); handleUndo(); }
           else if (mod && (key === 'y' || (key === 'z' && e.shiftKey))) { e.preventDefault(); handleRedo(); }
+          else if (mod && key === 'a') { e.preventDefault(); setSelectedIds(pageItems.map(i => i.id)); }
           else if (mod && key === 'd' && selectedItemId) { e.preventDefault(); duplicateItem(selectedItemId); }
-          else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItemId) { e.preventDefault(); deleteItem(selectedItemId); }
-          else if (e.key === 'Escape' && selectedItemId) setSelectedItemId(null);
+          else if (mod && (key === '=' || key === '+')) { e.preventDefault(); zoomBy(1); }
+          else if (mod && key === '-') { e.preventDefault(); zoomBy(-1); }
+          else if (mod && key === '0') { e.preventDefault(); setZoom('fit'); }
+          else if (arrows[key] && selectedItems.length) {
+              e.preventDefault();
+              const step = e.shiftKey ? 10 : 1;
+              updateItems(nudgeItems(selectedItems, arrows[key][0] * step, arrows[key][1] * step, canvas));
+          }
+          else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length) { e.preventDefault(); deleteItem(selectedIds); }
+          else if (e.key === 'Escape' && selectedIds.length) setSelectedIds([]);
       };
       document.addEventListener('keydown', onKeyDown);
       return () => document.removeEventListener('keydown', onKeyDown);
   });
 
-  const contextItem = contextMenu?.kind === 'item'
-      ? activePageDesign.items?.find(i => i.id === contextMenu.itemId)
-      : null;
-  const contextMenuItems = !contextMenu ? [] : contextItem
+  const menuContext = {
+      update: (id, changes) => handleDesignUpdate('update_item', { id, ...changes }),
+      updateItems,
+      move: (id, direction) => handleDesignUpdate('move_item', { id, direction }),
+      duplicate: duplicateItem,
+      remove: deleteItem,
+      align: (items, mode) => updateItems(alignItems(items, mode, canvas)),
+      alignUpdates: (items, mode) => alignItems(items, mode, canvas),
+      distribute: (items, axis) => updateItems(distributeItems(items, axis)),
+      copyStyle: (item) => setCopiedStyle(pickStyle(item)),
+      pasteStyle: copiedStyle ? (items) => updateItems(applyStyle(items, copiedStyle)) : null,
+      canvas,
+      presetColors,
+      accentColor: design.accentColor,
+  };
+  const contextItem = contextMenu?.kind === 'item' ? pageItems.find(i => i.id === contextMenu.itemId) : null;
+  const contextMenuItems = !contextMenu ? []
+      : contextItem && selectedItems.length > 1 && selectedIds.includes(contextItem.id)
+      ? buildSelectionMenu(selectedItems, menuContext)
+      : contextItem
       ? buildItemMenu(contextItem, {
-          update: (id, changes) => handleDesignUpdate('update_item', { id, ...changes }),
-          move: (id, direction) => handleDesignUpdate('move_item', { id, direction }),
-          duplicate: duplicateItem,
-          remove: deleteItem,
+          ...menuContext,
           editProperties: () => openTab(contextItem.type === 'text' || contextItem.type === 'frame' ? 'text' : 'layers'),
-          canvas: canvasSize,
-          presetColors,
-          accentColor: design.accentColor,
       })
       : contextMenu.kind === 'page'
       ? buildPageMenu({
@@ -698,6 +758,7 @@ export default function InvitationDesigner() {
           updateDesign,
           openTab,
           presetColors,
+          selectAll: () => setSelectedIds(pageItems.map(i => i.id)),
       })
       : [];
 
@@ -734,6 +795,8 @@ export default function InvitationDesigner() {
             setEditorLang={setEditorLang}
             selectedItemId={selectedItemId}
             setSelectedItemId={setSelectedItemId}
+            selectedIds={selectedIds}
+            onSelect={handleSelect}
             updateDesign={updateDesign}
             handleDesignUpdate={handleDesignUpdate}
             addItem={addItem}
@@ -770,8 +833,10 @@ export default function InvitationDesigner() {
                 <InvitationCanvas
                     design={activePageDesign}
                     onUpdateDesign={(type, payload) => handleDesignUpdate(type, payload)}
-                    selectedId={selectedItemId}
-                    onSelectExclusively={setSelectedItemId}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelect}
+                    zoom={zoom}
+                    onFitScaleChange={setFitScale}
                     mode="edit" 
                     guest={dummyGuest}
                     showGrid={design.showGrid}
@@ -897,9 +962,9 @@ export default function InvitationDesigner() {
               />
             </label>
 
-            {/* Selected element opacity */}
+            {/* Selected element opacity (also in the right-click menu and side panel) */}
             {selectedItem && (
-              <>
+              <div className="hidden 2xl:flex items-center">
                 {divider}
                 <div className="flex items-center gap-2 px-1" title="Element opacity">
                   <Sliders className="w-4 h-4 text-[#A67B5B]" />
@@ -913,8 +978,24 @@ export default function InvitationDesigner() {
                   />
                   <span className="text-[10px] font-bold text-stone-500 w-6">{selectedItem.opacity ?? 100}%</span>
                 </div>
-              </>
+              </div>
             )}
+
+            {divider}
+
+            {/* Zoom */}
+            <div className="flex items-center" role="group" aria-label="Zoom">
+              <button onClick={() => zoomBy(-1)} className={toggleButton(false)} title="Zoom out (Ctrl −)" aria-label="Zoom out"><ZoomOut className="w-4 h-4" /></button>
+              <button
+                onClick={() => setZoom('fit')}
+                className="min-w-[3.25rem] px-1 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100"
+                title="Fit to screen (Ctrl 0)"
+                aria-label={`Zoom ${Math.round(currentScale * 100)}%, click to fit`}
+              >
+                {zoom === 'fit' ? 'Fit' : `${Math.round(currentScale * 100)}%`}
+              </button>
+              <button onClick={() => zoomBy(1)} className={toggleButton(false)} title="Zoom in (Ctrl +)" aria-label="Zoom in"><ZoomIn className="w-4 h-4" /></button>
+            </div>
 
             {divider}
 

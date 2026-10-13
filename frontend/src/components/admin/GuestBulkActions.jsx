@@ -1,5 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Download, FileImage, FileText, MessageCircle, Mail, Send, RotateCcw, Trash2, X, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronDown, Download, FileImage, FileText, MessageCircle, Mail, Send, RotateCcw, Trash2, X, CheckCircle, XCircle, Tags } from 'lucide-react';
+import { confirmAction } from '../../utils/feedback';
+
+const BAR_BUTTON = 'flex items-center gap-2 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto';
 
 export default function GuestBulkActions({
   selectedIds,
@@ -14,6 +17,7 @@ export default function GuestBulkActions({
   onExportBulk,
   onExportWhatsAppKit,
   onBulkDelete,
+  onBulkSetGroup,
   onClearSelection,
 }) {
   return (
@@ -128,45 +132,50 @@ export default function GuestBulkActions({
                 )}
               </div>
 
-              <button
-                onClick={() => {
-                  if (window.confirm(`Mark ${selectedIds.length} selected guests as confirmed?`)) {
-                    onBulkUpdate({ rsvp_status: 'confirmed' });
-                  }
-                }}
-                className="flex items-center gap-2 hover:text-green-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
-              >
-                <CheckCircle className="w-4 h-4" /> Mark Confirmed
-              </button>
+              <div className="relative w-full sm:w-auto">
+                <button
+                  onClick={() => setShowBulkMenu(prev => prev === 'via' ? null : 'via')}
+                  className={`${BAR_BUTTON} justify-between hover:text-[#A67B5B]`}
+                  aria-expanded={showBulkMenu === 'via'}
+                >
+                  <MessageCircle className="w-4 h-4" /> Invite via <ChevronDown className={`w-3 h-3 transition-transform ${showBulkMenu === 'via' ? 'rotate-180' : ''}`} />
+                </button>
+                {showBulkMenu === 'via' && (
+                  <div className="mt-2 w-full sm:absolute sm:bottom-full sm:left-0 sm:mb-2 sm:mt-0 sm:w-36 bg-stone-800 border border-stone-700 rounded-lg shadow-xl py-1 z-[110]">
+                    {[['whatsapp', 'WhatsApp'], ['email', 'Email']].map(([id, label]) => (
+                      <button
+                        key={id}
+                        onClick={() => { onBulkUpdate({ invitation_via: id }); setShowBulkMenu(null); }}
+                        className="w-full text-left px-3 py-2 hover:bg-stone-700 text-xs text-white"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-              <button
-                onClick={() => {
-                  if (window.confirm(`Mark ${selectedIds.length} selected guests as declined?`)) {
-                    onBulkUpdate({ rsvp_status: 'declined' });
-                  }
-                }}
-                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
-              >
-                <XCircle className="w-4 h-4" /> Mark Declined
-              </button>
-
-              <button
-                onClick={() => {
-                  if (window.confirm(`Reset RSVP status for ${selectedIds.length} selected guests?`)) {
-                    onBulkUpdate({ rsvp_status: 'pending', rsvp_message: null, dietary_notes: null });
-                  }
-                }}
-                className="flex items-center gap-2 hover:text-orange-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
-              >
-                <RotateCcw className="w-4 h-4" /> Reset RSVP
-              </button>
-
-              <button
-                onClick={onBulkDelete}
-                className="flex items-center gap-2 hover:text-red-400 transition-colors text-xs px-4 py-2 bg-stone-800 rounded border border-stone-700 whitespace-nowrap w-full sm:w-auto justify-center"
-              >
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
+              {[
+                { label: 'Set Group', icon: Tags, hover: 'hover:text-[#A67B5B]', onClick: onBulkSetGroup },
+                { label: 'Mark Confirmed', icon: CheckCircle, hover: 'hover:text-green-400', confirm: 'Mark {n} selected guests as confirmed?', update: { rsvp_status: 'confirmed' } },
+                { label: 'Mark Declined', icon: XCircle, hover: 'hover:text-red-400', confirm: 'Mark {n} selected guests as declined?', update: { rsvp_status: 'declined' } },
+                { label: 'Reset RSVP', icon: RotateCcw, hover: 'hover:text-orange-400', confirm: 'Reset RSVP status for {n} selected guests?', update: { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null } },
+                { label: 'Delete', icon: Trash2, hover: 'hover:text-red-400', onClick: onBulkDelete },
+              ].map(({ label, icon, hover, confirm, update, onClick }) => {
+                const Icon = icon;
+                return (
+                <button
+                  key={label}
+                  onClick={async () => {
+                    if (onClick) return onClick();
+                    if (await confirmAction(confirm.replace('{n}', selectedIds.length))) onBulkUpdate(update);
+                  }}
+                  className={`${BAR_BUTTON} justify-center ${hover}`}
+                >
+                  <Icon className="w-4 h-4" /> {label}
+                </button>
+                );
+              })}
             </div>
           </div>
 

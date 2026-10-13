@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Users, Plus, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks, Download, UserCheck, Clock, UserX, Send, CopyCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService } from '../../services/api';
@@ -20,43 +21,16 @@ import { renderWhatsAppMessage } from '../../utils/whatsappMessage';
 import { useSearch } from '../../context/SearchContext';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { confirmAction, promptAction, notifyError, notifyUndo } from '../../utils/feedback';
+import { percent } from '../../utils/rsvp';
+import useSavedViews from '../../hooks/useSavedViews';
+import {
+  STATUS_FILTERS, INVITE_FILTERS, NEEDS_FILTERS, DEFAULT_GUEST_FILTERS, DEFAULT_GUEST_SORT, GUEST_SORTS,
+  filtersFromParams, filtersToParams, matchesGuestFilters, matchesGuestSearch, matchesStatus,
+  guestStats, guestGroups, sortGuests, nextSort,
+} from '../../utils/guests';
 
-const DEFAULT_FILTER = 'active';
-const STATUS_FILTERS = [
-  { id: 'active', label: 'Pending + Confirmed' },
-  { id: 'all', label: 'All' },
-  { id: 'confirmed', label: 'Confirmed' },
-  { id: 'pending', label: 'Pending' },
-  { id: 'declined', label: 'Declined' },
-];
-const SENT_STATUSES = ['sent', 'opened', 'responded'];
 const IGNORED_DUPLICATES_KEY = 'admin.guests.ignoredDuplicates';
-
-function matchesStatusFilter(guest, filter) {
-  const status = guest.rsvp_status || 'pending';
-  if (filter === 'all') return true;
-  if (filter === 'active') return status !== 'declined';
-  return status === filter;
-}
-
-function guestStats(guests) {
-  const count = (fn) => guests.filter(fn).length;
-  const confirmed = count(g => g.rsvp_status === 'confirmed');
-  const declined = count(g => g.rsvp_status === 'declined');
-  const plusOnes = count(g => g.parent_guest_id);
-  return {
-    total: guests.length,
-    primary: guests.length - plusOnes,
-    plusOnes,
-    confirmed,
-    declined,
-    pending: guests.length - confirmed - declined,
-    responded: confirmed + declined,
-    invitesSent: count(g => SENT_STATUSES.includes(g.invitation?.status)),
-  };
-}
-
-const percent = (part, whole) => (whole ? `${Math.round((part / whole) * 100)}%` : '0%');
 
 // "Not duplicates" decisions are a per-browser convenience.
 function loadIgnoredDuplicates() {
@@ -85,10 +59,14 @@ export default function AdminGuests() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { searchQuery } = useSearch();
-  const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'alpha'
-  // Default view: everyone still expected (pending + confirmed); declined are one tap away.
-  const [filter, setFilter] = useState(DEFAULT_FILTER); // active, all, confirmed, pending, declined
+  const { searchQuery, setSearchQuery } = useSearch();
+  // Filters live in the URL (/guests?status=pending&invite=unsent) so dashboard
+  // to-dos, analytics and bookmarks can deep-link. Default view: everyone still
+  // expected (pending + confirmed); declined are one tap away.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
+  const [sort, setSort] = useState(DEFAULT_GUEST_SORT);
+  const { views, saveView, deleteView } = useSavedViews('admin.guests.views');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const { data: duplicateData, refetch: refetchDuplicates } = useGuestDuplicates();
@@ -122,6 +100,22 @@ export default function AdminGuests() {
       setGuests(Array.isArray(gData) ? gData : []);
     }
   }, [guestsData]);
+
+  // Follow links that change the query while this page is open (e.g. from the header).
+  useEffect(() => {
+    setFilters(filtersFromParams(searchParams));
+    const q = searchParams.get('q');
+    if (q) setSearchQuery(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the URL itself changes
+  }, [searchParams.toString()]);
+
+  const applyFilters = (next) => {
+    const merged = { ...filters, ...next };
+    setFilters(merged);
+    setCurrentPage(1);
+    setSelectedIds([]);
+    setSearchParams(filtersToParams(merged), { replace: true });
+  };
 
   // Any change to the list (add, import, edit, merge) can create or resolve duplicates.
   useEffect(() => {
@@ -323,14 +317,25 @@ ${rows.join('\n')}
     setModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Delete this guest?')) {
-      try {
-        await guestService.delete(id);
+  // Deletes are soft on the server, so they can be undone from the toast.
+  const deleteGuests = async (ids) => {
+    const names = guests.filter(g => ids.includes(g.id)).map(g => g.name);
+    const label = ids.length === 1 ? names[0] || 'this guest' : `${ids.length} guests`;
+    if (!await confirmAction({ title: `Delete ${label}?`, message: 'You can undo this straight after.', confirmLabel: 'Delete' })) return;
+    try {
+      await guestService.bulkDelete(ids);
+      setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+      refetchGuests();
+      notifyUndo(`Deleted ${label}`, async () => {
+        await guestService.restore(ids);
         refetchGuests();
-      } catch (e) { console.error(e); alert('Failed to delete'); }
+      });
+    } catch (e) {
+      notifyError(e, 'Failed to delete');
     }
   };
+
+  const handleDelete = (id) => deleteGuests([id]);
 
   const handleSave = async (data) => {
     try {
@@ -364,18 +369,18 @@ ${rows.join('\n')}
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (window.confirm(`Delete ${selectedIds.length} selected guests?`)) {
-      try {
-        await Promise.all(selectedIds.map(id => guestService.delete(id)));
-        toast.success(`Deleted ${selectedIds.length} guests`);
-        setSelectedIds([]);
-        refetchGuests();
-      } catch (e) { 
-        console.error(e); 
-        toast.error('Failed bulk delete'); 
-      }
-    }
+  const handleBulkDelete = () => deleteGuests(selectedIds);
+
+  // Bulk "Set group…" with existing groups suggested.
+  const handleBulkSetGroup = async () => {
+    const group = await promptAction({
+      title: `Set group for ${selectedIds.length} guests`,
+      label: 'Group',
+      placeholder: 'e.g. Family',
+      suggestions: guestGroups(guests),
+      confirmLabel: 'Apply',
+    });
+    if (group) handleBulkUpdate({ group });
   };
 
   const handleBulkWhatsApp = async () => {
@@ -397,7 +402,7 @@ ${rows.join('\n')}
         return;
     }
     
-    if (!window.confirm(`Send email invitations with custom cards to ${targets.length} guests?`)) return;
+    if (!await confirmAction(`Send email invitations with custom cards to ${targets.length} guests?`)) return;
     
     setIsBulkExporting(true); // Re-use the bulk progress UI
     setBulkProgress({ current: 0, total: targets.length });
@@ -436,7 +441,7 @@ ${rows.join('\n')}
         return;
     }
 
-    if (!window.confirm(`Resend RSVP confirmation emails to ${targets.length} guests?`)) return;
+    if (!await confirmAction(`Resend RSVP confirmation emails to ${targets.length} guests?`)) return;
 
     try {
         setLoading(true);
@@ -477,7 +482,7 @@ ${rows.join('\n')}
             setImportData(res.data);
             setConflictModalOpen(true);
         } else if (res.data.valid.length > 0) {
-            if (window.confirm(`Import ${res.data.valid.length} new guests?`)) {
+            if (await confirmAction(`Import ${res.data.valid.length} new guests?`)) {
                 await guestService.confirmImport({ valid: res.data.valid });
                 toast.success('Guests imported successfully!');
                 refetchGuests();
@@ -516,7 +521,7 @@ ${rows.join('\n')}
   const handleInlineSave = async (guest, field, value) => {
       // Small helper to normalize values for comparison
       const normalize = (val) => val === null || val === undefined ? '' : String(val);
-      if (normalize(guest[field]) === normalize(value)) return;
+      if (normalize(guest[field]) === normalize(value)) return 'unchanged';
       
       const updatedData = { ...guest, [field]: value };
       
@@ -527,9 +532,10 @@ ${rows.join('\n')}
       try {
           await guestService.update(guest.id, updatedData);
           refetchGuests();
+          return 'saved';
       } catch (err) {
-          console.error("Failed to update guest inline", err);
-          alert('Failed to save update.');
+          notifyError(err, `Couldn't save ${field.replace(/_/g, ' ')} for ${guest.name}`);
+          throw err; // the cell shows its error state
       }
   };
 
@@ -550,7 +556,7 @@ ${rows.join('\n')}
           refetchGuests();
       } catch (err) {
           console.error("Failed to create guest inline", err);
-          alert('Failed to create guest. Ensure name is provided.');
+          notifyError('Failed to create guest. Ensure name is provided.');
       }
   };
 
@@ -702,15 +708,19 @@ ${rows.join('\n')}
       const payload = { ...guest, ...data };
       await guestService.update(guest.id, payload);
       refetchGuests();
-      toast.success("Guest details updated");
+      // Offer to put the changed fields back.
+      const previous = Object.fromEntries(Object.keys(data).map(key => [key, guest[key] ?? null]));
+      notifyUndo(`Updated ${guest.name}`, async () => {
+        await guestService.update(guest.id, { ...guest, ...previous });
+        refetchGuests();
+      });
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to update guest details");
+      notifyError(err, 'Failed to update guest details');
     }
   };
 
   const handleResetAllRSVPs = async () => {
-    if (!window.confirm("Are you sure you want to reset RSVP status for ALL guests to 'pending'? This will allow you to send fresh invitations.")) return;
+    if (!await confirmAction("Are you sure you want to reset RSVP status for ALL guests to 'pending'? This will allow you to send fresh invitations.")) return;
     
     try {
         const allIds = guests.map(g => g.id);
@@ -726,23 +736,31 @@ ${rows.join('\n')}
     }
   };
 
-  // Filter and Search logic
-  const searchLower = (searchQuery || '').trim().toLowerCase();
-  const searchDigits = searchLower.replace(/\D/g, '');
-  const filteredGuests = guests.filter(guest => {
-      const matchesSearch = !searchLower
-        || [guest.name, guest.email, guest.group, guest.unique_code]
-            .some(v => v && String(v).toLowerCase().includes(searchLower))
-        || (searchDigits.length >= 3 && String(guest.phone || '').replace(/\D/g, '').includes(searchDigits));
-      return matchesSearch && matchesStatusFilter(guest, filter);
-  }).sort((a, b) => {
-      if (sortBy === 'alpha') return a.name.localeCompare(b.name);
-      return b.id - a.id; // latest added first
-  });
+  // Filter, search and sort
+  const filterContext = { duplicateIds };
+  const filteredGuests = sortGuests(
+    guests.filter(guest => matchesGuestSearch(guest, searchQuery) && matchesGuestFilters(guest, filters, filterContext)),
+    sort
+  );
 
   const stats = useMemo(() => guestStats(guests), [guests]);
+  const groupNames = useMemo(() => guestGroups(guests), [guests]);
 
-  const changeFilter = (f) => { setFilter(f); setCurrentPage(1); setSelectedIds([]); };
+  const changeFilter = (status) => applyFilters({ status });
+  // Counts for each option, holding the other filters as they are.
+  const countWith = (next) => guests.filter(g => matchesGuestSearch(g, searchQuery) && matchesGuestFilters(g, { ...filters, ...next }, filterContext)).length;
+
+  const saveCurrentView = async () => {
+    const name = await promptAction({ title: 'Save this view', label: 'Name', placeholder: 'e.g. Family, not invited yet' });
+    if (name) saveView(name, { filters, sort, search: searchQuery || '' });
+  };
+  const applyView = (id) => {
+    const view = views.find(v => v.id === id);
+    if (!view) return;
+    applyFilters({ ...DEFAULT_GUEST_FILTERS, ...view.state.filters });
+    setSort(view.state.sort || DEFAULT_GUEST_SORT);
+    setSearchQuery(view.state.search || '');
+  };
 
   const summaryCards = [
     {
@@ -752,7 +770,7 @@ ${rows.join('\n')}
       color: '#A67B5B',
       hint: `${stats.plusOnes} plus-ones`,
       onClick: () => changeFilter('all'),
-      active: filter === 'all',
+      active: filters.status === 'all',
     },
     {
       label: 'Confirmed',
@@ -761,7 +779,7 @@ ${rows.join('\n')}
       color: '#6B8E5A',
       hint: `${percent(stats.confirmed, stats.total)} · headcount`,
       onClick: () => changeFilter('confirmed'),
-      active: filter === 'confirmed',
+      active: filters.status === 'confirmed',
     },
     {
       label: 'Pending',
@@ -770,7 +788,7 @@ ${rows.join('\n')}
       color: '#D4935A',
       hint: `${percent(stats.responded, stats.total)} replied`,
       onClick: () => changeFilter('pending'),
-      active: filter === 'pending',
+      active: filters.status === 'pending',
     },
     {
       label: 'Declined',
@@ -779,7 +797,7 @@ ${rows.join('\n')}
       color: '#C0756B',
       hint: `${percent(stats.declined, stats.total)} of invited`,
       onClick: () => changeFilter('declined'),
-      active: filter === 'declined',
+      active: filters.status === 'declined',
     },
     {
       label: 'Invites Sent',
@@ -890,23 +908,51 @@ ${rows.join('\n')}
         toolbarHidden={selectedIds.length > 0}
         search="Search name, email, phone, group, code..."
         filters={{
-          groups: [{
-            id: 'status',
-            label: 'RSVP status',
-            defaultValue: DEFAULT_FILTER,
-            value: filter,
-            onChange: changeFilter,
-            options: STATUS_FILTERS.map(f => ({ ...f, count: guests.filter(g => matchesStatusFilter(g, f.id)).length })),
-          }],
+          groups: [
+            {
+              id: 'status',
+              label: 'RSVP status',
+              defaultValue: DEFAULT_GUEST_FILTERS.status,
+              value: filters.status,
+              onChange: changeFilter,
+              options: STATUS_FILTERS.map(f => ({ ...f, count: guests.filter(g => matchesStatus(g, f.id)).length })),
+            },
+            {
+              id: 'invite',
+              label: 'Invitation',
+              defaultValue: DEFAULT_GUEST_FILTERS.invite,
+              value: filters.invite,
+              onChange: (invite) => applyFilters({ invite }),
+              options: INVITE_FILTERS.map(f => ({ ...f, count: countWith({ invite: f.id }) })),
+            },
+            {
+              id: 'group',
+              label: 'Group',
+              defaultValue: DEFAULT_GUEST_FILTERS.group,
+              value: filters.group,
+              onChange: (group) => applyFilters({ group }),
+              options: [{ id: 'all', label: 'All groups' }, ...groupNames.map(g => ({ id: g, label: g, count: countWith({ group: g }) }))],
+            },
+            {
+              id: 'needs',
+              label: 'Needs attention',
+              defaultValue: DEFAULT_GUEST_FILTERS.needs,
+              value: filters.needs,
+              onChange: (needs) => applyFilters({ needs }),
+              options: NEEDS_FILTERS.map(f => ({ ...f, count: f.id === 'none' ? undefined : countWith({ needs: f.id }) })),
+            },
+          ],
           sort: {
-            options: [
-              { id: 'latest', label: 'Latest added' },
-              { id: 'alpha', label: 'Name A → Z' },
-            ],
-            value: sortBy,
-            onChange: setSortBy,
+            options: Object.entries(GUEST_SORTS).flatMap(([key, { label }]) => [
+              { id: `${key}:asc`, label: `${label} ↑` },
+              { id: `${key}:desc`, label: `${label} ↓` },
+            ]),
+            value: `${sort.key}:${sort.dir}`,
+            defaultValue: `${DEFAULT_GUEST_SORT.key}:${DEFAULT_GUEST_SORT.dir}`,
+            onChange: (value) => { const [key, dir] = value.split(':'); setSort({ key, dir }); },
           },
           view: { options: ['list', 'spreadsheet'], value: viewMode, onChange: setViewMode },
+          views: { items: views, onApply: applyView, onSave: saveCurrentView, onDelete: deleteView },
         }}
       >
         <input 
@@ -930,6 +976,7 @@ ${rows.join('\n')}
         onExportBulk={exportBulk}
         onExportWhatsAppKit={exportWhatsAppKit}
         onBulkDelete={handleBulkDelete}
+        onBulkSetGroup={handleBulkSetGroup}
         onClearSelection={() => { setSelectedIds([]); setShowBulkMenu(null); }}
       />
 
@@ -972,6 +1019,9 @@ ${rows.join('\n')}
         onDelete={handleDelete}
         onUpdateGuest={handleUpdateGuest}
         onSetCurrentPage={setCurrentPage}
+        sort={sort}
+        onAdd={handleAdd}
+        onSort={(key) => setSort(prev => nextSort(prev, key))}
       />
 
       <WhatsAppChecklistModal

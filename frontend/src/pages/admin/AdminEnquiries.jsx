@@ -16,6 +16,7 @@ import Spinner from '../../components/admin/Spinner';
 import DeleteButton from '../../components/admin/DeleteButton';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
+import { confirmAction, notifyError } from '../../utils/feedback';
 
 export default function AdminEnquiries() {
   const { data, isLoading: loading, refetch } = useEnquiries();
@@ -57,7 +58,7 @@ export default function AdminEnquiries() {
   const clearSelection = () => setSelectedIds([]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this enquiry?')) return;
+    if (!await confirmAction('Delete this enquiry?')) return;
     
     setProcessing(id);
     try {
@@ -72,7 +73,7 @@ export default function AdminEnquiries() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected enquiries?`)) return;
+    if (!await confirmAction(`Delete ${selectedIds.length} selected enquiries?`)) return;
 
     setProcessing('bulk');
     try {
@@ -97,7 +98,7 @@ export default function AdminEnquiries() {
       refetch();
     } catch (err) {
       console.error('Failed to send reply', err);
-      alert('Failed to send reply. Please try again.');
+      notifyError('Failed to send reply. Please try again.');
     }
     setProcessing(null);
   };

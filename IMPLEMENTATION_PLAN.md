@@ -414,6 +414,71 @@ If any feature causes issues:
 
 ---
 
+## 13. Admin UX, Data Safety & Backups (October 2026)
+
+Follow-up to the admin redesign (shared toolbar, viewport-fit listings, header
+navigation). Every item below is implemented; shared building blocks are listed
+so new pages reuse them rather than re-implementing.
+
+### 13.1 Status
+
+| # | Area | Change | Status |
+|---|------|--------|--------|
+| 1 | Data accuracy | Dashboard never shows placeholder numbers; failed loads show `QueryError` with Retry (Dashboard, Analytics) | ✅ |
+| 1 | Data accuracy | Guest groups stored in one spelling (`Guest::normalizeGroup`: "family"/" FAMILY " → "Family", acronyms like VIP kept); migration `2026_10_13_000001_normalize_guest_groups` cleans existing rows; bulk update, filters and exports normalise too | ✅ |
+| 1 | Data accuracy | Analytics "Guest Groups" is a stacked bar per group (confirmed / pending / declined); clicking a group opens the filtered guest list | ✅ |
+| 2 | Safer actions | Styled confirm dialog (`confirmAction`) replaces every `window.confirm`/`alert` in the admin; text prompt (`promptAction`); typed confirmation for restores | ✅ |
+| 2 | Safer actions | Undo toast (`notifyUndo`) after guest deletes (soft delete + `POST /api/guests/restore`) and after RSVP/status edits | ✅ |
+| 2 | Safer actions | Unsaved-changes guard (reload/close + in-app links) and header "Unsaved changes" chip on Settings and Email Templates | ✅ |
+| 3 | Navigation | Sidebar grouped into Guests / Website / Engagement with distinct icons; `aria-current` on the active page | ✅ |
+| 3 | Navigation | Notifications carry a `link` (resolved in `NotificationResource`) and open the related page, e.g. an RSVP opens that guest | ✅ |
+| 4 | Dashboard | Countdown, RSVP progress bar, actionable to-dos (invites not sent, duplicates, no reply 14+ days, missing contact, confirmed without table) linking to filtered lists, recent RSVPs | ✅ |
+| 5 | Guest list | Filters (status, invitation, group, needs-attention) synced to the URL; sortable columns; saved views (per browser); bulk "Set group" and "Invite via"; per-cell saving/saved/error markers in the spreadsheet; card layout on phones; spreadsheet columns realigned | ✅ |
+| 6 | Designer | Arrow-key nudge (Shift = 10px); reliable smart guides (other elements + page centre/edges); zoom (Fit, 50–200%, Ctrl +/−/0); Shift-click multi-select with group drag, align, distribute, opacity, lock and delete; Layers panel drag-to-restack with lock toggles; lock/unlock; copy/paste style; Ctrl+A | ✅ |
+| 7 | Consistency | Skeleton loading everywhere (`EmptyState loading`); empty states offer the next step (`EmptyState action`); gallery upload panel opens on demand, for an empty gallery, or when files are dragged onto the page | ✅ |
+| 8 | Accessibility | Admin-scoped contrast fix for light grey text, visible keyboard focus rings, reduced-motion support (`.admin-theme` + `MotionConfig`); accessible names for icon-only buttons; table headers with `aria-sort` | ✅ |
+| 9 | Upkeep | Playwright page list fixed (several paths pointed at routes that don't exist) and screenshot baselines regenerated for the new layout | ✅ |
+| 10 | Backups | See 13.2 | ✅ |
+
+### 13.2 Backups
+
+**Why app-level backups:** production runs on shared cPanel hosting (MySQL) while
+development and CI use SQLite, and `mysqldump` is not guaranteed to be available.
+`App\Services\BackupService` dumps every data table to JSON inside a zip, so the
+same code works on any driver.
+
+| Item | Detail |
+|------|--------|
+| Storage | `backend/storage/app/backups/backup-YYYYMMDD-HHMMSS-<label>.zip` (`manifest.json` + `database.json`, optional `uploads/`) |
+| Skipped tables | migrations, tokens, sessions, cache, jobs (runtime state, not wedding data) |
+| Manual | Admin → account menu → **Backups**: back up now (optionally with photos), download, restore, delete |
+| Nightly | `backups:create --label=scheduled --keep=14` at 02:15 via the Laravel scheduler |
+| Automatic safety copies | Before every restore (`pre-restore`), guest merge (`pre-merge`) and import (`pre-import`); last 10 of each kept. Toggle with `AUTO_BACKUPS` (off in tests) |
+| Restore | Requires typing RESTORE; takes a safety backup first, replaces table contents in one transaction, ignores columns the current schema no longer has |
+| API | `GET/POST /api/backups`, `GET /api/backups/{name}/download`, `POST /api/backups/{name}/restore`, `DELETE /api/backups/{name}` (admin only; names validated against the backup pattern) |
+
+### 13.3 Deployment steps
+
+1. Migrations run automatically in the "Deploy Backend" workflow; `2026_10_13_000001_normalize_guest_groups` merges spelling variants of guest groups.
+2. Ensure the cPanel cron runs the scheduler every minute, otherwise nightly backups never run:
+   `* * * * * cd /path/to/backend && php artisan schedule:run >> /dev/null 2>&1`
+3. The PHP `zip` extension must be enabled (standard on cPanel).
+4. Download a backup from the Backups page now and then and keep it off the server — backups on the same host do not protect against losing the host.
+
+### 13.4 Shared building blocks (reuse these)
+
+| Need | Use |
+|------|-----|
+| Confirm / prompt / toasts / undo | `utils/feedback.jsx` (`confirmAction`, `promptAction`, `notifyError`, `notifySuccess`, `notifyUndo`) |
+| Guest filters, stats, to-dos, sorting | `utils/guests.js`; RSVP colours/labels and links in `utils/rsvp.js` |
+| Canvas element maths (align, distribute, nudge, layers, styles) | `utils/invitationItems.js` |
+| Page search / filters / saved views | `AdminPageLayout` props `search`, `filters` (incl. `views`), hook `useSavedViews` |
+| Loading / empty / error states | `EmptyState` (`loading`, `action`), `QueryError` |
+| Unsaved edits | `useUnsavedChanges(value)` + `UnsavedChangesStatus` |
+| Header status or compact title | `AdminHeaderStatus` (portal), automatic via `AdminPageHero` |
+
+---
+
 ## Appendix A: Existing Code References
 
 - Polaroid model: `backend/app/Models/PolaroidImage.php`

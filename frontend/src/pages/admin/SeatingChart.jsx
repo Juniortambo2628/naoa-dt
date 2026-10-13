@@ -7,6 +7,7 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminCard from '../../components/admin/AdminCard';
 import { useSearch } from '../../context/SearchContext';
+import { confirmAction, notifyError } from '../../utils/feedback';
 
 
 
@@ -57,7 +58,7 @@ function GuestItem({ guest, tables, onAssign }) {
                 </div>
             </div>
             
-            <button 
+            <button aria-label="Table options" 
                 ref={buttonRef}
                 onClick={handleToggleMenu} 
                 className="p-1.5 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-stone-600 transition-colors"
@@ -135,7 +136,7 @@ function TableCard({ table, onClick, onDelete }) {
                         <p className="text-xs text-stone-500 capitalize">{table.type} Table</p>
                     </div>
                 </div>
-                <button 
+                <button aria-label={`Delete ${table.name}`} 
                     onClick={(e) => { e.stopPropagation(); onDelete(table.id); }}
                     className="p-1.5 bg-red-50 text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-500"
                 >
@@ -292,7 +293,7 @@ export default function SeatingChart() {
              // A better way: store selectedTableId and derive selectedTable from tables array
           }
       } catch (err) {
-          alert('Failed to assign guest: ' + (err.response?.data?.message || err.message));
+          notifyError('Failed to assign guest: ' + (err.response?.data?.message || err.message));
       }
   };
   
@@ -303,7 +304,7 @@ export default function SeatingChart() {
           await tableService.unassignGuest(guestId); // Check api.js for correct method
           fetchData();
       } catch {
-           alert('Failed to unassign guest');
+           notifyError('Failed to unassign guest');
       }
   };
 
@@ -316,12 +317,12 @@ export default function SeatingChart() {
           setIsAdding(false);
           fetchData();
       } catch {
-          alert('Failed to add table');
+          notifyError('Failed to add table');
       }
   };
 
   const handleDeleteTable = async (id) => {
-      if (confirm('Delete this table? Assigned guests will be unassigned.')) {
+      if (await confirmAction('Delete this table? Assigned guests will be unassigned.')) {
           await tableService.delete(id);
           fetchData();
           if (selectedTable?.id === id) setSelectedTable(null);
@@ -407,10 +408,10 @@ export default function SeatingChart() {
                           onChange={e => setNewTable({...newTable, capacity: parseInt(e.target.value)})}
                           placeholder="Cap"
                        />
-                       <button onClick={handleAddTable} className="p-2 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6A4E]">
+                       <button aria-label="Add table" onClick={handleAddTable} className="p-2 bg-[#A67B5B] text-white rounded-lg hover:bg-[#8B6A4E]">
                            <Check className="w-4 h-4" />
                        </button>
-                       <button onClick={() => setIsAdding(false)} className="p-2 bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200">
+                       <button aria-label="Cancel adding table" onClick={() => setIsAdding(false)} className="p-2 bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200">
                            <X className="w-4 h-4" />
                        </button>
                   </div>

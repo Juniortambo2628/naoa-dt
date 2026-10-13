@@ -164,7 +164,7 @@ export default function AdminFloatingToolbar({
             )}
 
             {/* Visibility toggler */}
-            <button
+            <button aria-label="Hide toolbar"
               onClick={() => setVisible(false)}
               className="p-2 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-white/60 transition-colors"
               title="Hide toolbar"

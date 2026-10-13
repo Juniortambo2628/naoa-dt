@@ -1,7 +1,7 @@
 import Overlay from '../../components/Overlay';
 import { useState, useEffect } from 'react';
 import { galleryService, getAssetUrl } from '../../services/api';
-import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical, Check } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical, Check, Upload, X } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
@@ -10,6 +10,7 @@ import AdminBulkActions from '../../components/admin/AdminBulkActions';
 import EmptyState from '../../components/admin/EmptyState';
 import { useGallery } from '../../hooks/useApiHooks';
 import { useSearch } from '../../context/SearchContext';
+import { confirmAction, notifyError } from '../../utils/feedback';
 
 export default function GalleryManager() {
   const { data: fetchedItems, isLoading: loading, refetch: fetchGallery } = useGallery();
@@ -26,7 +27,7 @@ export default function GalleryManager() {
   }, [fetchedItems]);
 
   const handleDelete = async (id) => {
-    if (confirm('Delete this image?')) {
+    if (await confirmAction('Delete this image?')) {
       await galleryService.delete(id);
       fetchGallery();
     }
@@ -50,7 +51,7 @@ export default function GalleryManager() {
       setEditingItem(null);
       fetchGallery();
     } catch {
-      alert('Failed to update photo');
+      notifyError('Failed to update photo');
     }
   };
 
@@ -65,7 +66,7 @@ export default function GalleryManager() {
   };
 
   const handleBulkDelete = async () => {
-    if (confirm(`Delete ${selectedIds.length} selected photos?`)) {
+    if (await confirmAction(`Delete ${selectedIds.length} selected photos?`)) {
       await Promise.all(selectedIds.map(id => galleryService.delete(id)));
       setSelectedIds([]);
       fetchGallery();
@@ -90,7 +91,7 @@ export default function GalleryManager() {
       setIsReordering(false);
       fetchGallery();
     } catch {
-      alert('Failed to save order');
+      notifyError('Failed to save order');
     }
   };
 
@@ -101,7 +102,25 @@ export default function GalleryManager() {
       || [item.caption, item.uploaded_by].some(v => v && String(v).toLowerCase().includes(searchLower)))
     .sort((a, b) => b.id - a.id);
 
+  // The upload panel only takes space when it's needed: on request, for an
+  // empty gallery, while uploading, or when files are dragged onto the page.
+  const [uploaderOpen, setUploaderOpen] = useState(false);
+  const showUploader = !isReordering && (uploaderOpen || items.length === 0 || uploadingFiles.length > 0);
+  useEffect(() => {
+    const onDragEnter = (e) => { if (e.dataTransfer?.types?.includes('Files')) setUploaderOpen(true); };
+    window.addEventListener('dragenter', onDragEnter);
+    return () => window.removeEventListener('dragenter', onDragEnter);
+  }, []);
+
   const toolbarActions = [
+    {
+      id: 'upload',
+      label: 'Upload Photos',
+      icon: Upload,
+      variant: 'primary',
+      onClick: () => setUploaderOpen(open => !open),
+      hidden: isReordering,
+    },
     {
       id: 'select-all',
       label: selectedIds.length === items.length ? 'Deselect All' : 'Select All',
@@ -134,16 +153,21 @@ export default function GalleryManager() {
         filters={{ view: { options: ['grid', 'list'], value: viewMode, onChange: setViewMode } }}
       >
         {/* Multi-Upload Dropzone */}
-        {!isReordering && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-dashed border-[#A67B5B]/20 transition-all hover:border-[#A67B5B]/40">
-            <div className="flex items-center gap-4 mb-4">
+        {showUploader && (
+          <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-dashed border-[#A67B5B]/20 transition-all hover:border-[#A67B5B]/40">
+            <div className="flex items-center gap-3 mb-3">
               <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
                 <ImageIcon className="w-5 h-5 text-[#A67B5B]" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-sm font-bold text-stone-800">Add Gallery Photos</h3>
-                <p className="text-xs text-stone-500">Drag and drop multiple images to upload them instantly</p>
+                <p className="text-xs text-stone-600">Drop images here (or anywhere on the page) to upload them instantly</p>
               </div>
+              {items.length > 0 && uploadingFiles.length === 0 && (
+                <button type="button" onClick={() => setUploaderOpen(false)} className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100" aria-label="Close upload panel">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <ImageUpload
               allowMultiple={true}
@@ -221,7 +245,7 @@ export default function GalleryManager() {
           </Overlay>
         )}
 
-        {loading ? <p>Loading...</p> : viewMode === 'grid' ? (
+        {loading ? <EmptyState loading rows={4} /> : viewMode === 'grid' ? (
           <GalleryGrid
             items={filteredItems}
             uploadingFiles={uploadingFiles}
@@ -297,7 +321,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
           >
             {item.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
           </button>
-          <button
+          <button aria-label="Delete photo"
             onClick={() => onDelete(item.id)}
             className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg backdrop-blur-sm"
           >
@@ -429,7 +453,7 @@ function GalleryList({ items, uploadingFiles, selectedIds, onToggleSelection, on
               </div>
 
               <div className="flex items-center justify-end gap-2">
-                <button
+                <button aria-label="Edit photo position"
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                   className="p-2 rounded-lg text-stone-400 hover:text-[#A67B5B] hover:bg-stone-100 transition-colors"
                 >
@@ -441,7 +465,7 @@ function GalleryList({ items, uploadingFiles, selectedIds, onToggleSelection, on
                 >
                   {item.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
-                <button
+                <button aria-label="Delete photo"
                   onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
                   className="p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                 >

@@ -10,6 +10,9 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminCard from '../../components/admin/AdminCard';
 import Spinner from '../../components/admin/Spinner';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
+import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
+import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
+import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
 
 const mockGuest = {
     name: "John Doe",
@@ -36,9 +39,10 @@ export default function AdminEmails() {
     email_gift_message: '',
   });
   const [savingSettings, setSavingSettings] = useState(false);
+  const { dirty, markSaved } = useUnsavedChanges(emailSettings);
 
   const handleBulkSend = async () => {
-    if (!window.confirm('Send digital invitations to all guests with pending RSVPs and valid email addresses?')) return;
+    if (!await confirmAction('Send digital invitations to all guests with pending RSVPs and valid email addresses?')) return;
     setLoading(true);
     try {
         // Fetch current guest list to find pending ones
@@ -53,12 +57,12 @@ export default function AdminEmails() {
         );
 
         if (pendingGuests.length === 0) {
-            alert('No pending primary guests with email addresses found.');
+            notifyError('No pending primary guests with email addresses found.');
             setLoading(false);
             return;
         }
 
-        if (!window.confirm(`Found ${pendingGuests.length} primary guests to invite. Proceed?`)) {
+        if (!await confirmAction(`Found ${pendingGuests.length} primary guests to invite. Proceed?`)) {
             setLoading(false);
             return;
         }
@@ -66,10 +70,10 @@ export default function AdminEmails() {
         const guestIds = pendingGuests.map(g => g.id);
         const res = await invitationService.sendBulk(guestIds);
         
-        alert(`Successfully queued ${res.data.sent_count} invitations! ${res.data.error_count > 0 ? res.data.error_count + ' failed.' : ''}`);
+        notifySuccess(`Successfully queued ${res.data.sent_count} invitations! ${res.data.error_count > 0 ? res.data.error_count + ' failed.' : ''}`);
     } catch(e) {
         console.error("Bulk send failed", e);
-        alert('Failed to send bulk invitations: ' + (e.response?.data?.message || e.message));
+        notifyError('Failed to send bulk invitations: ' + (e.response?.data?.message || e.message));
     }
     setLoading(false);
   };
@@ -79,9 +83,10 @@ export default function AdminEmails() {
     setSavingSettings(true);
     try {
         await settingService.update(emailSettings);
-        alert('Email templates saved successfully!');
+        markSaved(emailSettings);
+        notifySuccess('Email templates saved successfully!');
     } catch {
-        alert('Failed to save email templates');
+        notifyError('Failed to save email templates');
     }
     setSavingSettings(false);
   };
@@ -117,7 +122,7 @@ export default function AdminEmails() {
             }
 
             // Load Email Settings
-            setEmailSettings({
+            const loadedEmailSettings = {
                 email_invitation_subject: res.data.email_invitation_subject || '',
                 email_invitation_message: res.data.email_invitation_message || '',
                 email_rsvp_subject: res.data.email_rsvp_subject || '',
@@ -125,16 +130,19 @@ export default function AdminEmails() {
                 email_rsvp_declined_message: res.data.email_rsvp_declined_message || '',
                 email_gift_subject: res.data.email_gift_subject || '',
                 email_gift_message: res.data.email_gift_message || '',
-            });
+            };
+            setEmailSettings(loadedEmailSettings);
+            markSaved(loadedEmailSettings);
         } catch (e) {
             console.error("Failed to load settings", e);
         }
     };
     loadData();
-  }, []);
+  }, [markSaved]);
 
   return (
     <>
+    <UnsavedChangesStatus dirty={dirty} />
     <AdminPageLayout
       actions={[
         activeTab === 'compose'

@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
 import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
+import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminModal from '../../components/admin/AdminModal';
@@ -12,6 +14,7 @@ import Spinner from '../../components/admin/Spinner';
 import LocationPicker from '../../components/LocationPicker';
 import { INVITATION_SECTIONS, resolveInvitationSections } from '../../utils/invitationSections';
 import { DEFAULT_WHATSAPP_TEMPLATE, WHATSAPP_PLACEHOLDERS, renderWhatsAppMessage } from '../../utils/whatsappMessage';
+import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
 
 const settingSections = [
   {
@@ -94,9 +97,12 @@ export default function AdminSettings() {
 
   const formRef = useRef(null);
 
+  // Last saved values, to know when there are unsaved edits.
+  const { dirty, markSaved } = useUnsavedChanges(settings);
+
   const loadSettings = () => {
     if (settingsData) {
-        setSettings({
+        const loaded = {
           rsvp_enabled: String(settingsData.rsvp_enabled) === 'true',
           admin_email_notifications: String(settingsData.admin_email_notifications) === 'true',
           admin_email: settingsData.admin_email || '',
@@ -111,11 +117,13 @@ export default function AdminSettings() {
           venue_lng: settingsData.venue_lng || '',
           whatsapp_message_template: settingsData.whatsapp_message_template || DEFAULT_WHATSAPP_TEMPLATE,
           invitation_sections: resolveInvitationSections(settingsData.invitation_sections),
-        });
+        };
+        setSettings(loaded);
+        markSaved(loaded);
     }
   };
 
-  useEffect(loadSettings, [settingsData]);
+  useEffect(loadSettings, [settingsData, markSaved]);
 
   const handleDiscard = () => {
     loadSettings();
@@ -133,6 +141,7 @@ export default function AdminSettings() {
         };
 
         await updateSettingsMutation.mutateAsync(payload);
+        markSaved(settings);
         toast.success('System settings saved successfully');
     } catch (err) {
         console.error('Settings save error:', err);
@@ -142,13 +151,13 @@ export default function AdminSettings() {
 
   const handle2faToggle = async () => {
     if (is2faEnabled) {
-        if (window.confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+        if (await confirmAction('Are you sure you want to disable Two-Factor Authentication?')) {
             try {
                 await twoFactorService.disable();
                 await checkAuth();
-                alert('2FA disabled');
+                notifySuccess('2FA disabled');
             } catch {
-                alert('Failed to disable 2FA');
+                notifyError('Failed to disable 2FA');
             }
         }
     } else {
@@ -158,7 +167,7 @@ export default function AdminSettings() {
             setTwoFactorData(res.data);
             setShow2faModal(true);
         } catch {
-            alert('Failed to initiate 2FA setup');
+            notifyError('Failed to initiate 2FA setup');
         }
         setVerifying2fa(false);
     }
@@ -172,9 +181,9 @@ export default function AdminSettings() {
         await checkAuth();
         setShow2faModal(false);
         setVerificationCode('');
-        alert('Two-factor authentication enabled successfully!');
+        notifySuccess('Two-factor authentication enabled successfully!');
     } catch (e) {
-        alert(e.response?.data?.message || 'Invalid verification code');
+        notifyError(e.response?.data?.message || 'Invalid verification code');
     }
     setVerifying2fa(false);
   };
@@ -182,6 +191,8 @@ export default function AdminSettings() {
   if (isLoading) return <div className="text-center py-8"><Spinner size="lg" /></div>;
 
   return (
+    <>
+    <UnsavedChangesStatus dirty={dirty} />
     <AdminPageLayout
       actions={[
         {
@@ -190,14 +201,14 @@ export default function AdminSettings() {
           icon: Save,
           variant: 'primary',
           onClick: () => formRef.current?.requestSubmit(),
-          disabled: updateSettingsMutation.isPending,
+          disabled: updateSettingsMutation.isPending || !dirty,
         },
         {
           id: 'discard-settings',
           label: 'Discard Changes',
           icon: RotateCcw,
           onClick: handleDiscard,
-          disabled: updateSettingsMutation.isPending,
+          disabled: updateSettingsMutation.isPending || !dirty,
         },
       ]}
       hero={
@@ -520,6 +531,7 @@ export default function AdminSettings() {
         </form>
       </AdminModal>
     </AdminPageLayout>
+    </>
   );
 }
 

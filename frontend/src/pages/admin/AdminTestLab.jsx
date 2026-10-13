@@ -11,6 +11,7 @@ import AdminCard from '../../components/admin/AdminCard';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import { AdminInput } from '../../components/admin/AdminInput';
+import { notifyError } from '../../utils/feedback';
 
 const STATUS_COLORS = {
   ok: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', dot: 'bg-green-500' },
@@ -108,7 +109,7 @@ export default function AdminTestLab() {
 
   // --- Simulate Live Update ---
   const handleSimulateLiveUpdate = async () => {
-    if (!liveMsg.trim()) return alert('Enter a message');
+    if (!liveMsg.trim()) return notifyError('Enter a message');
     setLoading(true);
     addLog(`Posting live update: "${liveMsg}"`, 'info');
     try {
@@ -141,7 +142,7 @@ export default function AdminTestLab() {
 
   // --- Email Test ---
   const handleSendTestEmail = async (type) => {
-    if (!testEmail) return alert('Enter an email');
+    if (!testEmail) return notifyError('Enter an email');
     setLoading(true);
     addLog(`Sending ${type} to ${testEmail}...`, 'info');
     try {
@@ -155,7 +156,7 @@ export default function AdminTestLab() {
 
   // --- Flight Notification Test ---
   const handleSendTestFlightNotification = async (type) => {
-    if (!testEmail) return alert('Enter an email in the Email System card first');
+    if (!testEmail) return notifyError('Enter an email in the Email System card first');
     setLoading(true);
     addLog(`Sending test flight notification (${type}) to ${testEmail}...`, 'info');
     try {
@@ -584,7 +585,7 @@ export default function AdminTestLab() {
                 onChange={(e) => setTestCode(e.target.value.toUpperCase())}
                 className="flex-1 p-2 border border-stone-200 rounded-lg outline-none font-mono text-center tracking-widest font-bold"
               />
-              <button onClick={generateRandomCode} className="p-2 bg-stone-100 rounded-lg hover:bg-stone-200 text-stone-600">
+              <button aria-label="Generate a random code" onClick={generateRandomCode} className="p-2 bg-stone-100 rounded-lg hover:bg-stone-200 text-stone-600">
                 <RefreshCw className="w-5 h-5" />
               </button>
             </div>
