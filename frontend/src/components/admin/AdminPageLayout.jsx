@@ -31,7 +31,9 @@ import useActivityPanel from './useActivityPanel';
  * @param {boolean}   [toolbarHidden]  - Hide the toolbar (e.g. while a bulk-selection bar is shown)
  * @param {boolean}   [fill]           - Fit the viewport; content scrolls inside AdminListPanel
  * @param {object}    [panel]          - Side panel config (see AdminSidePanel);
- *                                      pages without one get the Activity panel
+ *                                      pages without one get the Activity panel.
+ *                                      A page panel makes the page fit the viewport
+ *                                      like `fill` (the left column scrolls).
  */
 export default function AdminPageLayout({
   hero,
@@ -51,6 +53,14 @@ export default function AdminPageLayout({
     && ((actions && actions.length > 0) || search || filters || toolbarContent);
 
   const fillBody = 'space-y-6 fit:space-y-0 fit:flex fit:flex-col fit:gap-4 fit:flex-1 fit:min-h-0';
+  // A page with its own side panel fits the viewport too, so the panel never
+  // makes the page longer; its left column then scrolls on its own.
+  const fitPage = fill || !!pagePanel;
+  const bodyClass = fill
+    ? fillBody
+    : pagePanel
+      ? 'space-y-6 fit:overflow-y-auto fit:overscroll-contain fit:min-h-0 fit:pr-1 fit:pb-2'
+      : 'space-y-6';
 
   return (
     <>
@@ -61,18 +71,18 @@ export default function AdminPageLayout({
         /* Extra bottom padding so content never hides behind the fixed
            floating toolbar (bottom-center), especially on mobile. */
         className={`admin-page-layout space-y-5 pb-28 lg:pb-24 ${
-          fill
+          fitPage
             ? 'fit:h-[calc(100dvh-7rem)] fit:flex fit:flex-col fit:overflow-hidden fit:space-y-0 fit:gap-5'
             : ''
         }`}
-        data-layout={fill ? 'fill' : 'flow'}
+        data-layout={fitPage ? 'fill' : 'flow'}
       >
-        {fill ? <div className="fit:shrink-0 space-y-5">{hero}{summary}</div> : <>{hero}{summary}</>}
+        {fitPage ? <div className="fit:shrink-0 space-y-5">{hero}{summary}</div> : <>{hero}{summary}</>}
 
         {panel.mobile !== false && <SidePanelMobileBar panel={panel} />}
 
-        <div className={`lg:flex lg:gap-5 ${fill ? 'fit:flex-1 fit:min-h-0' : ''}`}>
-          <div className={`lg:flex-1 min-w-0 ${fill ? fillBody : 'space-y-6'}`}>{children}</div>
+        <div className={`lg:flex lg:gap-5 ${fitPage ? 'fit:flex-1 fit:min-h-0' : ''}`}>
+          <div className={`lg:flex-1 min-w-0 ${bodyClass}`}>{children}</div>
           <SidePanelAside key={panel.id || panel.title} panel={panel} />
         </div>
       </motion.div>

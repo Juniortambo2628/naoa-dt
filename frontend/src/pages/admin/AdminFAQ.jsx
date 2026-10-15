@@ -1,225 +1,164 @@
-import React, { useState, useEffect, useRef } from 'react';
-import useRole from '../../hooks/useRole';
-import { motion, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Edit, Trash2, Save, HelpCircle, GripVertical, Image as ImageIcon, Table as TableIcon, CheckCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Plus, Trash2, Save, HelpCircle, ArrowUp, ArrowDown, Image as ImageIcon, Table as TableIcon } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
-import TableInsertModal from '../../components/admin/TableInsertModal';
-import 'react-quill-new/dist/quill.snow.css'; // ES6
+import 'react-quill-new/dist/quill.snow.css';
 import { FilePond, registerPlugin } from 'react-filepond';
 import 'filepond/dist/filepond.min.css';
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import TableInsertModal from '../../components/admin/TableInsertModal';
 import { useFAQs } from '../../hooks/useApiHooks';
 import { faqService, contentService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminListPanel from '../../components/admin/AdminListPanel';
-import AdminModal from '../../components/admin/AdminModal';
-import EmptyState from '../../components/admin/EmptyState';
 import AdminCard from '../../components/admin/AdminCard';
-import AdminBulkActions from '../../components/admin/AdminBulkActions';
+import EmptyState from '../../components/admin/EmptyState';
+import EditableFieldset from '../../components/admin/EditableFieldset';
 import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
-import useFilteredItems from '../../hooks/useFilteredItems';
-import useCrudHandlers from '../../hooks/useCrudHandlers';
-import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
+import useAdminAction from '../../hooks/useAdminAction';
+import useRole from '../../hooks/useRole';
+import useUnsavedChangesGuard from '../../hooks/useUnsavedChangesGuard';
+import { notifyError } from '../../utils/feedback';
 
 registerPlugin(FilePondPluginImagePreview);
 
-function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, onDelete }) {
-    const dragControls = useDragControls();
-    const { canEdit } = useRole();
+const NEW = 'new';
 
-    return (
-        <Reorder.Item
-            value={faq}
-            dragListener={false}
-            dragControls={dragControls}
-            className={`p-4 flex gap-4 items-start hover:bg-stone-50 transition-colors shadow-sm relative group ${isSelected ? 'bg-[#A67B5B]/5' : 'bg-white'}`}
-        >
-            {canEdit && <div
-                className={`mt-1 text-stone-300 hover:text-stone-500 ${searchQuery ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}
-                onPointerDown={(e) => { if (!searchQuery) dragControls.start(e); }}
-            >
-                <GripVertical className="w-5 h-5" />
-            </div>}
-            <div
-                className="w-5 h-5 mt-1.5 rounded border flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors"
-                onClick={(e) => { e.stopPropagation(); onToggleSelect(faq.id); }}
-            >
-                {isSelected && <CheckCircle className="w-3.5 h-3.5 text-[#A67B5B]" />}
-            </div>
-            <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-stone-800 text-lg mb-2">{faq.question}</h3>
-                <div
-                    className="faq-answer-prose text-stone-600 prose prose-sm max-w-none max-h-24 overflow-hidden relative"
-                    dangerouslySetInnerHTML={{ __html: faq.answer }}
-                />
-                <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-stone-50 to-transparent pointer-events-none"></div>
-            </div>
-            <div className="flex gap-2 shrink-0">
-                <Button edit
-                    size="icon"
-                    icon={Edit}
-                    aria-label={`Edit FAQ: ${faq.question}`}
-                    title="Edit"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => { e.stopPropagation(); onEdit(faq); }}
-                />
-                <Button edit
-                    variant="danger"
-                    size="icon"
-                    icon={Trash2}
-                    aria-label={`Delete FAQ: ${faq.question}`}
-                    title="Delete"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => { e.stopPropagation(); onDelete(faq.id); }}
-                />
-            </div>
-        </Reorder.Item>
-    );
-}
+const QUILL_MODULES = {
+    toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ color: ['#000000', '#ffffff', '#4A3F35', '#A67B5B', '#8B6A4D', '#7D8B9A', '#8B9A7D', '#D4A59A', '#F8E8E0', '#6B5E53', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff'] }, { background: [] }],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ align: [] }],
+        ['link', 'clean'],
+    ],
+};
 
-function FaqGridCard({ faq, isSelected, onToggleSelect, onEdit, onDelete }) {
-    return (
-        <div
-            onClick={() => onToggleSelect(faq.id)}
-            className={`p-5 rounded-2xl border transition-all cursor-pointer ${
-                isSelected
-                    ? 'border-[#A67B5B] ring-2 ring-[#A67B5B]/20 bg-[#A67B5B]/5'
-                    : 'border-stone-100 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
-            }`}
-        >
-            <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#A67B5B] border-[#A67B5B]' : 'border-stone-300'}`}>
-                        {isSelected && <CheckCircle className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <h3 className="font-medium text-stone-800 line-clamp-1">{faq.question}</h3>
-                </div>
-            </div>
-            <div
-                className="faq-answer-prose text-stone-600 prose prose-sm max-w-none max-h-32 overflow-hidden relative mb-4"
-                dangerouslySetInnerHTML={{ __html: faq.answer }}
-            />
-            <div className="flex gap-2">
-                <Button edit
-                    size="sm"
-                    icon={Edit}
-                    className="flex-1"
-                    onClick={(e) => { e.stopPropagation(); onEdit(faq); }}
-                >
-                    Edit
-                </Button>
-                <Button edit
-                    variant="danger"
-                    size="sm"
-                    icon={Trash2}
-                    className="flex-1"
-                    onClick={(e) => { e.stopPropagation(); onDelete(faq.id); }}
-                >
-                    Delete
-                </Button>
-            </div>
-        </div>
-    );
-}
-
+/**
+ * FAQs: the questions are the side panel's list; the selected question is
+ * edited on the left; Save / Add / Delete / Move live in the shared toolbar.
+ * Each question keeps its own draft, so switching between them never loses
+ * an edit (unsaved ones are marked with a dot).
+ */
 export default function AdminFAQ() {
     const { data: faqs = [], isLoading: loading, refetch } = useFAQs();
     const { searchQuery } = useSearch();
+    const { canEdit } = useRole();
     const quillRef = useRef(null);
-    const [reorderableFaqs, setReorderableFaqs] = useState([]);
-    const [, setOrder] = useState(0);
+    const [list, setList] = useState([]);
+    const [activeId, setActiveId] = useState(null);
+    const [drafts, setDrafts] = useState({}); // id (or NEW) -> { question, answer }
     const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
     const [tableModalOpen, setTableModalOpen] = useState(false);
-    const [viewMode, setViewMode] = useState('list');
-    const [selectedIds, setSelectedIds] = useState([]);
 
-    const toggleSelection = (id) => {
-        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    // Keep the local (reorderable) list in step with the server.
+    useEffect(() => { setList(faqs); }, [faqs]);
+
+    const saved = (id) => list.find((f) => f.id === id);
+    const draftFor = (id) => drafts[id] ?? (id === NEW
+        ? { question: '', answer: '' }
+        : { question: saved(id)?.question || '', answer: saved(id)?.answer || '' });
+    const isDirty = (id) => {
+        const draft = drafts[id];
+        if (!draft) return false;
+        if (id === NEW) return true;
+        const faq = saved(id);
+        return !!faq && (draft.question !== faq.question || draft.answer !== faq.answer);
     };
+    const anyDirty = Object.keys(drafts).some((id) => isDirty(id === NEW ? NEW : Number(id)));
+    useUnsavedChangesGuard(anyDirty);
 
-    const bulkDelete = useBulkAdminAction((id) => faqService.delete(id), {
-        confirm: (ids) => `Delete ${ids.length} selected FAQs?`,
-        success: (count) => `${count} FAQs deleted`,
-        onSuccess: () => { setSelectedIds([]); refetch(); },
-    });
-
-    // Form state
-    const [question, setQuestion] = useState('');
-    const [answer, setAnswer] = useState('');
-
-    const {
-        selectedItem: selectedFaq,
-        modalOpen,
-        setModalOpen,
-        handleAdd,
-        handleEdit,
-        handleDelete,
-    } = useCrudHandlers({
-        service: faqService,
-        onRefresh: refetch,
-    });
-
-    // Sync local reorderable list with server data
+    // Select the first question by default (and after the selected one goes away).
     useEffect(() => {
-        setReorderableFaqs(faqs);
-    }, [faqs]);
+        if (activeId === NEW || list.some((f) => f.id === activeId)) return;
+        setActiveId(list[0]?.id ?? null);
+    }, [list, activeId]);
 
-    useEffect(() => {
-        if (selectedFaq) {
-            setQuestion(selectedFaq.question || '');
-            setAnswer(selectedFaq.answer || '');
-            setOrder(selectedFaq.order || 0);
-        } else {
-            setQuestion('');
-            setAnswer('');
-            setOrder(0);
-        }
-    }, [selectedFaq, modalOpen]);
+    const searchLower = (searchQuery || '').trim().toLowerCase();
+    const visible = useMemo(() => list.filter((faq) => !searchLower
+        || `${faq.question} ${faq.answer}`.toLowerCase().includes(searchLower)), [list, searchLower]);
 
-    const handleEditFaq = (faq) => {
-        setAnswer(faq.answer);
-        setUploadedFileUrl(null);
-        handleEdit(faq);
-    };
+    const items = [
+        ...(drafts[NEW] ? [{ id: NEW, label: drafts[NEW].question || 'New question', dot: true }] : []),
+        ...visible.map((faq) => ({ id: faq.id, label: draftFor(faq.id).question || 'Untitled question', dot: isDirty(faq.id) })),
+    ];
 
-    const saveFaq = useAdminAction(() => (selectedFaq
-        ? faqService.update(selectedFaq.id, { question, answer, order: selectedFaq.order })
-        : faqService.create({ question, answer })), {
+    const draft = activeId != null ? draftFor(activeId) : null;
+    const setDraft = (patch) => setDrafts((all) => ({ ...all, [activeId]: { ...draftFor(activeId), ...patch } }));
+    const forget = (id) => setDrafts(({ [id]: _dropped, ...rest }) => rest);
+
+    const saveFaq = useAdminAction((id, values) => (id === NEW
+        ? faqService.create(values)
+        : faqService.update(id, { ...values, order: saved(id)?.order })), {
         key: () => 'save',
+        success: 'FAQ saved',
         error: 'Failed to save FAQ.',
-        onSuccess: () => { setModalOpen(false); refetch(); },
+        onSuccess: (res, id) => {
+            forget(id);
+            if (id === NEW && res?.data?.id) setActiveId(res.data.id);
+            refetch();
+        },
     });
-    const handleSave = (e) => {
-        e.preventDefault();
-        saveFaq.run();
+    const save = () => {
+        if (!draft?.question.trim()) {
+            notifyError('Write the question first.');
+            return;
+        }
+        saveFaq.run(activeId, { question: draft.question.trim(), answer: draft.answer });
+    };
+
+    const selectNeighbour = (id) => {
+        const index = list.findIndex((f) => f.id === id);
+        const next = list[index + 1] || list[index - 1];
+        setActiveId(next?.id ?? null);
+    };
+    const deleteFaq = useAdminAction((id) => faqService.delete(id), {
+        key: () => 'delete',
+        confirm: 'Delete this FAQ?',
+        success: 'FAQ deleted',
+        error: 'Failed to delete FAQ',
+        onSuccess: (_, id) => { forget(id); selectNeighbour(id); refetch(); },
+    });
+    const remove = () => {
+        if (activeId === NEW) {
+            forget(NEW);
+            setActiveId(list[0]?.id ?? null);
+            return;
+        }
+        deleteFaq.run(activeId);
+    };
+
+    const addFaq = () => {
+        setDrafts((all) => ({ ...all, [NEW]: all[NEW] ?? { question: '', answer: '' } }));
+        setActiveId(NEW);
+        setUploadedFileUrl(null);
     };
 
     const saveOrder = useAdminAction(
-        (newOrder) => faqService.reorder(newOrder.map((item, index) => ({ id: item.id, order: index }))),
-        { key: () => 'reorder', error: 'Failed to update order' },
+        (ordered) => faqService.reorder(ordered.map((item, index) => ({ id: item.id, order: index }))),
+        { key: () => 'reorder', error: 'Failed to update order', onError: () => refetch() },
     );
-    const handleReorder = (newOrder) => {
-        if (searchQuery) return; // Prevent reorder while search is active
-        setReorderableFaqs(newOrder);
-        saveOrder.run(newOrder);
+    const activeIndex = list.findIndex((f) => f.id === activeId);
+    const move = (step) => {
+        const target = activeIndex + step;
+        if (activeIndex < 0 || target < 0 || target >= list.length) return;
+        const next = [...list];
+        [next[activeIndex], next[target]] = [next[target], next[activeIndex]];
+        setList(next);
+        saveOrder.run(next);
     };
-
-    const filteredFaqs = useFilteredItems(reorderableFaqs, searchQuery, (faq, searchLower) =>
-        faq.question.toLowerCase().includes(searchLower) || 
-        faq.answer.toLowerCase().includes(searchLower)
-    );
+    // Order follows the full list, so moving is off while a search narrows it.
+    const canMove = activeId !== NEW && activeIndex >= 0 && !searchLower;
 
     const insertImageToQuill = () => {
         if (!uploadedFileUrl || !quillRef.current) return;
-        
         const editor = quillRef.current.getEditor();
-        const range = editor.getSelection(true); // Get cursor position
+        const range = editor.getSelection(true);
         editor.insertEmbed(range.index, 'image', uploadedFileUrl);
-        editor.setSelection(range.index + 1); // Move cursor right after the image
-        setUploadedFileUrl(null); // Reset after dropping
+        editor.setSelection(range.index + 1);
+        setUploadedFileUrl(null);
     };
 
     const handleInsertTable = (tableHtml) => {
@@ -230,179 +169,130 @@ export default function AdminFAQ() {
         editor.setSelection(range.index + 1);
     };
 
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ 'color': ['#000000', '#ffffff', '#4A3F35', '#A67B5B', '#8B6A4D', '#7D8B9A', '#8B9A7D', '#D4A59A', '#F8E8E0', '#6B5E53', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff'] }, { 'background': [] }],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'align': [] }],
-            ['link', 'clean']
-        ],
-    };
-
     return (
-        <>
-            <AdminPageLayout
-              fill
-              actions={[
-                    {
-                        id: 'add-faq',
-                        label: 'Add FAQ',
-                        icon: Plus,
-                        variant: 'secondary',
-                        onClick: handleAdd,
-                    },
-                ]}
-                hero={
-                    <AdminPageHero
-                        title="FAQ Management"
-                        description={`${faqs.length} questions in database`}
-                        breadcrumb="FAQs"
-                        icon={<HelpCircle className="w-5 h-5 text-[#A67B5B]" />}
-                    />
-                }
-                search="Search FAQs…"
-                filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
-            >
-                <AdminBulkActions
-                    selectedCount={selectedIds.length}
-                    onClearSelection={() => setSelectedIds([])}
-                    actions={[
-                        { id: 'delete', label: 'Delete Selected', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
-                    ]}
+        <AdminPageLayout
+            actions={[
+                {
+                    id: 'save-faq',
+                    label: saveFaq.pending ? 'Saving...' : 'Save',
+                    icon: Save,
+                    variant: 'secondary',
+                    onClick: save,
+                    disabled: !draft || !isDirty(activeId) || saveFaq.pending,
+                },
+                { id: 'add-faq', label: 'Add FAQ', icon: Plus, onClick: addFaq },
+                { id: 'move-up', label: 'Move up', icon: ArrowUp, onClick: () => move(-1), disabled: !canMove || activeIndex === 0 || saveOrder.pending },
+                { id: 'move-down', label: 'Move down', icon: ArrowDown, onClick: () => move(1), disabled: !canMove || activeIndex === list.length - 1 || saveOrder.pending },
+                { id: 'delete-faq', label: activeId === NEW ? 'Discard' : 'Delete', icon: Trash2, variant: 'danger', onClick: remove, disabled: !draft || deleteFaq.pending },
+            ]}
+            panel={{
+                id: 'faqs',
+                title: 'Questions',
+                icon: HelpCircle,
+                subtitle: searchLower
+                    ? `${visible.length} of ${list.length} match your search`
+                    : `${list.length} ${list.length === 1 ? 'question' : 'questions'} · in the order guests see them`,
+                items,
+                activeId,
+                onChange: (id) => { setActiveId(id); setUploadedFileUrl(null); },
+            }}
+            hero={
+                <AdminPageHero
+                    title="FAQ Management"
+                    description={`${faqs.length} questions in database`}
+                    breadcrumb="FAQs"
+                    icon={<HelpCircle className="w-5 h-5 text-[#A67B5B]" />}
                 />
-
-                <AdminListPanel>
-                    {loading ? (
-                        <EmptyState loading />
-                    ) : filteredFaqs.length === 0 ? (
-                        <EmptyState icon={HelpCircle} message="No FAQs added yet" searchQuery={searchQuery} action={{ label: 'Add a FAQ', onClick: handleAdd }} />
-                    ) : viewMode === 'list' ? (
-                        <Reorder.Group axis="y" values={filteredFaqs} onReorder={handleReorder} className="divide-y divide-stone-100">
-                            {filteredFaqs.map((faq) => (
-                                <FaqReorderItem
-                                    key={faq.id}
-                                    faq={faq}
-                                    searchQuery={searchQuery}
-                                    isSelected={selectedIds.includes(faq.id)}
-                                    onToggleSelect={toggleSelection}
-                                    onEdit={handleEditFaq}
-                                    onDelete={(id) => handleDelete(id, { confirmMessage: 'Are you sure you want to delete this FAQ?' })}
-                                />
-                            ))}
-                        </Reorder.Group>
-                    ) : (
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {filteredFaqs.map((faq) => (
-                                <FaqGridCard
-                                    key={faq.id}
-                                    faq={faq}
-                                    isSelected={selectedIds.includes(faq.id)}
-                                    onToggleSelect={toggleSelection}
-                                    onEdit={handleEditFaq}
-                                    onDelete={(id) => handleDelete(id, { confirmMessage: 'Are you sure you want to delete this FAQ?' })}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </AdminListPanel>
-
-                <AdminModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedFaq ? 'Edit FAQ' : 'Add New FAQ'} size="2xl">
-                    <form onSubmit={handleSave} className="space-y-6">
+            }
+            search="Search FAQs…"
+        >
+            {loading ? (
+                <EmptyState loading />
+            ) : !draft ? (
+                <AdminCard>
+                    <EmptyState icon={HelpCircle} message="No FAQs added yet" action={{ label: 'Add a FAQ', icon: Plus, onClick: addFaq }} />
+                </AdminCard>
+            ) : (
+                <EditableFieldset>
+                    <AdminCard className="space-y-5">
                         <div>
                             <label htmlFor="faq-question" className="block text-sm font-medium text-stone-700 mb-1">Question</label>
                             <input
                                 id="faq-question"
                                 type="text"
-                                value={question}
-                                onChange={(e) => setQuestion(e.target.value)}
+                                value={draft.question}
+                                onChange={(e) => setDraft({ question: e.target.value })}
+                                placeholder="e.g. Is there parking at the venue?"
                                 className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#A67B5B]/20 outline-none"
-                                required
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700 mb-1">Answer (Rich Text)</label>
-                                <div className="bg-white border rounded-xl overflow-hidden" style={{ minHeight: '300px' }}>
-                                    <ReactQuill 
-                                        ref={quillRef}
-                                        theme="snow" 
-                                        value={answer} 
-                                        onChange={setAnswer} 
-                                        modules={modules}
-                                        style={{ height: '250px' }}
+                        <div>
+                            <span className="block text-sm font-medium text-stone-700 mb-1">Answer</span>
+                            <div className="bg-white border rounded-xl overflow-hidden faq-editor">
+                                <ReactQuill
+                                    key={activeId}
+                                    ref={quillRef}
+                                    theme="snow"
+                                    value={draft.answer}
+                                    // Quill normalises HTML on load; only real edits count.
+                                    onChange={(value, _delta, source) => { if (source === 'user') setDraft({ answer: value }); }}
+                                    modules={QUILL_MODULES}
+                                    readOnly={!canEdit}
+                                    style={{ height: '260px' }}
+                                />
+                            </div>
+                        </div>
+                    </AdminCard>
+
+                    {canEdit && (
+                        <AdminCard className="mt-4">
+                            <h3 className="text-sm font-medium text-stone-700 mb-1">Images and tables</h3>
+                            <p className="text-xs text-stone-500 mb-3">Upload an image, then insert it where the cursor is in the answer.</p>
+                            <div className="grid sm:grid-cols-2 gap-3 items-start">
+                                <div className="bg-stone-50 rounded-xl border border-stone-200 p-2">
+                                    <FilePond
+                                        key={activeId}
+                                        server={{
+                                            process: async (fieldName, file, metadata, load, error) => {
+                                                const formData = new FormData();
+                                                formData.append('image', file, file.name);
+                                                try {
+                                                    const res = await contentService.uploadMedia(formData);
+                                                    setUploadedFileUrl(res.data.url);
+                                                    load(res.data.url);
+                                                } catch {
+                                                    error('Upload failed');
+                                                }
+                                            },
+                                        }}
+                                        allowImagePreview
+                                        name="image"
+                                        labelIdle='Drag & Drop an image or <span class="filepond--label-action">Browse</span>'
+                                        maxFiles={1}
                                     />
                                 </div>
-                            </div>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-stone-700 mb-1">Media Upload</label>
-                                    <p className="text-xs text-stone-500 mb-2">Upload images here, then insert them into the answer text.</p>
-                                    <div className="bg-stone-50 rounded-xl border border-stone-200 p-2">
-                                        <FilePond
-                                            server={{
-                                                process: async (fieldName, file, metadata, load, error, _progress) => {
-                                                    const formData = new FormData();
-                                                    formData.append('image', file, file.name);
-                                                    try {
-                                                        const res = await contentService.uploadMedia(formData);
-                                                        setUploadedFileUrl(res.data.url);
-                                                        load(res.data.url);
-                                                    } catch {
-                                                        error('Upload failed');
-                                                    }
-                                                }
-                                            }}
-                                            allowImagePreview={true}
-                                            name="image"
-                                            labelIdle='Drag & Drop your files or <span class="filepond--label-action">Browse</span>'
-                                            maxFiles={1}
-                                        />
-                                        
-                                        {uploadedFileUrl && (
-                                            <Button edit
-                                                fullWidth
-                                                icon={ImageIcon}
-                                                onClick={insertImageToQuill}
-                                                className="mt-2"
-                                            >
-                                                Insert Uploaded Image into Text
-                                            </Button>
-                                        )}
-
-                                        <Button
-                                            fullWidth
-                                            icon={TableIcon}
-                                            onClick={() => setTableModalOpen(true)}
-                                            className="mt-2"
-                                        >
-                                            Add Table to Answer
-                                        </Button>
-                                    </div>
+                                <div className="space-y-2">
+                                    <Button fullWidth icon={ImageIcon} onClick={insertImageToQuill} disabled={!uploadedFileUrl}>
+                                        Insert uploaded image
+                                    </Button>
+                                    <Button fullWidth icon={TableIcon} onClick={() => setTableModalOpen(true)}>
+                                        Add a table
+                                    </Button>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
-                            <Button onClick={() => setModalOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button edit type="submit" variant="secondary" icon={Save}>
-                                Save FAQ
-                            </Button>
-                        </div>
-                    </form>
-                </AdminModal>
-                {tableModalOpen && (
-                    <TableInsertModal 
-                        isOpen={tableModalOpen}
-                        onClose={() => setTableModalOpen(false)}
-                        onInsert={handleInsertTable}
-                    />
-                )}
-            </AdminPageLayout>
-        </>
+                        </AdminCard>
+                    )}
+                </EditableFieldset>
+            )}
+
+            {tableModalOpen && (
+                <TableInsertModal
+                    isOpen={tableModalOpen}
+                    onClose={() => setTableModalOpen(false)}
+                    onInsert={handleInsertTable}
+                />
+            )}
+        </AdminPageLayout>
     );
 }

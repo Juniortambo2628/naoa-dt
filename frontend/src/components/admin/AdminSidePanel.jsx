@@ -15,7 +15,9 @@ import { buttonClass } from '../buttonStyles';
  *
  *   panel = {
  *     title, icon, subtitle?,
- *     items?: [{ id, label, description?, icon?, badge? (number), dot? (bool) }],
+ *     items?: [{ id, label, description?, icon?, badge? (number), dot? (bool),
+ *               group? (string: a heading shown before the first item of each group),
+ *               muted? (bool: e.g. a hidden CMS section) }],
  *     activeId?, onChange?(id),
  *     navVariant?: 'list' (label + description rows) | 'grid' (compact tiles),
  *     content?: ReactNode   — tools/list shown under the switcher,
@@ -26,8 +28,10 @@ import { buttonClass } from '../buttonStyles';
  *     rail?: ReactNode      — extra content for the collapsed rail,
  *   }
  *
- * Desktop (lg+): a card in a right-hand column, sticky and scrolling on its own;
- * it collapses to a slim icon rail (remembered per panel) for more room.
+ * Desktop (lg+): a card in a right-hand column that always fits the viewport:
+ * its title stays put and only the links / content inside scroll, so a long
+ * list never makes the page longer. It collapses to a slim icon rail
+ * (remembered per panel) for more room.
  * Mobile: a bar under the header —
  *   - switcher only: a row of section chips (one tap to switch, always visible)
  *   - with content:  chips/button that open the panel as a bottom sheet, so the
@@ -90,11 +94,15 @@ export function SidePanelNav({ panel, onPicked }) {
   return (
     <nav aria-label={panel.title}>
       <ul className="space-y-0.5">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const Icon = item.icon;
           const active = item.id === activeId;
+          const groupStart = item.group && item.group !== items[index - 1]?.group;
           return (
             <li key={item.id}>
+              {groupStart && (
+                <p className={`px-2 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400 ${index > 0 ? 'pt-3' : ''}`}>{item.group}</p>
+              )}
               <button
                 type="button"
                 onClick={() => pick(item.id)}
@@ -112,7 +120,7 @@ export function SidePanelNav({ panel, onPicked }) {
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className={`text-sm font-medium truncate ${active ? 'text-[#8B5E3C]' : 'text-stone-800'}`}>{item.label}</span>
+                    <span className={`text-sm font-medium truncate ${active ? 'text-[#8B5E3C]' : item.muted ? 'text-stone-400' : 'text-stone-800'}`}>{item.label}</span>
                     <Badge item={item} />
                   </span>
                   {item.description && <span className="block text-xs text-stone-500 leading-snug mt-0.5">{item.description}</span>}
@@ -157,7 +165,7 @@ function SidePanelRail({ panel, onExpand }) {
     <aside
       aria-label={panel.title}
       data-side-panel="collapsed"
-      className="hidden lg:flex flex-col items-center gap-1.5 w-12 shrink-0 py-2 lg:sticky lg:top-20 self-start bg-white rounded-2xl shadow-sm border border-stone-100"
+      className="hidden lg:flex flex-col items-center gap-1.5 w-12 shrink-0 py-2 lg:sticky lg:top-20 self-start lg:max-h-[calc(100dvh-6.5rem)] overflow-y-auto scrollbar-hide bg-white rounded-2xl shadow-sm border border-stone-100"
     >
       <button type="button" onClick={onExpand} aria-label={`Show ${panel.title}`} title={`Show ${panel.title}`}
         className="p-2 rounded-lg text-stone-500 hover:bg-stone-100 hover:text-[#A67B5B]">
@@ -190,13 +198,15 @@ export function SidePanelAside({ panel }) {
   };
 
   if (collapsed) return <SidePanelRail panel={panel} onExpand={() => toggle(false)} />;
+  const hasListNav = panel.items?.length > 0 && panel.navVariant !== 'grid';
 
   return (
     <aside
       aria-label={panel.title}
       data-side-panel
-      className="hidden lg:flex flex-col w-80 xl:w-[22rem] shrink-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] fit:max-h-full self-start fit:self-stretch bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden"
+      className="hidden lg:flex flex-col w-80 xl:w-[22rem] shrink-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6.5rem)] fit:max-h-full self-start fit:self-stretch bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden"
     >
+      {/* Pinned: title (and a compact tab grid, which is a toolbar, not a list) */}
       <div className="shrink-0 p-4 pb-3 space-y-3 border-b border-stone-100">
         <PanelHeader panel={panel}>
           <button type="button" onClick={() => toggle(true)} aria-label={`Hide ${panel.title}`} title="Collapse panel"
@@ -204,9 +214,15 @@ export function SidePanelAside({ panel }) {
             <PanelRightClose className="w-4 h-4" />
           </button>
         </PanelHeader>
-        <SidePanelNav panel={panel} />
+        {panel.navVariant === 'grid' && <SidePanelNav panel={panel} />}
       </div>
-      {panel.content && <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4">{panel.content}</div>}
+      {/* Scrolls: the links and any tools/list */}
+      {(hasListNav || panel.content) && (
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-4">
+          {hasListNav && <SidePanelNav panel={panel} />}
+          {panel.content && <div className="px-1">{panel.content}</div>}
+        </div>
+      )}
       {panel.footer && <div className="shrink-0 p-4 pt-3 border-t border-stone-100 bg-[#A67B5B]/[0.03]">{panel.footer}</div>}
     </aside>
   );
@@ -236,7 +252,7 @@ function ChipRow({ panel, onPicked }) {
             className={`${buttonClass({ variant: active ? 'secondary' : 'primary', size: 'sm' })} snap-start shrink-0 !rounded-full relative`}
           >
             {Icon && <Icon aria-hidden="true" />}
-            {item.label}
+            <span className={`max-w-[14rem] truncate ${item.muted && !active ? 'opacity-60' : ''}`}>{item.label}</span>
             {(item.badge > 0 || item.dot) && (
               <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-[#A67B5B]'}`} aria-hidden="true" />
             )}
