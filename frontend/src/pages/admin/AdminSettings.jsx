@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -115,7 +115,6 @@ export default function AdminSettings() {
     }
   }, [user]);
 
-  const formRef = useRef(null);
 
   // Last saved values, to know when there are unsaved edits.
   const { dirty, markSaved, baseline } = useUnsavedChanges(settings);
@@ -224,19 +223,20 @@ export default function AdminSettings() {
     <AdminPageLayout
       actions={[
         {
+          // The toolbar is the one place to save.
           id: 'save-settings',
-          label: updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes',
+          label: saveSettings.pending ? 'Saving...' : 'Save Changes',
           icon: Save,
           variant: 'secondary',
-          onClick: () => formRef.current?.requestSubmit(),
-          disabled: updateSettingsMutation.isPending || !dirty,
+          action: saveSettings,
+          disabled: !dirty,
         },
         {
           id: 'discard-settings',
           label: 'Discard Changes',
           icon: RotateCcw,
           onClick: handleDiscard,
-          disabled: updateSettingsMutation.isPending || !dirty,
+          disabled: saveSettings.pending || !dirty,
         },
       ]}
       panel={{
@@ -264,7 +264,7 @@ export default function AdminSettings() {
         />
       }
     >
-          <form ref={formRef} onSubmit={handleSave} className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
           {/* Viewers: read-only, except their own account security */}
           <EditableFieldset allow={activeSection.id === 'security'} className="block space-y-4">
             {/* Wedding Details — single source of truth for date, names & venue */}
@@ -496,23 +496,6 @@ export default function AdminSettings() {
             </SettingsCard>
             )}
 
-            <div className="flex justify-end gap-4 pt-2">
-              <Button
-                onClick={handleDiscard}
-                disabled={updateSettingsMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button edit
-                type="submit"
-                variant="secondary"
-                icon={Save}
-                className="min-w-[140px]"
-                loading={updateSettingsMutation.isPending}
-              >
-                {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
           </EditableFieldset>
           </form>
 

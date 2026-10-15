@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { contentService } from '../../services/api';
 import useAdminAction from '../../hooks/useAdminAction';
+import useUnsavedChangesGuard from '../../hooks/useUnsavedChangesGuard';
 import EditableFieldset from '../../components/admin/EditableFieldset';
-
-import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Languages, Sparkles, Edit } from 'lucide-react';
+import { Save, Eye, EyeOff, Layout, Image as ImageIcon, Sparkles, Edit } from 'lucide-react';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import ToggleButton from '../../components/admin/ToggleButton';
 import Button from '../../components/Button';
 import { useContent } from '../../context/ContentContext';
 import { notifyError } from '../../utils/feedback';
@@ -177,9 +176,9 @@ const PAGES = [
 
 export default function ContentManager() {
   const { contents: globalContents, loading, updateLocalContent } = useContent();
-  const [activePage, setActivePage] = useState('home');
   const [contents, setContents] = useState({});
-  const [expandedSection, setExpandedSection] = useState('home_hero');
+  // One section at a time; the side panel lists every section, grouped by page.
+  const [activeKey, setActiveKey] = useState('home_hero');
   const [activeLang, setActiveLang] = useState('en');
   const [translating, setTranslating] = useState(null);
 
@@ -306,28 +305,70 @@ export default function ContentManager() {
           content: sectionData.content,
           is_visible: sectionData.is_visible ?? true,
       });
-  }, { success: 'Saved', error: 'Failed to save.' });
+  }, {
+      success: (_, sectionKey) => `${SECTIONS.find(s => s.key === sectionKey)?.label || 'Section'} saved`,
+      error: 'Failed to save.',
+      // The site's copy now matches the draft (clears the unsaved dot).
+      onSuccess: (_, sectionKey) => updateLocalContent(sectionKey, { content: contents[sectionKey]?.content }),
+  });
   const handleSave = saveSection.run;
 
+  // Unsaved edits: the draft differs from what the site currently has.
+  const isDirty = (key) => JSON.stringify(contents[key]?.content ?? {}) !== JSON.stringify(globalContents?.[key]?.content ?? {});
+  useUnsavedChangesGuard(SECTIONS.some((section) => isDirty(section.key)));
+
   if (loading) return <div className="p-8 text-center text-stone-500">Loading content...</div>;
+
+  const section = SECTIONS.find(s => s.key === activeKey) || SECTIONS[0];
+  const page = PAGES.find(p => p.sections.includes(section.key));
+  const sectionData = contents[section.key] || { content: {} };
+  const sectionVisible = sectionData.is_visible !== false;
+  const panelItems = PAGES.flatMap(p => p.sections.map(key => {
+      const def = SECTIONS.find(s => s.key === key);
+      const hidden = contents[key]?.is_visible === false;
+      return def && {
+          id: key,
+          label: def.label,
+          group: p.label,
+          muted: hidden,
+          description: hidden ? 'Hidden on the site' : undefined,
+          dot: isDirty(key),
+      };
+  })).filter(Boolean);
 
   return (
     <>
     <AdminPageLayout
-      actions={PAGES.map(page => ({
-        id: page.id,
-        readOnly: true, // page tabs
-        label: page.label,
-        variant: activePage === page.id ? 'secondary' : 'primary',
-        onClick: () => {
-          setActivePage(page.id);
-          setExpandedSection(page.sections[0]);
+      actions={[
+        {
+          id: 'save-section',
+          label: saveSection.isPending(section.key) ? 'Saving...' : 'Save',
+          icon: Save,
+          variant: 'secondary',
+          onClick: () => handleSave(section.key),
+          disabled: !isDirty(section.key) || saveSection.isPending(section.key),
         },
-      }))}
+        {
+          id: 'toggle-visibility',
+          label: sectionVisible ? 'Hide on site' : 'Show on site',
+          icon: sectionVisible ? EyeOff : Eye,
+          onClick: () => handleToggleVisibility(section.key),
+          disabled: saveVisibility.isPending(section.key),
+        },
+      ]}
+      panel={{
+        id: 'cms',
+        title: 'Page Sections',
+        icon: Layout,
+        subtitle: 'Pick a section to edit. Dots mark unsaved edits.',
+        items: panelItems,
+        activeId: section.key,
+        onChange: setActiveKey,
+      }}
       hero={
         <AdminPageHero
           title="CMS - Content Management"
-          description={`Editing: ${PAGES.find(p => p.id === activePage)?.label}`}
+          description={`Editing: ${page?.label} › ${section.label}`}
           breadcrumb="CMS"
           icon={<Edit className="w-5 h-5 text-[#A67B5B]" />}
         />
@@ -342,41 +383,15 @@ export default function ContentManager() {
         }],
       }}
     >
-       <div className="space-y-4">
-           {SECTIONS.filter(s => PAGES.find(p => p.id === activePage)?.sections.includes(s.key)).map(section => {
-               const isExpanded = expandedSection === section.key;
-               const sectionData = contents[section.key] || { content: {} };
-               const isSaving = saveSection.isPending(section.key);
-
-               return (
-                   <div key={section.key} className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
-                        <div 
-                             role="button"
-                             tabIndex={0}
-                             onClick={() => setExpandedSection(isExpanded ? null : section.key)}
-                             className={`w-full flex items-center justify-between p-4 transition-colors text-left cursor-pointer ${isExpanded ? 'bg-stone-50' : 'hover:bg-stone-50'}`}
-                        >
-                           <span className="font-medium text-stone-700 flex items-center gap-2">
-                                {section.label}
-                                {sectionData.content && Object.keys(sectionData.content).length > 0 && (
-                                    <span className="w-2 h-2 rounded-full bg-green-400" title="Has content"></span>
-                                )}
-                           </span>
-                           <div className="flex items-center gap-6">
-                               <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                                   <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Visible</span>
-                                    <ToggleButton
-                                        enabled={sectionData.is_visible !== false}
-                                        onToggle={() => handleToggleVisibility(section.key)}
-                                        label={`Toggle ${section.label} visibility`}
-                                    />
-                               </div>
-                               {isExpanded ? <ChevronDown className="w-5 h-5 text-stone-400" /> : <ChevronRight className="w-5 h-5 text-stone-400" />}
-                           </div>
-                       </div>
-
-                        {isExpanded && (
-                            <div className="p-6 border-t border-stone-100 space-y-6 animate-in slide-in-from-top-2">
+       <div className="bg-white rounded-xl shadow-sm border border-stone-100">
+           <div className="px-5 py-4 border-b border-stone-100 flex items-center gap-2">
+               <h2 className="font-medium text-stone-800">{section.label}</h2>
+               {!sectionVisible && (
+                   <span className="px-2 py-0.5 rounded-full bg-stone-100 text-[11px] font-medium text-stone-500">Hidden on the site</span>
+               )}
+               {isDirty(section.key) && <span className="ml-auto text-xs text-amber-700">Unsaved changes</span>}
+           </div>
+           <div className="p-5">
                                 <EditableFieldset>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {section.fields.map(field => {
@@ -495,23 +510,8 @@ export default function ContentManager() {
                                 </div>
                                 </EditableFieldset>
 
-                                <div className="flex justify-end items-center pt-4 border-t border-stone-50">
-                                     <Button edit
-                                        variant="secondary"
-                                        icon={Save}
-                                        className="min-w-[120px]"
-                                        onClick={() => handleSave(section.key)}
-                                        loading={isSaving}
-                                     >
-                                         {isSaving ? 'Saving...' : 'Save Changes'}
-                                     </Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-        </div>
+           </div>
+       </div>
 
     </AdminPageLayout>
     </>
