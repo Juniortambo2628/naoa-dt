@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Users, UserCheck, Clock, BarChart2, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Users, UserCheck, Clock, BarChart2, RefreshCw, PieChart as PieIcon, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAnalytics } from '../../hooks/useApiHooks';
 import { RSVP_STATUSES, RSVP_ORDER, guestListLink } from '../../utils/rsvp';
@@ -11,9 +12,16 @@ import EmptyState from '../../components/admin/EmptyState';
 import QueryError from '../../components/admin/QueryError';
 
 
+const REPORTS = [
+    { id: 'status', label: 'RSVP Status', icon: PieIcon, description: 'How everyone invited has replied' },
+    { id: 'groups', label: 'Guest Groups', icon: BarChart2, description: 'Replies within each group' },
+    { id: 'timeline', label: 'Response Timeline', icon: TrendingUp, description: 'Confirmations over time' },
+];
+
 export default function AnalyticsCharts() {
     const { data, isLoading, isFetching, isError, error, refetch } = useAnalytics();
     const navigate = useNavigate();
+    const [report, setReport] = useState('status');
 
     if (isLoading) {
         return <EmptyState loading />;
@@ -37,7 +45,7 @@ export default function AnalyticsCharts() {
 
     return (
         <AdminPageLayout
-            actions={[{ id: 'refresh', label: isFetching ? 'Refreshing...' : 'Refresh', icon: RefreshCw, onClick: () => refetch(), disabled: isFetching }]}
+            actions={[{ id: 'refresh', readOnly: true, label: isFetching ? 'Refreshing...' : 'Refresh', icon: RefreshCw, onClick: () => refetch(), disabled: isFetching }]}
             hero={
                 <AdminPageHero
                     title="Analytics & Reports"
@@ -47,21 +55,27 @@ export default function AnalyticsCharts() {
                 />
             }
             summary={<AdminSummaryCards cards={statCards} columns={3} />}
+            panel={{
+                id: 'analytics',
+                title: 'Reports',
+                icon: BarChart2,
+                items: REPORTS,
+                activeId: report,
+                onChange: setReport,
+            }}
         >
-
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* RSVP Status Pie Chart */}
+                {/* One report at a time, picked in the side panel */}
+                {report === 'status' && (
                 <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-4">RSVP Status</h3>
-                    <ResponsiveContainer width="100%" height={250}>
+                    <ResponsiveContainer width="100%" height={340}>
                         <PieChart>
                             <Pie
                                 data={rsvpStatus}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={60}
-                                outerRadius={90}
+                                innerRadius={80}
+                                outerRadius={120}
                                 dataKey="value"
                                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                             >
@@ -73,8 +87,10 @@ export default function AnalyticsCharts() {
                         </PieChart>
                     </ResponsiveContainer>
                 </AdminCard>
+                )}
 
                 {/* Group Distribution — RSVP split per group; click a bar to open that group */}
+                {report === 'groups' && (
                 <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800">Guest Groups</h3>
                     <p className="text-xs text-stone-500 mb-4">RSVP status within each group. Click a group to see its guests.</p>
@@ -110,12 +126,14 @@ export default function AnalyticsCharts() {
                         </div>
                     )}
                 </AdminCard>
+                )}
 
                 {/* RSVP Timeline Graph */}
-                <AdminCard className="lg:col-span-2">
+                {report === 'timeline' && (
+                <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-6">RSVP Cumulative Timeline</h3>
                     {timeline && timeline.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={340}>
                             <AreaChart data={timeline} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -147,7 +165,7 @@ export default function AnalyticsCharts() {
                         </div>
                     )}
                 </AdminCard>
-            </div>
+                )}
         </AdminPageLayout>
     );
 }

@@ -11,6 +11,20 @@ import EmptyState from '../../components/admin/EmptyState';
 import { useSearch } from '../../context/SearchContext';
 import { Skeleton } from '../../components/Skeleton';
 
+const FILTERS = [
+    { id: 'all', label: 'All responses', icon: Users },
+    { id: 'attending', label: 'Attending', icon: CheckCircle },
+    { id: 'declined', label: 'Declined', icon: XCircle },
+    { id: 'with_messages', label: 'With messages', icon: MessageSquare },
+];
+
+function matchesFilter(guest, filter) {
+    if (filter === 'attending') return guest.rsvp_status === 'confirmed';
+    if (filter === 'declined') return guest.rsvp_status === 'declined';
+    if (filter === 'with_messages') return !!guest.rsvp_message;
+    return true;
+}
+
 export default function AdminRSVPs() {
     const { data: guestsData, isLoading } = useGuests();
     const { searchQuery } = useSearch();
@@ -68,11 +82,7 @@ export default function AdminRSVPs() {
         const matchesQuery = matchesPrimary || matchesPlusOnes;
         if (!matchesQuery) return false;
 
-        if (filter === 'with_messages') {
-            return !!guest.rsvp_message;
-        }
-
-        return true;
+        return matchesFilter(guest, filter);
     });
 
     if (isLoading) {
@@ -113,18 +123,15 @@ export default function AdminRSVPs() {
             }
             summary={<AdminSummaryCards cards={statCards} columns={4} />}
             search="Search RSVPs…"
-            filters={{
-              groups: [{
-                id: 'responses',
-                label: 'Show',
-                options: [
-                  { id: 'all', label: 'All Responses' },
-                  { id: 'with_messages', label: 'With Messages' },
-                ],
-                value: filter,
-                onChange: setFilter,
-              }],
-              view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode },
+            filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
+            panel={{
+              id: 'rsvps',
+              title: 'Responses',
+              icon: MessageSquare,
+              subtitle: 'One row per household that replied',
+              items: FILTERS.map((f) => ({ ...f, count: rsvps.filter((guest) => matchesFilter(guest, f.id)).length })),
+              activeId: filter,
+              onChange: setFilter,
             }}
         >
                 <AdminListPanel

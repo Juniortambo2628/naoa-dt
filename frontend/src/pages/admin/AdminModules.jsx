@@ -71,6 +71,7 @@ export default function AdminModules() {
     });
 
     if (loading) return <EmptyState loading rows={6} />;
+    const enabledCount = MODULES.filter(m => isVisible(m.key)).length;
 
     return (
         <AdminPageLayout
@@ -79,18 +80,24 @@ export default function AdminModules() {
             { id: 'disable-all', label: 'Disable All', icon: EyeOff, action: setAll, args: [false] },
           ]}
           search="Search modules…"
-          filters={{
-            groups: [{
-              id: 'status',
-              label: 'Status',
-              options: [
-                { id: 'all', label: 'All' },
-                { id: 'enabled', label: 'Enabled' },
-                { id: 'disabled', label: 'Disabled' },
-              ],
-              value: statusFilter,
-              onChange: setStatusFilter,
-            }],
+          panel={{
+            id: 'modules',
+            title: 'Modules',
+            icon: Layout,
+            subtitle: `${enabledCount} of ${MODULES.length} shown on your website`,
+            items: [
+              { id: 'all', label: 'All modules', icon: Layout, count: MODULES.length },
+              { id: 'enabled', label: 'Enabled', icon: Eye, count: enabledCount },
+              { id: 'disabled', label: 'Disabled', icon: EyeOff, count: MODULES.length - enabledCount },
+            ],
+            activeId: statusFilter,
+            onChange: setStatusFilter,
+            footer: (
+              <p className="text-xs text-stone-600 leading-relaxed">
+                Disabling a module hides it from the website's navigation and its page. Its saved content stays safe
+                and comes back when you enable it again.
+              </p>
+            ),
           }}
           hero={
             <AdminPageHero
@@ -102,7 +109,7 @@ export default function AdminModules() {
           }
         >
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 gap-4">
                 {visibleModules.map(module => {
                     const active = isVisible(module.key);
 
@@ -140,18 +147,6 @@ export default function AdminModules() {
                 <p className="text-center py-8 text-stone-400">No modules match your search or filter.</p>
             )}
 
-            <div className="bg-[#A67B5B]/5 border border-[#A67B5B]/10 p-6 rounded-2xl flex items-start gap-4">
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                    <HelpCircle className="w-5 h-5 text-[#A67B5B]" />
-                </div>
-                <div>
-                    <h4 className="font-semibold text-stone-800 text-sm">Pro Tip</h4>
-                    <p className="text-sm text-stone-600 mt-1">
-                        Disabling a module hides it from the public website navigation and prevents access to its specific page. 
-                        Your saved content remains safe and will reappear when you re-enable the module.
-                    </p>
-                </div>
-            </div>
         </AdminPageLayout>
     );
 }

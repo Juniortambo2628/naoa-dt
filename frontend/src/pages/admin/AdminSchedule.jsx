@@ -22,6 +22,7 @@ export default function AdminSchedule() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [targetEventId, setTargetEventId] = useState(null);
   const { searchQuery } = useSearch();
+  const [activeEventId, setActiveEventId] = useState(null);
 
   useEffect(() => {
     if (events.length > 0 && !targetEventId) {
@@ -105,17 +106,32 @@ export default function AdminSchedule() {
       return { ...event, visible: false };
   }).filter(e => e.visible);
 
+  // The panel lists the events; the selected one's items are shown on the left.
+  const activeEvent = filteredEvents.find(e => e.id === activeEventId) || filteredEvents[0] || null;
+  const formatDate = (date) => new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
   return (
     <>
       <AdminPageLayout
         fill
         actions={[
           {
-            id: 'add-event',
-            label: 'Add Major Event',
-            icon: Calendar,
+            id: 'add-item',
+            label: 'Add Item',
+            icon: Plus,
             variant: 'secondary',
-            onClick: handleCreateEvent,
+            onClick: () => handleAddItem(activeEvent.id),
+            hidden: !activeEvent,
+          },
+          { id: 'add-event', label: 'Add Major Event', icon: Calendar, onClick: handleCreateEvent },
+          { id: 'edit-event', label: 'Edit Event', icon: Edit, onClick: () => handleEditEvent(activeEvent), hidden: !activeEvent },
+          {
+            id: 'delete-event',
+            label: 'Delete Event',
+            icon: Trash2,
+            variant: 'danger',
+            onClick: () => handleDeleteEvent(activeEvent.id),
+            hidden: !activeEvent,
           },
         ]}
         hero={
@@ -127,71 +143,70 @@ export default function AdminSchedule() {
           />
         }
         search="Search schedule…"
+        panel={{
+          id: 'schedule',
+          title: 'Major Events',
+          icon: Calendar,
+          subtitle: searchQuery
+            ? `${filteredEvents.length} of ${events.length} match your search`
+            : `${events.length} ${events.length === 1 ? 'event' : 'events'}`,
+          items: filteredEvents.map(event => ({
+            id: event.id,
+            label: event.name,
+            description: [event.event_date && formatDate(event.event_date), event.venue].filter(Boolean).join(' · '),
+            count: event.display_items.length,
+          })),
+          activeId: activeEvent?.id,
+          onChange: setActiveEventId,
+        }}
       >
         <AdminListPanel plain>
           {loading ? (
           <EmptyState loading />
-        ) : filteredEvents.length === 0 ? (
+        ) : !activeEvent ? (
           <EmptyState icon={Calendar} message="No events yet" searchQuery={searchQuery} action={{ label: 'Add an event', onClick: handleCreateEvent }} />
         ) : (
-          <div className="space-y-8">
-              {filteredEvents.map(event => (
-                  <AdminCard key={event.id}>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-                          <div className="flex items-center gap-3 min-w-0">
-                              <div className="min-w-0">
-                                  <h2 className="text-xl font-medium text-[#4A3F35] break-words">{event.name}</h2>
-                                  <p className="text-stone-500 text-sm break-words">{new Date(event.event_date).toLocaleDateString()} • {event.venue}</p>
-                              </div>
-                              <div className="flex gap-2 flex-shrink-0">
-                                  <Button edit size="icon-sm" icon={Edit} aria-label="Edit Event" title="Edit Event"
-                                      onClick={() => handleEditEvent(event)}
-                                  />
-                                  <Button edit variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete Event" title="Delete Event"
-                                      onClick={() => handleDeleteEvent(event.id)}
-                                  />
-                              </div>
-                          </div>
-                          <Button edit
-                              variant="secondary"
-                              icon={Plus}
-                              onClick={() => handleAddItem(event.id)}
-                              className="self-start sm:self-auto flex-shrink-0"
-                          >
-                              Add Item
-                          </Button>
-                      </div>
+          <AdminCard>
+              <div className="mb-5 min-w-0">
+                  <h2 className="text-xl font-medium text-[#4A3F35] break-words">{activeEvent.name}</h2>
+                  <p className="text-stone-500 text-sm break-words">
+                      {[activeEvent.event_date && formatDate(activeEvent.event_date), activeEvent.event_time?.slice(0, 5), activeEvent.venue].filter(Boolean).join(' • ')}
+                  </p>
+                  {activeEvent.description && <p className="text-sm text-stone-600 mt-2">{activeEvent.description}</p>}
+              </div>
 
-                      <div className="space-y-3">
-                          {event.display_items.map(item => (
-                              <div key={item.id} className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-stone-50 hover:bg-stone-100 transition-colors">
-                                  <div className="w-14 sm:w-16 text-center flex-shrink-0">
-                                      <p className="font-bold text-[#A67B5B]">{item.start_time.slice(0,5)}</p>
-                                      <p className="text-xs text-stone-400">{item.end_time?.slice(0,5)}</p>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                      <h3 className="font-medium text-stone-800 break-words">{item.title}</h3>
-                                      <p className="text-sm text-stone-500 flex items-center gap-1">
-                                          <MapPin className="w-3 h-3 flex-shrink-0" /> <span className="break-words min-w-0">{item.location}</span>
-                                      </p>
-                                  </div>
-                                  <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                                      <Button edit size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
-                                          onClick={() => handleEditItem(item, event.id)}
-                                      />
-                                      <Button edit variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete schedule item" title="Delete"
-                                          onClick={() => handleDeleteItem(item.id)}
-                                      />
-                                  </div>
-                              </div>
-                          ))}
-                          {event.display_items.length === 0 && (
-                              <p className="text-center text-stone-400 py-4">No matching items in this group.</p>
-                          )}
+              <div className="space-y-3">
+                  {activeEvent.display_items.map(item => (
+                      <div key={item.id} className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-stone-50 hover:bg-stone-100 transition-colors">
+                          <div className="w-14 sm:w-16 text-center flex-shrink-0">
+                              <p className="font-bold text-[#A67B5B]">{item.start_time.slice(0,5)}</p>
+                              <p className="text-xs text-stone-400">{item.end_time?.slice(0,5)}</p>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-stone-800 break-words">{item.title}</h3>
+                              {item.location && (
+                                  <p className="text-sm text-stone-500 flex items-center gap-1">
+                                      <MapPin className="w-3 h-3 flex-shrink-0" /> <span className="break-words min-w-0">{item.location}</span>
+                                  </p>
+                              )}
+                          </div>
+                          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                              <Button edit size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
+                                  onClick={() => handleEditItem(item, activeEvent.id)}
+                              />
+                              <Button edit variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete schedule item" title="Delete"
+                                  onClick={() => handleDeleteItem(item.id)}
+                              />
+                          </div>
                       </div>
-                  </AdminCard>
-              ))}
-          </div>
+                  ))}
+                  {activeEvent.display_items.length === 0 && (
+                      <p className="text-center text-stone-400 py-4">
+                          {searchQuery ? 'No matching items in this event.' : 'No items yet — use Add Item to plan this event.'}
+                      </p>
+                  )}
+              </div>
+          </AdminCard>
         )}
         </AdminListPanel>
 

@@ -19,6 +19,14 @@ import GiftImage from '../../components/GiftImage';
 import Spinner from '../../components/admin/Spinner';
 import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
+function matchesView(gift, view) {
+  if (view === 'available') return gift.is_available;
+  if (view === 'reserved') return !gift.is_available && !gift.is_cash_fund;
+  if (view === 'cash') return gift.is_cash_fund;
+  if (view.startsWith('category:')) return gift.category === view.slice('category:'.length);
+  return true;
+}
+
 export default function AdminGifts() {
   const { data: gifts = [], isLoading: loading, refetch } = useGifts();
   const { searchQuery } = useSearch();
@@ -41,10 +49,21 @@ export default function AdminGifts() {
     onSuccess: () => refetch(),
   });
 
+  const [view, setView] = useState('all');
   const filteredGifts = useFilteredItems(gifts, searchQuery, (gift, searchLower) =>
     gift.name.toLowerCase().includes(searchLower) ||
     (gift.description && gift.description.toLowerCase().includes(searchLower))
-  );
+  ).filter((gift) => matchesView(gift, view));
+
+  // Availability views, then one per category the registry uses.
+  const categories = [...new Set(gifts.map((g) => g.category).filter(Boolean))].sort();
+  const views = [
+    { id: 'all', label: 'All gifts', icon: Gift },
+    { id: 'available', label: 'Available', icon: CheckCircle },
+    { id: 'reserved', label: 'Reserved', icon: Heart },
+    { id: 'cash', label: 'Cash funds', icon: DollarSign },
+    ...categories.map((c) => ({ id: `category:${c}`, label: c, group: 'Category' })),
+  ];
 
   const stats = {
     total: gifts.length,
@@ -106,6 +125,15 @@ export default function AdminGifts() {
         summary={<AdminSummaryCards cards={statCards} columns={4} />}
         search="Search gifts…"
         filters={{ view: { options: ['grid', 'list'], value: viewMode, onChange: setViewMode } }}
+        panel={{
+          id: 'gifts',
+          title: 'Registry',
+          icon: Gift,
+          subtitle: `${stats.available} of ${stats.total} still available to guests`,
+          items: views.map((v) => ({ ...v, count: gifts.filter((gift) => matchesView(gift, v.id)).length })),
+          activeId: views.some((v) => v.id === view) ? view : 'all',
+          onChange: (id) => { setView(id); setSelectedIds([]); },
+        }}
       >
         <AdminBulkActions
           selectedCount={selectedIds.length}
@@ -159,7 +187,7 @@ export default function AdminGifts() {
 
 function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onViewClaims }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 @md:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-4 gap-4">
       {gifts.map((gift) => {
         const isSelected = selectedIds.includes(gift.id);
         const isReserved = !gift.is_available;

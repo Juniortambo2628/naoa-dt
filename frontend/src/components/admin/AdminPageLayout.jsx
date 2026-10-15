@@ -82,7 +82,9 @@ export default function AdminPageLayout({
         {panel.mobile !== false && <SidePanelMobileBar panel={panel} />}
 
         <div className={`lg:flex lg:gap-5 ${fitPage ? 'fit:flex-1 fit:min-h-0' : ''}`}>
-          <div className={`lg:flex-1 min-w-0 ${bodyClass}`}>{children}</div>
+          {/* A size container: card grids inside use @-breakpoints (e.g. @3xl:grid-cols-3),
+              so they fit the column left beside the side panel, not the whole screen. */}
+          <div className={`@container lg:flex-1 min-w-0 ${bodyClass}`}>{children}</div>
           <SidePanelAside key={panel.id || panel.title} panel={panel} />
         </div>
       </motion.div>

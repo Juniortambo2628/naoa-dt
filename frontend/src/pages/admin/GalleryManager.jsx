@@ -20,6 +20,13 @@ const POSITION_OPTIONS = ['top', 'left', 'center', 'right', 'bottom'].map((pos) 
   label: pos.charAt(0).toUpperCase() + pos.slice(1),
 }));
 
+const VIEWS = [
+  { id: 'all', label: 'All photos', icon: ImageIcon, match: () => true },
+  { id: 'visible', label: 'On the website', icon: Eye, match: (item) => item.is_visible },
+  { id: 'hidden', label: 'Hidden', icon: EyeOff, match: (item) => !item.is_visible },
+  { id: 'guests', label: 'From guests', icon: UserCheck, match: (item) => !!item.is_guest_upload },
+];
+
 export default function GalleryManager() {
   const { data: fetchedItems, isLoading: loading, refetch: fetchGallery } = useGallery();
   const [items, setItems] = useState([]);
@@ -29,6 +36,7 @@ export default function GalleryManager() {
   const [uploadingFiles, setUploadingFiles] = useState([]);
   const { searchQuery } = useSearch();
   const [viewMode, setViewMode] = useState('grid');
+  const [view, setView] = useState('all');
 
   useEffect(() => {
     if (fetchedItems) setItems(fetchedItems);
@@ -100,8 +108,8 @@ export default function GalleryManager() {
   // Search by caption or uploader; reordering always works on the full set.
   const searchLower = (searchQuery || '').trim().toLowerCase();
   const filteredItems = items
-    .filter(item => isReordering || !searchLower
-      || [item.caption, item.uploaded_by].some(v => v && String(v).toLowerCase().includes(searchLower)))
+    .filter(item => isReordering || (VIEWS.find(v => v.id === view)?.match(item) && (!searchLower
+      || [item.caption, item.uploaded_by].some(v => v && String(v).toLowerCase().includes(searchLower)))))
     .sort((a, b) => b.id - a.id);
 
   // The upload panel only takes space when it's needed: on request, for an
@@ -153,6 +161,15 @@ export default function GalleryManager() {
         }
         search="Search gallery…"
         filters={{ view: { options: ['grid', 'list'], value: viewMode, onChange: setViewMode } }}
+        panel={{
+          id: 'gallery',
+          title: 'Photos',
+          icon: ImageIcon,
+          subtitle: isReordering ? 'Reordering shows every photo' : 'Drop photos anywhere on the page to upload',
+          items: VIEWS.map(({ match, ...v }) => ({ ...v, count: items.filter(match).length })),
+          activeId: isReordering ? 'all' : view,
+          onChange: (id) => { if (!isReordering) setView(id); },
+        }}
       >
         {/* Multi-Upload Dropzone */}
         {showUploader && (
@@ -325,7 +342,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
   );
 
   return isReordering ? (
-    <Reorder.Group axis="y" values={items} onReorder={onReorder} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <Reorder.Group axis="y" values={items} onReorder={onReorder} className="grid grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4 gap-4">
       {items.map(item => (
         <Reorder.Item key={item.id} value={item} className="relative aspect-square bg-stone-100 rounded-xl overflow-hidden shadow-sm cursor-grab active:cursor-grabbing">
           <img src={getAssetUrl(item.image_url)} alt="Gallery Image" className="w-full h-full object-cover" />
@@ -336,7 +353,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
       ))}
     </Reorder.Group>
   ) : (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4 gap-4">
       {uploadingFiles.map(file => (
         <div key={file.id} className="aspect-square rounded-xl overflow-hidden shadow-sm upload-placeholder shimmer-bg">
           <img src={file.preview} alt="Uploading..." className="w-full h-full object-cover" />

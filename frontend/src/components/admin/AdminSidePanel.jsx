@@ -18,6 +18,7 @@ import useRole, { useVisibleActions } from '../../hooks/useRole';
  *   panel = {
  *     title, icon, subtitle?,
  *     items?: [{ id, label, description?, icon?, badge? (number), dot? (bool),
+ *               count? (number: how many things the item holds, e.g. a filter's matches),
  *               group? (string: a heading shown before the first item of each group),
  *               muted? (bool: e.g. a hidden CMS section) }],
  *     activeId?, onChange?(id),
@@ -63,6 +64,9 @@ function Badge({ item }) {
   }
   if (item.dot) {
     return <span className="ml-auto shrink-0 w-2 h-2 rounded-full bg-amber-500" aria-label="Unsaved changes" />;
+  }
+  if (item.count != null) {
+    return <span className="ml-auto shrink-0 text-xs tabular-nums text-stone-400">{item.count}</span>;
   }
   return null;
 }
@@ -444,6 +448,7 @@ function ChipRow({ panel, onPicked, className = '-mx-4 px-4' }) {
           >
             {Icon && <Icon aria-hidden="true" />}
             <span className={`max-w-[14rem] truncate ${item.muted && !active ? 'opacity-60' : ''}`}>{item.label}</span>
+            {item.count != null && <span className={`tabular-nums ${active ? 'opacity-80' : 'opacity-60'}`}>{item.count}</span>}
             {(item.badge > 0 || item.dot) && (
               <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-[#A67B5B]'}`} aria-hidden="true" />
             )}

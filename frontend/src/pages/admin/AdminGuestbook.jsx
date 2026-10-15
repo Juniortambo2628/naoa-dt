@@ -15,6 +15,21 @@ import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
 import { useBulkAdminAction } from '../../hooks/useAdminAction';
 
+const DAY = 24 * 60 * 60 * 1000;
+const PERIODS = [
+  { id: 'all', label: 'All messages', icon: MessageSquare },
+  { id: 'week', label: 'This week', icon: Clock, days: 7 },
+  { id: 'month', label: 'This month', icon: Clock, days: 30 },
+  { id: 'older', label: 'Older', icon: Clock },
+];
+
+function inPeriod(entry, period) {
+  if (period === 'all') return true;
+  const age = Date.now() - new Date(entry.created_at).getTime();
+  if (period === 'older') return age > 30 * DAY;
+  return age <= PERIODS.find((p) => p.id === period).days * DAY;
+}
+
 export default function AdminGuestbook() {
   const { data, isLoading: loading, refetch } = useGuestbook();
   const entries = data?.entries || [];
@@ -28,10 +43,11 @@ export default function AdminGuestbook() {
   const [viewMode, setViewMode] = useState('list');
   const [selectedIds, setSelectedIds] = useState([]);
 
+  const [period, setPeriod] = useState('all');
   const filteredEntries = useFilteredItems(entries, searchQuery, (entry, searchLower) =>
     (entry.guest_name || '').toLowerCase().includes(searchLower) ||
     (entry.message || '').toLowerCase().includes(searchLower)
-  );
+  ).filter((entry) => inPeriod(entry, period));
 
   const toggleSelection = (id) => {
     setSelectedIds((prev) =>
@@ -74,6 +90,15 @@ export default function AdminGuestbook() {
         }
         search="Search messages…"
         filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
+        panel={{
+          id: 'guestbook',
+          title: 'Messages',
+          icon: MessageSquare,
+          subtitle: 'Shown on the website as soon as guests send them',
+          items: PERIODS.map(({ days: _days, ...p }) => ({ ...p, count: entries.filter((entry) => inPeriod(entry, p.id)).length })),
+          activeId: period,
+          onChange: (id) => { setPeriod(id); clearSelection(); },
+        }}
       >
         <AdminBulkActions
           selectedCount={selectedIds.length}
@@ -173,7 +198,7 @@ function GuestbookList({ entries, selectedIds, onToggleSelect, onDelete, isProce
 
 function GuestbookGrid({ entries, selectedIds, onToggleSelect, onDelete }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 gap-4">
       <AnimatePresence>
         {entries.map((entry) => {
           const isSelected = selectedIds.includes(entry.id);
