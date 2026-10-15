@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, Trash2, Save, HelpCircle, ArrowUp, ArrowDown, Image as ImageIcon, Table as TableIcon } from 'lucide-react';
+import { Plus, Trash2, Save, HelpCircle, Image as ImageIcon, Table as TableIcon } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { FilePond, registerPlugin } from 'react-filepond';
@@ -16,7 +16,7 @@ import EmptyState from '../../components/admin/EmptyState';
 import EditableFieldset from '../../components/admin/EditableFieldset';
 import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
-import useAdminAction from '../../hooks/useAdminAction';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 import useRole from '../../hooks/useRole';
 import useUnsavedChangesGuard from '../../hooks/useUnsavedChangesGuard';
 import { notifyError } from '../../utils/feedback';
@@ -37,8 +37,9 @@ const QUILL_MODULES = {
 };
 
 /**
- * FAQs: the questions are the side panel's list; the selected question is
- * edited on the left; Save / Add / Delete / Move live in the shared toolbar.
+ * FAQs: the questions are the side panel's list (drag to reorder, "Select"
+ * to delete several); the selected question is edited on the left; Save /
+ * Add / Delete live in the shared toolbar.
  * Each question keeps its own draft, so switching between them never loses
  * an edit (unsaved ones are marked with a dot).
  */
@@ -81,7 +82,7 @@ export default function AdminFAQ() {
         || `${faq.question} ${faq.answer}`.toLowerCase().includes(searchLower)), [list, searchLower]);
 
     const items = [
-        ...(drafts[NEW] ? [{ id: NEW, label: drafts[NEW].question || 'New question', dot: true }] : []),
+        ...(drafts[NEW] ? [{ id: NEW, label: drafts[NEW].question || 'New question', dot: true, fixed: true }] : []),
         ...visible.map((faq) => ({ id: faq.id, label: draftFor(faq.id).question || 'Untitled question', dot: isDirty(faq.id) })),
     ];
 
@@ -137,20 +138,20 @@ export default function AdminFAQ() {
     };
 
     const saveOrder = useAdminAction(
-        (ordered) => faqService.reorder(ordered.map((item, index) => ({ id: item.id, order: index }))),
+        (ordered) => faqService.reorder(ordered.map((id, index) => ({ id, order: index }))),
         { key: () => 'reorder', error: 'Failed to update order', onError: () => refetch() },
     );
-    const activeIndex = list.findIndex((f) => f.id === activeId);
-    const move = (step) => {
-        const target = activeIndex + step;
-        if (activeIndex < 0 || target < 0 || target >= list.length) return;
-        const next = [...list];
-        [next[activeIndex], next[target]] = [next[target], next[activeIndex]];
-        setList(next);
-        saveOrder.run(next);
+    const reorder = (ids) => {
+        setList(ids.map((id) => saved(id)).filter(Boolean));
+        saveOrder.run(ids);
     };
-    // Order follows the full list, so moving is off while a search narrows it.
-    const canMove = activeId !== NEW && activeIndex >= 0 && !searchLower;
+
+    const bulkDelete = useBulkAdminAction((id) => faqService.delete(id), {
+        confirm: (ids) => `Delete ${ids.length} selected ${ids.length === 1 ? 'FAQ' : 'FAQs'}?`,
+        success: (count) => `${count} ${count === 1 ? 'FAQ' : 'FAQs'} deleted`,
+        onSuccess: (_, ids) => { ids.forEach(forget); refetch(); },
+        onError: () => refetch(),
+    });
 
     const insertImageToQuill = () => {
         if (!uploadedFileUrl || !quillRef.current) return;
@@ -181,8 +182,6 @@ export default function AdminFAQ() {
                     disabled: !draft || !isDirty(activeId) || saveFaq.pending,
                 },
                 { id: 'add-faq', label: 'Add FAQ', icon: Plus, onClick: addFaq },
-                { id: 'move-up', label: 'Move up', icon: ArrowUp, onClick: () => move(-1), disabled: !canMove || activeIndex === 0 || saveOrder.pending },
-                { id: 'move-down', label: 'Move down', icon: ArrowDown, onClick: () => move(1), disabled: !canMove || activeIndex === list.length - 1 || saveOrder.pending },
                 { id: 'delete-faq', label: activeId === NEW ? 'Discard' : 'Delete', icon: Trash2, variant: 'danger', onClick: remove, disabled: !draft || deleteFaq.pending },
             ]}
             panel={{
@@ -191,8 +190,11 @@ export default function AdminFAQ() {
                 icon: HelpCircle,
                 subtitle: searchLower
                     ? `${visible.length} of ${list.length} match your search`
-                    : `${list.length} ${list.length === 1 ? 'question' : 'questions'} · in the order guests see them`,
+                    : `${list.length} ${list.length === 1 ? 'question' : 'questions'} · ${canEdit ? 'drag to reorder' : 'in the order guests see them'}`,
                 items,
+                // Order follows the full list, so dragging is off while a search narrows it.
+                onReorder: searchLower ? undefined : reorder,
+                bulkActions: [{ id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete }],
                 activeId,
                 onChange: (id) => { setActiveId(id); setUploadedFileUrl(null); },
             }}

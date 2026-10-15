@@ -133,4 +133,26 @@ class FaqTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['question', 'answer']);
     }
+
+    public function test_admin_can_reorder_faqs(): void
+    {
+        [$a, $b] = Faq::factory()->count(2)->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/faqs/reorder', ['faqs' => [
+                ['id' => $a->id, 'order' => 1],
+                ['id' => $b->id, 'order' => 0],
+            ]])
+            ->assertOk();
+
+        $this->assertSame(1, $a->fresh()->order);
+        $this->assertSame(0, $b->fresh()->order);
+    }
+
+    public function test_reorder_rejects_unknown_faqs(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/faqs/reorder', ['faqs' => [['id' => 999, 'order' => 0]]])
+            ->assertStatus(422);
+    }
 }

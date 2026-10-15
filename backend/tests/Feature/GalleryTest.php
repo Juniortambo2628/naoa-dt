@@ -176,4 +176,26 @@ class GalleryTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['image', 'guest_name']);
     }
+
+    public function test_admin_can_reorder_items(): void
+    {
+        [$a, $b] = GalleryItem::factory()->count(2)->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/gallery/reorder', ['items' => [
+                ['id' => $a->id, 'order' => 1],
+                ['id' => $b->id, 'order' => 0],
+            ]])
+            ->assertOk();
+
+        $this->assertSame(1, $a->fresh()->order);
+        $this->assertSame(0, $b->fresh()->order);
+    }
+
+    public function test_reorder_rejects_unknown_items(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/gallery/reorder', ['items' => [['id' => 999, 'order' => 0]]])
+            ->assertStatus(422);
+    }
 }
