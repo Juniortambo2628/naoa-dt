@@ -14,17 +14,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role', 20)->default('editor')->after('email');
-        });
+        // Safe to re-run: only accounts that existed before roles become owners.
+        if (! Schema::hasColumn('users', 'role')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('role', 20)->default('editor')->after('email');
+            });
 
-        DB::table('users')->update(['role' => 'owner']);
+            DB::table('users')->update(['role' => 'owner']);
+        }
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
-        });
+        if (Schema::hasColumn('users', 'role')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('role');
+            });
+        }
     }
 };

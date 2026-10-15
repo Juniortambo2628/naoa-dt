@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -67,6 +68,19 @@ class User extends Authenticatable
     /**
      * Determine if the user has two-factor authentication enabled.
      */
+    /**
+     * What database cascades would do: the collaboration tables reference
+     * users with plain columns (see the 2026_10_15 migration), so tidy up here.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            DB::table('revisions')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('admin_module_visits')->where('user_id', $user->id)->delete();
+            DB::table('users')->where('invited_by', $user->id)->update(['invited_by' => null]);
+        });
+    }
+
     public function isOwner(): bool
     {
         return $this->role === self::ROLE_OWNER;
