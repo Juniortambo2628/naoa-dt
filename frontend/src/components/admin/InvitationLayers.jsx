@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Reorder } from 'framer-motion';
 import { FileText, FileImage, SquareDashedMousePointer, MapPin, Calendar, Move, GripVertical, Lock, Unlock, X } from 'lucide-react';
+import Button from '../Button';
 import { byLayerTopFirst } from '../../utils/invitationItems';
 
 const TYPE_ICONS = { text: FileText, image: FileImage, frame: SquareDashedMousePointer, venue_location: MapPin, calendar_link: Calendar };
