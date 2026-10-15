@@ -17,6 +17,12 @@ class Setting extends Model
         'save_the_date_theme' => 'design',
     ];
 
+    /** "wedding_date" -> "Wedding date" in the version history. */
+    public function revisionLabel(): string
+    {
+        return ucfirst(str_replace('_', ' ', (string) $this->key));
+    }
+
     public function revisionModule(array $changed = []): string
     {
         if (isset(self::MODULE_KEYS[$this->key])) {

@@ -302,7 +302,7 @@ export default function AdminFAQ() {
                             ))}
                         </Reorder.Group>
                     ) : (
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredFaqs.map((faq) => (
                                 <FaqGridCard
                                     key={faq.id}
@@ -331,7 +331,7 @@ export default function AdminFAQ() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-stone-700 mb-1">Answer (Rich Text)</label>
                                 <div className="bg-white border rounded-xl overflow-hidden" style={{ minHeight: '300px' }}>

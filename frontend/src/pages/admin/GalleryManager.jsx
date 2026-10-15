@@ -339,7 +339,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
   );
 
   return isReordering ? (
-    <Reorder.Group axis="y" values={items} onReorder={onReorder} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <Reorder.Group axis="y" values={items} onReorder={onReorder} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {items.map(item => (
         <Reorder.Item key={item.id} value={item} className="relative aspect-square bg-stone-100 rounded-xl overflow-hidden shadow-sm cursor-grab active:cursor-grabbing">
           <img src={getAssetUrl(item.image_url)} alt="Gallery Image" className="w-full h-full object-cover" />
@@ -350,7 +350,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
       ))}
     </Reorder.Group>
   ) : (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {uploadingFiles.map(file => (
         <div key={file.id} className="aspect-square rounded-xl overflow-hidden shadow-sm upload-placeholder shimmer-bg">
           <img src={file.preview} alt="Uploading..." className="w-full h-full object-cover" />

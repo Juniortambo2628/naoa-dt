@@ -17,6 +17,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Faq = lazy(() => import('./pages/Faq'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AcceptInvite = lazy(() => import('./pages/admin/AcceptInvite'));
 const DigitalInvitation = lazy(() => import('./pages/DigitalInvitation'));
 const Contact = lazy(() => import('./pages/Contact'));
 
@@ -72,6 +73,7 @@ function App() {
 
                 {/* Admin Routes — AdminDashboard owns its own nested routing */}
                 <Route path="/admin" element={<AdminLogin />} />
+                <Route path="/admin/accept-invite" element={<AcceptInvite />} />
                 <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
                 {/* Auxiliary Routes */}
                 <Route path="/module-unavailable/:module" element={<ModuleDisabled />} />

@@ -69,6 +69,13 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /** Sign in with a token issued elsewhere (e.g. accepting a collaborator invite). */
+  const loginWithToken = (token, authUser) => {
+    localStorage.setItem('auth_token', token);
+    setUser(authUser);
+    setIsAuthenticated(true);
+  };
+
   const logout = async () => {
     try {
       await api.post('/logout');
@@ -87,6 +94,7 @@ export function AuthProvider({ children }) {
     isAuthenticated,
     login,
     verify2fa,
+    loginWithToken,
     logout,
     checkAuth,
   };

@@ -97,7 +97,7 @@ export default function CheckInScanner() {
         >
 
                 {/* Scanner Section */}
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-4">
                 <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-4">QR Scanner</h3>
                     

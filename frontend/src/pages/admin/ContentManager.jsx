@@ -381,7 +381,7 @@ export default function ContentManager() {
 
                         {isExpanded && (
                             <div className="p-6 border-t border-stone-100 space-y-6 animate-in slide-in-from-top-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {section.fields.map(field => {
                                         if (field.type === 'header') {
                                             return (

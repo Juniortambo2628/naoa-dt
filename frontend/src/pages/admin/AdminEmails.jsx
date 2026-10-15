@@ -191,7 +191,7 @@ export default function AdminEmails() {
       </div>
 
       {activeTab === 'compose' ? (
-        <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="grid md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* ... existing compose UI ... */}
           <AdminCard className="md:col-span-2">
               <h2 className="text-lg font-medium mb-4 text-[#4A3F35]">Send Invitations</h2>
@@ -317,7 +317,7 @@ export default function AdminEmails() {
                         value={emailSettings.email_rsvp_subject}
                         onChange={(e) => setEmailSettings({...emailSettings, email_rsvp_subject: e.target.value})}
                     />
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                         <AdminTextarea 
                             label="When Attending"
                             rows={4}

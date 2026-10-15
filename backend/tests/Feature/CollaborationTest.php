@@ -34,7 +34,7 @@ class CollaborationTest extends TestCase
             ->postJson('/api/settings', ['settings' => ['bride_name' => 'Dina', 'groom_name' => 'Tze Ren']])->assertOk();
 
         $history = $this->actingAs($this->admin, 'sanctum')->getJson('/api/revisions?module=settings')->assertOk();
-        $first = collect($history->json('data.data'))->first(fn ($r) => $r['action'] === 'created' && $r['subject_label'] === 'bride_name');
+        $first = collect($history->json('data.data'))->first(fn ($r) => $r['action'] === 'created' && $r['subject_label'] === 'Bride name');
         $this->assertNotNull($first);
 
         $update = collect($history->json('data.data'))->firstWhere('action', 'updated');
@@ -45,7 +45,7 @@ class CollaborationTest extends TestCase
         $this->actingAs($this->admin, 'sanctum')
             ->postJson("/api/revisions/{$first['id']}/restore")->assertOk();
         $this->assertSame('Dinah', Setting::getValue('bride_name'));
-        $this->assertDatabaseHas('revisions', ['action' => 'restored', 'subject_label' => 'bride_name']);
+        $this->assertDatabaseHas('revisions', ['action' => 'restored', 'subject_label' => 'Bride name']);
     }
 
     public function test_quick_successive_edits_merge_into_one_version(): void

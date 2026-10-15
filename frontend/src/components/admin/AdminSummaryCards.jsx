@@ -41,19 +41,19 @@ export default function AdminSummaryCards({ cards = [], columns = 4 }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, duration: 0.2 }}
             aria-pressed={stat.onClick ? !!stat.active : undefined}
-            className={`p-4 rounded-2xl bg-white flex items-center gap-3 text-left min-w-0 transition-shadow ${
+            className={`px-3.5 py-3 rounded-2xl bg-white flex items-center gap-3 text-left min-w-0 transition-shadow ${
               stat.onClick ? 'cursor-pointer hover:ring-2 hover:ring-[#A67B5B]/20' : ''
             } ${stat.active ? 'ring-2 ring-[#A67B5B]/50' : ''}`}
             style={{ boxShadow: '0 4px 20px rgba(166, 123, 91, 0.08)' }}
           >
             <div
-              className={`w-10 h-10 rounded-xl items-center justify-center shrink-0 ${iconVisibility}`}
+              className={`w-9 h-9 rounded-xl items-center justify-center shrink-0 ${iconVisibility}`}
               style={{ background: `${stat.color}15` }}
             >
               {Icon && <Icon className="w-5 h-5" style={{ color: stat.color }} />}
             </div>
             <div className="min-w-0">
-              <p className="text-2xl font-semibold leading-tight text-[#4A3F35]">
+              <p className="text-xl font-semibold leading-tight text-[#4A3F35]">
                 {stat.value}
               </p>
               <p className="text-sm text-[#8B7B6B] truncate">

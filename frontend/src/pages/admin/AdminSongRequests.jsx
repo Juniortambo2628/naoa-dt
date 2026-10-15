@@ -161,7 +161,7 @@ export default function AdminSongRequests() {
           />
         }
         summary={
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
               icon={<Music className="w-6 h-6" />}
               label="Total Requests"
@@ -318,7 +318,7 @@ export default function AdminSongRequests() {
 
 function SongGrid({ songs, selectedIds, onToggleSelect, onTogglePlayed, onDelete, isProcessing }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {songs.map((song) => {
         const isSelected = selectedIds.includes(song.id);
         return (

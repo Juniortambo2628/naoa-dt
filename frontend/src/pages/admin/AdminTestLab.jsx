@@ -330,7 +330,7 @@ export default function AdminTestLab() {
       </AdminCard>
 
       {/* Feature Simulation */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         {/* Live Update Simulation */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
@@ -409,7 +409,7 @@ export default function AdminTestLab() {
       </div>
 
       {/* API Endpoint Testing */}
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
         {/* Weather API Test */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-4">
@@ -486,7 +486,7 @@ export default function AdminTestLab() {
       </div>
 
       {/* Email & Code Testing */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
@@ -547,7 +547,7 @@ export default function AdminTestLab() {
       </div>
 
       {/* Code & QR */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-[#A67B5B]/10 rounded-lg">

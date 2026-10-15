@@ -404,3 +404,13 @@ export const flightService = {
   lookup: (flightNumber, date) => api.post('/flights/lookup', { flight_number: flightNumber, date }),
   getStatus: (flightNumber, date) => api.post('/flights/status', { flight_number: flightNumber, date }),
 };
+
+// Collaboration: presence + sidebar badges, invitations, version history
+export const collaborationService = {
+  heartbeat: (data) => api.post('/collaboration/heartbeat', data),
+  getCollaborators: () => api.get('/collaborators'),
+  invite: (data) => api.post('/collaborators/invite', data),
+  acceptInvite: (data) => api.post('/collaborators/accept', data),
+  getRevisions: (params) => api.get('/revisions', { params }),
+  restoreRevision: (id, { batch = false } = {}) => api.post(`/revisions/${id}/restore`, { batch }),
+};

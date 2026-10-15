@@ -249,12 +249,12 @@ const plusOnesText = (guest) => (guest.plus_ones?.length ? guest.plus_ones.map((
 
 function TableView({ props }) {
   const { filteredGuests, pagedGuests, selectedIds, onToggleSelect, onToggleSelectAll, duplicateIds, onReviewDuplicates, sort, onSort } = props;
-  const th = 'px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider';
+  const th = 'px-4 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider';
   return (
     <table className="w-full hidden md:table">
       <thead className="sticky top-0 z-10 bg-stone-50 shadow-[inset_0_-1px_0_rgb(245_245_244)]">
         <tr>
-          <th scope="col" className="px-6 py-4 text-left">
+          <th scope="col" className="px-4 py-2.5 text-left">
             <input type="checkbox" aria-label="Select all guests in this list" className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]" checked={selectedIds.length === filteredGuests.length && filteredGuests.length > 0} onChange={onToggleSelectAll} />
           </th>
           <SortHeader label="Name" sortKey="name" sort={sort} onSort={onSort} className={th} />
@@ -268,15 +268,15 @@ function TableView({ props }) {
       <tbody className="divide-y divide-stone-100">
         {pagedGuests.map((guest) => (
           <tr key={guest.id} className={`hover:bg-stone-50/50 ${selectedIds.includes(guest.id) ? 'bg-stone-50' : ''}`}>
-            <td className="px-6 py-4">
+            <td className="px-4 py-2.5">
               <input type="checkbox" aria-label={`Select ${guest.name}`} className="w-4 h-4 rounded border-stone-300 text-[#A67B5B] focus:ring-[#A67B5B]" checked={selectedIds.includes(guest.id)} onChange={() => onToggleSelect(guest.id)} />
             </td>
-            <td className="px-6 py-4"><GuestName guest={guest} duplicate={duplicateIds?.has(guest.id)} onReviewDuplicates={onReviewDuplicates} /></td>
-            <td className="px-6 py-4"><ContactLines guest={guest} /></td>
-            <td className="px-6 py-4">
+            <td className="px-4 py-2.5"><GuestName guest={guest} duplicate={duplicateIds?.has(guest.id)} onReviewDuplicates={onReviewDuplicates} /></td>
+            <td className="px-4 py-2.5"><ContactLines guest={guest} /></td>
+            <td className="px-4 py-2.5">
               {guest.group && <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-700">{guest.group}</span>}
             </td>
-            <td className="px-6 py-4">
+            <td className="px-4 py-2.5">
               {plusOnesText(guest) ? (
                 <div>
                   <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">+{guest.plus_ones.length}</span>
@@ -284,8 +284,8 @@ function TableView({ props }) {
                 </div>
               ) : <span className="text-xs text-stone-500">None</span>}
             </td>
-            <td className="px-6 py-4"><RsvpStatusSelect guest={guest} onUpdateGuest={props.onUpdateGuest} /></td>
-            <td className="px-6 py-4"><GuestActions guest={guest} {...props} /></td>
+            <td className="px-4 py-2.5"><RsvpStatusSelect guest={guest} onUpdateGuest={props.onUpdateGuest} /></td>
+            <td className="px-4 py-2.5"><GuestActions guest={guest} {...props} /></td>
           </tr>
         ))}
       </tbody>

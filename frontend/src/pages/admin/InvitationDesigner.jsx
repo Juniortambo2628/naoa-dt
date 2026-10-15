@@ -11,7 +11,7 @@ import { PortalWhen } from '../../components/Overlay';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
-import InvitationSidebar from '../../components/admin/InvitationSidebar';
+import InvitationSidebar, { DESIGNER_TABS } from '../../components/admin/InvitationSidebar';
 import InvitationSaveStatus from '../../components/admin/InvitationSaveStatus';
 import InvitationPageMenu from '../../components/admin/InvitationPageMenu';
 import InvitationAddMenu from '../../components/admin/InvitationAddMenu';
@@ -773,6 +773,42 @@ export default function InvitationDesigner() {
 
       <AdminPageLayout
         fill
+        panel={{
+          title: 'Design Tools',
+          icon: Sliders,
+          subtitle: 'Right-click any element for quick adjustments.',
+          sheetLabel: 'Design tools',
+          navVariant: 'grid',
+          items: DESIGNER_TABS,
+          activeId: activeTab,
+          onChange: setActiveTab,
+          content: (
+            <InvitationSidebar
+              loading={loading}
+              activeTab={activeTab}
+              design={activePageDesign}
+              editorLang={editorLang}
+              setEditorLang={setEditorLang}
+              selectedItemId={selectedItemId}
+              setSelectedItemId={setSelectedItemId}
+              selectedIds={selectedIds}
+              onSelect={handleSelect}
+              updateDesign={updateDesign}
+              handleDesignUpdate={handleDesignUpdate}
+              addItem={addItem}
+              onAddElement={addElement}
+              deleteItem={deleteItem}
+              updateContent={updateContent}
+              insertPlaceholder={insertPlaceholder}
+              titleRef={titleRef}
+              messageRef={messageRef}
+              languages={languages}
+              presetBackgrounds={presetBackgrounds}
+              presetColors={presetColors}
+              fonts={fonts}
+            />
+          ),
+        }}
         hero={
           <AdminPageHero
             title="Invitation Designer"
@@ -785,33 +821,7 @@ export default function InvitationDesigner() {
         {/* Fits the viewport on desktop (like other editors): only the side
             panel scrolls, so its tabs and the canvas always stay in view. */}
         <div className="flex flex-col gap-4 lg:h-[calc(100vh-140px)] fit:h-auto fit:flex-1 fit:min-h-0">
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:overflow-hidden">
-         <InvitationSidebar
-            loading={loading}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            design={activePageDesign}
-            editorLang={editorLang}
-            setEditorLang={setEditorLang}
-            selectedItemId={selectedItemId}
-            setSelectedItemId={setSelectedItemId}
-            selectedIds={selectedIds}
-            onSelect={handleSelect}
-            updateDesign={updateDesign}
-            handleDesignUpdate={handleDesignUpdate}
-            addItem={addItem}
-            onAddElement={addElement}
-            deleteItem={deleteItem}
-            updateContent={updateContent}
-            insertPlaceholder={insertPlaceholder}
-            titleRef={titleRef}
-            messageRef={messageRef}
-            languages={languages}
-            presetBackgrounds={presetBackgrounds}
-            presetColors={presetColors}
-            fonts={fonts}
-         />
-
+        <div className="flex-1 min-h-0 flex flex-col gap-4 lg:overflow-hidden">
         {/* Live Preview Area */}
         <PortalWhen active={isFullscreen}>
         <div 
@@ -820,7 +830,7 @@ export default function InvitationDesigner() {
                 isFullscreen
                     // No `relative` here: it would override `fixed` and leave the preview in the page flow.
                     ? 'fixed inset-0 z-[100] bg-stone-100/95 backdrop-blur-md p-8'
-                    : 'relative order-1 lg:order-2 flex-1 min-h-[55vh] lg:min-h-0 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
+                    : 'relative flex-1 min-h-[60vh] lg:min-h-0 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
             }`}
         >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />

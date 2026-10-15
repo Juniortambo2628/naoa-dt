@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import AdminFloatingToolbar from './AdminFloatingToolbar';
+import { SidePanelAside, SidePanelMobileBar } from './AdminSidePanel';
+import useActivityPanel from './useActivityPanel';
 
 /**
  * AdminPageLayout — standardized layout shared by every admin dashboard page.
@@ -7,8 +9,12 @@ import AdminFloatingToolbar from './AdminFloatingToolbar';
  * Order:
  *   1. Hero section (title, breadcrumb, description)
  *   2. Summary / overview cards (optional)
- *   3. Page content
+ *   3. Page content, with the shared side panel on its right (optional)
  *   + the shared floating toolbar (search, filters, page actions)
+ *
+ * The side panel (see AdminSidePanel) is where pages put their section
+ * switcher, tools or secondary lists, so every page has the same shape. On
+ * mobile it becomes a sticky chip bar / bottom sheet under the header.
  *
  * Listing pages pass `fill`: on desktop-sized viewports the page then fits the
  * viewport exactly — hero, summary cards and the list's pagination stay put
@@ -24,6 +30,8 @@ import AdminFloatingToolbar from './AdminFloatingToolbar';
  * @param {ReactNode} [toolbarContent] - Custom controls rendered inside the toolbar
  * @param {boolean}   [toolbarHidden]  - Hide the toolbar (e.g. while a bulk-selection bar is shown)
  * @param {boolean}   [fill]           - Fit the viewport; content scrolls inside AdminListPanel
+ * @param {object}    [panel]          - Side panel config (see AdminSidePanel);
+ *                                      pages without one get the Activity panel
  */
 export default function AdminPageLayout({
   hero,
@@ -35,9 +43,14 @@ export default function AdminPageLayout({
   toolbarContent,
   toolbarHidden = false,
   fill = false,
+  panel: pagePanel,
 }) {
+  const activityPanel = useActivityPanel();
+  const panel = pagePanel || activityPanel;
   const showToolbar = !toolbarHidden
     && ((actions && actions.length > 0) || search || filters || toolbarContent);
+
+  const fillBody = 'space-y-6 fit:space-y-0 fit:flex fit:flex-col fit:gap-4 fit:flex-1 fit:min-h-0';
 
   return (
     <>
@@ -47,7 +60,7 @@ export default function AdminPageLayout({
         transition={{ duration: 0.25 }}
         /* Extra bottom padding so content never hides behind the fixed
            floating toolbar (bottom-center), especially on mobile. */
-        className={`admin-page-layout space-y-6 pb-28 lg:pb-24 ${
+        className={`admin-page-layout space-y-5 pb-28 lg:pb-24 ${
           fill
             ? 'fit:h-[calc(100dvh-7rem)] fit:flex fit:flex-col fit:overflow-hidden fit:space-y-0 fit:gap-5'
             : ''
@@ -56,11 +69,12 @@ export default function AdminPageLayout({
       >
         {fill ? <div className="fit:shrink-0 space-y-5">{hero}{summary}</div> : <>{hero}{summary}</>}
 
-        {fill ? (
-          <div className="space-y-6 fit:space-y-0 fit:flex fit:flex-col fit:gap-4 fit:flex-1 fit:min-h-0">
-            {children}
-          </div>
-        ) : children}
+        {panel.mobile !== false && <SidePanelMobileBar panel={panel} />}
+
+        <div className={`lg:flex lg:gap-5 ${fill ? 'fit:flex-1 fit:min-h-0' : ''}`}>
+          <div className={`lg:flex-1 min-w-0 ${fill ? fillBody : 'space-y-6'}`}>{children}</div>
+          <SidePanelAside key={panel.id || panel.title} panel={panel} />
+        </div>
       </motion.div>
 
       {showToolbar && (

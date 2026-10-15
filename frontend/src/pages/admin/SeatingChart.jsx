@@ -5,7 +5,6 @@ import { guestService, tableService } from '../../services/api';
 import { Plus, Users, MoreVertical, Trash2, Check, X, Search, Eye, Armchair } from 'lucide-react';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminCard from '../../components/admin/AdminCard';
 import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import { confirmAction, notifyError } from '../../utils/feedback';
@@ -24,9 +23,11 @@ function GuestItem({ guest, tables, onAssign }) {
     e.stopPropagation();
     if (!showMenu && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setMenuPos({ 
-        top: rect.bottom + window.scrollY + 5, 
-        left: rect.right + window.scrollX - 224 // Align right edge (w-56 = 224px)
+      // The menu is position: fixed, so viewport coordinates (works inside the
+      // side panel and the mobile bottom sheet, which scroll on their own).
+      setMenuPos({
+        top: Math.min(rect.bottom + 5, window.innerHeight - 260),
+        left: Math.max(8, rect.right - 224), // Align right edge (w-56 = 224px)
       });
     }
     setShowMenu(!showMenu);
@@ -36,7 +37,7 @@ function GuestItem({ guest, tables, onAssign }) {
 
   return (
     <>
-        <div className="p-3 bg-white rounded-lg shadow-sm border border-stone-200 flex items-center justify-between group hover:border-[#A67B5B]/30 transition-colors">
+        <div className="p-2.5 bg-white rounded-lg border border-stone-200 flex items-center justify-between group hover:border-[#A67B5B]/30 transition-colors">
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-xs font-medium text-stone-600">
                     {guest.name.charAt(0)}
@@ -346,6 +347,25 @@ export default function SeatingChart() {
   return (
     <>
       <AdminPageLayout
+        fill
+        panel={{
+          title: 'Unassigned Guests',
+          icon: Users,
+          subtitle: `${unassignedGuests.length} ${unassignedGuests.length === 1 ? 'guest' : 'guests'} still to seat`,
+          sheetLabel: `Unassigned guests (${unassignedGuests.length})`,
+          content: (
+            <div className="space-y-2">
+              {unassignedGuests.map(guest => (
+                <GuestItem key={guest.id} guest={guest} tables={tables} onAssign={handleAssignGuest} />
+              ))}
+              {unassignedGuests.length === 0 && (
+                <div className="text-center py-8 text-stone-400 text-sm">
+                  {searchQuery ? 'No guests match your search' : 'Everyone has a seat'}
+                </div>
+              )}
+            </div>
+          ),
+        }}
         actions={[
           {
             id: 'add-table',
@@ -365,36 +385,10 @@ export default function SeatingChart() {
         }
         search="Search guests…"
       >
-        <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
-
-       <div className="flex-1 flex gap-6 overflow-hidden">
-       {/* Sidebar: Unassigned Guests */}
-       <AdminCard padding={false} className="w-80 flex flex-col h-full relative z-20">
-              <div className="p-4 border-b border-stone-100">
-                <h2 className="font-semibold text-lg text-stone-800">Unassigned Guests</h2>
-                <p className="text-xs text-stone-500">{unassignedGuests.length} guests remaining</p>
-              </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {unassignedGuests.map(guest => (
-                  <GuestItem 
-                    key={guest.id} 
-                    guest={guest} 
-                    tables={tables}
-                    onAssign={handleAssignGuest}
-                  />
-              ))}
-              {unassignedGuests.length === 0 && (
-                  <div className="text-center py-8 text-stone-400 text-sm">
-                      No guests found
-                  </div>
-              )}
-          </div>
-       </AdminCard>
-
-       {/* Main Area: Table Grid */}
-       <div className="flex-1 bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-200 relative overflow-hidden flex flex-col">
+        {/* Main Area: Table Grid (unassigned guests live in the side panel) */}
+       <div className="min-h-[50vh] fit:min-h-0 fit:flex-1 bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-200 relative overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="p-6 flex items-center justify-between border-b border-stone-100/50">
+          <div className="px-4 py-3 flex items-center justify-between gap-3 border-b border-stone-100/50">
               <div>
                   <h2 className="font-semibold text-lg text-stone-800">Tables Overview</h2>
               </div>
@@ -426,9 +420,9 @@ export default function SeatingChart() {
           </div>
 
           {/* Table Grid */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4">
               {tables.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                       {tables.map(table => (
                           <TableCard 
                               key={table.id}
@@ -458,8 +452,6 @@ export default function SeatingChart() {
                 />
             )}
        </AnimatePresence>
-       </div>
-      </div>
       </AdminPageLayout>
     </>
   );

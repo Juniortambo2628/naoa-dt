@@ -179,7 +179,7 @@ export default function AdminGifts() {
 
 function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onViewClaims }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {gifts.map((gift) => {
         const isSelected = selectedIds.includes(gift.id);
         const isReserved = !gift.is_available;
