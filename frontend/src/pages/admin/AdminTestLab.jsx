@@ -42,7 +42,16 @@ function StatusBadge({ status, label }) {
   );
 }
 
+const SECTIONS = [
+  { id: 'health', label: 'API Status', icon: Activity, description: 'Health of the API and its services' },
+  { id: 'simulate', label: 'Simulations', icon: Radio, description: 'Live updates and polaroids' },
+  { id: 'apis', label: 'API Endpoints', icon: Server, description: 'Weather, seating and settings' },
+  { id: 'messaging', label: 'Email & Notifications', icon: Mail, description: 'Test emails and flight alerts' },
+  { id: 'codes', label: 'Codes & QR', icon: QrCode, description: 'Generate and verify RSVP codes' },
+];
+
 export default function AdminTestLab() {
+  const [section, setSection] = useState('health');
   const [testEmail, setTestEmail] = useState('');
   const [testCode, setTestCode] = useState('TEST-CODE-123');
   const [loading, setLoading] = useState(false);
@@ -259,11 +268,21 @@ export default function AdminTestLab() {
           onClick: runHealthCheck,
           disabled: healthLoading,
         },
-        { id: 'test-weather', label: 'Test Weather', icon: Cloud, onClick: handleTestWeather, disabled: loading },
-        { id: 'test-seating', label: 'Test Seating', icon: Map, onClick: handleTestSeating, disabled: loading },
-        { id: 'test-settings', label: 'Test Settings', icon: Settings, onClick: handleTestSettings, disabled: loading },
         { id: 'clear-logs', readOnly: true, label: 'Clear Logs', icon: Trash2, variant: 'danger', onClick: () => setLogs([]), hidden: logs.length === 0 },
       ]}
+      panel={{
+        id: 'test-lab',
+        title: 'Test Areas',
+        icon: FlaskConical,
+        items: SECTIONS,
+        activeId: section,
+        onChange: setSection,
+        footer: (
+          <p className="text-xs text-stone-600 leading-relaxed">
+            Everything you run here is recorded in the activity log under each area.
+          </p>
+        ),
+      }}
       hero={
         <AdminPageHero
           title="Test Lab"
@@ -273,6 +292,7 @@ export default function AdminTestLab() {
         />
       }
     >
+      {section === 'health' && (<>
       {/* API Status Monitor */}
       <AdminCard className="mb-6">
         <div className="flex items-center justify-between mb-6">
@@ -298,7 +318,7 @@ export default function AdminTestLab() {
               <span className="text-xs text-stone-400">Last checked: {new Date(health.timestamp).toLocaleTimeString()}</span>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 @xl:grid-cols-3 @4xl:grid-cols-5 gap-3">
               {Object.entries(health.checks).map(([name, check]) => (
                 <div key={name} className={`p-3 rounded-xl border ${STATUS_COLORS[check.status]?.bg || ''} ${STATUS_COLORS[check.status]?.border || ''}`}>
                   <div className="flex items-center gap-2 mb-1">
@@ -313,7 +333,7 @@ export default function AdminTestLab() {
             {entityCounts && (
               <div className="mt-4 p-4 bg-stone-50 rounded-xl">
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-3">Entity Counts</h4>
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-3 @2xl:grid-cols-5 gap-4">
                   {Object.entries(entityCounts).map(([key, val]) => (
                     <div key={key} className="text-center">
                       <p className="text-2xl font-bold text-[#A67B5B]">{val}</p>
@@ -334,9 +354,11 @@ export default function AdminTestLab() {
           </div>
         )}
       </AdminCard>
+      </>)}
 
+      {section === 'simulate' && (<>
       {/* Feature Simulation */}
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
+      <div className="grid @2xl:grid-cols-2 gap-4 mb-6">
         {/* Live Update Simulation */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
@@ -413,9 +435,11 @@ export default function AdminTestLab() {
           </div>
         </AdminCard>
       </div>
+      </>)}
 
+      {section === 'apis' && (<>
       {/* API Endpoint Testing */}
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
+      <div className="grid @3xl:grid-cols-3 gap-4 mb-6">
         {/* Weather API Test */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-4">
@@ -490,9 +514,11 @@ export default function AdminTestLab() {
           Preview Programme Page
         </Button>
       </div>
+      </>)}
 
+      {section === 'messaging' && (<>
       {/* Email & Code Testing */}
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
+      <div className="grid @2xl:grid-cols-2 gap-4 mb-6">
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
@@ -551,9 +577,11 @@ export default function AdminTestLab() {
           )}
         </AdminCard>
       </div>
+      </>)}
 
+      {section === 'codes' && (<>
       {/* Code & QR */}
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
+      <div className="grid @2xl:grid-cols-2 gap-4 mb-6">
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
@@ -579,6 +607,7 @@ export default function AdminTestLab() {
           </div>
         </AdminCard>
       </div>
+      </>)}
 
       {/* Activity Log */}
       <div className="bg-stone-900 rounded-2xl p-6 shadow-sm border border-stone-800 font-mono text-sm h-64 overflow-y-auto">

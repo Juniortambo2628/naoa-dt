@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mail, Clock, 
-  Send, CheckCircle, X, RefreshCw, Trash2
+  Send, CheckCircle, X, RefreshCw, Trash2, Users, Briefcase, HelpCircle
 } from 'lucide-react';
 import { useEnquiries } from '../../hooks/useApiHooks';
 import { enquiryService } from '../../services/api';
@@ -18,13 +18,31 @@ import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
+// One list of views: by reply status, then by who sent it.
+const VIEWS = [
+  { id: 'all', label: 'All enquiries', icon: Mail },
+  { id: 'pending', label: 'Awaiting reply', group: 'Status', icon: Clock },
+  { id: 'replied', label: 'Replied', group: 'Status', icon: CheckCircle },
+  { id: 'guest', label: 'Guests', group: 'From', icon: Users },
+  { id: 'vendor', label: 'Vendors', group: 'From', icon: Briefcase },
+  { id: 'other', label: 'Other', group: 'From', icon: HelpCircle },
+];
+
+function matchesView(enq, view) {
+  if (view === 'pending') return enq.status !== 'replied';
+  if (view === 'replied') return enq.status === 'replied';
+  if (view === 'guest' || view === 'vendor') return (enq.type || 'guest') === view;
+  if (view === 'other') return !['guest', 'vendor'].includes(enq.type || 'guest');
+  return true;
+}
+
 export default function AdminEnquiries() {
   const { data, isLoading: loading, refetch } = useEnquiries();
   const enquiries = data?.data || [];
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [view, setView] = useState('all');
   const [viewMode, setViewMode] = useState('list');
   const [selectedIds, setSelectedIds] = useState([]);
   const { searchQuery } = useSearch();
@@ -34,9 +52,8 @@ export default function AdminEnquiries() {
            (enq.email || '').toLowerCase().includes(searchLower) ||
            (enq.subject || '').toLowerCase().includes(searchLower) ||
            (enq.message || '').toLowerCase().includes(searchLower);
-    const matchesType = typeFilter === 'all' || (enq.type || 'guest') === typeFilter;
-    return matchesSearch && matchesType;
-  });
+    return matchesSearch;
+  }).filter((enq) => matchesView(enq, view));
 
   const toggleSelection = (id) => {
     setSelectedIds((prev) =>
@@ -141,20 +158,15 @@ export default function AdminEnquiries() {
           />
         }
         search="Search enquiries…"
-        filters={{
-          groups: [{
-            id: 'type',
-            label: 'Type',
-            options: [
-              { id: 'all', label: 'All Enquiries' },
-              { id: 'guest', label: 'Guests' },
-              { id: 'vendor', label: 'Vendors' },
-              { id: 'other', label: 'Other' },
-            ],
-            value: typeFilter,
-            onChange: setTypeFilter,
-          }],
-          view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode },
+        filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
+        panel={{
+          id: 'enquiries',
+          title: 'Enquiries',
+          icon: Mail,
+          subtitle: 'From the contact form on your website',
+          items: VIEWS.map((v) => ({ ...v, count: enquiries.filter((enq) => matchesView(enq, v.id)).length })),
+          activeId: view,
+          onChange: (id) => { setView(id); clearSelection(); },
         }}
       >
         <AnimatePresence>
@@ -170,7 +182,7 @@ export default function AdminEnquiries() {
         {filteredEnquiries.length > 0 && (
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm text-stone-500">
-              {filteredEnquiries.length} enquiry{filteredEnquiries.length === 1 ? '' : 'ies'}
+              {filteredEnquiries.length} {filteredEnquiries.length === 1 ? 'enquiry' : 'enquiries'}
             </span>
             <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none">
               <input
@@ -191,7 +203,7 @@ export default function AdminEnquiries() {
             ) : filteredEnquiries.length === 0 ? (
               <EmptyState icon={Mail} message="No enquiries yet" searchQuery={searchQuery} />
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 gap-4">
                 {filteredEnquiries.map((enq) => (
                   <motion.div
                     key={enq.id}

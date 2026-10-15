@@ -1,6 +1,6 @@
 import Overlay from '../../components/Overlay';
 import { useState, useEffect } from 'react';
-import { Mail, Send, CheckCircle, Clock, X, Save } from 'lucide-react';
+import { Mail, Send, CheckCircle, Clock, X, Save, Gift } from 'lucide-react';
 import { invitationService, settingService, guestService, contentService } from '../../services/api';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import { getWeddingInfo } from '../../utils/weddingInfo';
@@ -23,8 +23,17 @@ const mockGuest = {
     table: { name: "Table 5" }
 };
 
+const TEMPLATES = [
+  { id: 'invitation', label: 'Invitation Email', icon: Mail, description: 'Sent with the digital invitation',
+    keys: ['email_invitation_subject', 'email_invitation_message'] },
+  { id: 'rsvp', label: 'RSVP Confirmation', icon: CheckCircle, description: 'Sent when a guest replies',
+    keys: ['email_rsvp_subject', 'email_rsvp_attending_message', 'email_rsvp_declined_message'] },
+  { id: 'gift', label: 'Gift Thank You', icon: Gift, description: 'Sent when a guest reserves a gift',
+    keys: ['email_gift_subject', 'email_gift_message'] },
+];
+
 export default function AdminEmails() {
-  const [activeTab, setActiveTab] = useState('compose'); // compose, templates, history
+  const [activeTab, setActiveTab] = useState('compose'); // compose, or one of the TEMPLATES
   const [showPreview, setShowPreview] = useState(false);
   const [design, setDesign] = useState(null);
   const [invitationDesign, setInvitationDesign] = useState(null);
@@ -40,7 +49,9 @@ export default function AdminEmails() {
     email_gift_subject: '',
     email_gift_message: '',
   });
-  const { dirty, markSaved } = useUnsavedChanges(emailSettings);
+  const { dirty, markSaved, baseline } = useUnsavedChanges(emailSettings);
+  const templateDirty = (id) => !!baseline && TEMPLATES.find((t) => t.id === id).keys
+    .some((key) => emailSettings[key] !== baseline[key]);
 
   const bulkSend = useAdminAction(async () => {
     // Fetch the current guest list to find pending primary guests with an email
@@ -147,9 +158,26 @@ export default function AdminEmails() {
               icon: Save,
               variant: 'secondary',
               onClick: handleSaveSettings,
-              disabled: savingSettings,
+              disabled: savingSettings || !dirty,
             },
       ]}
+      panel={{
+        id: 'emails',
+        title: 'Emails',
+        icon: Mail,
+        subtitle: 'Send invitations, and edit the emails guests receive',
+        items: [
+          { id: 'compose', label: 'Send Invitations', icon: Send, description: 'Preview and send to pending guests' },
+          ...TEMPLATES.map(({ keys: _keys, ...t }) => ({ ...t, group: 'Templates', dot: templateDirty(t.id) })),
+        ],
+        activeId: activeTab,
+        onChange: setActiveTab,
+        footer: activeTab !== 'compose' && (
+          <p className="text-xs text-stone-600 leading-relaxed">
+            Save Templates saves all three emails. Every email starts with "Dear [Guest Name]".
+          </p>
+        ),
+      }}
       hero={
         <AdminPageHero
           title="Email Management"
@@ -160,27 +188,10 @@ export default function AdminEmails() {
       }
     >
       <div className="space-y-6">
-      <div className="flex gap-4 border-b border-stone-100">
-            <button 
-                onClick={() => setActiveTab('compose')}
-                className={`pb-4 px-2 text-sm font-medium transition-colors relative ${activeTab === 'compose' ? 'text-[#A67B5B]' : 'text-stone-400 hover:text-stone-600'}`}
-            >
-                Compose & Send
-                {activeTab === 'compose' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A67B5B]" />}
-            </button>
-            <button 
-                onClick={() => setActiveTab('templates')}
-                className={`pb-4 px-2 text-sm font-medium transition-colors relative ${activeTab === 'templates' ? 'text-[#A67B5B]' : 'text-stone-400 hover:text-stone-600'}`}
-            >
-                Email Templates
-                {activeTab === 'templates' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A67B5B]" />}
-            </button>
-      </div>
-
       {activeTab === 'compose' ? (
-        <div className="grid md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="grid @3xl:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* ... existing compose UI ... */}
-          <AdminCard className="md:col-span-2">
+          <AdminCard className="@3xl:col-span-2">
               <h2 className="text-lg font-medium mb-4 text-[#4A3F35]">Send Invitations</h2>
               
               <div className="space-y-4">
@@ -229,18 +240,9 @@ export default function AdminEmails() {
                   </div>
               </div>
 
-               <div className="mt-6 pt-6 border-t border-stone-100">
-                  <Button edit
-                      variant="secondary"
-                      fullWidth
-                      icon={Send}
-                      loading={loading}
-                      onClick={handleBulkSend}
-                  >
-                      Send to All Pending Guests
-                  </Button>
-                  <p className="text-center text-xs text-stone-400 mt-2">Will send via email to guests who haven't received an invite yet.</p>
-              </div>
+              <p className="mt-6 pt-4 border-t border-stone-100 text-xs text-stone-500">
+                  Send to All Pending (in the toolbar) emails every guest who hasn't replied yet and has an email address.
+              </p>
           </AdminCard>
 
           {/* Status Card */}
@@ -269,7 +271,8 @@ export default function AdminEmails() {
       ) : (
         <form onSubmit={handleSaveSettings} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <EditableFieldset className="block space-y-6">
-            {/* Invitation Template */}
+            {/* Only the template picked in the side panel */}
+            {activeTab === 'invitation' && (
             <AdminCard>
                 <h2 className="text-lg font-medium mb-6 text-[#4A3F35] flex items-center gap-2">
                     <Mail className="w-5 h-5" />
@@ -292,8 +295,9 @@ export default function AdminEmails() {
                     </div>
                 </div>
             </AdminCard>
+            )}
 
-            {/* RSVP Confirmation Templates */}
+            {activeTab === 'rsvp' && (
             <AdminCard>
                 <h2 className="text-lg font-medium mb-6 text-[#4A3F35] flex items-center gap-2">
                     <CheckCircle className="w-5 h-5" />
@@ -321,8 +325,9 @@ export default function AdminEmails() {
                     </div>
                 </div>
             </AdminCard>
+            )}
 
-             {/* Gift Registry Thank You */}
+            {activeTab === 'gift' && (
              <AdminCard>
                 <h2 className="text-lg font-medium mb-6 text-[#4A3F35] flex items-center gap-2">
                     <Send className="w-5 h-5" />
@@ -342,7 +347,7 @@ export default function AdminEmails() {
                     />
                 </div>
             </AdminCard>
-
+            )}
           </EditableFieldset>
         </form>
       )}

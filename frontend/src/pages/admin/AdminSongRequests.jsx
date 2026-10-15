@@ -140,19 +140,19 @@ export default function AdminSongRequests() {
           </div>
         }
         search="Search songs…"
-        filters={{
-          groups: [{
-            id: 'status',
-            label: 'Status',
-            options: [
-              { id: 'all', label: 'All Requests' },
-              { id: 'pending', label: 'Pending' },
-              { id: 'played', label: 'Played' },
-            ],
-            value: filter,
-            onChange: setFilter,
-          }],
-          view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode },
+        filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
+        panel={{
+          id: 'songs',
+          title: 'Requests',
+          icon: Music,
+          subtitle: 'Checked for new requests every 30 seconds',
+          items: [
+            { id: 'all', label: 'All requests', icon: Music, count: songs.length },
+            { id: 'pending', label: 'Not played yet', icon: Clock, count: songs.filter(song => !song.is_played).length },
+            { id: 'played', label: 'Played', icon: Check, count: songs.filter(song => song.is_played).length },
+          ],
+          activeId: filter,
+          onChange: (id) => { setFilter(id); clearSelection(); },
         }}
       >
         <AdminBulkActions
@@ -275,7 +275,7 @@ export default function AdminSongRequests() {
 
 function SongGrid({ songs, selectedIds, onToggleSelect, onTogglePlayed, onDelete, isProcessing }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 @md:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-4 gap-4">
       {songs.map((song) => {
         const isSelected = selectedIds.includes(song.id);
         return (
