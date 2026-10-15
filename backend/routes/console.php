@@ -25,3 +25,6 @@ Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
     ->withoutOverlapping()
     ->when(fn () => config('queue.default') !== 'sync');
+
+// Version history older than Revision::KEEP_DAYS is pruned nightly.
+Schedule::command('model:prune', ['--model' => [\App\Models\Revision::class]])->dailyAt('03:30');

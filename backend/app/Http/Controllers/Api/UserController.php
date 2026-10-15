@@ -27,9 +27,10 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8',
+            'role' => ['sometimes', Rule::in(User::ROLES)],
         ]);
 
-        return $this->createdResponse(User::create($validated));
+        return $this->createdResponse(User::create($validated + ['role' => User::ROLE_EDITOR]));
     }
 
     public function update(Request $request, User $user): JsonResponse
@@ -38,7 +39,12 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => 'nullable|string|min:8',
+            'role' => ['sometimes', Rule::in(User::ROLES)],
         ]);
+
+        if (isset($validated['role']) && $validated['role'] !== User::ROLE_OWNER && $user->isOwner() && $this->isLastOwner($user)) {
+            return $this->errorResponse('At least one owner must remain', 422);
+        }
 
         if (empty($validated['password'])) {
             unset($validated['password']);
@@ -59,9 +65,18 @@ class UserController extends Controller
             return $this->errorResponse('At least one admin user must remain', 422);
         }
 
+        if ($user->isOwner() && $this->isLastOwner($user)) {
+            return $this->errorResponse('At least one owner must remain', 422);
+        }
+
         $user->tokens()->delete();
         $user->delete();
 
         return $this->deletedResponse('User deleted');
+    }
+
+    private function isLastOwner(User $user): bool
+    {
+        return ! User::where('role', User::ROLE_OWNER)->whereKeyNot($user->getKey())->exists();
     }
 }

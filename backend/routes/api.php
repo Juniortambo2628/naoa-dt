@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\CheckInController;
+use App\Http\Controllers\Api\CollaborationController;
 use App\Http\Controllers\Api\EmergencyNumberController;
 use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\ExportController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PageContentController;
 use App\Http\Controllers\Api\PolaroidImageController;
+use App\Http\Controllers\Api\RevisionController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SongRequestController;
@@ -30,6 +32,7 @@ use App\Http\Controllers\Api\TranslateController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WeatherController;
+use App\Http\Middleware\EnforceRole;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,6 +45,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:15,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/verify-2fa', [AuthController::class, 'verify2fa']);
+    Route::post('/collaborators/accept', [CollaborationController::class, 'accept']);
 });
 
 // Public Guest Routes (for RSVP - Throttled)
@@ -148,8 +152,9 @@ Route::get('/weather', [WeatherController::class, 'forecast']);
 // Public Calendar Routes
 Route::get('/calendar/ics', [CalendarController::class, 'downloadIcs'])->name('calendar.ics');
 
-// Protected Routes (require authentication)
-Route::middleware('auth:sanctum')->group(function () {
+// Protected Routes (require authentication). Viewers are read-only;
+// people and backups are for owners (see EnforceRole).
+Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
@@ -177,7 +182,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Backups (admin)
-    Route::group(['prefix' => 'backups'], function () {
+    Route::group(['prefix' => 'backups', 'middleware' => EnforceRole::class.':owner'], function () {
         Route::get('/', [BackupController::class, 'index']);
         Route::post('/', [BackupController::class, 'store']);
         Route::get('/{name}/download', [BackupController::class, 'download']);
@@ -239,7 +244,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // FAQ Management (admin)
     // Admin users management
-    Route::apiResource('users', UserController::class)->except(['show']);
+    Route::get('/users', [UserController::class, 'index']);
+    Route::apiResource('users', UserController::class)->except(['index', 'show'])
+        ->middleware(EnforceRole::class.':owner');
 
     Route::group(['prefix' => 'faqs'], function () {
         Route::post('/', [FaqController::class, 'store']);
@@ -311,6 +318,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/2fa/setup', [TwoFactorController::class, 'setup']);
     Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
     Route::post('/2fa/disable', [TwoFactorController::class, 'disable']);
+
+    // Collaboration: presence + module badges, invitations, version history
+    Route::post('/collaboration/heartbeat', [CollaborationController::class, 'heartbeat']);
+    Route::get('/collaborators', [CollaborationController::class, 'collaborators']);
+    Route::middleware(EnforceRole::class.':owner')->group(function () {
+        Route::post('/collaborators/invite', [CollaborationController::class, 'invite']);
+        Route::patch('/collaborators/{user}/role', [CollaborationController::class, 'updateRole']);
+    });
+    Route::get('/revisions', [RevisionController::class, 'index']);
+    Route::post('/revisions/{revision}/restore', [RevisionController::class, 'restore']);
 
     // Notification Routes (admin)
     Route::get('/notifications', [NotificationController::class, 'index']);

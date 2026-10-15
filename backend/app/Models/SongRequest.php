@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsRevisions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SongRequest extends Model
 {
-    use HasFactory;
+    use HasFactory, RecordsRevisions;
+
+    protected string $revisionModule = 'songs';
 
     protected $fillable = [
         'guest_name',

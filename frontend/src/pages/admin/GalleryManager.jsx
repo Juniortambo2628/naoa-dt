@@ -13,7 +13,7 @@ import Button from '../../components/Button';
 import SegmentedControl from '../../components/SegmentedControl';
 import { useGallery } from '../../hooks/useApiHooks';
 import { useSearch } from '../../context/SearchContext';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
 const POSITION_OPTIONS = ['top', 'left', 'center', 'right', 'bottom'].map((pos) => ({
   value: pos,
@@ -34,34 +34,40 @@ export default function GalleryManager() {
     if (fetchedItems) setItems(fetchedItems);
   }, [fetchedItems]);
 
-  const handleDelete = async (id) => {
-    if (await confirmAction('Delete this image?')) {
-      await galleryService.delete(id);
-      fetchGallery();
-    }
-  };
+  const refresh = () => fetchGallery();
+  const remove = useAdminAction((id) => galleryService.delete(id), {
+    confirm: 'Delete this image?',
+    error: 'Failed to delete image',
+    onSuccess: refresh,
+  });
+  const handleDelete = remove.run;
 
-  const toggleVisibility = async (item) => {
-    try {
-      await galleryService.update(item.id, { is_visible: !item.is_visible });
-      fetchGallery();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const visibility = useAdminAction((item) => galleryService.update(item.id, { is_visible: !item.is_visible }), {
+    key: (item) => item.id,
+    error: 'Failed to update visibility',
+    onSuccess: refresh,
+  });
+  const toggleVisibility = visibility.run;
 
-  const handleUpdate = async (e) => {
+  const updatePhoto = useAdminAction(() => galleryService.update(editingItem.id, {
+    object_position: editingItem.object_position || 'center',
+  }), {
+    key: () => 'edit',
+    error: 'Failed to update photo',
+    onSuccess: () => { setEditingItem(null); refresh(); },
+  });
+  const handleUpdate = (e) => {
     e.preventDefault();
-    try {
-      await galleryService.update(editingItem.id, {
-        object_position: editingItem.object_position || 'center'
-      });
-      setEditingItem(null);
-      fetchGallery();
-    } catch {
-      notifyError('Failed to update photo');
-    }
+    updatePhoto.run();
   };
+
+  const addUpload = useAdminAction((url) => galleryService.create({ image_url: url, caption: '', order: -1 }), {
+    error: 'Failed to add the uploaded photo',
+    onSuccess: (_, __, fileId) => {
+      setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+      refresh();
+    },
+  });
 
   const handleReorder = (newOrder) => {
     setItems(newOrder);
@@ -73,35 +79,23 @@ export default function GalleryManager() {
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (await confirmAction(`Delete ${selectedIds.length} selected photos?`)) {
-      await Promise.all(selectedIds.map(id => galleryService.delete(id)));
-      setSelectedIds([]);
-      fetchGallery();
-    }
-  };
+  const afterBulk = () => { setSelectedIds([]); refresh(); };
+  const bulkDelete = useBulkAdminAction((id) => galleryService.delete(id), {
+    confirm: (ids) => `Delete ${ids.length} selected photos?`,
+    onSuccess: afterBulk,
+  });
+  const bulkShow = useBulkAdminAction((id) => galleryService.update(id, { is_visible: true }), { onSuccess: afterBulk });
+  const bulkHide = useBulkAdminAction((id) => galleryService.update(id, { is_visible: false }), { onSuccess: afterBulk });
 
-  const handleBulkVisibility = async (visible) => {
-    await Promise.all(selectedIds.map(id =>
-      galleryService.update(id, { is_visible: visible })
-    ));
-    setSelectedIds([]);
-    fetchGallery();
-  };
-
-  const saveOrder = async () => {
-    try {
-      const reorderedItems = items.map((item, index) => ({
-        id: item.id,
-        order: index
-      }));
-      await galleryService.reorder(reorderedItems);
-      setIsReordering(false);
-      fetchGallery();
-    } catch {
-      notifyError('Failed to save order');
-    }
-  };
+  const reorder = useAdminAction(
+    () => galleryService.reorder(items.map((item, index) => ({ id: item.id, order: index }))),
+    {
+      key: () => 'reorder',
+      error: 'Failed to save order',
+      onSuccess: () => { setIsReordering(false); refresh(); },
+    },
+  );
+  const saveOrder = reorder.run;
 
   // Search by caption or uploader; reordering always works on the full set.
   const searchLower = (searchQuery || '').trim().toLowerCase();
@@ -198,15 +192,7 @@ export default function GalleryManager() {
               onFileRemoved={(id) => {
                 setUploadingFiles(prev => prev.filter(f => f.id !== id));
               }}
-              onUpload={async (url, id) => {
-                try {
-                  await galleryService.create({ image_url: url, caption: '', order: -1 });
-                  setUploadingFiles(prev => prev.filter(f => f.id !== id));
-                  fetchGallery();
-                } catch (err) {
-                  console.error('Auto-upload error:', err);
-                }
-              }}
+              onUpload={(url, id) => addUpload.run(url, id)}
             />
           </div>
         )}
@@ -239,7 +225,7 @@ export default function GalleryManager() {
 
                 <div className="flex justify-end gap-2">
                   <Button onClick={() => setEditingItem(null)}>Cancel</Button>
-                  <Button type="submit" variant="secondary">Save Changes</Button>
+                  <Button edit type="submit" variant="secondary">Save Changes</Button>
                 </div>
               </form>
             </div>
@@ -274,9 +260,9 @@ export default function GalleryManager() {
           selectedCount={selectedIds.length}
           onClearSelection={() => setSelectedIds([])}
           actions={[
-            { id: 'show', label: 'Show', icon: Eye, variant: 'secondary', onClick: () => handleBulkVisibility(true) },
-            { id: 'hide', label: 'Hide', icon: EyeOff, variant: 'primary', onClick: () => handleBulkVisibility(false) },
-            { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
+            { id: 'show', label: 'Show', icon: Eye, variant: 'secondary', action: bulkShow, args: [selectedIds] },
+            { id: 'hide', label: 'Hide', icon: EyeOff, variant: 'primary', action: bulkHide, args: [selectedIds] },
+            { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
           ]}
         />
       </AdminPageLayout>
@@ -309,10 +295,10 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
           <p className="text-white text-sm font-medium truncate">Uploaded by: {item.uploaded_by || 'Anonymous'}</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" icon={ImageIcon} className="flex-1" onClick={() => onEdit(item)}>
+          <Button edit size="sm" icon={ImageIcon} className="flex-1" onClick={() => onEdit(item)}>
             Edit
           </Button>
-          <Button
+          <Button edit
             size="icon"
             icon={item.is_visible ? Eye : EyeOff}
             onClick={() => onToggleVisibility(item)}
@@ -339,7 +325,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
   );
 
   return isReordering ? (
-    <Reorder.Group axis="y" values={items} onReorder={onReorder} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <Reorder.Group axis="y" values={items} onReorder={onReorder} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {items.map(item => (
         <Reorder.Item key={item.id} value={item} className="relative aspect-square bg-stone-100 rounded-xl overflow-hidden shadow-sm cursor-grab active:cursor-grabbing">
           <img src={getAssetUrl(item.image_url)} alt="Gallery Image" className="w-full h-full object-cover" />
@@ -350,7 +336,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
       ))}
     </Reorder.Group>
   ) : (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {uploadingFiles.map(file => (
         <div key={file.id} className="aspect-square rounded-xl overflow-hidden shadow-sm upload-placeholder shimmer-bg">
           <img src={file.preview} alt="Uploading..." className="w-full h-full object-cover" />
@@ -446,14 +432,14 @@ function GalleryList({ items, uploadingFiles, selectedIds, onToggleSelection, on
               </div>
 
               <div className="flex items-center justify-end gap-2">
-                <Button
+                <Button edit
                   size="icon"
                   icon={ImageIcon}
                   aria-label="Edit photo position"
                   title="Edit photo position"
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                 />
-                <Button
+                <Button edit
                   size="icon"
                   icon={item.is_visible ? Eye : EyeOff}
                   aria-label={item.is_visible ? 'Hide photo' : 'Show photo'}

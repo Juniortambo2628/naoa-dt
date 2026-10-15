@@ -15,6 +15,7 @@ import { AdminInput } from '../../components/admin/AdminInput';
 import { notifyError } from '../../utils/feedback';
 import Button from '../../components/Button';
 import SegmentedControl from '../../components/SegmentedControl';
+import useAdminAction from '../../hooks/useAdminAction';
 
 const LIVE_TYPE_OPTIONS = ['normal', 'important', 'alert'].map((t) => ({
   value: t,
@@ -117,35 +118,40 @@ export default function AdminTestLab() {
   }, []);
 
   // --- Simulate Live Update ---
+  // Test Lab results go to its log panel, not toasts.
+  const logFailure = (err) => addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
+  const simulateLiveUpdate = useAdminAction(() => testLabService.simulateLiveUpdate({ message: liveMsg, type: liveType }), {
+    key: () => 'live',
+    error: false,
+    onSuccess: () => { addLog('Live update posted! Check Programme page.', 'success'); setLiveMsg(''); },
+    onError: logFailure,
+  });
   const handleSimulateLiveUpdate = async () => {
     if (!liveMsg.trim()) return notifyError('Enter a message');
     setLoading(true);
     addLog(`Posting live update: "${liveMsg}"`, 'info');
-    try {
-      await testLabService.simulateLiveUpdate({ message: liveMsg, type: liveType });
-      addLog('Live update posted! Check Programme page.', 'success');
-      setLiveMsg('');
-    } catch (err) {
-      addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
-    }
+    await simulateLiveUpdate.run();
     setLoading(false);
   };
 
   // --- Simulate Polaroid ---
-  const handleSimulatePolaroid = async () => {
-    setLoading(true);
-    addLog('Simulating polaroid image...', 'info');
-    try {
-      await testLabService.simulatePolaroid({
-        note: polaroidCaption || 'Test polaroid from admin',
-        location: polaroidLocation || 'Test Lab',
-      });
+  const simulatePolaroid = useAdminAction(() => testLabService.simulatePolaroid({
+    note: polaroidCaption || 'Test polaroid from admin',
+    location: polaroidLocation || 'Test Lab',
+  }), {
+    key: () => 'polaroid',
+    error: false,
+    onSuccess: () => {
       addLog('Polaroid simulated! Check Programme page.', 'success');
       setPolaroidCaption('');
       setPolaroidLocation('');
-    } catch (err) {
-      addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
-    }
+    },
+    onError: logFailure,
+  });
+  const handleSimulatePolaroid = async () => {
+    setLoading(true);
+    addLog('Simulating polaroid image...', 'info');
+    await simulatePolaroid.run();
     setLoading(false);
   };
 
@@ -256,7 +262,7 @@ export default function AdminTestLab() {
         { id: 'test-weather', label: 'Test Weather', icon: Cloud, onClick: handleTestWeather, disabled: loading },
         { id: 'test-seating', label: 'Test Seating', icon: Map, onClick: handleTestSeating, disabled: loading },
         { id: 'test-settings', label: 'Test Settings', icon: Settings, onClick: handleTestSettings, disabled: loading },
-        { id: 'clear-logs', label: 'Clear Logs', icon: Trash2, variant: 'danger', onClick: () => setLogs([]), hidden: logs.length === 0 },
+        { id: 'clear-logs', readOnly: true, label: 'Clear Logs', icon: Trash2, variant: 'danger', onClick: () => setLogs([]), hidden: logs.length === 0 },
       ]}
       hero={
         <AdminPageHero
@@ -330,7 +336,7 @@ export default function AdminTestLab() {
       </AdminCard>
 
       {/* Feature Simulation */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         {/* Live Update Simulation */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
@@ -360,7 +366,7 @@ export default function AdminTestLab() {
                 onChange={setLiveType}
               />
             </div>
-            <Button
+            <Button edit
               variant="secondary"
               icon={Radio}
               fullWidth
@@ -394,7 +400,7 @@ export default function AdminTestLab() {
               onChange={(e) => setPolaroidLocation(e.target.value)}
               placeholder="Main Hall"
             />
-            <Button
+            <Button edit
               variant="secondary"
               icon={Camera}
               fullWidth
@@ -409,7 +415,7 @@ export default function AdminTestLab() {
       </div>
 
       {/* API Endpoint Testing */}
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
         {/* Weather API Test */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-4">
@@ -486,7 +492,7 @@ export default function AdminTestLab() {
       </div>
 
       {/* Email & Code Testing */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
@@ -547,7 +553,7 @@ export default function AdminTestLab() {
       </div>
 
       {/* Code & QR */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
@@ -567,7 +573,7 @@ export default function AdminTestLab() {
             <div className="flex justify-center p-4 bg-white border border-stone-200 rounded-xl">
               <QRCodeSVG value={testCode || ' '} size={112} title={`QR code for ${testCode}`} />
             </div>
-            <Button variant="secondary" icon={CheckCircle} fullWidth onClick={handleVerifyCode} disabled={loading}>
+            <Button edit variant="secondary" icon={CheckCircle} fullWidth onClick={handleVerifyCode} disabled={loading}>
               Verify RSVP Code
             </Button>
           </div>

@@ -92,9 +92,9 @@ function DashboardOverview() {
   return (
     <AdminPageLayout
       actions={[
-        { id: 'guests', label: 'Guest List', icon: Users, variant: 'secondary', onClick: () => navigate('/admin/dashboard/guests') },
-        { id: 'analytics', label: 'Analytics', icon: PieChart, onClick: () => navigate('/admin/dashboard/analytics') },
-        { id: 'checkin', label: 'Check-In', icon: CheckCircle, onClick: () => navigate('/admin/dashboard/checkin') },
+        { id: 'guests', readOnly: true, label: 'Guest List', icon: Users, variant: 'secondary', onClick: () => navigate('/admin/dashboard/guests') },
+        { id: 'analytics', readOnly: true, label: 'Analytics', icon: PieChart, onClick: () => navigate('/admin/dashboard/analytics') },
+        { id: 'checkin', readOnly: true, label: 'Check-In', icon: CheckCircle, onClick: () => navigate('/admin/dashboard/checkin') },
       ]}
       hero={
         <AdminPageHero
@@ -108,7 +108,7 @@ function DashboardOverview() {
     >
       {isError && <QueryError what="your guest list" error={error} onRetry={refetch} />}
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4">
         {/* Countdown */}
         <AdminCard className="flex flex-col justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#A67B5B]">
@@ -140,7 +140,7 @@ function DashboardOverview() {
         </AdminCard>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4">
         {/* To-do */}
         <AdminCard>
           <h2 className="text-lg font-semibold text-[#4A3F35] mb-4">To do</h2>

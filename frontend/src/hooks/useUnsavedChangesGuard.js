@@ -47,5 +47,5 @@ export function useUnsavedChanges(value) {
   const [baseline, setBaseline] = useState(null);
   const dirty = baseline !== null && JSON.stringify(value) !== JSON.stringify(baseline);
   useUnsavedChangesGuard(dirty);
-  return { dirty, markSaved: setBaseline };
+  return { dirty, markSaved: setBaseline, baseline };
 }

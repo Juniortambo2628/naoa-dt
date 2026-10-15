@@ -50,7 +50,7 @@ export default function AnalyticsCharts() {
         >
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* RSVP Status Pie Chart */}
                 <AdminCard>
                     <h3 className="text-lg font-medium text-stone-800 mb-4">RSVP Status</h3>

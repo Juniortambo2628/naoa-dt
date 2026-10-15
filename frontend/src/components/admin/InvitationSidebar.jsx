@@ -4,7 +4,7 @@ import {
   FileText, FileImage, X, ChevronUp, ChevronDown, ArrowUp, ArrowDown,
   User, Hash, Table as TableIcon, Trash2, Plus,
   AlignCenter, AlignRight, AlignJustify, ArrowUpToLine, ArrowDownToLine,
-  AlertCircle, Sliders,
+  AlertCircle, Sliders, Palette, Type, LayoutGrid, Shapes, Layers,
 } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import WeddingPalettePicker from './WeddingPalettePicker';
@@ -26,10 +26,24 @@ const V_ALIGN_OPTIONS = [
   { value: 'bottom', icon: ArrowDownToLine, ariaLabel: 'Align bottom' },
 ];
 
+/** The designer's tool groups — shown as the side panel's switcher. */
+// eslint-disable-next-line react-refresh/only-export-components
+export const DESIGNER_TABS = [
+  { id: 'style', label: 'Style', icon: Palette },
+  { id: 'text', label: 'Text', icon: Type },
+  { id: 'layout', label: 'Layout', icon: LayoutGrid },
+  { id: 'items', label: 'Items', icon: Shapes },
+  { id: 'layers', label: 'Layers', icon: Layers },
+];
+
+/**
+ * The invitation designer's tools for the active tab. Rendered inside the
+ * shared page side panel (AdminPageLayout `panel`), which provides the tab
+ * switcher, the card and scrolling — or a bottom sheet on mobile.
+ */
 export default function InvitationSidebar({
   loading,
   activeTab,
-  setActiveTab,
   design,
   editorLang,
   setEditorLang,
@@ -52,33 +66,15 @@ export default function InvitationSidebar({
   fonts,
 }) {
   return (
-    <div className="order-2 lg:order-1 w-full lg:w-96 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col lg:overflow-hidden">
+    <div className="font-sans">
       {loading ? (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
           <Skeleton variant="text" width="100%" height="40px" className="rounded-xl" />
           <Skeleton variant="image" width="100%" height="200px" className="rounded-xl" />
           <Skeleton variant="image" width="100%" height="150px" className="rounded-xl" />
         </div>
       ) : (
-        <div className="flex-1 lg:overflow-y-auto font-sans">
-          <div className="p-6 pt-0 space-y-8">
-            {/* Tabs Navigation — stays pinned while the panel scrolls */}
-            <div className="sticky top-16 lg:top-0 z-20 -mx-6 px-6 pt-6 pb-3 bg-white/95 backdrop-blur-sm border-b border-stone-100">
-             <div className="flex p-1 bg-stone-100/50 rounded-xl" role="tablist" aria-label="Designer panels">
-              {(['style', 'text', 'layout', 'items', 'layers']).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  role="tab"
-                  aria-selected={activeTab === tab}
-                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${activeTab === tab ? 'bg-white text-[#A67B5B] shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-             </div>
-            </div>
-
+          <div className="space-y-6">
             {activeTab === 'items' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
                 <div className="space-y-4">
@@ -764,7 +760,6 @@ export default function InvitationSidebar({
               </div>
             )}
           </div>
-        </div>
       )}
     </div>
   );

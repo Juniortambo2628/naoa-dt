@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
@@ -9,6 +10,9 @@ import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminModal from '../../components/admin/AdminModal';
+import EditableFieldset from '../../components/admin/EditableFieldset';
+import useAdminAction from '../../hooks/useAdminAction';
+
 import { AdminInput } from '../../components/admin/AdminInput';
 import Spinner from '../../components/admin/Spinner';
 import Button from '../../components/Button';
@@ -17,48 +21,63 @@ import { INVITATION_SECTIONS, resolveInvitationSections } from '../../utils/invi
 import { DEFAULT_WHATSAPP_TEMPLATE, WHATSAPP_PLACEHOLDERS, renderWhatsAppMessage } from '../../utils/whatsappMessage';
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
 
+// Each section owns these settings keys (for the "unsaved changes" dots).
 const settingSections = [
   {
     id: 'wedding',
     label: 'Wedding Details',
     icon: Heart,
-    description: 'Couple names, date and venue — the single source of truth.',
+    description: 'Couple names and date — the single source of truth.',
+    keys: ['bride_name', 'groom_name', 'wedding_date'],
   },
   {
     id: 'general',
     label: 'General',
     icon: Globe,
     description: 'Control public-facing features and primary URL.',
+    keys: ['rsvp_enabled', 'public_url'],
+  },
+  {
+    id: 'venue',
+    label: 'Venue Location',
+    icon: MapPin,
+    description: 'Venue name, address and map pin for invitations.',
+    keys: ['venue_name', 'venue_address', 'venue_lat', 'venue_lng'],
   },
   {
     id: 'security',
     label: 'Security',
     icon: Lock,
     description: 'Protect your account with two-factor authentication.',
+    keys: [],
   },
   {
     id: 'invitation-page',
     label: 'Guest Invitation Page',
     icon: LayoutTemplate,
     description: 'Choose which parts of the guest invitation page are shown.',
+    keys: ['invitation_sections'],
   },
   {
     id: 'whatsapp',
     label: 'WhatsApp Message',
     icon: MessageCircle,
     description: 'The message pre-filled when sending invitations on WhatsApp.',
+    keys: ['whatsapp_message_template'],
   },
   {
     id: 'notifications',
     label: 'Notifications',
     icon: Mail,
     description: 'Choose when and where you receive alerts.',
+    keys: ['admin_email_notifications', 'admin_email'],
   },
   {
     id: 'features',
     label: 'Features',
     icon: Music,
     description: 'Toggle optional functionality like song request limits.',
+    keys: ['song_request_limit_enabled'],
   },
 ];
 
@@ -99,7 +118,18 @@ export default function AdminSettings() {
   const formRef = useRef(null);
 
   // Last saved values, to know when there are unsaved edits.
-  const { dirty, markSaved } = useUnsavedChanges(settings);
+  const { dirty, markSaved, baseline } = useUnsavedChanges(settings);
+
+  // One section at a time; the side panel switches between them (?section= deep-links).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeSection = settingSections.find(s => s.id === searchParams.get('section')) || settingSections[0];
+  const showSection = (id) => setSearchParams((params) => {
+    const next = new URLSearchParams(params);
+    next.set('section', id);
+    return next;
+  }, { replace: true });
+  const sectionDirty = (section) => !!baseline
+    && section.keys.some(key => JSON.stringify(settings[key]) !== JSON.stringify(baseline[key]));
 
   const loadSettings = () => {
     if (settingsData) {
@@ -131,23 +161,20 @@ export default function AdminSettings() {
     toast('Unsaved changes discarded');
   };
 
-  const handleSave = async (e) => {
+  const saveSettings = useAdminAction(() => updateSettingsMutation.mutateAsync({
+    ...settings,
+    rsvp_enabled: String(settings.rsvp_enabled),
+    admin_email_notifications: String(settings.admin_email_notifications),
+    song_request_limit_enabled: String(settings.song_request_limit_enabled),
+  }), {
+    key: () => 'save',
+    success: 'System settings saved successfully',
+    error: 'Failed to save settings',
+    onSuccess: () => markSaved(settings),
+  });
+  const handleSave = (e) => {
     e.preventDefault();
-    try {
-        const payload = {
-            ...settings,
-            rsvp_enabled: String(settings.rsvp_enabled),
-            admin_email_notifications: String(settings.admin_email_notifications),
-            song_request_limit_enabled: String(settings.song_request_limit_enabled),
-        };
-
-        await updateSettingsMutation.mutateAsync(payload);
-        markSaved(settings);
-        toast.success('System settings saved successfully');
-    } catch (err) {
-        console.error('Settings save error:', err);
-        toast.error('Failed to save settings: ' + (err.response?.data?.message || err.message));
-    }
+    saveSettings.run();
   };
 
   const handle2faToggle = async () => {
@@ -212,6 +239,22 @@ export default function AdminSettings() {
           disabled: updateSettingsMutation.isPending || !dirty,
         },
       ]}
+      panel={{
+        title: 'Setting Overview',
+        icon: Info,
+        subtitle: dirty ? 'Sections with unsaved edits are marked — saving saves them all.' : undefined,
+        items: settingSections.map(section => ({ ...section, dot: sectionDirty(section) })),
+        activeId: activeSection.id,
+        onChange: showSection,
+        footer: (
+          <>
+            <p className="text-sm text-[#4A3F35] font-medium mb-1">Need help?</p>
+            <p className="text-xs text-[#8B7B6B]">
+              Changes are applied immediately after saving. Two-factor authentication cannot be recovered without backup codes.
+            </p>
+          </>
+        ),
+      }}
       hero={
         <AdminPageHero
           title="System Settings"
@@ -221,11 +264,11 @@ export default function AdminSettings() {
         />
       }
     >
-      <div className="grid lg:grid-cols-3 gap-8 items-start">
-        {/* Left Column: Settings Form */}
-        <div className="lg:col-span-2 space-y-6">
-          <form ref={formRef} onSubmit={handleSave} className="space-y-6">
+          <form ref={formRef} onSubmit={handleSave} className="space-y-4">
+          {/* Viewers: read-only, except their own account security */}
+          <EditableFieldset allow={activeSection.id === 'security'} className="block space-y-4">
             {/* Wedding Details — single source of truth for date, names & venue */}
+            {activeSection.id === 'wedding' && (
             <SettingsCard icon={Heart} title="Wedding Details" description="The couple, date and venue — used across the site, invitations and emails.">
               <div className="space-y-5">
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -255,8 +298,10 @@ export default function AdminSettings() {
                 </div>
               </div>
             </SettingsCard>
+            )}
 
             {/* General */}
+            {activeSection.id === 'general' && (
             <SettingsCard icon={Globe} title="General" description="Public URL and core site behavior.">
               <div className="space-y-5">
                 <Toggle
@@ -279,8 +324,10 @@ export default function AdminSettings() {
                 </div>
               </div>
             </SettingsCard>
+            )}
 
             {/* Venue Location */}
+            {activeSection.id === 'venue' && (
             <SettingsCard icon={MapPin} title="Venue Location" description="Venue name, address and map coordinates for invitations.">
               <div className="space-y-5">
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -309,8 +356,10 @@ export default function AdminSettings() {
                 </div>
               </div>
             </SettingsCard>
+            )}
 
             {/* Security */}
+            {activeSection.id === 'security' && (
             <SettingsCard icon={Lock} title="Security" description="Account protection settings.">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-stone-50 border border-stone-100">
                 <div className="flex items-center gap-4">
@@ -334,8 +383,10 @@ export default function AdminSettings() {
                 </Button>
               </div>
             </SettingsCard>
+            )}
 
             {/* Notifications */}
+            {activeSection.id === 'notifications' && (
             <SettingsCard icon={Mail} title="Notifications" description="Email alerts and recipients.">
               <div className="space-y-5">
                 <Toggle
@@ -358,8 +409,10 @@ export default function AdminSettings() {
                 )}
               </div>
             </SettingsCard>
+            )}
 
             {/* Guest invitation page sections */}
+            {activeSection.id === 'invitation-page' && (
             <SettingsCard icon={LayoutTemplate} title="Guest Invitation Page" description="Turn parts of the guest invitation on or off. The page layout adjusts to what's shown.">
               <div className="flex gap-3 mb-4 text-xs">
                 <button type="button" className="text-[#A67B5B] hover:underline" onClick={() => setSettings(s => ({ ...s, invitation_sections: Object.fromEntries(INVITATION_SECTIONS.map(x => [x.id, true])) }))}>Show all</button>
@@ -378,8 +431,10 @@ export default function AdminSettings() {
                 ))}
               </div>
             </SettingsCard>
+            )}
 
             {/* WhatsApp message */}
+            {activeSection.id === 'whatsapp' && (
             <SettingsCard icon={MessageCircle} title="WhatsApp Message" description="Pre-filled text for WhatsApp invitations. Each guest gets their own name and links.">
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
@@ -426,8 +481,10 @@ export default function AdminSettings() {
                 </button>
               </div>
             </SettingsCard>
+            )}
 
             {/* Features */}
+            {activeSection.id === 'features' && (
             <SettingsCard icon={Music} title="Features" description="Optional guest-facing modules.">
               <Toggle
                 id="songLimitToggle"
@@ -437,6 +494,7 @@ export default function AdminSettings() {
                 hint="Guests can submit up to 5 song requests per hour."
               />
             </SettingsCard>
+            )}
 
             <div className="flex justify-end gap-4 pt-2">
               <Button
@@ -445,7 +503,7 @@ export default function AdminSettings() {
               >
                 Cancel
               </Button>
-              <Button
+              <Button edit
                 type="submit"
                 variant="secondary"
                 icon={Save}
@@ -455,42 +513,8 @@ export default function AdminSettings() {
                 {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
+          </EditableFieldset>
           </form>
-        </div>
-
-        {/* Right Column: Help / Summary */}
-        <div className="space-y-6 lg:sticky lg:top-24">
-          <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100">
-            <h3 className="text-lg font-medium text-stone-800 mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-[#A67B5B]" />
-              Setting Overview
-            </h3>
-            <div className="space-y-4">
-              {settingSections.map((section) => {
-                const Icon = section.icon;
-                return (
-                  <div key={section.id} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-stone-50 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-4 h-4 text-stone-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-stone-800">{section.label}</p>
-                      <p className="text-xs text-stone-500 leading-relaxed">{section.description}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-[#A67B5B]/5 border border-[#A67B5B]/10">
-            <p className="text-sm text-[#4A3F35] font-medium mb-1">Need help?</p>
-            <p className="text-xs text-[#8B7B6B]">
-              Changes are applied immediately after saving. Two-factor authentication cannot be recovered without backup codes.
-            </p>
-          </div>
-        </div>
-      </div>
 
       <AdminModal isOpen={show2faModal && !!twoFactorData} onClose={() => setShow2faModal(false)} title="Setup Two-Factor Authentication" size="md">
         <form onSubmit={handleConfirm2fa} className="space-y-6">
@@ -538,8 +562,8 @@ export default function AdminSettings() {
 function SettingsCard({ icon, title, description, children }) {
   const Icon = icon;
   return (
-    <div className="p-6 rounded-2xl bg-white shadow-sm border border-stone-100">
-      <div className="flex items-start gap-3 mb-5">
+    <div className="p-4 sm:p-5 rounded-2xl bg-white shadow-sm border border-stone-100">
+      <div className="flex items-start gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center flex-shrink-0">
           <Icon className="w-5 h-5 text-[#A67B5B]" />
         </div>

@@ -1,9 +1,14 @@
+import useRole from '../../hooks/useRole';
+
+// Viewers see the switch's state but can't flip it.
 export default function ToggleButton({ enabled, onToggle, label }) {
+  const { canEdit } = useRole();
   return (
     <button
       type="button"
       onClick={onToggle}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+      disabled={!canEdit}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
         enabled ? 'bg-[#A67B5B]' : 'bg-stone-200'
       }`}
     >

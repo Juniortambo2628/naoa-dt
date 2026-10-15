@@ -44,6 +44,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role,
             ],
         ]);
     }
@@ -75,6 +76,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role,
             ],
         ]);
     }
@@ -82,6 +84,8 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+        // Drop out of other collaborators' "who's here" right away.
+        $request->user()->forceFill(['last_active_at' => null, 'current_module' => null, 'current_path' => null])->saveQuietly();
 
         return $this->successResponse(null, 'Logged out successfully');
     }

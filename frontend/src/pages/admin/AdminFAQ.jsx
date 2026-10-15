@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import useRole from '../../hooks/useRole';
 import { motion, Reorder, useDragControls } from 'framer-motion';
 import { Plus, Edit, Trash2, Save, HelpCircle, GripVertical, Image as ImageIcon, Table as TableIcon, CheckCircle } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
@@ -21,13 +22,13 @@ import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
-import { toast } from 'react-hot-toast';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
 registerPlugin(FilePondPluginImagePreview);
 
 function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, onDelete }) {
     const dragControls = useDragControls();
+    const { canEdit } = useRole();
 
     return (
         <Reorder.Item
@@ -36,12 +37,12 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
             dragControls={dragControls}
             className={`p-4 flex gap-4 items-start hover:bg-stone-50 transition-colors shadow-sm relative group ${isSelected ? 'bg-[#A67B5B]/5' : 'bg-white'}`}
         >
-            <div
+            {canEdit && <div
                 className={`mt-1 text-stone-300 hover:text-stone-500 ${searchQuery ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}
                 onPointerDown={(e) => { if (!searchQuery) dragControls.start(e); }}
             >
                 <GripVertical className="w-5 h-5" />
-            </div>
+            </div>}
             <div
                 className="w-5 h-5 mt-1.5 rounded border flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors"
                 onClick={(e) => { e.stopPropagation(); onToggleSelect(faq.id); }}
@@ -57,7 +58,7 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
                 <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-stone-50 to-transparent pointer-events-none"></div>
             </div>
             <div className="flex gap-2 shrink-0">
-                <Button
+                <Button edit
                     size="icon"
                     icon={Edit}
                     aria-label={`Edit FAQ: ${faq.question}`}
@@ -65,7 +66,7 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onEdit(faq); }}
                 />
-                <Button
+                <Button edit
                     variant="danger"
                     size="icon"
                     icon={Trash2}
@@ -102,7 +103,7 @@ function FaqGridCard({ faq, isSelected, onToggleSelect, onEdit, onDelete }) {
                 dangerouslySetInnerHTML={{ __html: faq.answer }}
             />
             <div className="flex gap-2">
-                <Button
+                <Button edit
                     size="sm"
                     icon={Edit}
                     className="flex-1"
@@ -110,7 +111,7 @@ function FaqGridCard({ faq, isSelected, onToggleSelect, onEdit, onDelete }) {
                 >
                     Edit
                 </Button>
-                <Button
+                <Button edit
                     variant="danger"
                     size="sm"
                     icon={Trash2}
@@ -139,17 +140,11 @@ export default function AdminFAQ() {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
-    const handleBulkDelete = async () => {
-        if (!await confirmAction(`Delete ${selectedIds.length} selected FAQs?`)) return;
-        try {
-            await Promise.all(selectedIds.map(id => faqService.delete(id)));
-            toast.success(`${selectedIds.length} FAQs deleted`);
-            setSelectedIds([]);
-            refetch();
-        } catch {
-            toast.error('Failed to delete some FAQs');
-        }
-    };
+    const bulkDelete = useBulkAdminAction((id) => faqService.delete(id), {
+        confirm: (ids) => `Delete ${ids.length} selected FAQs?`,
+        success: (count) => `${count} FAQs deleted`,
+        onSuccess: () => { setSelectedIds([]); refetch(); },
+    });
 
     // Form state
     const [question, setQuestion] = useState('');
@@ -190,30 +185,26 @@ export default function AdminFAQ() {
         handleEdit(faq);
     };
 
-    const handleSave = async (e) => {
+    const saveFaq = useAdminAction(() => (selectedFaq
+        ? faqService.update(selectedFaq.id, { question, answer, order: selectedFaq.order })
+        : faqService.create({ question, answer })), {
+        key: () => 'save',
+        error: 'Failed to save FAQ.',
+        onSuccess: () => { setModalOpen(false); refetch(); },
+    });
+    const handleSave = (e) => {
         e.preventDefault();
-        try {
-            if (selectedFaq) {
-                await faqService.update(selectedFaq.id, { question, answer, order: selectedFaq.order });
-            } else {
-                await faqService.create({ question, answer });
-            }
-            setModalOpen(false);
-        } catch (err) {
-            console.error(err);
-            notifyError("Failed to save FAQ.");
-        }
+        saveFaq.run();
     };
 
-    const handleReorder = async (newOrder) => {
+    const saveOrder = useAdminAction(
+        (newOrder) => faqService.reorder(newOrder.map((item, index) => ({ id: item.id, order: index }))),
+        { key: () => 'reorder', error: 'Failed to update order' },
+    );
+    const handleReorder = (newOrder) => {
         if (searchQuery) return; // Prevent reorder while search is active
         setReorderableFaqs(newOrder);
-        const updatedFaqs = newOrder.map((item, index) => ({ id: item.id, order: index }));
-        try {
-            await faqService.reorder(updatedFaqs);
-        } catch (error) {
-            console.error("Failed to update order", error);
-        }
+        saveOrder.run(newOrder);
     };
 
     const filteredFaqs = useFilteredItems(reorderableFaqs, searchQuery, (faq, searchLower) =>
@@ -278,7 +269,7 @@ export default function AdminFAQ() {
                     selectedCount={selectedIds.length}
                     onClearSelection={() => setSelectedIds([])}
                     actions={[
-                        { id: 'delete', label: 'Delete Selected', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
+                        { id: 'delete', label: 'Delete Selected', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
                     ]}
                 />
 
@@ -302,7 +293,7 @@ export default function AdminFAQ() {
                             ))}
                         </Reorder.Group>
                     ) : (
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredFaqs.map((faq) => (
                                 <FaqGridCard
                                     key={faq.id}
@@ -331,7 +322,7 @@ export default function AdminFAQ() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-stone-700 mb-1">Answer (Rich Text)</label>
                                 <div className="bg-white border rounded-xl overflow-hidden" style={{ minHeight: '300px' }}>
@@ -371,7 +362,7 @@ export default function AdminFAQ() {
                                         />
                                         
                                         {uploadedFileUrl && (
-                                            <Button
+                                            <Button edit
                                                 fullWidth
                                                 icon={ImageIcon}
                                                 onClick={insertImageToQuill}
@@ -398,7 +389,7 @@ export default function AdminFAQ() {
                             <Button onClick={() => setModalOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="secondary" icon={Save}>
+                            <Button edit type="submit" variant="secondary" icon={Save}>
                                 Save FAQ
                             </Button>
                         </div>

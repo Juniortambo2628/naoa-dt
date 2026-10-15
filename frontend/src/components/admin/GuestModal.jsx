@@ -317,7 +317,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
             <Button onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" variant="secondary" icon={Save} loading={loading}>
+            <Button edit type="submit" variant="secondary" icon={Save} loading={loading}>
               {loading ? 'Saving...' : 'Save Guest'}
             </Button>
           </div>

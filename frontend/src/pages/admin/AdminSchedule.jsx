@@ -12,7 +12,7 @@ import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import AdminCard from '../../components/admin/AdminCard';
 import Button from '../../components/Button';
 import Spinner from '../../components/admin/Spinner';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 
 export default function AdminSchedule() {
   const { data: events = [], isLoading: loading, refetch } = useSchedule();
@@ -45,17 +45,12 @@ export default function AdminSchedule() {
       setEventModalOpen(true);
   };
 
-  const handleDeleteEvent = async (eventId) => {
-      if (await confirmAction('Are you sure you want to delete this event? This will also delete all its schedule items.')) {
-          try {
-              await scheduleService.deleteEvent(eventId);
-              refetch();
-          } catch (err) {
-              console.error(err);
-              notifyError('Failed to delete event');
-          }
-      }
-  };
+  const deleteEvent = useAdminAction((eventId) => scheduleService.deleteEvent(eventId), {
+      confirm: 'Are you sure you want to delete this event? This will also delete all its schedule items.',
+      error: 'Failed to delete event',
+      onSuccess: () => refetch(),
+  });
+  const handleDeleteEvent = deleteEvent.run;
 
   const handleEditItem = (item, eventId) => {
     setSelectedItem(item);
@@ -63,40 +58,32 @@ export default function AdminSchedule() {
     setModalOpen(true);
   };
 
-  const handleDeleteItem = async (itemId) => {
-    if (await confirmAction('Delete this schedule item?')) {
-      try {
-        await scheduleService.deleteItem(itemId); 
-        refetch();
-      } catch (err) {
-        console.error(err);
-        notifyError('Failed to delete item');
-      }
-    }
-  };
+  const deleteItem = useAdminAction((itemId) => scheduleService.deleteItem(itemId), {
+      confirm: 'Delete this schedule item?',
+      error: 'Failed to delete item',
+      onSuccess: () => refetch(),
+  });
+  const handleDeleteItem = deleteItem.run;
 
-  const handleSaveItem = async (data) => {
-    if (selectedItem) {
-        await scheduleService.updateItem(selectedItem.id, data);
-    } else {
-        await scheduleService.createItem(targetEventId, data);
-    }
-    refetch();
-  };
-
-  const handleSaveEvent = async (data) => {
-      try {
-        if (selectedEvent) {
-            await scheduleService.updateEvent(selectedEvent.id, data);
-        } else {
-            await scheduleService.createEvent(data);
-        }
-        refetch();
-      } catch (e) {
-        console.error(e);
-        notifyError('Failed to save event');
-      }
-  };
+  // Saves re-throw so the form stays open when they fail.
+  const saveItem = useAdminAction((data) => (selectedItem
+      ? scheduleService.updateItem(selectedItem.id, data)
+      : scheduleService.createItem(targetEventId, data)), {
+      key: () => 'save-item',
+      error: 'Failed to save',
+      rethrow: true,
+      onSuccess: () => refetch(),
+  });
+  const saveEvent = useAdminAction((data) => (selectedEvent
+      ? scheduleService.updateEvent(selectedEvent.id, data)
+      : scheduleService.createEvent(data)), {
+      key: () => 'save-event',
+      error: 'Failed to save event',
+      rethrow: true,
+      onSuccess: () => refetch(),
+  });
+  const handleSaveItem = saveItem.run;
+  const handleSaveEvent = saveEvent.run;
 
   const filteredEvents = events.map(event => {
       const activeSearch = searchQuery || '';
@@ -157,15 +144,15 @@ export default function AdminSchedule() {
                                   <p className="text-stone-500 text-sm break-words">{new Date(event.event_date).toLocaleDateString()} • {event.venue}</p>
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
-                                  <Button size="icon-sm" icon={Edit} aria-label="Edit Event" title="Edit Event"
+                                  <Button edit size="icon-sm" icon={Edit} aria-label="Edit Event" title="Edit Event"
                                       onClick={() => handleEditEvent(event)}
                                   />
-                                  <Button variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete Event" title="Delete Event"
+                                  <Button edit variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete Event" title="Delete Event"
                                       onClick={() => handleDeleteEvent(event.id)}
                                   />
                               </div>
                           </div>
-                          <Button
+                          <Button edit
                               variant="secondary"
                               icon={Plus}
                               onClick={() => handleAddItem(event.id)}
@@ -189,10 +176,10 @@ export default function AdminSchedule() {
                                       </p>
                                   </div>
                                   <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                                      <Button size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
+                                      <Button edit size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
                                           onClick={() => handleEditItem(item, event.id)}
                                       />
-                                      <Button variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete schedule item" title="Delete"
+                                      <Button edit variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete schedule item" title="Delete"
                                           onClick={() => handleDeleteItem(item.id)}
                                       />
                                   </div>
@@ -262,7 +249,9 @@ function EventModal({ isOpen, onClose, onSave, event }) {
         try {
             await onSave(formData);
             onClose();
-        } catch(e) { console.error(e); }
+        } catch {
+            // Reported by the save action; keep the form open.
+        }
         setLoading(false);
     };
 
@@ -276,7 +265,7 @@ function EventModal({ isOpen, onClose, onSave, event }) {
                 </div>
                 <AdminInput label="Venue Name" required value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
                 <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>{event ? 'Update Event' : 'Create Event'}</Button>
+                <Button edit type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>{event ? 'Update Event' : 'Create Event'}</Button>
             </form>
         </AdminModal>
     );
@@ -321,7 +310,9 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
         try {
             await onSave(formData);
             onClose();
-        } catch(e) { console.error(e); notifyError('Failed to save'); }
+        } catch {
+            // Reported by the save action; keep the form open.
+        }
         setLoading(false);
     };
 
@@ -335,7 +326,7 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
                 </div>
                 <AdminInput label="Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
                 <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Event</Button>
+                <Button edit type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Event</Button>
             </form>
         </AdminModal>
     );

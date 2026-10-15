@@ -7,9 +7,8 @@ import EmptyState from '../../components/admin/EmptyState';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import ToggleButton from '../../components/admin/ToggleButton';
-import { toast } from 'react-hot-toast';
 import { useContent } from '../../context/ContentContext';
-import { confirmAction } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 
 const MODULES = [
     { key: 'home_hero', label: 'Home Hero', icon: Home, description: 'Main landing section with couple names and venue.' },
@@ -32,63 +31,52 @@ const MODULES = [
 
 export default function AdminModules() {
     const { contents, loading, isVisible, updateLocalContent } = useContent();
-    const [, setSaving] = useState(null);
     const { searchQuery } = useSearch();
     const [statusFilter, setStatusFilter] = useState('all');
-    const [bulkSaving, setBulkSaving] = useState(false);
 
     const searchLower = (searchQuery || '').trim().toLowerCase();
     const visibleModules = MODULES.filter(m =>
         (!searchLower || `${m.label} ${m.description}`.toLowerCase().includes(searchLower))
         && (statusFilter === 'all' || (statusFilter === 'enabled') === isVisible(m.key)));
 
-    const setAllModules = async (enabled) => {
-        const targets = MODULES.filter(m => isVisible(m.key) !== enabled);
-        if (targets.length === 0) return;
-        if (!await confirmAction(`${enabled ? 'Enable' : 'Disable'} ${targets.length} modules?`)) return;
-        setBulkSaving(true);
+    const visibilityPayload = (key, visible) => ({ is_visible: visible, content: contents[key]?.content || {} });
+    const targetsFor = (enabled) => MODULES.filter(m => isVisible(m.key) !== enabled);
+
+    // Optimistic: the switches flip at once and flip back for any save that fails.
+    const setAll = useAdminAction(async (enabled) => {
+        const targets = targetsFor(enabled);
         targets.forEach(m => updateLocalContent(m.key, { is_visible: enabled }));
-        const results = await Promise.allSettled(targets.map(m => contentService.update(m.key, {
-            is_visible: enabled,
-            content: contents[m.key]?.content || {},
-        })));
+        const results = await Promise.allSettled(targets.map(m => contentService.update(m.key, visibilityPayload(m.key, enabled))));
         const failed = targets.filter((m, i) => results[i].status === 'rejected');
         failed.forEach(m => updateLocalContent(m.key, { is_visible: !enabled }));
-        if (failed.length) toast.error(`Failed to update ${failed.length} modules`);
-        else toast.success(`All modules ${enabled ? 'enabled' : 'disabled'}`);
-        setBulkSaving(false);
-    };
+        if (failed.length) throw Object.assign(new Error('Some modules failed'), { failed: failed.length });
+        return targets.length;
+    }, {
+        key: () => 'bulk',
+        confirm: (enabled) => {
+            const count = targetsFor(enabled).length;
+            return count ? `${enabled ? 'Enable' : 'Disable'} ${count} modules?` : null;
+        },
+        success: (count, enabled) => (count ? `All modules ${enabled ? 'enabled' : 'disabled'}` : null),
+        error: (err) => (err.failed ? `Failed to update ${err.failed} modules` : 'Failed to update modules'),
+    });
 
-    const toggleModule = async (key, currentStatus) => {
-        const newStatus = !currentStatus;
-        
-        // Optimistic update
-        updateLocalContent(key, { is_visible: newStatus });
-        
-        setSaving(key);
-        try {
-            await contentService.update(key, {
-                is_visible: newStatus,
-                content: contents[key]?.content || {}
-            });
-            toast.success(`${MODULES.find(m => m.key === key)?.label} ${newStatus ? 'enabled' : 'disabled'}`);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to update module");
-            // Revert optimistic update on failure
-            updateLocalContent(key, { is_visible: currentStatus });
-        } finally {
-            setSaving(null);
-        }
-    };
+    const toggle = useAdminAction(async (key, currentStatus) => {
+        updateLocalContent(key, { is_visible: !currentStatus });
+        await contentService.update(key, visibilityPayload(key, !currentStatus));
+    }, {
+        success: (_, key, currentStatus) => `${MODULES.find(m => m.key === key)?.label} ${currentStatus ? 'disabled' : 'enabled'}`,
+        error: 'Failed to update module',
+        onError: (_, key, currentStatus) => updateLocalContent(key, { is_visible: currentStatus }),
+    });
 
     if (loading) return <EmptyState loading rows={6} />;
 
     return (
         <AdminPageLayout
           actions={[
-            { id: 'enable-all', label: 'Enable All', icon: Eye, variant: 'secondary', onClick: () => setAllModules(true), disabled: bulkSaving },
-            { id: 'disable-all', label: 'Disable All', icon: EyeOff, onClick: () => setAllModules(false), disabled: bulkSaving },
+            { id: 'enable-all', label: 'Enable All', icon: Eye, variant: 'secondary', action: setAll, args: [true] },
+            { id: 'disable-all', label: 'Disable All', icon: EyeOff, action: setAll, args: [false] },
           ]}
           search="Search modules…"
           filters={{
@@ -114,7 +102,7 @@ export default function AdminModules() {
           }
         >
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {visibleModules.map(module => {
                     const active = isVisible(module.key);
 
@@ -129,7 +117,7 @@ export default function AdminModules() {
                                 </div>
                                 <ToggleButton
                                     enabled={active}
-                                    onToggle={() => toggleModule(module.key, active)}
+                                    onToggle={() => toggle.run(module.key, active)}
                                     label={`Toggle ${module.label}`}
                                 />
                             </div>

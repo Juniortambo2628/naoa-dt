@@ -5,10 +5,10 @@ import { guestService, tableService } from '../../services/api';
 import { Plus, Users, MoreVertical, Trash2, Check, X, Search, Eye, Armchair } from 'lucide-react';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
-import AdminCard from '../../components/admin/AdminCard';
 import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useRole from '../../hooks/useRole';
+import useAdminAction from '../../hooks/useAdminAction';
 
 
 
@@ -24,9 +24,11 @@ function GuestItem({ guest, tables, onAssign }) {
     e.stopPropagation();
     if (!showMenu && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setMenuPos({ 
-        top: rect.bottom + window.scrollY + 5, 
-        left: rect.right + window.scrollX - 224 // Align right edge (w-56 = 224px)
+      // The menu is position: fixed, so viewport coordinates (works inside the
+      // side panel and the mobile bottom sheet, which scroll on their own).
+      setMenuPos({
+        top: Math.min(rect.bottom + 5, window.innerHeight - 260),
+        left: Math.max(8, rect.right - 224), // Align right edge (w-56 = 224px)
       });
     }
     setShowMenu(!showMenu);
@@ -36,7 +38,7 @@ function GuestItem({ guest, tables, onAssign }) {
 
   return (
     <>
-        <div className="p-3 bg-white rounded-lg shadow-sm border border-stone-200 flex items-center justify-between group hover:border-[#A67B5B]/30 transition-colors">
+        <div className="p-2.5 bg-white rounded-lg border border-stone-200 flex items-center justify-between group hover:border-[#A67B5B]/30 transition-colors">
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-xs font-medium text-stone-600">
                     {guest.name.charAt(0)}
@@ -59,7 +61,7 @@ function GuestItem({ guest, tables, onAssign }) {
                 </div>
             </div>
             
-            <Button
+            <Button edit
                 ref={buttonRef}
                 size="icon-sm"
                 icon={MoreVertical}
@@ -138,7 +140,7 @@ function TableCard({ table, onClick, onDelete }) {
                         <p className="text-xs text-stone-500 capitalize">{table.type} Table</p>
                     </div>
                 </div>
-                <Button
+                <Button edit
                     size="icon-sm"
                     variant="danger"
                     icon={Trash2}
@@ -229,7 +231,7 @@ function TableDetailsModal({ table, onClose, onUnassign }) {
                                                 <p className="text-xs text-stone-500 capitalize">{guest.group}</p>
                                             </div>
                                         </div>
-                                        <Button
+                                        <Button edit
                                             size="sm"
                                             variant="danger"
                                             icon={Trash2}
@@ -262,6 +264,7 @@ export default function SeatingChart() {
   const { searchQuery } = useSearch();
   
   // New Table Form
+  const { canEdit } = useRole();
   const [newTable, setNewTable] = useState({ name: '', capacity: 10, type: 'round' });
   const [isAdding, setIsAdding] = useState(false);
   
@@ -288,53 +291,39 @@ export default function SeatingChart() {
     setLoading(false);
   };
 
-  const handleAssignGuest = async (guestId, tableId) => {
-      try {
-          await tableService.assignGuest(tableId, guestId);
-          fetchData(); 
-          
-          // Use setTimeout because we refresh data from server
-          // If modal is open, we need to refresh selectedTable too
-          if (selectedTable && selectedTable.id === tableId) {
-             // We can't update selectedTable directly with new data until fetch completes
-             // A better way: store selectedTableId and derive selectedTable from tables array
-          }
-      } catch (err) {
-          notifyError('Failed to assign guest: ' + (err.response?.data?.message || err.message));
-      }
-  };
-  
-  const handleUnassignGuest = async (guestId) => {
-      try {
-          // Assuming API has unassign endpoint: DELETE /tables/{table}/guests/{guest} or similar
-          // Or update guest setting table_id = null
-          await tableService.unassignGuest(guestId); // Check api.js for correct method
-          fetchData();
-      } catch {
-           notifyError('Failed to unassign guest');
-      }
-  };
-
-  const handleAddTable = async () => {
-      try {
-          // Default position center (not used in list view but keep for model compat)
-          const tableData = { ...newTable, x: 100, y: 100 };
-          await tableService.create(tableData);
-          setNewTable({ name: '', capacity: 10, type: 'round' });
-          setIsAdding(false);
-          fetchData();
-      } catch {
-          notifyError('Failed to add table');
-      }
-  };
-
-  const handleDeleteTable = async (id) => {
-      if (await confirmAction('Delete this table? Assigned guests will be unassigned.')) {
-          await tableService.delete(id);
+  const assignGuest = useAdminAction((guestId, tableId) => tableService.assignGuest(tableId, guestId), {
+      error: 'Failed to assign guest',
+      onSuccess: () => fetchData(),
+  });
+  const unassignGuest = useAdminAction((guestId) => tableService.unassignGuest(guestId), {
+      error: 'Failed to unassign guest',
+      onSuccess: () => fetchData(),
+  });
+  const addTable = useAdminAction(
+      // Default position (not used in list view but kept for model compat)
+      () => tableService.create({ ...newTable, x: 100, y: 100 }),
+      {
+          key: () => 'add-table',
+          error: 'Failed to add table',
+          onSuccess: () => {
+              setNewTable({ name: '', capacity: 10, type: 'round' });
+              setIsAdding(false);
+              fetchData();
+          },
+      },
+  );
+  const deleteTable = useAdminAction((id) => tableService.delete(id), {
+      confirm: 'Delete this table? Assigned guests will be unassigned.',
+      error: 'Failed to delete table',
+      onSuccess: (_, id) => {
           fetchData();
           if (selectedTable?.id === id) setSelectedTable(null);
-      }
-  };
+      },
+  });
+  const handleAssignGuest = assignGuest.run;
+  const handleUnassignGuest = unassignGuest.run;
+  const handleAddTable = addTable.run;
+  const handleDeleteTable = deleteTable.run;
 
   const unassignedGuests = guests
     .filter(g => !g.table_id)
@@ -346,6 +335,25 @@ export default function SeatingChart() {
   return (
     <>
       <AdminPageLayout
+        fill
+        panel={{
+          title: 'Unassigned Guests',
+          icon: Users,
+          subtitle: `${unassignedGuests.length} ${unassignedGuests.length === 1 ? 'guest' : 'guests'} still to seat`,
+          sheetLabel: `Unassigned guests (${unassignedGuests.length})`,
+          content: (
+            <div className="space-y-2">
+              {unassignedGuests.map(guest => (
+                <GuestItem key={guest.id} guest={guest} tables={tables} onAssign={handleAssignGuest} />
+              ))}
+              {unassignedGuests.length === 0 && (
+                <div className="text-center py-8 text-stone-400 text-sm">
+                  {searchQuery ? 'No guests match your search' : 'Everyone has a seat'}
+                </div>
+              )}
+            </div>
+          ),
+        }}
         actions={[
           {
             id: 'add-table',
@@ -365,36 +373,10 @@ export default function SeatingChart() {
         }
         search="Search guests…"
       >
-        <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
-
-       <div className="flex-1 flex gap-6 overflow-hidden">
-       {/* Sidebar: Unassigned Guests */}
-       <AdminCard padding={false} className="w-80 flex flex-col h-full relative z-20">
-              <div className="p-4 border-b border-stone-100">
-                <h2 className="font-semibold text-lg text-stone-800">Unassigned Guests</h2>
-                <p className="text-xs text-stone-500">{unassignedGuests.length} guests remaining</p>
-              </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {unassignedGuests.map(guest => (
-                  <GuestItem 
-                    key={guest.id} 
-                    guest={guest} 
-                    tables={tables}
-                    onAssign={handleAssignGuest}
-                  />
-              ))}
-              {unassignedGuests.length === 0 && (
-                  <div className="text-center py-8 text-stone-400 text-sm">
-                      No guests found
-                  </div>
-              )}
-          </div>
-       </AdminCard>
-
-       {/* Main Area: Table Grid */}
-       <div className="flex-1 bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-200 relative overflow-hidden flex flex-col">
+        {/* Main Area: Table Grid (unassigned guests live in the side panel) */}
+       <div className="min-h-[50vh] fit:min-h-0 fit:flex-1 bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-200 relative overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="p-6 flex items-center justify-between border-b border-stone-100/50">
+          <div className="px-4 py-3 flex items-center justify-between gap-3 border-b border-stone-100/50">
               <div>
                   <h2 className="font-semibold text-lg text-stone-800">Tables Overview</h2>
               </div>
@@ -415,20 +397,20 @@ export default function SeatingChart() {
                           onChange={e => setNewTable({...newTable, capacity: parseInt(e.target.value)})}
                           placeholder="Cap"
                        />
-                       <Button size="icon" variant="secondary" icon={Check} aria-label="Add table" title="Add table" onClick={handleAddTable} />
+                       <Button edit size="icon" variant="secondary" icon={Check} aria-label="Add table" title="Add table" onClick={handleAddTable} />
                        <Button size="icon" icon={X} aria-label="Cancel adding table" title="Cancel" onClick={() => setIsAdding(false)} />
                   </div>
               ) : (
-                  <Button variant="secondary" icon={Plus} onClick={() => setIsAdding(true)}>
+                  <Button edit variant="secondary" icon={Plus} onClick={() => setIsAdding(true)}>
                       Add Table
                   </Button>
               )}
           </div>
 
           {/* Table Grid */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4">
               {tables.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                       {tables.map(table => (
                           <TableCard 
                               key={table.id}
@@ -442,7 +424,7 @@ export default function SeatingChart() {
                   <div className="h-full flex flex-col items-center justify-center text-stone-400">
                       <Armchair className="w-16 h-16 mb-4 opacity-20" />
                       <p>No tables created yet</p>
-                      <button onClick={() => setIsAdding(true)} className="text-[#A67B5B] hover:underline mt-2 text-sm">Create your first table</button>
+                      {canEdit && <button onClick={() => setIsAdding(true)} className="text-[#A67B5B] hover:underline mt-2 text-sm">Create your first table</button>}
                   </div>
               )}
           </div>
@@ -458,8 +440,6 @@ export default function SeatingChart() {
                 />
             )}
        </AnimatePresence>
-       </div>
-      </div>
       </AdminPageLayout>
     </>
   );

@@ -4,11 +4,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, DatabaseBackup, LogOut, Settings, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import useDismiss from '../../hooks/useDismiss';
+import useRole from '../../hooks/useRole';
+import { roleLabel } from '../../utils/roles';
 
 const ACCOUNT_LINKS = [
   { path: '/admin/dashboard/users', icon: UserCog, label: 'Users', id: 'header-users' },
   { path: '/admin/dashboard/settings', icon: Settings, label: 'Settings', id: 'header-settings' },
-  { path: '/admin/dashboard/backups', icon: DatabaseBackup, label: 'Backups', id: 'header-backups' },
+  { path: '/admin/dashboard/backups', icon: DatabaseBackup, label: 'Backups', id: 'header-backups', ownerOnly: true },
 ];
 
 /**
@@ -18,6 +20,8 @@ const ACCOUNT_LINKS = [
  */
 export default function HeaderAccountMenu({ compactLinks = [] }) {
   const { user, logout } = useAuth();
+  const { isOwner, role } = useRole();
+  const accountLinks = ACCOUNT_LINKS.filter((link) => isOwner || !link.ownerOnly);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -64,6 +68,7 @@ export default function HeaderAccountMenu({ compactLinks = [] }) {
             <div className="px-4 py-2 border-b border-stone-100 mb-1">
               <p className="text-sm font-semibold text-stone-800 truncate">{user?.name || 'Admin'}</p>
               {user?.email && <p className="text-xs text-stone-500 truncate">{user.email}</p>}
+              <p className="text-[11px] text-[#A67B5B] font-medium mt-0.5">{roleLabel(role)}</p>
             </div>
 
             {compactLinks.length > 0 && (
@@ -77,7 +82,7 @@ export default function HeaderAccountMenu({ compactLinks = [] }) {
               </div>
             )}
 
-            {ACCOUNT_LINKS.map((link) => (
+            {accountLinks.map((link) => (
               <Link key={link.path} id={link.id} to={link.path} role="menuitem" onClick={close} className={itemClass}>
                 <link.icon className="w-4 h-4 text-[#A67B5B]" />
                 {link.label}

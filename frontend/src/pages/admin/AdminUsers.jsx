@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Plus, Edit, Trash2, UserCog } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminUsers } from '../../hooks/useApiHooks';
 import { userService } from '../../services/api';
+import useRole from '../../hooks/useRole';
+import { ROLES, roleLabel } from '../../utils/roles';
 import { useAuth } from '../../context/AuthContext';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
@@ -13,15 +14,16 @@ import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import { AdminInput } from '../../components/admin/AdminInput';
-import { confirmAction } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 import Button from '../../components/Button';
 
-const EMPTY_FORM = { name: '', email: '', password: '' };
+const EMPTY_FORM = { name: '', email: '', password: '', role: 'editor' };
 const matchesUser = (user, q) => `${user.name} ${user.email}`.toLowerCase().includes(q);
 
 export default function AdminUsers() {
     const { data: users = [], isLoading } = useAdminUsers();
     const { user: currentUser } = useAuth();
+    const { isOwner } = useRole();
     const { searchQuery } = useSearch();
     const queryClient = useQueryClient();
     const filtered = useFilteredItems(users, searchQuery, matchesUser);
@@ -29,48 +31,40 @@ export default function AdminUsers() {
     const [editing, setEditing] = useState(null); // null = closed, {} = new, user = edit
     const [form, setForm] = useState(EMPTY_FORM);
     const [errors, setErrors] = useState({});
-    const [saving, setSaving] = useState(false);
 
     const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-users'] });
 
     const openModal = (user = {}) => {
         setEditing(user);
-        setForm({ name: user.name || '', email: user.email || '', password: '' });
+        setForm({ name: user.name || '', email: user.email || '', password: '', role: user.role || 'editor' });
         setErrors({});
     };
 
-    const handleSubmit = async (e) => {
+    const saveUser = useAdminAction(() => (editing.id ? userService.update(editing.id, form) : userService.create(form)), {
+        role: 'owner',
+        key: () => 'save',
+        success: () => (editing.id ? 'User Updated' : 'User Added'),
+        error: 'Failed to save user',
+        onSuccess: () => { setEditing(null); refresh(); },
+        // Field-level messages under the inputs (the toast gives the summary).
+        onError: (err) => setErrors(err?.response?.data?.errors || {}),
+    });
+    const saving = saveUser.pending;
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setSaving(true);
         setErrors({});
-        try {
-            if (editing.id) {
-                await userService.update(editing.id, form);
-                toast.success('User Updated');
-            } else {
-                await userService.create(form);
-                toast.success('User Added');
-            }
-            setEditing(null);
-            refresh();
-        } catch (err) {
-            setErrors(err?.response?.data?.errors || {});
-            toast.error(err?.response?.data?.message || 'Failed to save user');
-        } finally {
-            setSaving(false);
-        }
+        saveUser.run();
     };
 
-    const handleDelete = async (user) => {
-        if (!await confirmAction(`Remove ${user.name}'s admin access?`)) return;
-        try {
-            await userService.delete(user.id);
-            toast.success('User Removed');
-            refresh();
-        } catch (err) {
-            toast.error(err?.response?.data?.message || 'Failed to delete user');
-        }
-    };
+    const deleteUser = useAdminAction((user) => userService.delete(user.id), {
+        role: 'owner',
+        key: (user) => user.id,
+        confirm: (user) => `Remove ${user.name}'s admin access?`,
+        success: 'User Removed',
+        error: 'Failed to delete user',
+        onSuccess: refresh,
+    });
+    const handleDelete = deleteUser.run;
 
     const field = (key) => ({
         value: form[key],
@@ -82,12 +76,12 @@ export default function AdminUsers() {
         <>
             <AdminPageLayout
                 fill
-                actions={[{ id: 'add-user', label: 'Add User', icon: Plus, variant: 'secondary', onClick: () => openModal() }]}
+                actions={isOwner ? [{ id: 'add-user', label: 'Add User', icon: Plus, variant: 'secondary', onClick: () => openModal() }] : []}
                 search="Search users…"
                 hero={
                     <AdminPageHero
                         title="User Management"
-                        description={`${users.length} dashboard users`}
+                        description={isOwner ? `${users.length} dashboard users` : `${users.length} dashboard users · only owners can add or change users`}
                         breadcrumb="Users"
                         icon={<UserCog className="w-5 h-5 text-[#A67B5B]" />}
                     />
@@ -111,9 +105,10 @@ export default function AdminUsers() {
                                                   {user.name} {isSelf && <span className="text-xs text-[#A67B5B]">(You)</span>}
                                               </p>
                                               <p className="text-sm text-stone-500 truncate">{user.email}</p>
+                                              <p className="text-xs font-medium text-[#A67B5B]">{roleLabel(user.role)}</p>
                                           </div>
                                       </div>
-                                      <div className="flex gap-2">
+                                      {isOwner && <div className="flex gap-2">
                                           <Button size="sm" icon={Edit} className="flex-1" onClick={() => openModal(user)}>
                                               Edit
                                           </Button>
@@ -128,7 +123,7 @@ export default function AdminUsers() {
                                           >
                                               Delete
                                           </Button>
-                                      </div>
+                                      </div>}
                                   </div>
                               );
                           })}
@@ -149,6 +144,14 @@ export default function AdminUsers() {
                         autoComplete="new-password"
                         {...field('password')}
                     />
+                    <div>
+                        <label htmlFor="user-role" className="block text-sm font-medium text-stone-600 mb-1">Role</label>
+                        <select id="user-role" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                            className="w-full px-4 py-2 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]">
+                            {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label} — {r.description}</option>)}
+                        </select>
+                        {errors.role?.[0] && <p className="text-red-500 text-xs mt-1">{errors.role[0]}</p>}
+                    </div>
                     <Button type="submit" variant="secondary" fullWidth loading={saving}>
                         {saving ? 'Saving...' : 'Save User'}
                     </Button>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsRevisions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ScheduleItem extends Model
 {
-    use HasFactory;
+    use HasFactory, RecordsRevisions;
+
+    protected string $revisionModule = 'schedule';
 
     protected $fillable = [
         'event_id',

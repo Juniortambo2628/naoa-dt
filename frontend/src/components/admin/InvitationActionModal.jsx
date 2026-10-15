@@ -128,7 +128,7 @@ export default function InvitationActionModal({ isOpen, onClose, guest, onSendEm
                                         )}
                                     </div>
                                 </div>
-                                <Button
+                                <Button edit
                                     size="sm"
                                     variant={isEditing ? 'secondary' : 'primary'}
                                     icon={isEditing ? Save : null}

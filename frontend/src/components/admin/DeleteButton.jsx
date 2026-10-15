@@ -16,6 +16,7 @@ export default function DeleteButton({ onClick, processing, title = 'Delete' }) 
       icon={Trash2}
       loading={processing}
       onClick={onClick}
+      edit
       title={title}
       aria-label={title}
     />

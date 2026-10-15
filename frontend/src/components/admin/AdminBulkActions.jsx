@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MoreHorizontal, Trash2, Mail, CheckCircle, Download, Users } from 'lucide-react';
 import Button from '../Button';
+import { useVisibleActions } from '../../hooks/useRole';
 
 /**
  * AdminBulkActions — reusable bulk-selection action bar for admin list pages.
@@ -18,7 +19,9 @@ import Button from '../Button';
  *     disabled?: boolean,
  *   }
  */
-export default function AdminBulkActions({ selectedCount = 0, onClearSelection, actions = [] }) {
+export default function AdminBulkActions({ selectedCount = 0, onClearSelection, actions: allActions = [] }) {
+  // Viewers keep only `readOnly` actions (e.g. export).
+  const actions = useVisibleActions(allActions);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 

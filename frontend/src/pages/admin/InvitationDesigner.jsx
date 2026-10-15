@@ -11,7 +11,7 @@ import { PortalWhen } from '../../components/Overlay';
 import { toDocument, getPageDesign, createBlankPage, clonePage, SHARED_KEYS } from '../../utils/invitationPages';
 import InvitationCanvas from '../../components/admin/InvitationCanvas';
 import InvitationExportContainer from '../../components/admin/InvitationExportContainer';
-import InvitationSidebar from '../../components/admin/InvitationSidebar';
+import InvitationSidebar, { DESIGNER_TABS } from '../../components/admin/InvitationSidebar';
 import InvitationSaveStatus from '../../components/admin/InvitationSaveStatus';
 import InvitationPageMenu from '../../components/admin/InvitationPageMenu';
 import InvitationAddMenu from '../../components/admin/InvitationAddMenu';
@@ -28,6 +28,9 @@ import { saveAs } from 'file-saver';
 import { Skeleton } from '../../components/Skeleton';
 import { toast } from 'react-hot-toast';
 import { confirmAction, notifyError } from '../../utils/feedback';
+import useRole from '../../hooks/useRole';
+import EditableFieldset from '../../components/admin/EditableFieldset';
+
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);
@@ -39,6 +42,8 @@ export default function InvitationDesigner() {
   // configuration the public site uses, so the designer preview and exports
   // always reflect the real configured values rather than stale defaults.
   const [weddingInfo, setWeddingInfo] = useState(null);
+  // Viewers can try things on the canvas, but nothing is saved.
+  const { canEdit } = useRole();
   const [activeTab, setActiveTab] = useState('style'); // style, text, layout, items
   const [designType, setDesignType] = useState('invitation'); // invitation, save_the_date
   const [editorLang, setEditorLang] = useState('en');
@@ -259,6 +264,7 @@ export default function InvitationDesigner() {
   // Autosave effect — debounced, intentionally keyed only on `design`.
   useEffect(() => {
       if (loading) return; // Don't autosave while initial loading
+      if (!canEdit) return; // View-only: never write
       if (!loadedOkRef.current) return; // Don't autosave if the load failed (would overwrite saved pages)
 
       const timer = setTimeout(() => {
@@ -709,6 +715,7 @@ export default function InvitationDesigner() {
           const mod = e.ctrlKey || e.metaKey;
           const key = e.key.toLowerCase();
           const arrows = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
+          if (!canEdit && !(mod && ['=', '+', '-', '0'].includes(key))) return; // view-only: zoom keys only
           if (mod && key === 'z' && !e.shiftKey) { e.preventDefault(); handleUndo(); }
           else if (mod && (key === 'y' || (key === 'z' && e.shiftKey))) { e.preventDefault(); handleRedo(); }
           else if (mod && key === 'a') { e.preventDefault(); setSelectedIds(pageItems.map(i => i.id)); }
@@ -767,12 +774,52 @@ export default function InvitationDesigner() {
 
   return (
     <>
-      <AdminHeaderStatus>
-        <InvitationSaveStatus status={saveStatus} />
-      </AdminHeaderStatus>
+      {canEdit && (
+        <AdminHeaderStatus>
+          <InvitationSaveStatus status={saveStatus} />
+        </AdminHeaderStatus>
+      )}
 
       <AdminPageLayout
         fill
+        panel={{
+          title: 'Design Tools',
+          icon: Sliders,
+          subtitle: 'Right-click any element for quick adjustments.',
+          sheetLabel: 'Design tools',
+          navVariant: 'grid',
+          items: DESIGNER_TABS,
+          activeId: activeTab,
+          onChange: setActiveTab,
+          content: (
+            <EditableFieldset>
+            <InvitationSidebar
+              loading={loading}
+              activeTab={activeTab}
+              design={activePageDesign}
+              editorLang={editorLang}
+              setEditorLang={setEditorLang}
+              selectedItemId={selectedItemId}
+              setSelectedItemId={setSelectedItemId}
+              selectedIds={selectedIds}
+              onSelect={handleSelect}
+              updateDesign={updateDesign}
+              handleDesignUpdate={handleDesignUpdate}
+              addItem={addItem}
+              onAddElement={addElement}
+              deleteItem={deleteItem}
+              updateContent={updateContent}
+              insertPlaceholder={insertPlaceholder}
+              titleRef={titleRef}
+              messageRef={messageRef}
+              languages={languages}
+              presetBackgrounds={presetBackgrounds}
+              presetColors={presetColors}
+              fonts={fonts}
+            />
+            </EditableFieldset>
+          ),
+        }}
         hero={
           <AdminPageHero
             title="Invitation Designer"
@@ -785,33 +832,7 @@ export default function InvitationDesigner() {
         {/* Fits the viewport on desktop (like other editors): only the side
             panel scrolls, so its tabs and the canvas always stay in view. */}
         <div className="flex flex-col gap-4 lg:h-[calc(100vh-140px)] fit:h-auto fit:flex-1 fit:min-h-0">
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:overflow-hidden">
-         <InvitationSidebar
-            loading={loading}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            design={activePageDesign}
-            editorLang={editorLang}
-            setEditorLang={setEditorLang}
-            selectedItemId={selectedItemId}
-            setSelectedItemId={setSelectedItemId}
-            selectedIds={selectedIds}
-            onSelect={handleSelect}
-            updateDesign={updateDesign}
-            handleDesignUpdate={handleDesignUpdate}
-            addItem={addItem}
-            onAddElement={addElement}
-            deleteItem={deleteItem}
-            updateContent={updateContent}
-            insertPlaceholder={insertPlaceholder}
-            titleRef={titleRef}
-            messageRef={messageRef}
-            languages={languages}
-            presetBackgrounds={presetBackgrounds}
-            presetColors={presetColors}
-            fonts={fonts}
-         />
-
+        <div className="flex-1 min-h-0 flex flex-col gap-4 lg:overflow-hidden">
         {/* Live Preview Area */}
         <PortalWhen active={isFullscreen}>
         <div 
@@ -820,7 +841,7 @@ export default function InvitationDesigner() {
                 isFullscreen
                     // No `relative` here: it would override `fixed` and leave the preview in the page flow.
                     ? 'fixed inset-0 z-[100] bg-stone-100/95 backdrop-blur-md p-8'
-                    : 'relative order-1 lg:order-2 flex-1 min-h-[55vh] lg:min-h-0 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
+                    : 'relative flex-1 min-h-[60vh] lg:min-h-0 bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 p-3'
             }`}
         >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
@@ -837,13 +858,13 @@ export default function InvitationDesigner() {
                     onSelect={handleSelect}
                     zoom={zoom}
                     onFitScaleChange={setFitScale}
-                    mode="edit" 
+                    mode={canEdit ? 'edit' : 'view'}
                     guest={dummyGuest}
                     showGrid={design.showGrid}
                     snapToGrid={design.snapToGrid}
                     weddingSettings={weddingInfo}
-                    onItemContextMenu={(item, position) => setContextMenu({ kind: 'item', itemId: item.id, position })}
-                    onCanvasContextMenu={(position) => setContextMenu({ kind: 'page', position })}
+                    onItemContextMenu={canEdit ? (item, position) => setContextMenu({ kind: 'item', itemId: item.id, position }) : undefined}
+                    onCanvasContextMenu={canEdit ? (position) => setContextMenu({ kind: 'page', position }) : undefined}
                 />
             )}
 
@@ -869,14 +890,14 @@ export default function InvitationDesigner() {
         z={isFullscreen ? 'z-[110]' : 'z-50'}
         actions={[
           {
-            id: 'test-png',
+            id: 'test-png', readOnly: true,
             label: 'Test PNG',
             icon: FileImage,
             onClick: () => handleTestExport('png'),
             disabled: isExporting,
           },
           {
-            id: 'test-pdf',
+            id: 'test-pdf', readOnly: true,
             label: 'Test PDF',
             icon: FileText,
             onClick: () => handleTestExport('pdf'),
@@ -902,7 +923,7 @@ export default function InvitationDesigner() {
             {divider}
 
             {/* Undo / redo */}
-            <Button
+            <Button edit
               size="icon"
               icon={Undo2}
               onClick={handleUndo}
@@ -910,7 +931,7 @@ export default function InvitationDesigner() {
               title="Undo (Ctrl+Z)"
               aria-label="Undo"
             />
-            <Button
+            <Button edit
               size="icon"
               icon={Redo2}
               onClick={handleRedo}
@@ -922,8 +943,8 @@ export default function InvitationDesigner() {
             {divider}
 
             {/* Design tools */}
-            <InvitationAddMenu onAdd={addElement} />
-            <Button
+            {canEdit && <InvitationAddMenu onAdd={addElement} />}
+            <Button edit
               size="icon"
               icon={Grid3x3}
               variant={design.showGrid ? 'secondary' : 'primary'}
@@ -932,7 +953,7 @@ export default function InvitationDesigner() {
               title="Show grid"
               aria-label="Show grid"
             />
-            <Button
+            <Button edit
               size="icon"
               icon={Magnet}
               variant={design.snapToGrid ? 'secondary' : 'primary'}
@@ -941,7 +962,7 @@ export default function InvitationDesigner() {
               title="Snap to grid"
               aria-label="Snap to grid"
             />
-            <Button
+            <Button edit
               size="icon"
               icon={design.orientation === 'landscape' ? RectangleHorizontal : RectangleVertical}
               onClick={() => updateDesign('orientation', design.orientation === 'landscape' ? 'portrait' : 'landscape')}

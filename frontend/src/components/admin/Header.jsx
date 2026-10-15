@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings, PieChart, UserCheck } from 'lucide-react';
+import { Menu, Bell, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings, PieChart, UserCheck, History, Share2 } from 'lucide-react';
+import { useCollaboration } from '../../context/CollaborationContext';
+import CollaboratorAvatars from './CollaboratorAvatars';
+import useRole from '../../hooks/useRole';
 import HeaderAccountMenu from './HeaderAccountMenu';
 import { notificationService } from '../../services/api';
 
@@ -50,6 +53,9 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const fetchedRef = useRef(false);
+  const { presence, othersHere, openHistory, setShareOpen, badges } = useCollaboration();
+  const hasNews = Object.values(badges).some(Boolean);
+  const { canEdit } = useRole();
 
   const fetchNotifications = async () => {
     try {
@@ -107,16 +113,37 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
       <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         <button
           onClick={onMenuClick}
-          aria-label="Open sidebar menu"
-          className="lg:hidden p-2 rounded-lg hover:bg-black/5 shrink-0"
+          aria-label={hasNews ? 'Open sidebar menu (new changes)' : 'Open sidebar menu'}
+          className="lg:hidden relative p-2 rounded-lg hover:bg-black/5 shrink-0"
         >
           <Menu className="w-6 h-6 text-[#4A3F35]" />
+          {hasNews && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#A67B5B] ring-2 ring-[#FFF9F5]" aria-hidden="true" />}
         </button>
         {/* Compact page title, filled by AdminPageHero once it scrolls away */}
         <div ref={titleSlotRef} className="min-w-0 flex-1" />
+        {/* Someone else is on this page: say so, to avoid overwriting each other */}
+        {othersHere.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className="hidden sm:flex items-center gap-2 shrink-0 pl-1 pr-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs text-amber-800"
+            title="Others editing here may overwrite each other's unsaved changes"
+          >
+            <CollaboratorAvatars people={othersHere} size="xs" max={2} />
+            <span className="max-w-[14rem] truncate">
+              {othersHere.length === 1 ? `${othersHere[0].name} is here too` : `${othersHere.length} others are here too`}
+            </span>
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {!canEdit && (
+          <span className="px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 whitespace-nowrap"
+            title="You can look around, but changes won't be saved. Ask an owner for edit access.">
+            View only
+          </span>
+        )}
         {/* Page status (e.g. the designer's save indicator) */}
         <div ref={statusSlotRef} className="flex items-center empty:hidden mr-1" />
 
@@ -142,10 +169,41 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
           })}
         </nav>
 
+        {/* Who's online (click for the share panel) */}
+        {presence.length > 0 && (
+          <button type="button" onClick={() => setShareOpen(true)} className="hidden md:flex p-1 rounded-full hover:bg-black/5"
+            aria-label={`${presence.length} collaborator${presence.length === 1 ? '' : 's'} online`}>
+            <CollaboratorAvatars people={presence} max={3} />
+          </button>
+        )}
+
+        <button
+          id="header-share"
+          type="button"
+          onClick={() => setShareOpen(true)}
+          aria-label="Share dashboard"
+          title="Share — invite collaborators"
+          className="flex items-center gap-2 p-2 xl:px-3 rounded-xl text-sm font-medium text-[#6B5D52] hover:bg-[#A67B5B]/10 hover:text-[#A67B5B] transition-colors"
+        >
+          <Share2 className="w-5 h-5" />
+          <span className="hidden xl:inline">Share</span>
+        </button>
+
+        <button
+          id="header-history"
+          type="button"
+          onClick={openHistory}
+          aria-label="Version history"
+          title="Version history"
+          className="p-2 rounded-xl text-[#6B5D52] hover:bg-[#A67B5B]/10 hover:text-[#A67B5B] transition-colors"
+        >
+          <History className="w-5 h-5" />
+        </button>
+
         <button aria-label="Restart Dashboard Tour"
           id="header-restart"
           onClick={onRestartTutorial}
-          className="p-2 rounded-xl text-[#8B7B6B] hover:bg-black/5 transition-colors"
+          className="hidden sm:block p-2 rounded-xl text-[#8B7B6B] hover:bg-black/5 transition-colors"
           title="Restart Dashboard Tour"
         >
           <Info className="w-5 h-5" />

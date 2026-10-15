@@ -50,7 +50,7 @@ export default function InvitationLayers({ items, selectedIds, onSelect, onReord
               <span className="p-1.5 bg-stone-50 rounded-lg text-stone-500 group-hover:text-[#A67B5B]"><Icon className="w-4 h-4" /></span>
               <span className={`text-xs font-bold truncate ${item.locked ? 'text-stone-500' : 'text-stone-700'}`}>{name}</span>
             </button>
-            <Button
+            <Button edit
               size="icon-sm"
               icon={item.locked ? Lock : Unlock}
               onClick={() => onToggleLock(item)}
@@ -58,7 +58,7 @@ export default function InvitationLayers({ items, selectedIds, onSelect, onReord
               aria-label={item.locked ? `Unlock ${name}` : `Lock ${name}`}
               title={item.locked ? 'Unlock' : 'Lock position'}
             />
-            <Button
+            <Button edit
               size="icon-sm"
               variant="danger"
               icon={X}

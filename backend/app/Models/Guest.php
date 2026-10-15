@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsRevisions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Support\Str;
 
 class Guest extends Model
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, RecordsRevisions, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -44,6 +45,25 @@ class Guest extends Model
         'location_lat' => 'float',
         'location_lng' => 'float',
     ];
+
+    /** RSVP answers belong to the RSVPs module, table moves to the seating chart. */
+    public function revisionModule(array $changed = []): string
+    {
+        if ($changed && ! array_diff($changed, ['table_id'])) {
+            return 'seating';
+        }
+        if (array_intersect($changed, ['rsvp_status', 'rsvp_message', 'dietary_notes', 'song_request'])) {
+            return 'rsvps';
+        }
+
+        return 'guests';
+    }
+
+    /** Live location pings and check-in QR refreshes aren't edits worth a version. */
+    public function revisionIgnored(): array
+    {
+        return ['location_zone', 'location_lat', 'location_lng', 'location_updated_at', 'qr_code'];
+    }
 
     /** Acronym groups kept upper-case; everything else is Title Case. */
     private const GROUP_ACRONYMS = ['VIP', 'VVIP', 'MC'];

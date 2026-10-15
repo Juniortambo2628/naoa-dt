@@ -4,6 +4,9 @@ import {
   LayoutDashboard, Users, Calendar, Gift, Image, X, Music, MessageSquare, HelpCircle,
   MailCheck, Armchair, Palette, FileText, Blocks, Inbox,
 } from 'lucide-react';
+import { useCollaboration } from '../../context/CollaborationContext';
+import { moduleForPath } from '../../utils/adminModules';
+import CollaboratorAvatars from './CollaboratorAvatars';
 
 // Content pages, grouped. Analytics, Check-In, Email Templates and Test Lab
 // live in the header's quick links; Users, Settings, Backups and sign-out in
@@ -44,6 +47,9 @@ const navSections = [
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
+  // "New" badges: changes by others since you last opened a module; avatars:
+  // who else is on that page right now.
+  const { badges, presence } = useCollaboration();
 
   return (
     <>
@@ -101,6 +107,11 @@ export default function Sidebar({ isOpen, onClose }) {
                   {section.items.map((item) => {
                     const isActive = location.pathname === item.path ||
                       (item.path !== '/admin/dashboard' && location.pathname.startsWith(item.path));
+                    const moduleKey = moduleForPath(item.path)?.key;
+                    const newCount = isActive ? 0 : badges[moduleKey] || 0;
+                    const here = presence.filter(p => p.current_module === moduleKey);
+                    const label = [item.label, newCount && `${newCount} new`, here.length && `${here.map(p => p.name).join(', ')} here`]
+                      .filter(Boolean).join(', ');
                     return (
                       <li key={item.path}>
                         <Link
@@ -108,6 +119,7 @@ export default function Sidebar({ isOpen, onClose }) {
                           to={item.path}
                           onClick={() => onClose()}
                           aria-current={isActive ? 'page' : undefined}
+                          aria-label={label !== item.label ? label : undefined}
                           className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm focus-visible:outline-2 focus-visible:outline-white ${
                             isActive
                               ? 'text-[#8B5E3C] bg-white shadow-sm'
@@ -116,10 +128,20 @@ export default function Sidebar({ isOpen, onClose }) {
                         >
                           <item.icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                           <span className="font-medium truncate">{item.label}</span>
+                          {(here.length > 0 || newCount > 0) && (
+                            <span className="ml-auto flex items-center gap-1.5 shrink-0" aria-hidden="true">
+                              <CollaboratorAvatars people={here} size="xs" max={2} />
+                              {newCount > 0 && (
+                                <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-[#E8C9A8] text-[#4A3F35] text-[10px] font-bold flex items-center justify-center">
+                                  {newCount > 99 ? '99+' : newCount}
+                                </span>
+                              )}
+                            </span>
+                          )}
                           {isActive && (
                             <motion.div
                               layoutId="sidebar-indicator"
-                              className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                              className={`${here.length ? '' : 'ml-auto'} w-1.5 h-1.5 rounded-full flex-shrink-0`}
                               style={{ background: '#A67B5B' }}
                             />
                           )}

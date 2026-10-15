@@ -79,7 +79,7 @@ export default function AdminRSVPs() {
         return (
             <div className="space-y-6">
                 <div className="h-48 bg-stone-100 rounded-3xl animate-pulse" />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[1, 2, 3, 4].map(i => (
                         <Skeleton key={i} height="120px" className="rounded-2xl" />
                     ))}
@@ -129,7 +129,7 @@ export default function AdminRSVPs() {
         >
                 <AdminListPanel
                     header={
-                        <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
+                        <div className="px-4 py-2.5 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-stone-800">Recent Responses</h2>
                             <span className="text-sm text-stone-400">{filteredRsvps.length} shown</span>
                         </div>
@@ -238,7 +238,7 @@ export default function AdminRSVPs() {
                         })}
                     </div>
                 ) : (
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredRsvps.map((guest) => (
                             <RsvpGridCard key={guest.id} guest={guest} />
                         ))}

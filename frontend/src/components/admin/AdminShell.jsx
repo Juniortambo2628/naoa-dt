@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion, MotionConfig } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { SearchProvider, useSearch } from '../../context/SearchContext';
 import { AdminChromeProvider } from '../../context/AdminChromeContext';
+import { CollaborationProvider, useCollaboration } from '../../context/CollaborationContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AdminTutorial from './AdminTutorial';
 import ConfirmHost from './ConfirmHost';
+import ShareModal from './ShareModal';
+import VersionHistoryDrawer from './VersionHistoryDrawer';
 
 // Each page starts with an empty search so a query typed on one list never
 // silently filters the next page.
@@ -14,6 +17,35 @@ function ResetSearchOnNavigate({ pathname }) {
   const { setSearchQuery } = useSearch();
   useEffect(() => { setSearchQuery(''); }, [pathname, setSearchQuery]);
   return null;
+}
+
+// Share and Version history are opened from the header, rendered once here.
+function CollaborationPanels() {
+  const { shareOpen, setShareOpen, historyOpen, closeHistory, module, notifyDataRestored } = useCollaboration();
+  return (
+    <>
+      <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} />
+      <AnimatePresence>
+        {historyOpen && <VersionHistoryDrawer module={module} onClose={closeHistory} onRestored={notifyDataRestored} />}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// Remounts the page after a version is restored, so pages that keep their
+// own copy of the data (not just React Query) reload it too.
+function PageContent({ pathname, children }) {
+  const { dataVersion } = useCollaboration();
+  return (
+    <motion.div
+      key={`${pathname}#${dataVersion}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 /**
@@ -41,6 +73,7 @@ export default function AdminShell({ children }) {
     <MotionConfig reducedMotion="user">
     <SearchProvider>
     <AdminChromeProvider value={{ titleSlot, statusSlot }}>
+    <CollaborationProvider>
       <ResetSearchOnNavigate pathname={location.pathname} />
       <div 
         className="min-h-screen"
@@ -57,6 +90,7 @@ export default function AdminShell({ children }) {
           />
           
           <ConfirmHost />
+          <CollaborationPanels />
 
           <AdminTutorial 
             key={restartTutorial ? 'restarted' : 'initial'} 
@@ -64,18 +98,12 @@ export default function AdminShell({ children }) {
             onComplete={() => setRestartTutorial(false)}
           />
          
-          <main className="p-6">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {children}
-            </motion.div>
+          <main className="p-4 sm:p-6">
+            <PageContent pathname={location.pathname}>{children}</PageContent>
           </main>
         </div>
       </div>
+    </CollaborationProvider>
     </AdminChromeProvider>
     </SearchProvider>
     </MotionConfig>

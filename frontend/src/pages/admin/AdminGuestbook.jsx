@@ -13,15 +13,14 @@ import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
-import { toast } from 'react-hot-toast';
-import { confirmAction } from '../../utils/feedback';
+import { useBulkAdminAction } from '../../hooks/useAdminAction';
 
 export default function AdminGuestbook() {
   const { data, isLoading: loading, refetch } = useGuestbook();
   const entries = data?.entries || [];
   const { searchQuery } = useSearch();
 
-  const { processing, handleDelete } = useCrudHandlers({
+  const { isProcessing, handleDelete } = useCrudHandlers({
     service: guestbookService,
     onRefresh: refetch,
   });
@@ -42,21 +41,14 @@ export default function AdminGuestbook() {
 
   const clearSelection = () => setSelectedIds([]);
 
-  const handleBulkDelete = async () => {
-    if (!await confirmAction(`Delete ${selectedIds.length} selected messages?`)) return;
-    try {
-      await Promise.all(selectedIds.map((id) => guestbookService.delete(id)));
-      toast.success(`${selectedIds.length} messages deleted`);
-      clearSelection();
-      refetch();
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to delete some messages');
-    }
-  };
+  const bulkDelete = useBulkAdminAction((id) => guestbookService.delete(id), {
+    confirm: (ids) => `Delete ${ids.length} selected messages?`,
+    success: (count) => `${count} messages deleted`,
+    onSuccess: () => { clearSelection(); refetch(); },
+  });
 
   const bulkActions = [
-    { id: 'delete', label: 'Delete Selected', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
+    { id: 'delete', label: 'Delete Selected', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
   ];
 
   return (
@@ -65,7 +57,7 @@ export default function AdminGuestbook() {
         fill
         actions={[
           {
-            id: 'refresh',
+            id: 'refresh', readOnly: true,
             label: 'Refresh',
             icon: RefreshCw,
             onClick: () => refetch(),
@@ -107,7 +99,7 @@ export default function AdminGuestbook() {
               selectedIds={selectedIds}
               onToggleSelect={toggleSelection}
               onDelete={handleDelete}
-              processing={processing}
+              isProcessing={isProcessing}
             />
           )}
         </AdminListPanel>
@@ -128,7 +120,7 @@ function SelectionCheckbox({ isSelected }) {
   );
 }
 
-function GuestbookList({ entries, selectedIds, onToggleSelect, onDelete, processing }) {
+function GuestbookList({ entries, selectedIds, onToggleSelect, onDelete, isProcessing }) {
   return (
     <div className="grid grid-cols-1 gap-4">
       <AnimatePresence>
@@ -167,7 +159,7 @@ function GuestbookList({ entries, selectedIds, onToggleSelect, onDelete, process
                     e.stopPropagation();
                     onDelete(entry.id, { confirmMessage: 'Delete this message?' });
                   }}
-                  processing={processing === entry.id}
+                  processing={isProcessing(entry.id)}
                   title="Delete Message"
                 />
               </div>
@@ -181,7 +173,7 @@ function GuestbookList({ entries, selectedIds, onToggleSelect, onDelete, process
 
 function GuestbookGrid({ entries, selectedIds, onToggleSelect, onDelete }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <AnimatePresence>
         {entries.map((entry) => {
           const isSelected = selectedIds.includes(entry.id);
@@ -211,7 +203,7 @@ function GuestbookGrid({ entries, selectedIds, onToggleSelect, onDelete }) {
               </div>
 
               {/* Delete button */}
-              <Button
+              <Button edit
                 variant="danger"
                 size="icon-sm"
                 icon={Trash2}

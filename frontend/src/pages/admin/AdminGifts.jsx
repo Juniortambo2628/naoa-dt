@@ -17,8 +17,7 @@ import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import Button from '../../components/Button';
 import GiftImage from '../../components/GiftImage';
 import Spinner from '../../components/admin/Spinner';
-import { toast } from 'react-hot-toast';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
 export default function AdminGifts() {
   const { data: gifts = [], isLoading: loading, refetch } = useGifts();
@@ -35,16 +34,12 @@ export default function AdminGifts() {
   // Keep the open claims modal pointed at the live gift so it reflects refetches.
   const claimsGift = claimsGiftId ? gifts.find((g) => g.id === claimsGiftId) : null;
 
-  const handleRemoveClaim = async (claimId) => {
-    if (!await confirmAction('Remove this claim? The gift will become available again.')) return;
-    try {
-      await giftService.removeClaim(claimId);
-      toast.success('Claim removed');
-      refetch();
-    } catch {
-      toast.error('Failed to remove claim');
-    }
-  };
+  const removeClaim = useAdminAction((claimId) => giftService.removeClaim(claimId), {
+    confirm: 'Remove this claim? The gift will become available again.',
+    success: 'Claim removed',
+    error: 'Failed to remove claim',
+    onSuccess: () => refetch(),
+  });
 
   const filteredGifts = useFilteredItems(gifts, searchQuery, (gift, searchLower) =>
     gift.name.toLowerCase().includes(searchLower) ||
@@ -71,35 +66,20 @@ export default function AdminGifts() {
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (!await confirmAction(`Delete ${selectedIds.length} selected gifts?`)) return;
-    try {
-      await Promise.all(selectedIds.map(id => giftService.delete(id)));
-      toast.success(`${selectedIds.length} gifts deleted`);
-      setSelectedIds([]);
-      refetch();
-    } catch {
-      toast.error('Failed to delete some gifts');
-    }
-  };
-
-  const handleBulkToggleAvailability = async () => {
-    try {
-      await Promise.all(selectedIds.map(id => {
-        const gift = gifts.find(g => g.id === id);
-        return giftService.update(id, { is_available: !gift.is_available });
-      }));
-      toast.success('Availability updated');
-      setSelectedIds([]);
-      refetch();
-    } catch {
-      toast.error('Failed to update availability');
-    }
-  };
+  const afterBulk = () => { setSelectedIds([]); refetch(); };
+  const bulkDelete = useBulkAdminAction((id) => giftService.delete(id), {
+    confirm: (ids) => `Delete ${ids.length} selected gifts?`,
+    success: (count) => `${count} gifts deleted`,
+    onSuccess: afterBulk,
+  });
+  const bulkToggleAvailability = useBulkAdminAction((id) => {
+    const gift = gifts.find(g => g.id === id);
+    return giftService.update(id, { is_available: !gift.is_available });
+  }, { success: 'Availability updated', onSuccess: afterBulk });
 
   const bulkActions = [
-    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'secondary', onClick: handleBulkToggleAvailability },
-    { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
+    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'secondary', action: bulkToggleAvailability, args: [selectedIds] },
+    { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
   ];
 
   return (
@@ -170,7 +150,7 @@ export default function AdminGifts() {
           isOpen={!!claimsGift}
           onClose={() => setClaimsGiftId(null)}
           gift={claimsGift}
-          onRemoveClaim={handleRemoveClaim}
+          removeClaim={removeClaim}
         />
       </AdminPageLayout>
     </>
@@ -179,7 +159,7 @@ export default function AdminGifts() {
 
 function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onViewClaims }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {gifts.map((gift) => {
         const isSelected = selectedIds.includes(gift.id);
         const isReserved = !gift.is_available;
@@ -281,7 +261,7 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
               )}
 
               <div className="flex gap-2">
-                <Button
+                <Button edit
                   size="sm"
                   icon={Edit}
                   className="flex-1"
@@ -289,7 +269,7 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                 >
                   Edit
                 </Button>
-                <Button
+                <Button edit
                   variant="danger"
                   size="sm"
                   icon={Trash2}
@@ -380,14 +360,14 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                     onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
                   />
                 )}
-                <Button
+                <Button edit
                   size="icon-sm"
                   icon={Edit}
                   aria-label={`Edit ${gift.name}`}
                   title="Edit"
                   onClick={(e) => { e.stopPropagation(); onEdit(gift); }}
                 />
-                <Button
+                <Button edit
                   variant="danger"
                   size="icon-sm"
                   icon={Trash2}
@@ -443,7 +423,9 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
     try {
       await onSave(formData);
       onClose();
-    } catch (e) { console.error(e); notifyError('Error saving gift'); }
+    } catch {
+      // useCrudHandlers already reported the error; keep the form open.
+    }
     setLoading(false);
   };
 
@@ -465,13 +447,13 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
           <label htmlFor="cashFund" className="text-sm font-medium text-stone-700">This is a Cash Fund</label>
         </div>
         <AdminTextarea label="Description (Optional)" rows={2} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-        <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Gift</Button>
+        <Button edit type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Gift</Button>
       </form>
     </AdminModal>
   );
 }
 
-function ClaimsModal({ isOpen, onClose, gift, onRemoveClaim }) {
+function ClaimsModal({ isOpen, onClose, gift, removeClaim }) {
   const claims = gift?.claims || [];
   const isCashFund = !!gift?.is_cash_fund;
 
@@ -503,7 +485,8 @@ function ClaimsModal({ isOpen, onClose, gift, onRemoveClaim }) {
                 size="sm"
                 icon={Undo2}
                 className="flex-shrink-0"
-                onClick={() => onRemoveClaim(claim.id)}
+                action={removeClaim}
+                args={[claim.id]}
               >
                 {isCashFund ? 'Remove' : 'Undo'}
               </Button>
