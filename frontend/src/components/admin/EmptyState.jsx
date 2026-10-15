@@ -9,7 +9,8 @@ import Button from '../Button';
  * @param {string}     [searchQuery] - When set, the empty message talks about the search
  * @param {boolean}    [loading]     - Render skeleton rows instead
  * @param {number}     [rows=5]      - Skeleton rows while loading
- * @param {{ label: string, onClick: function, icon?: LucideIcon }} [action] - Next step button
+ * @param {{ label: string, onClick: function, icon?: LucideIcon, readOnly?: boolean }} [action] - Next step button
+ *   (an edit unless readOnly, so hidden for viewers)
  */
 export default function EmptyState({ icon: Icon, message, searchQuery, loading, rows = 5, action }) {
   if (loading) {
@@ -34,7 +35,7 @@ export default function EmptyState({ icon: Icon, message, searchQuery, loading, 
       <p>{searchQuery ? `Nothing matches “${searchQuery}”` : message || 'No items yet'}</p>
       {searchQuery && <p className="mt-1 text-sm text-stone-500">Try a different search or clear the filters.</p>}
       {!searchQuery && action && (
-        <Button variant="secondary" icon={action.icon} onClick={action.onClick} className="mt-4">
+        <Button variant="secondary" icon={action.icon} onClick={action.onClick} className="mt-4" edit={!action.readOnly}>
           {action.label}
         </Button>
       )}

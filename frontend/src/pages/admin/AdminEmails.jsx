@@ -10,6 +10,8 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminCard from '../../components/admin/AdminCard';
 import Button from '../../components/Button';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
+import EditableFieldset from '../../components/admin/EditableFieldset';
+
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
 import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
@@ -243,7 +245,7 @@ export default function AdminEmails() {
               </div>
 
                <div className="mt-6 pt-6 border-t border-stone-100">
-                  <Button
+                  <Button edit
                       variant="secondary"
                       fullWidth
                       icon={Send}
@@ -281,6 +283,7 @@ export default function AdminEmails() {
         </div>
       ) : (
         <form onSubmit={handleSaveSettings} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <EditableFieldset className="block space-y-6">
             {/* Invitation Template */}
             <AdminCard>
                 <h2 className="text-lg font-medium mb-6 text-[#4A3F35] flex items-center gap-2">
@@ -355,6 +358,7 @@ export default function AdminEmails() {
                 </div>
             </AdminCard>
 
+          </EditableFieldset>
         </form>
       )}
 

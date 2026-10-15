@@ -281,7 +281,7 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
               )}
 
               <div className="flex gap-2">
-                <Button
+                <Button edit
                   size="sm"
                   icon={Edit}
                   className="flex-1"
@@ -289,7 +289,7 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                 >
                   Edit
                 </Button>
-                <Button
+                <Button edit
                   variant="danger"
                   size="sm"
                   icon={Trash2}
@@ -380,14 +380,14 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                     onClick={(e) => { e.stopPropagation(); onViewClaims(gift); }}
                   />
                 )}
-                <Button
+                <Button edit
                   size="icon-sm"
                   icon={Edit}
                   aria-label={`Edit ${gift.name}`}
                   title="Edit"
                   onClick={(e) => { e.stopPropagation(); onEdit(gift); }}
                 />
-                <Button
+                <Button edit
                   variant="danger"
                   size="icon-sm"
                   icon={Trash2}
@@ -465,7 +465,7 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
           <label htmlFor="cashFund" className="text-sm font-medium text-stone-700">This is a Cash Fund</label>
         </div>
         <AdminTextarea label="Description (Optional)" rows={2} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-        <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Gift</Button>
+        <Button edit type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Gift</Button>
       </form>
     </AdminModal>
   );
@@ -498,7 +498,7 @@ function ClaimsModal({ isOpen, onClose, gift, onRemoveClaim }) {
                   <p className="text-xs text-stone-500 italic mt-1 line-clamp-2">&ldquo;{claim.message}&rdquo;</p>
                 )}
               </div>
-              <Button
+              <Button edit
                 variant="danger"
                 size="sm"
                 icon={Undo2}

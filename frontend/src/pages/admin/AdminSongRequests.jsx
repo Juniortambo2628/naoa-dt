@@ -138,7 +138,7 @@ export default function AdminSongRequests() {
         fill
         actions={[
           {
-            id: 'refresh',
+            id: 'refresh', readOnly: true,
             label: 'Refresh',
             icon: RefreshCw,
             onClick: () => refetch(),
@@ -286,7 +286,7 @@ export default function AdminSongRequests() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
+                        <Button edit
                           size="sm"
                           variant={song.is_played ? 'secondary' : 'primary'}
                           icon={Check}
@@ -371,7 +371,7 @@ function SongGrid({ songs, selectedIds, onToggleSelect, onTogglePlayed, onDelete
               </div>
 
               <div className="flex gap-2">
-                <Button
+                <Button edit
                   size="sm"
                   variant={song.is_played ? 'secondary' : 'primary'}
                   icon={Check}
@@ -383,7 +383,7 @@ function SongGrid({ songs, selectedIds, onToggleSelect, onTogglePlayed, onDelete
                 >
                   Played
                 </Button>
-                <Button
+                <Button edit
                   size="sm"
                   variant="danger"
                   icon={Trash2}

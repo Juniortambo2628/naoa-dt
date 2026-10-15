@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import useRole from '../../hooks/useRole';
+import EditableFieldset from './EditableFieldset';
 import {
   Users, Send, Edit, Trash2, RotateCcw, MessageCircle, Mail, CopyCheck, ArrowUp, ArrowDown, ArrowUpDown, Check, AlertCircle, Loader2,
 } from 'lucide-react';
@@ -20,13 +22,15 @@ function RsvpStatusSelect({ guest, onUpdateGuest }) {
     if (!await confirmAction(`Mark ${guest.name} as ${RSVP_STATUSES[next].label.toLowerCase()}?`)) return;
     onUpdateGuest(guest, next === 'pending' ? RESET_RSVP : { rsvp_status: next });
   };
+  const { canEdit } = useRole();
   return (
     <select
       value={status}
       onChange={handleChange}
+      disabled={!canEdit}
       title="Set RSVP status manually"
       aria-label={`RSVP status for ${guest.name}`}
-      className={`px-2 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#A67B5B] ${rsvpStatus(status).badge}`}
+      className={`px-2 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider cursor-pointer disabled:cursor-default disabled:appearance-none focus:outline-none focus:ring-2 focus:ring-[#A67B5B] ${rsvpStatus(status).badge}`}
     >
       {RSVP_ORDER.map((id) => <option key={id} value={id}>{RSVP_STATUSES[id].label}</option>)}
     </select>
@@ -40,13 +44,13 @@ function GuestActions({ guest, onInviteRequest, onEdit, onUpdateGuest, onDelete 
   };
   return (
     <div className="flex justify-end gap-1">
-      <Button size="icon-sm" icon={Send} onClick={() => onInviteRequest(guest)} title={isInviteSent(guest) ? 'Invitation sent — manage' : 'Send invitation'} aria-label={`Invitation for ${guest.name}`} />
+      <Button edit size="icon-sm" icon={Send} onClick={() => onInviteRequest(guest)} title={isInviteSent(guest) ? 'Invitation sent — manage' : 'Send invitation'} aria-label={`Invitation for ${guest.name}`} />
       {onEdit && (
-        <Button size="icon-sm" icon={Edit} onClick={() => onEdit(guest)} title="Edit" aria-label={`Edit ${guest.name}`} />
+        <Button edit size="icon-sm" icon={Edit} onClick={() => onEdit(guest)} title="Edit" aria-label={`Edit ${guest.name}`} />
       )}
-      <Button size="icon-sm" icon={RotateCcw} onClick={resetRsvp} title="Reset RSVP" aria-label={`Reset RSVP for ${guest.name}`} />
+      <Button edit size="icon-sm" icon={RotateCcw} onClick={resetRsvp} title="Reset RSVP" aria-label={`Reset RSVP for ${guest.name}`} />
       {onDelete && (
-        <Button size="icon-sm" variant="danger" icon={Trash2} onClick={() => onDelete(guest.id)} title="Delete" aria-label={`Delete ${guest.name}`} />
+        <Button edit size="icon-sm" variant="danger" icon={Trash2} onClick={() => onDelete(guest.id)} title="Delete" aria-label={`Delete ${guest.name}`} />
       )}
     </div>
   );
@@ -344,7 +348,7 @@ export default function GuestList(props) {
       ) : filteredGuests.length === 0 ? (
         <EmptyState icon={Users} message="No guests match these filters" searchQuery={searchQuery} action={props.onAdd && { label: 'Add a guest', onClick: props.onAdd }} />
       ) : viewMode === 'spreadsheet' ? (
-        <SpreadsheetView props={props} cellStatus={cellStatus} saveCell={saveCell} />
+        <EditableFieldset><SpreadsheetView props={props} cellStatus={cellStatus} saveCell={saveCell} /></EditableFieldset>
       ) : (
         <>
           <TableView props={props} />

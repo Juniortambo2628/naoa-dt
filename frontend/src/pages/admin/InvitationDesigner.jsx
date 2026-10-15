@@ -29,6 +29,8 @@ import { Skeleton } from '../../components/Skeleton';
 import { toast } from 'react-hot-toast';
 import { confirmAction, notifyError } from '../../utils/feedback';
 import useRole from '../../hooks/useRole';
+import EditableFieldset from '../../components/admin/EditableFieldset';
+
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);
@@ -713,6 +715,7 @@ export default function InvitationDesigner() {
           const mod = e.ctrlKey || e.metaKey;
           const key = e.key.toLowerCase();
           const arrows = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
+          if (!canEdit && !(mod && ['=', '+', '-', '0'].includes(key))) return; // view-only: zoom keys only
           if (mod && key === 'z' && !e.shiftKey) { e.preventDefault(); handleUndo(); }
           else if (mod && (key === 'y' || (key === 'z' && e.shiftKey))) { e.preventDefault(); handleRedo(); }
           else if (mod && key === 'a') { e.preventDefault(); setSelectedIds(pageItems.map(i => i.id)); }
@@ -789,6 +792,7 @@ export default function InvitationDesigner() {
           activeId: activeTab,
           onChange: setActiveTab,
           content: (
+            <EditableFieldset>
             <InvitationSidebar
               loading={loading}
               activeTab={activeTab}
@@ -813,6 +817,7 @@ export default function InvitationDesigner() {
               presetColors={presetColors}
               fonts={fonts}
             />
+            </EditableFieldset>
           ),
         }}
         hero={
@@ -853,13 +858,13 @@ export default function InvitationDesigner() {
                     onSelect={handleSelect}
                     zoom={zoom}
                     onFitScaleChange={setFitScale}
-                    mode="edit" 
+                    mode={canEdit ? 'edit' : 'view'}
                     guest={dummyGuest}
                     showGrid={design.showGrid}
                     snapToGrid={design.snapToGrid}
                     weddingSettings={weddingInfo}
-                    onItemContextMenu={(item, position) => setContextMenu({ kind: 'item', itemId: item.id, position })}
-                    onCanvasContextMenu={(position) => setContextMenu({ kind: 'page', position })}
+                    onItemContextMenu={canEdit ? (item, position) => setContextMenu({ kind: 'item', itemId: item.id, position }) : undefined}
+                    onCanvasContextMenu={canEdit ? (position) => setContextMenu({ kind: 'page', position }) : undefined}
                 />
             )}
 
@@ -885,14 +890,14 @@ export default function InvitationDesigner() {
         z={isFullscreen ? 'z-[110]' : 'z-50'}
         actions={[
           {
-            id: 'test-png',
+            id: 'test-png', readOnly: true,
             label: 'Test PNG',
             icon: FileImage,
             onClick: () => handleTestExport('png'),
             disabled: isExporting,
           },
           {
-            id: 'test-pdf',
+            id: 'test-pdf', readOnly: true,
             label: 'Test PDF',
             icon: FileText,
             onClick: () => handleTestExport('pdf'),
@@ -918,7 +923,7 @@ export default function InvitationDesigner() {
             {divider}
 
             {/* Undo / redo */}
-            <Button
+            <Button edit
               size="icon"
               icon={Undo2}
               onClick={handleUndo}
@@ -926,7 +931,7 @@ export default function InvitationDesigner() {
               title="Undo (Ctrl+Z)"
               aria-label="Undo"
             />
-            <Button
+            <Button edit
               size="icon"
               icon={Redo2}
               onClick={handleRedo}
@@ -938,8 +943,8 @@ export default function InvitationDesigner() {
             {divider}
 
             {/* Design tools */}
-            <InvitationAddMenu onAdd={addElement} />
-            <Button
+            {canEdit && <InvitationAddMenu onAdd={addElement} />}
+            <Button edit
               size="icon"
               icon={Grid3x3}
               variant={design.showGrid ? 'secondary' : 'primary'}
@@ -948,7 +953,7 @@ export default function InvitationDesigner() {
               title="Show grid"
               aria-label="Show grid"
             />
-            <Button
+            <Button edit
               size="icon"
               icon={Magnet}
               variant={design.snapToGrid ? 'secondary' : 'primary'}
@@ -957,7 +962,7 @@ export default function InvitationDesigner() {
               title="Snap to grid"
               aria-label="Snap to grid"
             />
-            <Button
+            <Button edit
               size="icon"
               icon={design.orientation === 'landscape' ? RectangleHorizontal : RectangleVertical}
               onClick={() => updateDesign('orientation', design.orientation === 'landscape' ? 'portrait' : 'landscape')}

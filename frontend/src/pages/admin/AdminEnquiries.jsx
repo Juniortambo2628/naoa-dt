@@ -141,7 +141,7 @@ export default function AdminEnquiries() {
         fill
         actions={[
           {
-            id: 'refresh',
+            id: 'refresh', readOnly: true,
             label: 'Refresh',
             icon: RefreshCw,
             onClick: () => refetch(),
@@ -252,7 +252,7 @@ export default function AdminEnquiries() {
                       </span>
                       <div className="flex items-center gap-1">
                         {enq.status !== 'replied' && (
-                          <Button
+                          <Button edit
                             variant="secondary"
                             size="sm"
                             icon={Send}
@@ -318,7 +318,7 @@ export default function AdminEnquiries() {
 
                     <div className="flex flex-row md:flex-col items-center gap-3 md:border-l md:border-stone-100 md:pl-6 min-w-[120px]">
                       {enq.status !== 'replied' && (
-                        <Button
+                        <Button edit
                           variant="secondary"
                           icon={Send}
                           onClick={() => { setSelectedEnquiry(enq); setShowReplyModal(true); }}
@@ -371,7 +371,7 @@ export default function AdminEnquiries() {
                   <Button onClick={() => setShowReplyModal(false)} className="flex-1">
                     Cancel
                   </Button>
-                  <Button
+                  <Button edit
                     type="submit"
                     variant="secondary"
                     icon={Send}

@@ -184,7 +184,7 @@ export default function TableInsertModal({ isOpen, onClose, onInsert }) {
                     <Button onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button variant="secondary" icon={Check} onClick={handleInsert}>
+                    <Button edit variant="secondary" icon={Check} onClick={handleInsert}>
                         Insert Table
                     </Button>
                 </div>

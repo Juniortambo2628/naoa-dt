@@ -83,7 +83,7 @@ export default function CheckInScanner() {
                 scanning
                     ? { id: 'stop-scan', label: 'Stop Scanning', icon: Square, variant: 'danger', onClick: stopScanning }
                     : { id: 'start-scan', label: 'Start Scanning', icon: QrCode, variant: 'secondary', onClick: startScanning },
-                { id: 'refresh', label: 'Refresh Stats', icon: RefreshCw, onClick: () => refetchStats() },
+                { id: 'refresh', readOnly: true, label: 'Refresh Stats', icon: RefreshCw, onClick: () => refetchStats() },
             ]}
             hero={
                 <AdminPageHero

@@ -10,6 +10,8 @@ import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminModal from '../../components/admin/AdminModal';
+import EditableFieldset from '../../components/admin/EditableFieldset';
+
 import { AdminInput } from '../../components/admin/AdminInput';
 import Spinner from '../../components/admin/Spinner';
 import Button from '../../components/Button';
@@ -265,6 +267,8 @@ export default function AdminSettings() {
       }
     >
           <form ref={formRef} onSubmit={handleSave} className="space-y-4">
+          {/* Viewers: read-only, except their own account security */}
+          <EditableFieldset allow={activeSection.id === 'security'} className="block space-y-4">
             {/* Wedding Details — single source of truth for date, names & venue */}
             {activeSection.id === 'wedding' && (
             <SettingsCard icon={Heart} title="Wedding Details" description="The couple, date and venue — used across the site, invitations and emails.">
@@ -501,7 +505,7 @@ export default function AdminSettings() {
               >
                 Cancel
               </Button>
-              <Button
+              <Button edit
                 type="submit"
                 variant="secondary"
                 icon={Save}
@@ -511,6 +515,7 @@ export default function AdminSettings() {
                 {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
+          </EditableFieldset>
           </form>
 
       <AdminModal isOpen={show2faModal && !!twoFactorData} onClose={() => setShow2faModal(false)} title="Setup Two-Factor Authentication" size="md">

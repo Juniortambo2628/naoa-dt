@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { contentService } from '../../services/api';
+import EditableFieldset from '../../components/admin/EditableFieldset';
+
 import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Languages, Sparkles, Edit } from 'lucide-react';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
@@ -381,6 +383,7 @@ export default function ContentManager() {
 
                         {isExpanded && (
                             <div className="p-6 border-t border-stone-100 space-y-6 animate-in slide-in-from-top-2">
+                                <EditableFieldset>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {section.fields.map(field => {
                                         if (field.type === 'header') {
@@ -459,7 +462,7 @@ export default function ContentManager() {
                                                     </label>
                                                     
                                                     {isMultiLang && activeLang === 'en' && (
-                                                        <Button
+                                                        <Button edit
                                                             size="sm"
                                                             icon={Sparkles}
                                                             onClick={() => handleTranslate(section.key, field.key)}
@@ -496,9 +499,10 @@ export default function ContentManager() {
                                         );
                                     })}
                                 </div>
+                                </EditableFieldset>
 
                                 <div className="flex justify-end items-center pt-4 border-t border-stone-50">
-                                     <Button
+                                     <Button edit
                                         variant="secondary"
                                         icon={Save}
                                         className="min-w-[120px]"

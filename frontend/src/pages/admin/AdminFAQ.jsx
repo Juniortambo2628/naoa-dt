@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import useRole from '../../hooks/useRole';
 import { motion, Reorder, useDragControls } from 'framer-motion';
 import { Plus, Edit, Trash2, Save, HelpCircle, GripVertical, Image as ImageIcon, Table as TableIcon, CheckCircle } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
@@ -28,6 +29,7 @@ registerPlugin(FilePondPluginImagePreview);
 
 function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, onDelete }) {
     const dragControls = useDragControls();
+    const { canEdit } = useRole();
 
     return (
         <Reorder.Item
@@ -36,12 +38,12 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
             dragControls={dragControls}
             className={`p-4 flex gap-4 items-start hover:bg-stone-50 transition-colors shadow-sm relative group ${isSelected ? 'bg-[#A67B5B]/5' : 'bg-white'}`}
         >
-            <div
+            {canEdit && <div
                 className={`mt-1 text-stone-300 hover:text-stone-500 ${searchQuery ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}
                 onPointerDown={(e) => { if (!searchQuery) dragControls.start(e); }}
             >
                 <GripVertical className="w-5 h-5" />
-            </div>
+            </div>}
             <div
                 className="w-5 h-5 mt-1.5 rounded border flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors"
                 onClick={(e) => { e.stopPropagation(); onToggleSelect(faq.id); }}
@@ -57,7 +59,7 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
                 <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-stone-50 to-transparent pointer-events-none"></div>
             </div>
             <div className="flex gap-2 shrink-0">
-                <Button
+                <Button edit
                     size="icon"
                     icon={Edit}
                     aria-label={`Edit FAQ: ${faq.question}`}
@@ -65,7 +67,7 @@ function FaqReorderItem({ faq, searchQuery, isSelected, onToggleSelect, onEdit, 
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onEdit(faq); }}
                 />
-                <Button
+                <Button edit
                     variant="danger"
                     size="icon"
                     icon={Trash2}
@@ -102,7 +104,7 @@ function FaqGridCard({ faq, isSelected, onToggleSelect, onEdit, onDelete }) {
                 dangerouslySetInnerHTML={{ __html: faq.answer }}
             />
             <div className="flex gap-2">
-                <Button
+                <Button edit
                     size="sm"
                     icon={Edit}
                     className="flex-1"
@@ -110,7 +112,7 @@ function FaqGridCard({ faq, isSelected, onToggleSelect, onEdit, onDelete }) {
                 >
                     Edit
                 </Button>
-                <Button
+                <Button edit
                     variant="danger"
                     size="sm"
                     icon={Trash2}
@@ -371,7 +373,7 @@ export default function AdminFAQ() {
                                         />
                                         
                                         {uploadedFileUrl && (
-                                            <Button
+                                            <Button edit
                                                 fullWidth
                                                 icon={ImageIcon}
                                                 onClick={insertImageToQuill}
@@ -398,7 +400,7 @@ export default function AdminFAQ() {
                             <Button onClick={() => setModalOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="secondary" icon={Save}>
+                            <Button edit type="submit" variant="secondary" icon={Save}>
                                 Save FAQ
                             </Button>
                         </div>

@@ -6,6 +6,7 @@ import AdminToolbarSearch from './AdminToolbarSearch';
 import AdminToolbarFilters, { countActiveFilters } from './AdminToolbarFilters';
 import { useSearch } from '../../context/SearchContext';
 import Button from '../Button';
+import { useVisibleActions } from '../../hooks/useRole';
 
 /**
  * AdminFloatingToolbar — the shared, fixed bottom-center toolbar that every
@@ -22,6 +23,7 @@ import Button from '../Button';
  *     variant?: 'primary' | 'secondary' | 'danger',  // see components/Button
  *     disabled?: boolean,
  *     hidden?: boolean,
+ *     readOnly?: boolean, // viewing/exporting only — every other action is hidden for viewers
  *   }
  * @param {React.ReactNode} children - optional custom controls rendered inside
  *   the same bar, before the actions (e.g. the invitation designer's page and
@@ -44,7 +46,7 @@ export default function AdminFloatingToolbar({
   const [visible, setVisible] = useState(true);
   const { searchQuery } = useSearch();
 
-  const visibleActions = actions.filter((a) => !a.hidden);
+  const visibleActions = useVisibleActions(actions).filter((a) => !a.hidden);
   const searchProps = !search ? null
     : typeof search === 'string' ? { placeholder: search }
     : typeof search === 'object' ? search

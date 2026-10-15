@@ -708,3 +708,8 @@ textarea:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* View-only collaborators: fields in an EditableFieldset are disabled */
+.admin-theme fieldset:disabled :is(input, select, textarea, button, label) {
+  cursor: not-allowed;
+}

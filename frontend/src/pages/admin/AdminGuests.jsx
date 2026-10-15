@@ -849,21 +849,21 @@ ${rows.join('\n')}
       disabled: isImporting,
     },
     {
-      id: 'export-tracker',
+      id: 'export-tracker', readOnly: true,
       label: 'Export Invite Tracker',
       icon: Download,
       onClick: handleExportTracker,
       disabled: isExportingTracker,
     },
     {
-      id: 'export-images',
+      id: 'export-images', readOnly: true,
       label: 'Export Images',
       icon: FileImage,
       onClick: () => exportBulk('png'),
       disabled: isBulkExporting,
     },
     {
-      id: 'export-pdfs',
+      id: 'export-pdfs', readOnly: true,
       label: 'Export PDFs',
       icon: FileText,
       onClick: () => exportBulk('pdf'),
@@ -876,7 +876,7 @@ ${rows.join('\n')}
       onClick: () => setIsChecklistOpen(true),
     },
     {
-      id: 'whatsapp-kit',
+      id: 'whatsapp-kit', readOnly: true,
       label: 'WhatsApp Kit',
       icon: MessageCircle,
       onClick: exportWhatsAppKit,

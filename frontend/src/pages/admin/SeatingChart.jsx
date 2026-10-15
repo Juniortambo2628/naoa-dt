@@ -7,6 +7,7 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
+import useRole from '../../hooks/useRole';
 import { confirmAction, notifyError } from '../../utils/feedback';
 
 
@@ -60,7 +61,7 @@ function GuestItem({ guest, tables, onAssign }) {
                 </div>
             </div>
             
-            <Button
+            <Button edit
                 ref={buttonRef}
                 size="icon-sm"
                 icon={MoreVertical}
@@ -139,7 +140,7 @@ function TableCard({ table, onClick, onDelete }) {
                         <p className="text-xs text-stone-500 capitalize">{table.type} Table</p>
                     </div>
                 </div>
-                <Button
+                <Button edit
                     size="icon-sm"
                     variant="danger"
                     icon={Trash2}
@@ -230,7 +231,7 @@ function TableDetailsModal({ table, onClose, onUnassign }) {
                                                 <p className="text-xs text-stone-500 capitalize">{guest.group}</p>
                                             </div>
                                         </div>
-                                        <Button
+                                        <Button edit
                                             size="sm"
                                             variant="danger"
                                             icon={Trash2}
@@ -263,6 +264,7 @@ export default function SeatingChart() {
   const { searchQuery } = useSearch();
   
   // New Table Form
+  const { canEdit } = useRole();
   const [newTable, setNewTable] = useState({ name: '', capacity: 10, type: 'round' });
   const [isAdding, setIsAdding] = useState(false);
   
@@ -409,11 +411,11 @@ export default function SeatingChart() {
                           onChange={e => setNewTable({...newTable, capacity: parseInt(e.target.value)})}
                           placeholder="Cap"
                        />
-                       <Button size="icon" variant="secondary" icon={Check} aria-label="Add table" title="Add table" onClick={handleAddTable} />
+                       <Button edit size="icon" variant="secondary" icon={Check} aria-label="Add table" title="Add table" onClick={handleAddTable} />
                        <Button size="icon" icon={X} aria-label="Cancel adding table" title="Cancel" onClick={() => setIsAdding(false)} />
                   </div>
               ) : (
-                  <Button variant="secondary" icon={Plus} onClick={() => setIsAdding(true)}>
+                  <Button edit variant="secondary" icon={Plus} onClick={() => setIsAdding(true)}>
                       Add Table
                   </Button>
               )}
@@ -436,7 +438,7 @@ export default function SeatingChart() {
                   <div className="h-full flex flex-col items-center justify-center text-stone-400">
                       <Armchair className="w-16 h-16 mb-4 opacity-20" />
                       <p>No tables created yet</p>
-                      <button onClick={() => setIsAdding(true)} className="text-[#A67B5B] hover:underline mt-2 text-sm">Create your first table</button>
+                      {canEdit && <button onClick={() => setIsAdding(true)} className="text-[#A67B5B] hover:underline mt-2 text-sm">Create your first table</button>}
                   </div>
               )}
           </div>

@@ -74,7 +74,7 @@ function DuplicateGroup({ group, highlighted, onMerge, onIgnore }) {
             </span>
           ))}
         </div>
-        <Button
+        <Button edit
           size="sm"
           icon={EyeOff}
           onClick={() => onIgnore(group)}
@@ -155,7 +155,7 @@ function DuplicateGroup({ group, highlighted, onMerge, onIgnore }) {
           Keeps <strong>{keeper?.name}</strong> and fills in any missing details, RSVP answer,
           invitation and plus-ones from the merged {toMerge.length === 1 ? 'record' : 'records'}.
         </p>
-        <Button
+        <Button edit
           variant="secondary"
           icon={Merge}
           loading={busy}

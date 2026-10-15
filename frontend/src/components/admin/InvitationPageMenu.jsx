@@ -113,11 +113,11 @@ export default function InvitationPageMenu({
                         </button>
                       )}
                       <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100">
-                        <Button size="icon-sm" icon={ArrowUp} onClick={() => onMove(index, -1)} disabled={index === 0} aria-label={`Move ${pageLabel(page, index)} up`} title="Move up" />
-                        <Button size="icon-sm" icon={ArrowDown} onClick={() => onMove(index, 1)} disabled={index === total - 1} aria-label={`Move ${pageLabel(page, index)} down`} title="Move down" />
-                        <Button size="icon-sm" icon={Pencil} onClick={() => startRename(page, index)} aria-label={`Rename ${pageLabel(page, index)}`} title="Rename" />
-                        <Button size="icon-sm" icon={Copy} onClick={() => onDuplicate(index)} aria-label={`Duplicate ${pageLabel(page, index)}`} title="Duplicate" />
-                        <Button
+                        <Button edit size="icon-sm" icon={ArrowUp} onClick={() => onMove(index, -1)} disabled={index === 0} aria-label={`Move ${pageLabel(page, index)} up`} title="Move up" />
+                        <Button edit size="icon-sm" icon={ArrowDown} onClick={() => onMove(index, 1)} disabled={index === total - 1} aria-label={`Move ${pageLabel(page, index)} down`} title="Move down" />
+                        <Button edit size="icon-sm" icon={Pencil} onClick={() => startRename(page, index)} aria-label={`Rename ${pageLabel(page, index)}`} title="Rename" />
+                        <Button edit size="icon-sm" icon={Copy} onClick={() => onDuplicate(index)} aria-label={`Duplicate ${pageLabel(page, index)}`} title="Duplicate" />
+                        <Button edit
                           size="icon-sm"
                           variant="danger"
                           icon={Trash2}
@@ -131,7 +131,7 @@ export default function InvitationPageMenu({
                   );
                 })}
               </Reorder.Group>
-              <Button
+              <Button edit
                 icon={Plus}
                 fullWidth
                 onClick={() => { onAdd(); close(); }}

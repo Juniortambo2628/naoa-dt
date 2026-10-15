@@ -256,7 +256,7 @@ export default function AdminTestLab() {
         { id: 'test-weather', label: 'Test Weather', icon: Cloud, onClick: handleTestWeather, disabled: loading },
         { id: 'test-seating', label: 'Test Seating', icon: Map, onClick: handleTestSeating, disabled: loading },
         { id: 'test-settings', label: 'Test Settings', icon: Settings, onClick: handleTestSettings, disabled: loading },
-        { id: 'clear-logs', label: 'Clear Logs', icon: Trash2, variant: 'danger', onClick: () => setLogs([]), hidden: logs.length === 0 },
+        { id: 'clear-logs', readOnly: true, label: 'Clear Logs', icon: Trash2, variant: 'danger', onClick: () => setLogs([]), hidden: logs.length === 0 },
       ]}
       hero={
         <AdminPageHero
@@ -360,7 +360,7 @@ export default function AdminTestLab() {
                 onChange={setLiveType}
               />
             </div>
-            <Button
+            <Button edit
               variant="secondary"
               icon={Radio}
               fullWidth
@@ -394,7 +394,7 @@ export default function AdminTestLab() {
               onChange={(e) => setPolaroidLocation(e.target.value)}
               placeholder="Main Hall"
             />
-            <Button
+            <Button edit
               variant="secondary"
               icon={Camera}
               fullWidth
@@ -567,7 +567,7 @@ export default function AdminTestLab() {
             <div className="flex justify-center p-4 bg-white border border-stone-200 rounded-xl">
               <QRCodeSVG value={testCode || ' '} size={112} title={`QR code for ${testCode}`} />
             </div>
-            <Button variant="secondary" icon={CheckCircle} fullWidth onClick={handleVerifyCode} disabled={loading}>
+            <Button edit variant="secondary" icon={CheckCircle} fullWidth onClick={handleVerifyCode} disabled={loading}>
               Verify RSVP Code
             </Button>
           </div>

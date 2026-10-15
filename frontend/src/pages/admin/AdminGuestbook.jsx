@@ -65,7 +65,7 @@ export default function AdminGuestbook() {
         fill
         actions={[
           {
-            id: 'refresh',
+            id: 'refresh', readOnly: true,
             label: 'Refresh',
             icon: RefreshCw,
             onClick: () => refetch(),
@@ -211,7 +211,7 @@ function GuestbookGrid({ entries, selectedIds, onToggleSelect, onDelete }) {
               </div>
 
               {/* Delete button */}
-              <Button
+              <Button edit
                 variant="danger"
                 size="icon-sm"
                 icon={Trash2}

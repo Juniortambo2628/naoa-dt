@@ -239,7 +239,7 @@ export default function GalleryManager() {
 
                 <div className="flex justify-end gap-2">
                   <Button onClick={() => setEditingItem(null)}>Cancel</Button>
-                  <Button type="submit" variant="secondary">Save Changes</Button>
+                  <Button edit type="submit" variant="secondary">Save Changes</Button>
                 </div>
               </form>
             </div>
@@ -309,10 +309,10 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
           <p className="text-white text-sm font-medium truncate">Uploaded by: {item.uploaded_by || 'Anonymous'}</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" icon={ImageIcon} className="flex-1" onClick={() => onEdit(item)}>
+          <Button edit size="sm" icon={ImageIcon} className="flex-1" onClick={() => onEdit(item)}>
             Edit
           </Button>
-          <Button
+          <Button edit
             size="icon"
             icon={item.is_visible ? Eye : EyeOff}
             onClick={() => onToggleVisibility(item)}
@@ -446,14 +446,14 @@ function GalleryList({ items, uploadingFiles, selectedIds, onToggleSelection, on
               </div>
 
               <div className="flex items-center justify-end gap-2">
-                <Button
+                <Button edit
                   size="icon"
                   icon={ImageIcon}
                   aria-label="Edit photo position"
                   title="Edit photo position"
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                 />
-                <Button
+                <Button edit
                   size="icon"
                   icon={item.is_visible ? Eye : EyeOff}
                   aria-label={item.is_visible ? 'Hide photo' : 'Show photo'}

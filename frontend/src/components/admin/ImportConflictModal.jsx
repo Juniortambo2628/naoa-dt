@@ -137,7 +137,7 @@ export default function ImportConflictModal({ isOpen, onClose, conflicts, validC
                             <p className="text-xs text-stone-500 font-medium">Ready to import</p>
                             <p className="text-sm font-bold text-[#A67B5B]">{validCount + resolutions.filter(r => r !== 'skip').length} guests</p>
                         </div>
-                        <Button variant="secondary" size="lg" onClick={handleConfirm}>
+                        <Button edit variant="secondary" size="lg" onClick={handleConfirm}>
                             Complete Import <ArrowRight />
                         </Button>
                     </div>

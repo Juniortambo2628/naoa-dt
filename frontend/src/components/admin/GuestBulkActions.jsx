@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Download, FileImage, FileText, MessageCircle, Mail, Send, RotateCcw, Trash2, X, CheckCircle, XCircle, Tags } from 'lucide-react';
 import { confirmAction } from '../../utils/feedback';
 import Button from '../Button';
+import useRole from '../../hooks/useRole';
 
 const BAR_BUTTON_LAYOUT = 'w-full sm:w-auto';
 
@@ -21,6 +22,8 @@ export default function GuestBulkActions({
   onBulkSetGroup,
   onClearSelection,
 }) {
+  // Viewers keep the export buttons; everything that changes guests is hidden.
+  const { canEdit } = useRole();
   return (
     <AnimatePresence>
       {selectedIds.length > 0 && (
@@ -47,6 +50,7 @@ export default function GuestBulkActions({
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 py-1">
             <div className="contents">
               <select
+                hidden={!canEdit}
                 className="bg-stone-800 text-white text-xs rounded border-stone-700 focus:ring-[#A67B5B] outline-none px-3 py-2 w-full sm:w-auto"
                 onChange={(e) => {
                   if (e.target.value) {
@@ -64,7 +68,7 @@ export default function GuestBulkActions({
 
               {/* Invite Via — click-toggle submenu */}
               <div className="relative min-w-0">
-                <Button
+                <Button edit
                   size="sm"
                   onClick={() => setShowBulkMenu(prev => prev === 'invite' ? null : 'invite')}
                   className={`${BAR_BUTTON_LAYOUT} justify-between`}
@@ -139,7 +143,7 @@ export default function GuestBulkActions({
               </div>
 
               <div className="relative w-full sm:w-auto">
-                <Button
+                <Button edit
                   size="sm"
                   icon={MessageCircle}
                   onClick={() => setShowBulkMenu(prev => prev === 'via' ? null : 'via')}
@@ -170,7 +174,7 @@ export default function GuestBulkActions({
                 { label: 'Reset RSVP', icon: RotateCcw, confirm: 'Reset RSVP status for {n} selected guests?', update: { rsvp_status: 'pending', rsvp_message: null, dietary_notes: null } },
                 { label: 'Delete', icon: Trash2, variant: 'danger', onClick: onBulkDelete },
               ].map(({ label, icon, variant = 'primary', confirm, update, onClick }) => (
-                <Button
+                <Button edit
                   key={label}
                   size="sm"
                   variant={variant}

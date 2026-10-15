@@ -92,9 +92,9 @@ function DashboardOverview() {
   return (
     <AdminPageLayout
       actions={[
-        { id: 'guests', label: 'Guest List', icon: Users, variant: 'secondary', onClick: () => navigate('/admin/dashboard/guests') },
-        { id: 'analytics', label: 'Analytics', icon: PieChart, onClick: () => navigate('/admin/dashboard/analytics') },
-        { id: 'checkin', label: 'Check-In', icon: CheckCircle, onClick: () => navigate('/admin/dashboard/checkin') },
+        { id: 'guests', readOnly: true, label: 'Guest List', icon: Users, variant: 'secondary', onClick: () => navigate('/admin/dashboard/guests') },
+        { id: 'analytics', readOnly: true, label: 'Analytics', icon: PieChart, onClick: () => navigate('/admin/dashboard/analytics') },
+        { id: 'checkin', readOnly: true, label: 'Check-In', icon: CheckCircle, onClick: () => navigate('/admin/dashboard/checkin') },
       ]}
       hero={
         <AdminPageHero

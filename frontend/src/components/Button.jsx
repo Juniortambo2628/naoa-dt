@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { buttonClass } from './buttonStyles';
+import useRole from '../hooks/useRole';
 
 /**
  * Button — the one button component for the whole app (public site and
@@ -14,6 +15,7 @@ import { buttonClass } from './buttonStyles';
  * @param {boolean} [loading] - shows a spinner in place of the icon and disables
  * @param {boolean} [fullWidth]
  * @param {ElementType} [as='button'] - render as another element, e.g. Link or 'a'
+ * @param {boolean} [edit] - an editing action: not rendered for view-only collaborators
  */
 const Button = forwardRef(function Button(
   {
@@ -27,11 +29,14 @@ const Button = forwardRef(function Button(
     disabled = false,
     className = '',
     type,
+    edit = false,
     children,
     ...props
   },
   ref
 ) {
+  const { canEdit } = useRole();
+  if (edit && !canEdit) return null;
   const isButton = Tag === 'button';
   const isDisabled = disabled || loading;
   return (

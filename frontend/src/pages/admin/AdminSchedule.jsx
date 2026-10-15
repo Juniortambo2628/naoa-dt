@@ -157,15 +157,15 @@ export default function AdminSchedule() {
                                   <p className="text-stone-500 text-sm break-words">{new Date(event.event_date).toLocaleDateString()} • {event.venue}</p>
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
-                                  <Button size="icon-sm" icon={Edit} aria-label="Edit Event" title="Edit Event"
+                                  <Button edit size="icon-sm" icon={Edit} aria-label="Edit Event" title="Edit Event"
                                       onClick={() => handleEditEvent(event)}
                                   />
-                                  <Button variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete Event" title="Delete Event"
+                                  <Button edit variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete Event" title="Delete Event"
                                       onClick={() => handleDeleteEvent(event.id)}
                                   />
                               </div>
                           </div>
-                          <Button
+                          <Button edit
                               variant="secondary"
                               icon={Plus}
                               onClick={() => handleAddItem(event.id)}
@@ -189,10 +189,10 @@ export default function AdminSchedule() {
                                       </p>
                                   </div>
                                   <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                                      <Button size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
+                                      <Button edit size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
                                           onClick={() => handleEditItem(item, event.id)}
                                       />
-                                      <Button variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete schedule item" title="Delete"
+                                      <Button edit variant="danger" size="icon-sm" icon={Trash2} aria-label="Delete schedule item" title="Delete"
                                           onClick={() => handleDeleteItem(item.id)}
                                       />
                                   </div>
@@ -276,7 +276,7 @@ function EventModal({ isOpen, onClose, onSave, event }) {
                 </div>
                 <AdminInput label="Venue Name" required value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
                 <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>{event ? 'Update Event' : 'Create Event'}</Button>
+                <Button edit type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>{event ? 'Update Event' : 'Create Event'}</Button>
             </form>
         </AdminModal>
     );
@@ -335,7 +335,7 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
                 </div>
                 <AdminInput label="Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
                 <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <Button type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Event</Button>
+                <Button edit type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Event</Button>
             </form>
         </AdminModal>
     );
