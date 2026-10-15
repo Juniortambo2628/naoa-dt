@@ -17,8 +17,7 @@ import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import Button from '../../components/Button';
 import GiftImage from '../../components/GiftImage';
 import Spinner from '../../components/admin/Spinner';
-import { toast } from 'react-hot-toast';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
 export default function AdminGifts() {
   const { data: gifts = [], isLoading: loading, refetch } = useGifts();
@@ -35,16 +34,12 @@ export default function AdminGifts() {
   // Keep the open claims modal pointed at the live gift so it reflects refetches.
   const claimsGift = claimsGiftId ? gifts.find((g) => g.id === claimsGiftId) : null;
 
-  const handleRemoveClaim = async (claimId) => {
-    if (!await confirmAction('Remove this claim? The gift will become available again.')) return;
-    try {
-      await giftService.removeClaim(claimId);
-      toast.success('Claim removed');
-      refetch();
-    } catch {
-      toast.error('Failed to remove claim');
-    }
-  };
+  const removeClaim = useAdminAction((claimId) => giftService.removeClaim(claimId), {
+    confirm: 'Remove this claim? The gift will become available again.',
+    success: 'Claim removed',
+    error: 'Failed to remove claim',
+    onSuccess: () => refetch(),
+  });
 
   const filteredGifts = useFilteredItems(gifts, searchQuery, (gift, searchLower) =>
     gift.name.toLowerCase().includes(searchLower) ||
@@ -71,35 +66,20 @@ export default function AdminGifts() {
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (!await confirmAction(`Delete ${selectedIds.length} selected gifts?`)) return;
-    try {
-      await Promise.all(selectedIds.map(id => giftService.delete(id)));
-      toast.success(`${selectedIds.length} gifts deleted`);
-      setSelectedIds([]);
-      refetch();
-    } catch {
-      toast.error('Failed to delete some gifts');
-    }
-  };
-
-  const handleBulkToggleAvailability = async () => {
-    try {
-      await Promise.all(selectedIds.map(id => {
-        const gift = gifts.find(g => g.id === id);
-        return giftService.update(id, { is_available: !gift.is_available });
-      }));
-      toast.success('Availability updated');
-      setSelectedIds([]);
-      refetch();
-    } catch {
-      toast.error('Failed to update availability');
-    }
-  };
+  const afterBulk = () => { setSelectedIds([]); refetch(); };
+  const bulkDelete = useBulkAdminAction((id) => giftService.delete(id), {
+    confirm: (ids) => `Delete ${ids.length} selected gifts?`,
+    success: (count) => `${count} gifts deleted`,
+    onSuccess: afterBulk,
+  });
+  const bulkToggleAvailability = useBulkAdminAction((id) => {
+    const gift = gifts.find(g => g.id === id);
+    return giftService.update(id, { is_available: !gift.is_available });
+  }, { success: 'Availability updated', onSuccess: afterBulk });
 
   const bulkActions = [
-    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'secondary', onClick: handleBulkToggleAvailability },
-    { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
+    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'secondary', action: bulkToggleAvailability, args: [selectedIds] },
+    { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
   ];
 
   return (
@@ -170,7 +150,7 @@ export default function AdminGifts() {
           isOpen={!!claimsGift}
           onClose={() => setClaimsGiftId(null)}
           gift={claimsGift}
-          onRemoveClaim={handleRemoveClaim}
+          removeClaim={removeClaim}
         />
       </AdminPageLayout>
     </>
@@ -443,7 +423,9 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
     try {
       await onSave(formData);
       onClose();
-    } catch (e) { console.error(e); notifyError('Error saving gift'); }
+    } catch {
+      // useCrudHandlers already reported the error; keep the form open.
+    }
     setLoading(false);
   };
 
@@ -471,7 +453,7 @@ function GiftModal({ isOpen, onClose, onSave, gift }) {
   );
 }
 
-function ClaimsModal({ isOpen, onClose, gift, onRemoveClaim }) {
+function ClaimsModal({ isOpen, onClose, gift, removeClaim }) {
   const claims = gift?.claims || [];
   const isCashFund = !!gift?.is_cash_fund;
 
@@ -498,12 +480,13 @@ function ClaimsModal({ isOpen, onClose, gift, onRemoveClaim }) {
                   <p className="text-xs text-stone-500 italic mt-1 line-clamp-2">&ldquo;{claim.message}&rdquo;</p>
                 )}
               </div>
-              <Button edit
+              <Button
                 variant="danger"
                 size="sm"
                 icon={Undo2}
                 className="flex-shrink-0"
-                onClick={() => onRemoveClaim(claim.id)}
+                action={removeClaim}
+                args={[claim.id]}
               >
                 {isCashFund ? 'Remove' : 'Undo'}
               </Button>

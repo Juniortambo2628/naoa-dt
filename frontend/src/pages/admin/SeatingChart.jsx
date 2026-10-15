@@ -8,7 +8,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useRole from '../../hooks/useRole';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 
 
 
@@ -291,53 +291,39 @@ export default function SeatingChart() {
     setLoading(false);
   };
 
-  const handleAssignGuest = async (guestId, tableId) => {
-      try {
-          await tableService.assignGuest(tableId, guestId);
-          fetchData(); 
-          
-          // Use setTimeout because we refresh data from server
-          // If modal is open, we need to refresh selectedTable too
-          if (selectedTable && selectedTable.id === tableId) {
-             // We can't update selectedTable directly with new data until fetch completes
-             // A better way: store selectedTableId and derive selectedTable from tables array
-          }
-      } catch (err) {
-          notifyError('Failed to assign guest: ' + (err.response?.data?.message || err.message));
-      }
-  };
-  
-  const handleUnassignGuest = async (guestId) => {
-      try {
-          // Assuming API has unassign endpoint: DELETE /tables/{table}/guests/{guest} or similar
-          // Or update guest setting table_id = null
-          await tableService.unassignGuest(guestId); // Check api.js for correct method
-          fetchData();
-      } catch {
-           notifyError('Failed to unassign guest');
-      }
-  };
-
-  const handleAddTable = async () => {
-      try {
-          // Default position center (not used in list view but keep for model compat)
-          const tableData = { ...newTable, x: 100, y: 100 };
-          await tableService.create(tableData);
-          setNewTable({ name: '', capacity: 10, type: 'round' });
-          setIsAdding(false);
-          fetchData();
-      } catch {
-          notifyError('Failed to add table');
-      }
-  };
-
-  const handleDeleteTable = async (id) => {
-      if (await confirmAction('Delete this table? Assigned guests will be unassigned.')) {
-          await tableService.delete(id);
+  const assignGuest = useAdminAction((guestId, tableId) => tableService.assignGuest(tableId, guestId), {
+      error: 'Failed to assign guest',
+      onSuccess: () => fetchData(),
+  });
+  const unassignGuest = useAdminAction((guestId) => tableService.unassignGuest(guestId), {
+      error: 'Failed to unassign guest',
+      onSuccess: () => fetchData(),
+  });
+  const addTable = useAdminAction(
+      // Default position (not used in list view but kept for model compat)
+      () => tableService.create({ ...newTable, x: 100, y: 100 }),
+      {
+          key: () => 'add-table',
+          error: 'Failed to add table',
+          onSuccess: () => {
+              setNewTable({ name: '', capacity: 10, type: 'round' });
+              setIsAdding(false);
+              fetchData();
+          },
+      },
+  );
+  const deleteTable = useAdminAction((id) => tableService.delete(id), {
+      confirm: 'Delete this table? Assigned guests will be unassigned.',
+      error: 'Failed to delete table',
+      onSuccess: (_, id) => {
           fetchData();
           if (selectedTable?.id === id) setSelectedTable(null);
-      }
-  };
+      },
+  });
+  const handleAssignGuest = assignGuest.run;
+  const handleUnassignGuest = unassignGuest.run;
+  const handleAddTable = addTable.run;
+  const handleDeleteTable = deleteTable.run;
 
   const unassignedGuests = guests
     .filter(g => !g.table_id)

@@ -15,6 +15,7 @@ import { AdminInput } from '../../components/admin/AdminInput';
 import { notifyError } from '../../utils/feedback';
 import Button from '../../components/Button';
 import SegmentedControl from '../../components/SegmentedControl';
+import useAdminAction from '../../hooks/useAdminAction';
 
 const LIVE_TYPE_OPTIONS = ['normal', 'important', 'alert'].map((t) => ({
   value: t,
@@ -117,35 +118,40 @@ export default function AdminTestLab() {
   }, []);
 
   // --- Simulate Live Update ---
+  // Test Lab results go to its log panel, not toasts.
+  const logFailure = (err) => addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
+  const simulateLiveUpdate = useAdminAction(() => testLabService.simulateLiveUpdate({ message: liveMsg, type: liveType }), {
+    key: () => 'live',
+    error: false,
+    onSuccess: () => { addLog('Live update posted! Check Programme page.', 'success'); setLiveMsg(''); },
+    onError: logFailure,
+  });
   const handleSimulateLiveUpdate = async () => {
     if (!liveMsg.trim()) return notifyError('Enter a message');
     setLoading(true);
     addLog(`Posting live update: "${liveMsg}"`, 'info');
-    try {
-      await testLabService.simulateLiveUpdate({ message: liveMsg, type: liveType });
-      addLog('Live update posted! Check Programme page.', 'success');
-      setLiveMsg('');
-    } catch (err) {
-      addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
-    }
+    await simulateLiveUpdate.run();
     setLoading(false);
   };
 
   // --- Simulate Polaroid ---
-  const handleSimulatePolaroid = async () => {
-    setLoading(true);
-    addLog('Simulating polaroid image...', 'info');
-    try {
-      await testLabService.simulatePolaroid({
-        note: polaroidCaption || 'Test polaroid from admin',
-        location: polaroidLocation || 'Test Lab',
-      });
+  const simulatePolaroid = useAdminAction(() => testLabService.simulatePolaroid({
+    note: polaroidCaption || 'Test polaroid from admin',
+    location: polaroidLocation || 'Test Lab',
+  }), {
+    key: () => 'polaroid',
+    error: false,
+    onSuccess: () => {
       addLog('Polaroid simulated! Check Programme page.', 'success');
       setPolaroidCaption('');
       setPolaroidLocation('');
-    } catch (err) {
-      addLog(`Failed: ${err.response?.data?.message || err.message}`, 'error');
-    }
+    },
+    onError: logFailure,
+  });
+  const handleSimulatePolaroid = async () => {
+    setLoading(true);
+    addLog('Simulating polaroid image...', 'info');
+    await simulatePolaroid.run();
     setLoading(false);
   };
 

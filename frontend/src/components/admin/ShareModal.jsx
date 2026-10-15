@@ -9,9 +9,10 @@ import Spinner from './Spinner';
 import { CollaboratorAvatar } from './CollaboratorAvatars';
 import { collaborationService, userService } from '../../services/api';
 import { moduleByKey } from '../../utils/adminModules';
-import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
+import { notifyError, notifySuccess } from '../../utils/feedback';
 import { ROLES, roleLabel } from '../../utils/roles';
 import useRole from '../../hooks/useRole';
+import useAdminAction from '../../hooks/useAdminAction';
 
 const EMPTY_FORM = { name: '', email: '', message: '', role: 'editor' };
 
@@ -88,32 +89,30 @@ export default function ShareModal({ isOpen, onClose }) {
     if (await sendInvite(form)) setForm(EMPTY_FORM);
   };
 
-  const removeAccess = async (person) => {
-    const ok = await confirmAction({
+  const refreshPeople = () => queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+  const removeAccessAction = useAdminAction((person) => userService.delete(person.id), {
+    role: 'owner',
+    key: (person) => person.id,
+    confirm: (person) => ({
       title: `Remove ${person.name}?`,
       message: `${person.email} will be signed out and can no longer open the dashboard.`,
       confirmLabel: 'Remove access',
       tone: 'danger',
-    });
-    if (!ok) return;
-    try {
-      await userService.delete(person.id);
-      notifySuccess(`${person.name} no longer has access`);
-      queryClient.invalidateQueries({ queryKey: ['collaborators'] });
-    } catch (err) {
-      notifyError(err, 'Could not remove access');
-    }
-  };
+    }),
+    success: (_, person) => `${person.name} no longer has access`,
+    error: 'Could not remove access',
+    onSuccess: refreshPeople,
+  });
+  const removeAccess = removeAccessAction.run;
 
-  const changeRole = async (person, role) => {
-    try {
-      const res = await collaborationService.updateRole(person.id, role);
-      notifySuccess(res.data?.role ? `${person.name} is now ${roleLabel(res.data.role).toLowerCase()}` : 'Role updated');
-      queryClient.invalidateQueries({ queryKey: ['collaborators'] });
-    } catch (err) {
-      notifyError(err, 'Could not change the role');
-    }
-  };
+  const changeRoleAction = useAdminAction((person, role) => collaborationService.updateRole(person.id, role), {
+    role: 'owner',
+    key: (person) => person.id,
+    success: (res, person) => (res.data?.role ? `${person.name} is now ${roleLabel(res.data.role).toLowerCase()}` : 'Role updated'),
+    error: 'Could not change the role',
+    onSuccess: refreshPeople,
+  });
+  const changeRole = changeRoleAction.run;
 
   const close = () => {
     setLastInvite(null);

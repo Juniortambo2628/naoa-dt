@@ -18,6 +18,7 @@ const CollaborationContext = createContext({
   setShareOpen: () => {},
   dataVersion: 0,
   notifyDataRestored: () => {},
+  refresh: () => {},
 });
 
 /**
@@ -75,6 +76,7 @@ export function CollaborationProvider({ children }) {
     setShareOpen,
     dataVersion,
     notifyDataRestored: () => { setDataVersion((v) => v + 1); beat(); },
+    refresh: beat,
   }), [state, module, historyOpen, shareOpen, dataVersion, beat]);
 
   return <CollaborationContext.Provider value={value}>{children}</CollaborationContext.Provider>;

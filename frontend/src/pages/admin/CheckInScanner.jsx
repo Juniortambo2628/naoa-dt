@@ -9,6 +9,7 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 import Button from '../../components/Button';
+import useAdminAction from '../../hooks/useAdminAction';
 
 export default function CheckInScanner() {
     const { data: statsData, refetch: refetchStats } = useCheckinStats();
@@ -42,28 +43,26 @@ export default function CheckInScanner() {
         setScanning(false);
     };
 
-    const onScanSuccess = async (decodedText) => {
-        stopScanning();
-        
-        try {
-            const res = await checkinService.scan({ qr_code: decodedText });
-            setResult({
-                success: res.data.success,
-                message: res.data.message,
-                guest: res.data.guest
-            });
-            
+    // The result card shows success or failure, so no toasts here.
+    const checkIn = useAdminAction((qrCode) => checkinService.scan({ qr_code: qrCode }), {
+        error: false,
+        onSuccess: (res) => {
+            setResult({ success: res.data.success, message: res.data.message, guest: res.data.guest });
             if (res.data.success) {
                 setRecentCheckIns(prev => [res.data.guest, ...prev.slice(0, 4)]);
                 refetchStats();
             }
-        } catch (err) {
-            setResult({
-                success: false,
-                message: err.response?.data?.message || 'Check-in failed',
-                guest: err.response?.data?.guest
-            });
-        }
+        },
+        onError: (err) => setResult({
+            success: false,
+            message: err.response?.data?.message || 'Check-in failed',
+            guest: err.response?.data?.guest,
+        }),
+    });
+
+    const onScanSuccess = (decodedText) => {
+        stopScanning();
+        checkIn.run(decodedText);
     };
 
     const onScanError = (_error) => {

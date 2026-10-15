@@ -1,16 +1,18 @@
 import { useState, useCallback } from 'react';
-import { confirmAction, notifyError } from '../utils/feedback';
+import useAdminAction from './useAdminAction';
 
 /**
- * Reusable CRUD handlers for admin pages.
+ * Reusable CRUD handlers for admin pages, built on useAdminAction (so saves
+ * and deletes get role checks, confirmation, feedback and refreshing for free).
  *
  * Full mode (default):  provides handleAdd, handleEdit, handleSave, handleDelete + modal state.
- * Delete-only mode:     provides handleDelete + processing state (no modal).
+ * Delete-only mode:     provides handleDelete + isProcessing(id) (no modal).
+ *
+ * `removeAction` / `saveAction` are the underlying actions, for <Button action={…}>.
  */
-export default function useCrudHandlers({ service, onRefresh }) {
+export default function useCrudHandlers({ service, onRefresh, labels = {} }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [processing, setProcessing] = useState(null);
 
   const handleAdd = useCallback(() => {
     setSelectedItem(null);
@@ -23,54 +25,48 @@ export default function useCrudHandlers({ service, onRefresh }) {
   }, []);
 
   /**
-   * Delete with confirm dialog and optional processing state.
-   * If a `service` is provided the deletion goes through it.
-   * Otherwise callers can pass an async `deleteFn` via options.
+   * Delete with confirm dialog and per-item processing state.
+   * If a `service` is provided the deletion goes through it; otherwise
+   * callers pass an async `deleteFn` via options.
    */
-  const handleDelete = useCallback(async (id, opts = {}) => {
-    const { confirmMessage = 'Delete this item?', deleteFn } = opts;
+  const removeAction = useAdminAction(
+    (id, opts = {}) => (opts.deleteFn ? opts.deleteFn(id) : service?.delete?.(id)),
+    {
+      confirm: (id, opts = {}) => opts.confirmMessage || 'Delete this item?',
+      success: labels.deleted,
+      error: 'Failed to delete',
+      onSuccess: () => onRefresh?.(),
+    },
+  );
 
-    if (!await confirmAction(confirmMessage)) return;
-    setProcessing(id);
-    try {
-      if (deleteFn) {
-        await deleteFn(id);
-      } else if (service?.delete) {
-        await service.delete(id);
-      }
-      onRefresh?.();
-    } catch (err) {
-      console.error(err);
-      notifyError('Failed to delete');
-    }
-    setProcessing(null);
-  }, [service, onRefresh]);
+  const saveAction = useAdminAction(
+    (data) => (selectedItem ? service.update(selectedItem.id, data) : service.create(data)),
+    {
+      key: () => 'save',
+      success: labels.saved,
+      error: 'Failed to save',
+      rethrow: true,
+      onSuccess: () => {
+        setModalOpen(false);
+        setSelectedItem(null);
+        onRefresh?.();
+      },
+    },
+  );
 
-  const handleSave = useCallback(async (data) => {
-    try {
-      if (selectedItem) {
-        await service.update(selectedItem.id, data);
-      } else {
-        await service.create(data);
-      }
-      setModalOpen(false);
-      setSelectedItem(null);
-      onRefresh?.();
-    } catch (err) {
-      console.error(err);
-      notifyError('Failed to save');
-      throw err;
-    }
-  }, [selectedItem, service, onRefresh]);
+  const handleDelete = removeAction.run;
+  const handleSave = saveAction.run;
 
   return {
     selectedItem,
     modalOpen,
     setModalOpen,
-    processing,
+    isProcessing: removeAction.isPending,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSave,
+    removeAction,
+    saveAction,
   };
 }

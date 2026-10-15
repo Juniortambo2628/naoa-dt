@@ -12,7 +12,7 @@ import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import AdminCard from '../../components/admin/AdminCard';
 import Button from '../../components/Button';
 import Spinner from '../../components/admin/Spinner';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 
 export default function AdminSchedule() {
   const { data: events = [], isLoading: loading, refetch } = useSchedule();
@@ -45,17 +45,12 @@ export default function AdminSchedule() {
       setEventModalOpen(true);
   };
 
-  const handleDeleteEvent = async (eventId) => {
-      if (await confirmAction('Are you sure you want to delete this event? This will also delete all its schedule items.')) {
-          try {
-              await scheduleService.deleteEvent(eventId);
-              refetch();
-          } catch (err) {
-              console.error(err);
-              notifyError('Failed to delete event');
-          }
-      }
-  };
+  const deleteEvent = useAdminAction((eventId) => scheduleService.deleteEvent(eventId), {
+      confirm: 'Are you sure you want to delete this event? This will also delete all its schedule items.',
+      error: 'Failed to delete event',
+      onSuccess: () => refetch(),
+  });
+  const handleDeleteEvent = deleteEvent.run;
 
   const handleEditItem = (item, eventId) => {
     setSelectedItem(item);
@@ -63,40 +58,32 @@ export default function AdminSchedule() {
     setModalOpen(true);
   };
 
-  const handleDeleteItem = async (itemId) => {
-    if (await confirmAction('Delete this schedule item?')) {
-      try {
-        await scheduleService.deleteItem(itemId); 
-        refetch();
-      } catch (err) {
-        console.error(err);
-        notifyError('Failed to delete item');
-      }
-    }
-  };
+  const deleteItem = useAdminAction((itemId) => scheduleService.deleteItem(itemId), {
+      confirm: 'Delete this schedule item?',
+      error: 'Failed to delete item',
+      onSuccess: () => refetch(),
+  });
+  const handleDeleteItem = deleteItem.run;
 
-  const handleSaveItem = async (data) => {
-    if (selectedItem) {
-        await scheduleService.updateItem(selectedItem.id, data);
-    } else {
-        await scheduleService.createItem(targetEventId, data);
-    }
-    refetch();
-  };
-
-  const handleSaveEvent = async (data) => {
-      try {
-        if (selectedEvent) {
-            await scheduleService.updateEvent(selectedEvent.id, data);
-        } else {
-            await scheduleService.createEvent(data);
-        }
-        refetch();
-      } catch (e) {
-        console.error(e);
-        notifyError('Failed to save event');
-      }
-  };
+  // Saves re-throw so the form stays open when they fail.
+  const saveItem = useAdminAction((data) => (selectedItem
+      ? scheduleService.updateItem(selectedItem.id, data)
+      : scheduleService.createItem(targetEventId, data)), {
+      key: () => 'save-item',
+      error: 'Failed to save',
+      rethrow: true,
+      onSuccess: () => refetch(),
+  });
+  const saveEvent = useAdminAction((data) => (selectedEvent
+      ? scheduleService.updateEvent(selectedEvent.id, data)
+      : scheduleService.createEvent(data)), {
+      key: () => 'save-event',
+      error: 'Failed to save event',
+      rethrow: true,
+      onSuccess: () => refetch(),
+  });
+  const handleSaveItem = saveItem.run;
+  const handleSaveEvent = saveEvent.run;
 
   const filteredEvents = events.map(event => {
       const activeSearch = searchQuery || '';
@@ -262,7 +249,9 @@ function EventModal({ isOpen, onClose, onSave, event }) {
         try {
             await onSave(formData);
             onClose();
-        } catch(e) { console.error(e); }
+        } catch {
+            // Reported by the save action; keep the form open.
+        }
         setLoading(false);
     };
 
@@ -321,7 +310,9 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
         try {
             await onSave(formData);
             onClose();
-        } catch(e) { console.error(e); notifyError('Failed to save'); }
+        } catch {
+            // Reported by the save action; keep the form open.
+        }
         setLoading(false);
     };
 

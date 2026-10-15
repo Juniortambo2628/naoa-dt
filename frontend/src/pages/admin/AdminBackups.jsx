@@ -10,7 +10,8 @@ import EmptyState from '../../components/admin/EmptyState';
 import Button from '../../components/Button';
 import { useBackups } from '../../hooks/useApiHooks';
 import { backupService } from '../../services/api';
-import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
+import { notifyError, notifySuccess } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 
 const LABELS = {
   manual: { text: 'Manual', className: 'bg-[#A67B5B]/10 text-[#8B5E3C]' },
@@ -24,65 +25,74 @@ const formatSize = (bytes) => (!bytes ? '0 KB' : bytes > 1024 * 1024 ? `${(bytes
 
 export default function AdminBackups() {
   const { data: backups = [], isLoading, refetch } = useBackups();
-  const [busy, setBusy] = useState(null); // name of the backup being worked on, or 'create'
+  const [downloading, setDownloading] = useState(null);
+  // Owner-only operations; each refreshes the list afterwards (also on failure).
+  const ownerOp = { role: 'owner', error: 'Backup action failed', onSuccess: () => refetch(), onError: () => refetch() };
 
-  const run = async (key, action) => {
-    setBusy(key);
-    try {
-      await action();
-    } catch (err) {
-      notifyError(err, 'Backup action failed');
-    } finally {
-      setBusy(null);
-      refetch();
-    }
-  };
-
-  const create = (includeUploads) => run('create', async () => {
-    await backupService.create(includeUploads);
-    notifySuccess(includeUploads ? 'Backup with photos created' : 'Backup created');
+  const createBackup = useAdminAction((includeUploads) => backupService.create(includeUploads), {
+    ...ownerOp,
+    key: () => 'create',
+    success: (_, includeUploads) => (includeUploads ? 'Backup with photos created' : 'Backup created'),
   });
+  const create = createBackup.run;
 
   // Test-restores the backup into a throwaway database; the real data is untouched.
-  const verify = (backup) => run(`verify:${backup.name}`, async () => {
-    const { data: result } = await backupService.verify(backup.name);
-    const records = result.tables.reduce((sum, t) => sum + t.restored, 0);
-    if (result.ok) {
-      notifySuccess(`Backup verified: ${result.tables.length} tables and ${records} records restore correctly.`);
-    } else {
-      const bad = result.tables.filter((t) => !t.ok).map((t) => `${t.table} (${t.restored}/${t.expected})`);
-      notifyError(`Backup verification failed — incomplete tables: ${bad.join(', ')}`);
+  const verifyBackup = useAdminAction(async (backup) => (await backupService.verify(backup.name)).data, {
+    ...ownerOp,
+    key: (backup) => `verify:${backup.name}`,
+    onSuccess: (result) => {
+      const records = result.tables.reduce((sum, t) => sum + t.restored, 0);
+      if (result.ok) {
+        notifySuccess(`Backup verified: ${result.tables.length} tables and ${records} records restore correctly.`);
+      } else {
+        const bad = result.tables.filter((t) => !t.ok).map((t) => `${t.table} (${t.restored}/${t.expected})`);
+        notifyError(`Backup verification failed — incomplete tables: ${bad.join(', ')}`);
+      }
+      refetch();
+    },
+  });
+  const verify = verifyBackup.run;
+
+  // Reading a backup isn't a change, so it doesn't need the action helper.
+  const download = async (backup) => {
+    setDownloading(backup.name);
+    try {
+      const res = await backupService.download(backup.name);
+      saveAs(res.data, backup.name);
+    } catch (err) {
+      notifyError(err, 'Download failed');
     }
-  });
+    setDownloading(null);
+  };
 
-  const download = (backup) => run(backup.name, async () => {
-    const res = await backupService.download(backup.name);
-    saveAs(res.data, backup.name);
-  });
-
-  const restore = async (backup) => {
-    const ok = await confirmAction({
+  const restoreBackup = useAdminAction((backup) => backupService.restore(backup.name), {
+    ...ownerOp,
+    key: (backup) => backup.name,
+    confirm: (backup) => ({
       title: 'Restore this backup?',
       message: `All guests, RSVPs, settings and other data will be replaced with the copy from ${new Date(backup.created_at).toLocaleString()}. A safety backup of the current data is taken first, so this can be undone.`,
       confirmLabel: 'Restore',
       tone: 'danger',
       requireText: 'RESTORE',
-    });
-    if (!ok) return;
-    run(backup.name, async () => {
-      const res = await backupService.restore(backup.name);
-      notifySuccess(`Restored ${res.data?.restored_rows ?? 0} records. Reloading…`);
-      setTimeout(() => window.location.reload(), 1200);
-    });
-  };
+    }),
+    success: (res) => `Restored ${res.data?.restored_rows ?? 0} records. Reloading…`,
+    onSuccess: () => setTimeout(() => window.location.reload(), 1200),
+  });
+  const restore = restoreBackup.run;
 
-  const remove = async (backup) => {
-    if (!await confirmAction(`Delete backup ${backup.name}?`)) return;
-    run(backup.name, async () => {
-      await backupService.delete(backup.name);
-      notifySuccess('Backup deleted');
-    });
-  };
+  const deleteBackup = useAdminAction((backup) => backupService.delete(backup.name), {
+    ...ownerOp,
+    key: (backup) => backup.name,
+    confirm: (backup) => `Delete backup ${backup.name}?`,
+    success: 'Backup deleted',
+  });
+  const remove = deleteBackup.run;
+
+  // One backup operation at a time.
+  const busy = createBackup.pending ? 'create'
+    : [verifyBackup, restoreBackup, deleteBackup].some((op) => op.pending) || downloading ? 'row' : null;
+  const isWorking = (backup) => downloading === backup.name || restoreBackup.isPending(backup.name)
+    || deleteBackup.isPending(backup.name) || verifyBackup.isPending(`verify:${backup.name}`);
 
   const latest = backups[0];
   const nightly = backups.find((b) => b.label === 'scheduled');
@@ -145,7 +155,7 @@ export default function AdminBackups() {
             <tbody className="divide-y divide-stone-100">
               {backups.map((backup) => {
                 const label = LABELS[backup.label] || { text: backup.label || 'Backup', className: 'bg-stone-100 text-stone-600' };
-                const working = busy === backup.name;
+                const working = isWorking(backup);
                 return (
                   <tr key={backup.name} className={working ? 'opacity-60' : ''}>
                     <td className="px-6 py-3">
@@ -161,7 +171,7 @@ export default function AdminBackups() {
                     <td className="px-4 py-3 text-stone-600">{formatSize(backup.size)}</td>
                     <td className="px-6 py-3">
                       <div className="flex justify-end gap-1">
-                        <Button size="icon-sm" icon={ShieldCheck} onClick={() => verify(backup)} disabled={!!busy} loading={busy === `verify:${backup.name}`} aria-label={`Verify ${backup.name}`} title="Verify it restores (safe test)" />
+                        <Button size="icon-sm" icon={ShieldCheck} onClick={() => verify(backup)} disabled={!!busy} loading={verifyBackup.isPending(`verify:${backup.name}`)} aria-label={`Verify ${backup.name}`} title="Verify it restores (safe test)" />
                         <Button size="icon-sm" icon={Download} onClick={() => download(backup)} disabled={!!busy} aria-label={`Download ${backup.name}`} title="Download" />
                         <Button size="icon-sm" icon={RotateCcw} onClick={() => restore(backup)} disabled={!!busy} aria-label={`Restore ${backup.name}`} title="Restore" />
                         <Button size="icon-sm" variant="danger" icon={Trash2} onClick={() => remove(backup)} disabled={!!busy} aria-label={`Delete ${backup.name}`} title="Delete" />

@@ -23,6 +23,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { confirmAction, promptAction, notifyError, notifyUndo } from '../../utils/feedback';
 import { percent } from '../../utils/rsvp';
+import useAdminAction from '../../hooks/useAdminAction';
 import useSavedViews from '../../hooks/useSavedViews';
 import {
   STATUS_FILTERS, INVITE_FILTERS, NEEDS_FILTERS, DEFAULT_GUEST_FILTERS, DEFAULT_GUEST_SORT, GUEST_SORTS,
@@ -58,7 +59,6 @@ export default function AdminGuests() {
   const [guests, setGuests] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState(null);
-  const [loading, setLoading] = useState(false);
   const { searchQuery, setSearchQuery } = useSearch();
   // Filters live in the URL (/guests?status=pending&invite=unsent) so dashboard
   // to-dos, analytics and bookmarks can deep-link. Default view: everyone still
@@ -72,7 +72,6 @@ export default function AdminGuests() {
   const { data: duplicateData, refetch: refetchDuplicates } = useGuestDuplicates();
   const [ignoredDuplicateKeys, setIgnoredDuplicateKeys] = useState(loadIgnoredDuplicates);
   const [mergeModal, setMergeModal] = useState({ open: false, focusGuestId: null });
-  const [, setSendingId] = useState(null);
   const [design, setDesign] = useState(null);
   const [exportingGuest, setExportingGuest] = useState(null);
   const [isBulkExporting, setIsBulkExporting] = useState(false);
@@ -134,18 +133,19 @@ export default function AdminGuests() {
 
   const openMergeModal = (guest = null) => setMergeModal({ open: true, focusGuestId: guest?.id ?? null });
 
-  const handleMerge = async (keepId, mergeIds) => {
-    try {
-      const res = await guestService.merge(keepId, mergeIds);
+  const mergeGuests = useAdminAction((keepId, mergeIds) => guestService.merge(keepId, mergeIds), {
+    key: () => 'merge',
+    success: (res, keepId, mergeIds) => {
       const count = mergeIds.length;
-      toast.success(`Merged ${count} duplicate ${count === 1 ? 'record' : 'records'}${res.data?.name ? ` into ${res.data.name}` : ''}`);
+      return `Merged ${count} duplicate ${count === 1 ? 'record' : 'records'}${res.data?.name ? ` into ${res.data.name}` : ''}`;
+    },
+    error: 'Failed to merge guests',
+    onSuccess: (_, keepId, mergeIds) => {
       setSelectedIds((ids) => ids.filter((id) => !mergeIds.includes(id)));
-      await refetchGuests();
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || 'Failed to merge guests');
-    }
-  };
+      refetchGuests();
+    },
+  });
+  const handleMerge = mergeGuests.run;
 
   const handleIgnoreDuplicates = (group) => {
     const next = [...ignoredDuplicateKeys, groupKey(group)];
@@ -318,42 +318,37 @@ ${rows.join('\n')}
   };
 
   // Deletes are soft on the server, so they can be undone from the toast.
-  const deleteGuests = async (ids) => {
-    const names = guests.filter(g => ids.includes(g.id)).map(g => g.name);
-    const label = ids.length === 1 ? names[0] || 'this guest' : `${ids.length} guests`;
-    if (!await confirmAction({ title: `Delete ${label}?`, message: 'You can undo this straight after.', confirmLabel: 'Delete' })) return;
-    try {
-      await guestService.bulkDelete(ids);
+  const guestsLabel = (ids) => (ids.length === 1
+    ? guests.find(g => g.id === ids[0])?.name || 'this guest'
+    : `${ids.length} guests`);
+  const restoreGuests = useAdminAction((ids) => guestService.restore(ids), {
+    key: () => 'restore',
+    error: 'Failed to undo',
+    onSuccess: () => refetchGuests(),
+  });
+  const removeGuests = useAdminAction((ids) => guestService.bulkDelete(ids), {
+    key: () => 'delete',
+    confirm: (ids) => ({ title: `Delete ${guestsLabel(ids)}?`, message: 'You can undo this straight after.', confirmLabel: 'Delete' }),
+    error: 'Failed to delete',
+    onSuccess: (_, ids) => {
       setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
       refetchGuests();
-      notifyUndo(`Deleted ${label}`, async () => {
-        await guestService.restore(ids);
-        refetchGuests();
-      });
-    } catch (e) {
-      notifyError(e, 'Failed to delete');
-    }
-  };
+      notifyUndo(`Deleted ${guestsLabel(ids)}`, () => restoreGuests.run(ids));
+    },
+  });
+  const deleteGuests = removeGuests.run;
 
   const handleDelete = (id) => deleteGuests([id]);
 
-  const handleSave = async (data) => {
-    try {
-        if (selectedGuest) {
-            await guestService.update(selectedGuest.id, data);
-            toast.success('Guest updated successfully');
-        } else {
-            await guestService.create(data);
-            toast.success('Guest added successfully');
-        }
-        refetchGuests();
-        setModalOpen(false);
-    } catch (err) {
-        console.error(err);
-        const errMsg = err.response?.data?.message || 'Failed to save guest. Check if email is unique.';
-        toast.error(errMsg);
-    }
-  };
+  const saveGuest = useAdminAction((data) => (selectedGuest
+    ? guestService.update(selectedGuest.id, data)
+    : guestService.create(data)), {
+    key: () => 'save',
+    success: () => (selectedGuest ? 'Guest updated successfully' : 'Guest added successfully'),
+    error: 'Failed to save guest. Check if email is unique.',
+    onSuccess: () => { refetchGuests(); setModalOpen(false); },
+  });
+  const handleSave = saveGuest.run;
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredGuests.length) {
@@ -395,81 +390,77 @@ ${rows.join('\n')}
     setSelectedIds([]);
   };
 
-  const handleBulkSendInvite = async () => {
-    const targets = guests.filter(g => selectedIds.includes(g.id) && g.email);
+  const emailTargets = () => guests.filter(g => selectedIds.includes(g.id) && g.email);
+  const bulkSendInvite = useAdminAction(async () => {
+    const targets = emailTargets();
     if (targets.length === 0) {
-        toast.error("No selected guests with email addresses.");
-        return;
+      notifyError('No selected guests with email addresses.');
+      return null;
     }
-    
-    if (!await confirmAction(`Send email invitations with custom cards to ${targets.length} guests?`)) return;
-    
     setIsBulkExporting(true); // Re-use the bulk progress UI
     setBulkProgress({ current: 0, total: targets.length });
-    
     try {
-        for (let i = 0; i < targets.length; i++) {
-            const guest = targets[i];
-            setBulkProgress({ current: i + 1, total: targets.length });
-            
-            // Set the guest for the exporter to render
-            setExportingGuest(guest);
-            // Wait for render
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            const payload = await buildInvitePayload();
-
-            await invitationService.send(guest.id, payload);
-        }
-        toast.success(`Sent ${targets.length} invitations successfully!`);
-        refetchGuests();
-        setSelectedIds([]);
-    } catch (err) {
-        console.error("Bulk invite failed", err);
-        toast.error("Bulk invitation process failed partially.");
+      for (let i = 0; i < targets.length; i++) {
+        const guest = targets[i];
+        setBulkProgress({ current: i + 1, total: targets.length });
+        // Render the guest's card in the hidden exporter, then send it.
+        setExportingGuest(guest);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const payload = await buildInvitePayload();
+        await invitationService.send(guest.id, payload);
+      }
+      return targets.length;
     } finally {
-        setIsBulkExporting(false);
-        setExportingGuest(null);
-        setBulkProgress({ current: 0, total: 0 });
+      setIsBulkExporting(false);
+      setExportingGuest(null);
+      setBulkProgress({ current: 0, total: 0 });
     }
-  };
+  }, {
+    key: () => 'bulk-invite',
+    confirm: () => {
+      const count = emailTargets().length;
+      return count ? `Send email invitations with custom cards to ${count} guests?` : null;
+    },
+    success: (count) => count && `Sent ${count} invitations successfully!`,
+    error: 'Bulk invitation process failed partially.',
+    onSuccess: (count) => { if (count) { refetchGuests(); setSelectedIds([]); } },
+  });
+  const handleBulkSendInvite = bulkSendInvite.run;
 
-  const handleBulkResendConfirmation = async () => {
-    const targets = guests.filter(g => selectedIds.includes(g.id) && g.email && g.rsvp_status !== 'pending');
+  const confirmationTargets = () => guests.filter(g => selectedIds.includes(g.id) && g.email && g.rsvp_status !== 'pending');
+  const bulkResendConfirmation = useAdminAction(async () => {
+    const targets = confirmationTargets();
     if (targets.length === 0) {
-        toast.error("No selected guests with email addresses who have already RSVP'd.");
-        return;
+      notifyError("No selected guests with email addresses who have already RSVP'd.");
+      return null;
     }
+    return guestService.resendConfirmationBulk(targets.map(t => t.id));
+  }, {
+    key: () => 'bulk-resend',
+    confirm: () => {
+      const count = confirmationTargets().length;
+      return count ? `Resend RSVP confirmation emails to ${count} guests?` : null;
+    },
+    success: (res) => res && (res.data?.message || 'Sent confirmation emails successfully!'),
+    error: 'Failed to resend confirmation emails.',
+    onSuccess: (res) => { if (res) setSelectedIds([]); },
+  });
+  const handleBulkResendConfirmation = bulkResendConfirmation.run;
 
-    if (!await confirmAction(`Resend RSVP confirmation emails to ${targets.length} guests?`)) return;
+  const bulkUpdate = useAdminAction((data) => guestService.bulkUpdate(selectedIds, data), {
+    key: () => 'bulk-update',
+    success: () => `Updated ${selectedIds.length} guests`,
+    error: 'Bulk update failed.',
+    onSuccess: () => { setSelectedIds([]); refetchGuests(); },
+  });
+  const handleBulkUpdate = bulkUpdate.run;
 
-    try {
-        setLoading(true);
-        const res = await guestService.resendConfirmationBulk(targets.map(t => t.id));
-        toast.success(res.data.message || `Sent confirmation emails successfully!`);
-        setSelectedIds([]);
-    } catch (err) {
-        console.error("Bulk resend confirmation failed", err);
-        toast.error("Failed to resend confirmation emails.");
-    } finally {
-        setLoading(false);
-    }
-  };
-
-  const handleBulkUpdate = async (data) => {
-    try {
-      setLoading(true);
-      await guestService.bulkUpdate(selectedIds, data);
-      toast.success(`Updated ${selectedIds.length} guests`);
-      setSelectedIds([]);
-      refetchGuests();
-    } catch (err) {
-      console.error("Bulk update failed", err);
-      toast.error("Bulk update failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const importGuests = useAdminAction((payload) => guestService.confirmImport(payload), {
+    key: () => 'import',
+    success: (_, payload) => (payload.conflicts ? 'Import completed successfully!' : 'Guests imported successfully!'),
+    error: (_, payload) => (payload.conflicts ? 'Failed to complete import.' : 'Failed to import guests.'),
+    onSuccess: () => refetchGuests(),
+  });
 
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
@@ -483,9 +474,7 @@ ${rows.join('\n')}
             setConflictModalOpen(true);
         } else if (res.data.valid.length > 0) {
             if (await confirmAction(`Import ${res.data.valid.length} new guests?`)) {
-                await guestService.confirmImport({ valid: res.data.valid });
-                toast.success('Guests imported successfully!');
-                refetchGuests();
+                await importGuests.run({ valid: res.data.valid });
             }
         } else {
             toast.error('No new guests found in the file.');
@@ -502,21 +491,17 @@ ${rows.join('\n')}
   const handleConfirmImport = async (resolvedConflicts) => {
       setConflictModalOpen(false);
       setIsImporting(true);
-      try {
-          await guestService.confirmImport({
-              valid: importData.valid,
-              conflicts: resolvedConflicts
-          });
-          toast.success('Import completed successfully!');
-          refetchGuests();
-      } catch (err) {
-          console.error("Import confirmation failed", err);
-          toast.error("Failed to complete import.");
-      } finally {
-          setIsImporting(false);
-          setImportData(null);
-      }
+      await importGuests.run({ valid: importData.valid, conflicts: resolvedConflicts });
+      setIsImporting(false);
+      setImportData(null);
   };
+
+  const saveCell = useAdminAction((guest, field, data) => guestService.update(guest.id, data), {
+      key: (guest, field) => `${guest.id}:${field}`,
+      error: (_, guest, field) => `Couldn't save ${field.replace(/_/g, ' ')} for ${guest.name}`,
+      rethrow: true,
+      onSuccess: () => refetchGuests(),
+  });
 
   const handleInlineSave = async (guest, field, value) => {
       // Small helper to normalize values for comparison
@@ -529,35 +514,27 @@ ${rows.join('\n')}
           updatedData[field] = parseInt(value, 10) || 0;
       }
       
-      try {
-          await guestService.update(guest.id, updatedData);
-          refetchGuests();
-          return 'saved';
-      } catch (err) {
-          notifyError(err, `Couldn't save ${field.replace(/_/g, ' ')} for ${guest.name}`);
-          throw err; // the cell shows its error state
-      }
+      await saveCell.run(guest, field, updatedData); // throws on failure: the cell shows its error state
+      return 'saved';
   };
 
-  const handleInlineCreate = async (index, field, value) => {
+  const quickCreate = useAdminAction((data) => guestService.create(data), {
+      key: () => 'quick-create',
+      error: 'Failed to create guest. Ensure name is provided.',
+      onSuccess: () => refetchGuests(),
+  });
+
+  const handleInlineCreate = (index, field, value) => {
       if (!value.trim()) return;
       
-      try {
-          // Minimal payload for quick creation: Name and Group required
-          const newGuestData = {
-              name: field === 'name' ? value : `New Guest ${index + 1}`,
-              group: 'Family',
-              plus_ones_allowed: 0,
-              email: null,
-              [field]: value
-          };
-          
-          await guestService.create(newGuestData);
-          refetchGuests();
-      } catch (err) {
-          console.error("Failed to create guest inline", err);
-          notifyError('Failed to create guest. Ensure name is provided.');
-      }
+      // Minimal payload for quick creation: Name and Group required
+      quickCreate.run({
+          name: field === 'name' ? value : `New Guest ${index + 1}`,
+          group: 'Family',
+          plus_ones_allowed: 0,
+          email: null,
+          [field]: value,
+      });
   };
 
   const handleInviteRequest = (guest) => {
@@ -565,27 +542,24 @@ ${rows.join('\n')}
     setIsInviteModalOpen(true);
   };
 
-  const handleSendInvite = async (guest) => {
-    setSendingId(guest.id);
+  const sendInvite = useAdminAction(async (guest) => {
     try {
-        // Generate the invitation attachment before sending
+        // Generate the invitation attachment before sending: render the guest
+        // in the hidden exporter and wait for it to pick up the guest data.
         setExportingGuest(guest);
-        // Wait for render so the exporter component can pick up the guest data
         await new Promise(resolve => setTimeout(resolve, 800));
-
         const payload = await buildInvitePayload();
-
-        await invitationService.send(guest.id, payload);
-        toast.success(`Invitation sent to ${guest.name} with card attached!`);
-        refetchGuests();
-    } catch (e) {
-        console.error(e);
-        toast.error('Failed to send email invitation');
+        return await invitationService.send(guest.id, payload);
     } finally {
         setExportingGuest(null);
-        setSendingId(null);
     }
-  };
+  }, {
+    key: (guest) => guest.id,
+    success: (_, guest) => `Invitation sent to ${guest.name} with card attached!`,
+    error: 'Failed to send email invitation',
+    onSuccess: () => refetchGuests(),
+  });
+  const handleSendInvite = sendInvite.run;
 
   const handleExportTracker = async () => {
     setIsExportingTracker(true);
@@ -620,6 +594,12 @@ ${rows.join('\n')}
 
   // Step 1: render the guest's invitation PDF, upload it (so the message can link
   // to it) and mark the invite as sent. Returns what step 2 needs to share it.
+  const markWhatsappSent = useAdminAction((guest, data) => guestService.markWhatsappInvite(guest.id, data), {
+    key: (guest) => guest.id,
+    error: (_, guest) => `Couldn't record the WhatsApp invite for ${guest.name}`,
+    onSuccess: () => refetchGuests(),
+  });
+
   const prepareWhatsAppInvite = async (guest) => {
     let file = null;
     let pdfUrl = null;
@@ -630,12 +610,11 @@ ${rows.join('\n')}
       if (blob) {
         const fileName = `Invitation_${guest.name.replace(/\s+/g, '_')}.pdf`;
         file = new File([blob], fileName, { type: 'application/pdf' });
-        const res = await guestService.markWhatsappInvite(guest.id, { pdf_data: await blobToBase64(blob) });
+        const res = await markWhatsappSent.run(guest, { pdf_data: await blobToBase64(blob) });
         pdfUrl = res?.data?.pdf_url || null;
       } else {
-        await guestService.markWhatsappInvite(guest.id);
+        await markWhatsappSent.run(guest);
       }
-      refetchGuests();
     } catch (e) {
       console.error('Failed to prepare WhatsApp invitation PDF', e);
     } finally {
@@ -691,50 +670,45 @@ ${rows.join('\n')}
     window.open(whatsAppUrl(guest, buildWhatsAppMessage(guest)), '_blank');
   };
 
-  const toggleWhatsAppSent = async (guest, sent) => {
-    try {
-      if (sent) await guestService.markWhatsappInvite(guest.id);
-      else await guestService.unmarkWhatsappInvite(guest.id);
-      refetchGuests();
-    } catch (e) {
-      toast.error('Failed to save — please try again');
-      throw e;
-    }
-  };
+  // The checklist shows the row's error state, so this re-throws.
+  const toggleSent = useAdminAction((guest, sent) => (sent
+    ? guestService.markWhatsappInvite(guest.id)
+    : guestService.unmarkWhatsappInvite(guest.id)), {
+    key: (guest) => guest.id,
+    error: 'Failed to save — please try again',
+    rethrow: true,
+    onSuccess: () => refetchGuests(),
+  });
+  const toggleWhatsAppSent = toggleSent.run;
 
-  const handleUpdateGuest = async (guest, data) => {
-    try {
-      // Merge with existing guest data to ensure validation (like 'name') passes
-      const payload = { ...guest, ...data };
-      await guestService.update(guest.id, payload);
+  // Merge with existing guest data so validation (like 'name') passes; the
+  // toast offers to put the changed fields back.
+  const updateGuest = useAdminAction((guest, data) => guestService.update(guest.id, { ...guest, ...data }), {
+    key: (guest) => guest.id,
+    error: 'Failed to update guest details',
+    onSuccess: (_, guest, data) => {
       refetchGuests();
-      // Offer to put the changed fields back.
       const previous = Object.fromEntries(Object.keys(data).map(key => [key, guest[key] ?? null]));
-      notifyUndo(`Updated ${guest.name}`, async () => {
-        await guestService.update(guest.id, { ...guest, ...previous });
-        refetchGuests();
-      });
-    } catch (err) {
-      notifyError(err, 'Failed to update guest details');
-    }
-  };
+      notifyUndo(`Updated ${guest.name}`, () => updateGuestQuietly.run(guest, previous));
+    },
+  });
+  const updateGuestQuietly = useAdminAction((guest, data) => guestService.update(guest.id, { ...guest, ...data }), {
+    key: (guest) => guest.id,
+    error: 'Failed to undo',
+    onSuccess: () => refetchGuests(),
+  });
+  const handleUpdateGuest = updateGuest.run;
 
-  const handleResetAllRSVPs = async () => {
-    if (!await confirmAction("Are you sure you want to reset RSVP status for ALL guests to 'pending'? This will allow you to send fresh invitations.")) return;
-    
-    try {
-        const allIds = guests.map(g => g.id);
-        if (allIds.length === 0) return;
-        
-        toast.loading("Resetting statuses...", { id: 'reset-rsvp' });
-        await guestService.bulkUpdate(allIds, { rsvp_status: 'pending' });
-        refetchGuests();
-        toast.success("All RSVP statuses reset successfully", { id: 'reset-rsvp' });
-    } catch (err) {
-        console.error(err);
-        toast.error("Failed to reset RSVP statuses", { id: 'reset-rsvp' });
-    }
-  };
+  const resetAllRsvps = useAdminAction(() => guestService.bulkUpdate(guests.map(g => g.id), { rsvp_status: 'pending' }), {
+    key: () => 'reset-all',
+    confirm: () => (guests.length
+      ? "Are you sure you want to reset RSVP status for ALL guests to 'pending'? This will allow you to send fresh invitations."
+      : null),
+    success: 'All RSVP statuses reset successfully',
+    error: 'Failed to reset RSVP statuses',
+    onSuccess: () => refetchGuests(),
+  });
+  const handleResetAllRSVPs = () => guests.length && resetAllRsvps.run();
 
   // Filter, search and sort
   const filterContext = { duplicateIds };
@@ -968,7 +942,7 @@ ${rows.join('\n')}
         showBulkMenu={showBulkMenu}
         setShowBulkMenu={setShowBulkMenu}
         isBulkExporting={isBulkExporting}
-        loading={loading}
+        loading={bulkUpdate.pending || bulkResendConfirmation.pending}
         onBulkUpdate={handleBulkUpdate}
         onBulkWhatsApp={handleBulkWhatsApp}
         onBulkSendInvite={handleBulkSendInvite}

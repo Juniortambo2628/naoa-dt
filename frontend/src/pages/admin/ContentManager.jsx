@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { contentService } from '../../services/api';
+import useAdminAction from '../../hooks/useAdminAction';
 import EditableFieldset from '../../components/admin/EditableFieldset';
 
 import { Save, ChevronDown, ChevronRight, Layout, Image as ImageIcon, Globe, Languages, Sparkles, Edit } from 'lucide-react';
@@ -9,7 +10,6 @@ import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import ToggleButton from '../../components/admin/ToggleButton';
 import Button from '../../components/Button';
 import { useContent } from '../../context/ContentContext';
-import { toast } from 'react-hot-toast';
 import { notifyError } from '../../utils/feedback';
 
 const LANGUAGES = [
@@ -180,7 +180,6 @@ export default function ContentManager() {
   const [activePage, setActivePage] = useState('home');
   const [contents, setContents] = useState({});
   const [expandedSection, setExpandedSection] = useState('home_hero');
-  const [saving, setSaving] = useState(null);
   const [activeLang, setActiveLang] = useState('en');
   const [translating, setTranslating] = useState(null);
 
@@ -226,7 +225,17 @@ export default function ContentManager() {
       setContents(newContents);
   };
 
-  const handleToggleVisibility = async (sectionKey) => {
+  const saveVisibility = useAdminAction(
+      (sectionKey, content, visible) => contentService.update(sectionKey, { content, is_visible: visible }),
+      {
+          success: (_, sectionKey, __, visible) => `${sectionKey.replace('_', ' ')} is now ${visible ? 'enabled' : 'disabled'}`,
+          error: 'Failed to update visibility',
+          // Revert on failure
+          onError: (_, sectionKey, __, visible) => updateLocalContent(sectionKey, { is_visible: !visible }),
+      },
+  );
+
+  const handleToggleVisibility = (sectionKey) => {
       const currentSection = contents[sectionKey] || { content: {}, is_visible: true };
       const newVisibility = currentSection.is_visible === false; // Toggle it
       
@@ -243,17 +252,7 @@ export default function ContentManager() {
       }));
       
       // Auto-save visibility change
-      try {
-          await contentService.update(sectionKey, {
-              content: currentSection.content,
-              is_visible: newVisibility
-          });
-          toast.success(`${sectionKey.replace('_', ' ')} is now ${newVisibility ? 'enabled' : 'disabled'}`);
-      } catch {
-          toast.error('Failed to update visibility');
-          // Revert on failure
-          updateLocalContent(sectionKey, { is_visible: !newVisibility });
-      }
+      saveVisibility.run(sectionKey, currentSection.content, newVisibility);
   };
 
   const handleTranslate = async (sectionKey, fieldKey) => {
@@ -301,20 +300,14 @@ export default function ContentManager() {
       setTranslating(null);
   };
 
-  const handleSave = async (sectionKey) => {
-      setSaving(sectionKey);
-      try {
-          const sectionData = contents[sectionKey];
-          await contentService.update(sectionKey, {
-              content: sectionData.content,
-              is_visible: sectionData.is_visible ?? true
-          });
-          setTimeout(() => setSaving(null), 1000);
-      } catch {
-          notifyError('Failed to save.');
-          setSaving(null);
-      }
-  };
+  const saveSection = useAdminAction((sectionKey) => {
+      const sectionData = contents[sectionKey];
+      return contentService.update(sectionKey, {
+          content: sectionData.content,
+          is_visible: sectionData.is_visible ?? true,
+      });
+  }, { success: 'Saved', error: 'Failed to save.' });
+  const handleSave = saveSection.run;
 
   if (loading) return <div className="p-8 text-center text-stone-500">Loading content...</div>;
 
@@ -323,6 +316,7 @@ export default function ContentManager() {
     <AdminPageLayout
       actions={PAGES.map(page => ({
         id: page.id,
+        readOnly: true, // page tabs
         label: page.label,
         variant: activePage === page.id ? 'secondary' : 'primary',
         onClick: () => {
@@ -352,7 +346,7 @@ export default function ContentManager() {
            {SECTIONS.filter(s => PAGES.find(p => p.id === activePage)?.sections.includes(s.key)).map(section => {
                const isExpanded = expandedSection === section.key;
                const sectionData = contents[section.key] || { content: {} };
-               const isSaving = saving === section.key;
+               const isSaving = saveSection.isPending(section.key);
 
                return (
                    <div key={section.key} className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">

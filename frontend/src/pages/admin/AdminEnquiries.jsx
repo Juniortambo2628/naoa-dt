@@ -16,12 +16,11 @@ import Button from '../../components/Button';
 import DeleteButton from '../../components/admin/DeleteButton';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
 export default function AdminEnquiries() {
   const { data, isLoading: loading, refetch } = useEnquiries();
   const enquiries = data?.data || [];
-  const [processing, setProcessing] = useState(null);
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
@@ -57,51 +56,36 @@ export default function AdminEnquiries() {
 
   const clearSelection = () => setSelectedIds([]);
 
-  const handleDelete = async (id) => {
-    if (!await confirmAction('Delete this enquiry?')) return;
-    
-    setProcessing(id);
-    try {
-      await enquiryService.delete(id);
+  const deleteEnquiry = useAdminAction((id) => enquiryService.delete(id), {
+    confirm: 'Delete this enquiry?',
+    error: 'Failed to delete enquiry',
+    onSuccess: (_, id) => {
       setSelectedIds((prev) => prev.filter((i) => i !== id));
       refetch();
-    } catch (err) {
-      console.error('Failed to delete enquiry', err);
-    }
-    setProcessing(null);
-  };
+    },
+  });
+  const handleDelete = deleteEnquiry.run;
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    if (!await confirmAction(`Delete ${selectedIds.length} selected enquiries?`)) return;
+  const bulkDelete = useBulkAdminAction((id) => enquiryService.delete(id), {
+    confirm: (ids) => `Delete ${ids.length} selected enquiries?`,
+    onSuccess: () => { refetch(); clearSelection(); },
+  });
 
-    setProcessing('bulk');
-    try {
-      await Promise.all(selectedIds.map((id) => enquiryService.delete(id)));
-      refetch();
-      clearSelection();
-    } catch (err) {
-      console.error('Failed to delete selected enquiries', err);
-    }
-    setProcessing(null);
-  };
-
-  const handleReply = async (e) => {
-    e.preventDefault();
-    if (!replyMessage.trim()) return;
-
-    setProcessing(selectedEnquiry.id);
-    try {
-      await enquiryService.reply(selectedEnquiry.id, replyMessage);
+  const sendReply = useAdminAction((id, message) => enquiryService.reply(id, message), {
+    error: 'Failed to send reply. Please try again.',
+    onSuccess: () => {
       setShowReplyModal(false);
       setReplyMessage('');
       refetch();
-    } catch (err) {
-      console.error('Failed to send reply', err);
-      notifyError('Failed to send reply. Please try again.');
-    }
-    setProcessing(null);
+    },
+  });
+  const handleReply = (e) => {
+    e.preventDefault();
+    if (!replyMessage.trim()) return;
+    sendReply.run(selectedEnquiry.id, replyMessage);
   };
+  // Row and reply-button spinners.
+  const isBusy = (id) => deleteEnquiry.isPending(id) || sendReply.isPending(id);
 
   const bulkActions = [
     {
@@ -109,8 +93,8 @@ export default function AdminEnquiries() {
       label: 'Delete Selected',
       icon: Trash2,
       variant: 'danger',
-      onClick: handleBulkDelete,
-      disabled: processing === 'bulk',
+      action: bulkDelete,
+      args: [selectedIds],
     },
   ];
 
@@ -268,7 +252,7 @@ export default function AdminEnquiries() {
                         <span onClick={(e) => e.stopPropagation()}>
                           <DeleteButton
                             onClick={() => handleDelete(enq.id)}
-                            processing={processing === enq.id}
+                            processing={isBusy(enq.id)}
                             title="Delete Enquiry"
                           />
                         </span>
@@ -329,7 +313,7 @@ export default function AdminEnquiries() {
                       )}
                       <DeleteButton
                         onClick={() => handleDelete(enq.id)}
-                        processing={processing === enq.id}
+                        processing={isBusy(enq.id)}
                         title="Delete Enquiry"
                       />
                     </div>
@@ -375,7 +359,7 @@ export default function AdminEnquiries() {
                     type="submit"
                     variant="secondary"
                     icon={Send}
-                    loading={processing === selectedEnquiry.id}
+                    loading={isBusy(selectedEnquiry.id)}
                     disabled={!replyMessage.trim()}
                     className="flex-[2]"
                   >

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus, Edit, Trash2, UserCog } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminUsers } from '../../hooks/useApiHooks';
 import { userService } from '../../services/api';
@@ -15,7 +14,7 @@ import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminModal from '../../components/admin/AdminModal';
 import EmptyState from '../../components/admin/EmptyState';
 import { AdminInput } from '../../components/admin/AdminInput';
-import { confirmAction } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 import Button from '../../components/Button';
 
 const EMPTY_FORM = { name: '', email: '', password: '', role: 'editor' };
@@ -32,7 +31,6 @@ export default function AdminUsers() {
     const [editing, setEditing] = useState(null); // null = closed, {} = new, user = edit
     const [form, setForm] = useState(EMPTY_FORM);
     const [errors, setErrors] = useState({});
-    const [saving, setSaving] = useState(false);
 
     const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-users'] });
 
@@ -42,38 +40,31 @@ export default function AdminUsers() {
         setErrors({});
     };
 
-    const handleSubmit = async (e) => {
+    const saveUser = useAdminAction(() => (editing.id ? userService.update(editing.id, form) : userService.create(form)), {
+        role: 'owner',
+        key: () => 'save',
+        success: () => (editing.id ? 'User Updated' : 'User Added'),
+        error: 'Failed to save user',
+        onSuccess: () => { setEditing(null); refresh(); },
+        // Field-level messages under the inputs (the toast gives the summary).
+        onError: (err) => setErrors(err?.response?.data?.errors || {}),
+    });
+    const saving = saveUser.pending;
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setSaving(true);
         setErrors({});
-        try {
-            if (editing.id) {
-                await userService.update(editing.id, form);
-                toast.success('User Updated');
-            } else {
-                await userService.create(form);
-                toast.success('User Added');
-            }
-            setEditing(null);
-            refresh();
-        } catch (err) {
-            setErrors(err?.response?.data?.errors || {});
-            toast.error(err?.response?.data?.message || 'Failed to save user');
-        } finally {
-            setSaving(false);
-        }
+        saveUser.run();
     };
 
-    const handleDelete = async (user) => {
-        if (!await confirmAction(`Remove ${user.name}'s admin access?`)) return;
-        try {
-            await userService.delete(user.id);
-            toast.success('User Removed');
-            refresh();
-        } catch (err) {
-            toast.error(err?.response?.data?.message || 'Failed to delete user');
-        }
-    };
+    const deleteUser = useAdminAction((user) => userService.delete(user.id), {
+        role: 'owner',
+        key: (user) => user.id,
+        confirm: (user) => `Remove ${user.name}'s admin access?`,
+        success: 'User Removed',
+        error: 'Failed to delete user',
+        onSuccess: refresh,
+    });
+    const handleDelete = deleteUser.run;
 
     const field = (key) => ({
         value: form[key],

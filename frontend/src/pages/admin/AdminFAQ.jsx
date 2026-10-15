@@ -22,8 +22,7 @@ import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
-import { toast } from 'react-hot-toast';
-import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
 registerPlugin(FilePondPluginImagePreview);
 
@@ -141,17 +140,11 @@ export default function AdminFAQ() {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
-    const handleBulkDelete = async () => {
-        if (!await confirmAction(`Delete ${selectedIds.length} selected FAQs?`)) return;
-        try {
-            await Promise.all(selectedIds.map(id => faqService.delete(id)));
-            toast.success(`${selectedIds.length} FAQs deleted`);
-            setSelectedIds([]);
-            refetch();
-        } catch {
-            toast.error('Failed to delete some FAQs');
-        }
-    };
+    const bulkDelete = useBulkAdminAction((id) => faqService.delete(id), {
+        confirm: (ids) => `Delete ${ids.length} selected FAQs?`,
+        success: (count) => `${count} FAQs deleted`,
+        onSuccess: () => { setSelectedIds([]); refetch(); },
+    });
 
     // Form state
     const [question, setQuestion] = useState('');
@@ -192,30 +185,26 @@ export default function AdminFAQ() {
         handleEdit(faq);
     };
 
-    const handleSave = async (e) => {
+    const saveFaq = useAdminAction(() => (selectedFaq
+        ? faqService.update(selectedFaq.id, { question, answer, order: selectedFaq.order })
+        : faqService.create({ question, answer })), {
+        key: () => 'save',
+        error: 'Failed to save FAQ.',
+        onSuccess: () => { setModalOpen(false); refetch(); },
+    });
+    const handleSave = (e) => {
         e.preventDefault();
-        try {
-            if (selectedFaq) {
-                await faqService.update(selectedFaq.id, { question, answer, order: selectedFaq.order });
-            } else {
-                await faqService.create({ question, answer });
-            }
-            setModalOpen(false);
-        } catch (err) {
-            console.error(err);
-            notifyError("Failed to save FAQ.");
-        }
+        saveFaq.run();
     };
 
-    const handleReorder = async (newOrder) => {
+    const saveOrder = useAdminAction(
+        (newOrder) => faqService.reorder(newOrder.map((item, index) => ({ id: item.id, order: index }))),
+        { key: () => 'reorder', error: 'Failed to update order' },
+    );
+    const handleReorder = (newOrder) => {
         if (searchQuery) return; // Prevent reorder while search is active
         setReorderableFaqs(newOrder);
-        const updatedFaqs = newOrder.map((item, index) => ({ id: item.id, order: index }));
-        try {
-            await faqService.reorder(updatedFaqs);
-        } catch (error) {
-            console.error("Failed to update order", error);
-        }
+        saveOrder.run(newOrder);
     };
 
     const filteredFaqs = useFilteredItems(reorderableFaqs, searchQuery, (faq, searchLower) =>
@@ -280,7 +269,7 @@ export default function AdminFAQ() {
                     selectedCount={selectedIds.length}
                     onClearSelection={() => setSelectedIds([])}
                     actions={[
-                        { id: 'delete', label: 'Delete Selected', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
+                        { id: 'delete', label: 'Delete Selected', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
                     ]}
                 />
 

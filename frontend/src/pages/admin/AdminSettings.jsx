@@ -11,6 +11,7 @@ import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import AdminModal from '../../components/admin/AdminModal';
 import EditableFieldset from '../../components/admin/EditableFieldset';
+import useAdminAction from '../../hooks/useAdminAction';
 
 import { AdminInput } from '../../components/admin/AdminInput';
 import Spinner from '../../components/admin/Spinner';
@@ -160,23 +161,20 @@ export default function AdminSettings() {
     toast('Unsaved changes discarded');
   };
 
-  const handleSave = async (e) => {
+  const saveSettings = useAdminAction(() => updateSettingsMutation.mutateAsync({
+    ...settings,
+    rsvp_enabled: String(settings.rsvp_enabled),
+    admin_email_notifications: String(settings.admin_email_notifications),
+    song_request_limit_enabled: String(settings.song_request_limit_enabled),
+  }), {
+    key: () => 'save',
+    success: 'System settings saved successfully',
+    error: 'Failed to save settings',
+    onSuccess: () => markSaved(settings),
+  });
+  const handleSave = (e) => {
     e.preventDefault();
-    try {
-        const payload = {
-            ...settings,
-            rsvp_enabled: String(settings.rsvp_enabled),
-            admin_email_notifications: String(settings.admin_email_notifications),
-            song_request_limit_enabled: String(settings.song_request_limit_enabled),
-        };
-
-        await updateSettingsMutation.mutateAsync(payload);
-        markSaved(settings);
-        toast.success('System settings saved successfully');
-    } catch (err) {
-        console.error('Settings save error:', err);
-        toast.error('Failed to save settings: ' + (err.response?.data?.message || err.message));
-    }
+    saveSettings.run();
   };
 
   const handle2faToggle = async () => {

@@ -18,8 +18,8 @@ import Button from '../../components/Button';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
 import useCrudHandlers from '../../hooks/useCrudHandlers';
+import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 import usePolling from '../../hooks/usePolling';
-import { confirmAction } from '../../utils/feedback';
 
 export default function AdminSongRequests() {
   const { data, isLoading: loading, refetch } = useSongRequests();
@@ -29,9 +29,7 @@ export default function AdminSongRequests() {
   const [filter, setFilter] = useState('all');
   const [viewMode, setViewMode] = useState('list');
   const [selectedIds, setSelectedIds] = useState([]);
-  const [processingIds, setProcessingIds] = useState(new Set());
-
-  const { handleDelete } = useCrudHandlers({
+  const { handleDelete, isProcessing: isDeleting } = useCrudHandlers({
     service: songRequestService,
     onRefresh: refetch,
   });
@@ -48,16 +46,6 @@ export default function AdminSongRequests() {
 
   usePolling(refetch, 30000);
 
-  const setProcessing = (id, active) => {
-    setProcessingIds(prev => {
-      const next = new Set(prev);
-      if (active) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  };
-
-  const isProcessing = (id) => processingIds.has(id);
 
   const toggleSelection = (id) => {
     setSelectedIds(prev =>
@@ -75,61 +63,30 @@ export default function AdminSongRequests() {
 
   const clearSelection = () => setSelectedIds([]);
 
-  const handleTogglePlayed = async (id, played) => {
-    setProcessing(id, true);
-    try {
-      await songRequestService.setPlayed(id, played);
-      refetch();
-    } catch (err) {
-      console.error('Failed to update song', err);
-    }
-    setProcessing(id, false);
-  };
+  const togglePlayed = useAdminAction((id, played) => songRequestService.setPlayed(id, played), {
+    error: 'Failed to update song',
+    onSuccess: () => refetch(),
+  });
+  const handleTogglePlayed = togglePlayed.run;
+  const handleLocalDelete = handleDelete;
 
-  const handleLocalDelete = async (id, opts) => {
-    setProcessing(id, true);
-    await handleDelete(id, opts);
-    setProcessing(id, false);
-  };
+  const afterBulk = () => { clearSelection(); refetch(); };
+  const bulkMarkPlayed = useBulkAdminAction((id) => songRequestService.setPlayed(id, true), {
+    error: 'Failed to mark songs as played',
+    onSuccess: afterBulk,
+  });
+  const bulkDelete = useBulkAdminAction((id) => songRequestService.delete(id), {
+    confirm: (ids) => `Are you sure you want to delete ${ids.length} selected requests?`,
+    onSuccess: afterBulk,
+  });
 
-  const handleBulkMarkPlayed = async () => {
-    const ids = [...selectedIds];
-    setProcessingIds(prev => new Set([...prev, ...ids]));
-    try {
-      await Promise.all(ids.map(id => songRequestService.setPlayed(id, true)));
-      clearSelection();
-      refetch();
-    } catch (err) {
-      console.error('Failed to mark songs as played', err);
-    }
-    setProcessingIds(prev => {
-      const next = new Set(prev);
-      ids.forEach(id => next.delete(id));
-      return next;
-    });
-  };
-
-  const handleBulkDelete = async () => {
-    const ids = [...selectedIds];
-    if (!await confirmAction(`Are you sure you want to delete ${ids.length} selected requests?`)) return;
-    setProcessingIds(prev => new Set([...prev, ...ids]));
-    try {
-      await Promise.all(ids.map(id => songRequestService.delete(id)));
-      clearSelection();
-      refetch();
-    } catch (err) {
-      console.error('Failed to delete songs', err);
-    }
-    setProcessingIds(prev => {
-      const next = new Set(prev);
-      ids.forEach(id => next.delete(id));
-      return next;
-    });
-  };
+  // Row spinners: the row's own action, or a bulk action that includes it.
+  const bulkBusy = bulkMarkPlayed.pending || bulkDelete.pending;
+  const isProcessing = (id) => togglePlayed.isPending(id) || isDeleting(id) || (bulkBusy && selectedIds.includes(id));
 
   const bulkActions = [
-    { id: 'mark-played', label: 'Mark Played', icon: CheckCircle, variant: 'secondary', onClick: handleBulkMarkPlayed },
-    { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', onClick: handleBulkDelete },
+    { id: 'mark-played', label: 'Mark Played', icon: CheckCircle, variant: 'secondary', action: bulkMarkPlayed, args: [selectedIds] },
+    { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
   ];
 
   return (

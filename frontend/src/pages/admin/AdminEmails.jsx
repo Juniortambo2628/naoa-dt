@@ -12,7 +12,8 @@ import Button from '../../components/Button';
 import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
 import EditableFieldset from '../../components/admin/EditableFieldset';
 
-import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
+import { confirmAction, notifyError } from '../../utils/feedback';
+import useAdminAction from '../../hooks/useAdminAction';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
 import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
 
@@ -23,7 +24,6 @@ const mockGuest = {
 };
 
 export default function AdminEmails() {
-  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('compose'); // compose, templates, history
   const [showPreview, setShowPreview] = useState(false);
   const [design, setDesign] = useState(null);
@@ -40,58 +40,43 @@ export default function AdminEmails() {
     email_gift_subject: '',
     email_gift_message: '',
   });
-  const [savingSettings, setSavingSettings] = useState(false);
   const { dirty, markSaved } = useUnsavedChanges(emailSettings);
 
-  const handleBulkSend = async () => {
-    if (!await confirmAction('Send digital invitations to all guests with pending RSVPs and valid email addresses?')) return;
-    setLoading(true);
-    try {
-        // Fetch current guest list to find pending ones
-        const guestsRes = await guestService.getAll();
-        const allGuests = guestsRes.data.data || guestsRes.data;
-        
-        // Filter: Pending RSVP AND has Email AND is NOT a plus-one (we send to primary guests, send method handles their plus-ones)
-        const pendingGuests = allGuests.filter(g => 
-            g.rsvp_status === 'pending' && 
-            g.email && 
-            !g.parent_guest_id
-        );
+  const bulkSend = useAdminAction(async () => {
+    // Fetch the current guest list to find pending primary guests with an email
+    // (the send method handles their plus-ones).
+    const guestsRes = await guestService.getAll();
+    const allGuests = guestsRes.data.data || guestsRes.data;
+    const pendingGuests = allGuests.filter(g => g.rsvp_status === 'pending' && g.email && !g.parent_guest_id);
 
-        if (pendingGuests.length === 0) {
-            notifyError('No pending primary guests with email addresses found.');
-            setLoading(false);
-            return;
-        }
-
-        if (!await confirmAction(`Found ${pendingGuests.length} primary guests to invite. Proceed?`)) {
-            setLoading(false);
-            return;
-        }
-
-        const guestIds = pendingGuests.map(g => g.id);
-        const res = await invitationService.sendBulk(guestIds);
-        
-        notifySuccess(`Successfully queued ${res.data.sent_count} invitations! ${res.data.error_count > 0 ? res.data.error_count + ' failed.' : ''}`);
-    } catch(e) {
-        console.error("Bulk send failed", e);
-        notifyError('Failed to send bulk invitations: ' + (e.response?.data?.message || e.message));
+    if (pendingGuests.length === 0) {
+      notifyError('No pending primary guests with email addresses found.');
+      return null;
     }
-    setLoading(false);
-  };
+    if (!await confirmAction(`Found ${pendingGuests.length} primary guests to invite. Proceed?`)) return null;
 
-  const handleSaveSettings = async (e) => {
+    const res = await invitationService.sendBulk(pendingGuests.map(g => g.id));
+    return res.data;
+  }, {
+    key: () => 'bulk-send',
+    confirm: 'Send digital invitations to all guests with pending RSVPs and valid email addresses?',
+    success: (result) => result && `Successfully queued ${result.sent_count} invitations! ${result.error_count > 0 ? `${result.error_count} failed.` : ''}`,
+    error: 'Failed to send bulk invitations',
+  });
+  const handleBulkSend = bulkSend.run;
+  const loading = bulkSend.pending;
+
+  const saveTemplates = useAdminAction(() => settingService.update(emailSettings), {
+    key: () => 'save',
+    success: 'Email templates saved successfully!',
+    error: 'Failed to save email templates',
+    onSuccess: () => markSaved(emailSettings),
+  });
+  const handleSaveSettings = (e) => {
     e?.preventDefault();
-    setSavingSettings(true);
-    try {
-        await settingService.update(emailSettings);
-        markSaved(emailSettings);
-        notifySuccess('Email templates saved successfully!');
-    } catch {
-        notifyError('Failed to save email templates');
-    }
-    setSavingSettings(false);
+    saveTemplates.run();
   };
+  const savingSettings = saveTemplates.pending;
 
   useEffect(() => {
     const loadData = async () => {
