@@ -11,6 +11,7 @@ import { CollaboratorAvatar } from './CollaboratorAvatars';
 import { collaborationService } from '../../services/api';
 import { moduleByKey } from '../../utils/adminModules';
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
+import useRole from '../../hooks/useRole';
 
 const ACTION_WORDS = { created: 'added', updated: 'edited', deleted: 'deleted', restored: 'restored' };
 
@@ -30,7 +31,7 @@ function Change({ change }) {
   );
 }
 
-function Entry({ revision, batchSize, showModule, onRestore, restoring }) {
+function Entry({ revision, batchSize, showModule, onRestore, restoring, canRestore }) {
   const who = revision.user || { id: 0, name: 'A guest' };
   const when = new Date(revision.updated_at || revision.created_at);
   const moduleLabel = moduleByKey(revision.module)?.label || revision.module;
@@ -52,7 +53,7 @@ function Entry({ revision, batchSize, showModule, onRestore, restoring }) {
             {revision.changes.length > 4 && <li className="text-[11px] text-stone-400">+{revision.changes.length - 4} more fields</li>}
           </ul>
         )}
-        {revision.restorable && (
+        {canRestore && revision.restorable && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             <Button size="sm" icon={RotateCcw} disabled={restoring} onClick={() => onRestore(revision, false)}>
               {revision.action === 'deleted' ? 'Restore deleted item' : 'Restore this version'}
@@ -77,6 +78,7 @@ export default function VersionHistoryDrawer({ module, onClose, onRestored }) {
   const queryClient = useQueryClient();
   const [scope, setScope] = useState(module ? 'page' : 'all');
   const [restoring, setRestoring] = useState(false);
+  const { canEdit } = useRole();
   const filterModule = scope === 'page' ? module : null;
   const moduleLabel = moduleByKey(module)?.label;
 
@@ -177,6 +179,7 @@ export default function VersionHistoryDrawer({ module, onClose, onRestored }) {
                         showModule={scope === 'all'}
                         onRestore={restore}
                         restoring={restoring}
+                        canRestore={canEdit}
                       />
                     </ul>
                   </li>

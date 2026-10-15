@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\TranslateController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WeatherController;
+use App\Http\Middleware\EnforceRole;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -151,8 +152,9 @@ Route::get('/weather', [WeatherController::class, 'forecast']);
 // Public Calendar Routes
 Route::get('/calendar/ics', [CalendarController::class, 'downloadIcs'])->name('calendar.ics');
 
-// Protected Routes (require authentication)
-Route::middleware('auth:sanctum')->group(function () {
+// Protected Routes (require authentication). Viewers are read-only;
+// people and backups are for owners (see EnforceRole).
+Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
@@ -180,7 +182,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Backups (admin)
-    Route::group(['prefix' => 'backups'], function () {
+    Route::group(['prefix' => 'backups', 'middleware' => EnforceRole::class.':owner'], function () {
         Route::get('/', [BackupController::class, 'index']);
         Route::post('/', [BackupController::class, 'store']);
         Route::get('/{name}/download', [BackupController::class, 'download']);
@@ -242,7 +244,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // FAQ Management (admin)
     // Admin users management
-    Route::apiResource('users', UserController::class)->except(['show']);
+    Route::get('/users', [UserController::class, 'index']);
+    Route::apiResource('users', UserController::class)->except(['index', 'show'])
+        ->middleware(EnforceRole::class.':owner');
 
     Route::group(['prefix' => 'faqs'], function () {
         Route::post('/', [FaqController::class, 'store']);
@@ -318,7 +322,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Collaboration: presence + module badges, invitations, version history
     Route::post('/collaboration/heartbeat', [CollaborationController::class, 'heartbeat']);
     Route::get('/collaborators', [CollaborationController::class, 'collaborators']);
-    Route::post('/collaborators/invite', [CollaborationController::class, 'invite']);
+    Route::middleware(EnforceRole::class.':owner')->group(function () {
+        Route::post('/collaborators/invite', [CollaborationController::class, 'invite']);
+        Route::patch('/collaborators/{user}/role', [CollaborationController::class, 'updateRole']);
+    });
     Route::get('/revisions', [RevisionController::class, 'index']);
     Route::post('/revisions/{revision}/restore', [RevisionController::class, 'restore']);
 

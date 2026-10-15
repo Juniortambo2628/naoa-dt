@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import { getAssetUrl } from '../utils/assetUrl';
 
 let baseURL = import.meta.env.VITE_API_URL || '/api';
@@ -43,6 +44,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Denied by role (e.g. a viewer saving): one explanatory toast, not one per request.
+    if (error.response?.status === 403 && error.response.data?.reason === 'role') {
+      toast.error(error.response.data.message || 'You don’t have permission to do that.', { id: 'role-denied' });
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
       // Optionally redirect to login
@@ -410,6 +415,7 @@ export const collaborationService = {
   heartbeat: (data) => api.post('/collaboration/heartbeat', data),
   getCollaborators: () => api.get('/collaborators'),
   invite: (data) => api.post('/collaborators/invite', data),
+  updateRole: (id, role) => api.patch(`/collaborators/${id}/role`, { role }),
   acceptInvite: (data) => api.post('/collaborators/accept', data),
   getRevisions: (params) => api.get('/revisions', { params }),
   restoreRevision: (id, { batch = false } = {}) => api.post(`/revisions/${id}/restore`, { batch }),

@@ -10,8 +10,12 @@ import { CollaboratorAvatar } from './CollaboratorAvatars';
 import { collaborationService, userService } from '../../services/api';
 import { moduleByKey } from '../../utils/adminModules';
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
+import { ROLES, roleLabel } from '../../utils/roles';
+import useRole from '../../hooks/useRole';
 
-const EMPTY_FORM = { name: '', email: '', message: '' };
+const EMPTY_FORM = { name: '', email: '', message: '', role: 'editor' };
+
+const selectClass = 'px-2 py-1.5 rounded-lg border border-stone-200 bg-white text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20';
 
 function CopyField({ value, label }) {
   const [copied, setCopied] = useState(false);
@@ -54,6 +58,7 @@ export default function ShareModal({ isOpen, onClose }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [sending, setSending] = useState(false);
   const [lastInvite, setLastInvite] = useState(null);
+  const { isOwner } = useRole();
 
   const { data: people = [], isLoading } = useQuery({
     queryKey: ['collaborators'],
@@ -100,6 +105,16 @@ export default function ShareModal({ isOpen, onClose }) {
     }
   };
 
+  const changeRole = async (person, role) => {
+    try {
+      const res = await collaborationService.updateRole(person.id, role);
+      notifySuccess(res.data?.role ? `${person.name} is now ${roleLabel(res.data.role).toLowerCase()}` : 'Role updated');
+      queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+    } catch (err) {
+      notifyError(err, 'Could not change the role');
+    }
+  };
+
   const close = () => {
     setLastInvite(null);
     onClose();
@@ -108,9 +123,15 @@ export default function ShareModal({ isOpen, onClose }) {
   return (
     <AdminModal isOpen={isOpen} onClose={close} title="Share dashboard" size="lg">
       <div className="space-y-6 max-h-[70vh] overflow-y-auto -mx-1 px-1">
+        {!isOwner && (
+          <p className="text-sm text-stone-600 p-3 rounded-xl bg-stone-50 border border-stone-100">
+            Only owners can invite people or change what they can do. Ask an owner below if someone needs access.
+          </p>
+        )}
+        {isOwner && (
         <form onSubmit={onSubmit} className="space-y-3">
           <p className="text-sm text-stone-600">
-            Invite someone to plan with you. They get an email with a link to set their password, and can then edit everything you can.
+            Invite someone to plan with you. They get an email with a link to set their password.
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <AdminInput label="Name" required value={form.name} placeholder="e.g. Aunt Mei"
@@ -120,10 +141,27 @@ export default function ShareModal({ isOpen, onClose }) {
           </div>
           <AdminTextarea label="Personal note (optional)" rows={2} value={form.message} maxLength={1000}
             onChange={(e) => setForm({ ...form, message: e.target.value })} />
+          <fieldset>
+            <legend className="block text-sm font-medium text-stone-600 mb-1">They can</legend>
+            <div className="grid sm:grid-cols-3 gap-2">
+              {ROLES.map((r) => (
+                <label key={r.value} className={`p-2.5 rounded-xl border cursor-pointer text-xs transition-colors ${
+                  form.role === r.value ? 'border-[#A67B5B]/50 bg-[#A67B5B]/5' : 'border-stone-200 hover:bg-stone-50'}`}>
+                  <span className="flex items-center gap-2 font-medium text-sm text-stone-800">
+                    <input type="radio" name="invite-role" value={r.value} checked={form.role === r.value}
+                      onChange={() => setForm({ ...form, role: r.value })} className="text-[#A67B5B] focus:ring-[#A67B5B]" />
+                    {r.label}
+                  </span>
+                  <span className="block mt-1 text-stone-500 leading-snug">{r.description}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <div className="flex justify-end">
             <Button type="submit" variant="secondary" icon={Send} loading={sending}>Send invite</Button>
           </div>
         </form>
+        )}
 
         {lastInvite?.invite_link && (
           <div className={`p-3 rounded-xl border space-y-2 ${lastInvite.emailed ? 'bg-stone-50 border-stone-100' : 'bg-amber-50 border-amber-200'}`}>
@@ -155,11 +193,19 @@ export default function ShareModal({ isOpen, onClose }) {
                     <span className="block text-sm font-medium text-stone-800 truncate">{person.name}</span>
                     <span className="block text-xs text-stone-500 truncate">{person.email} · {status(person)}</span>
                   </span>
-                  {person.pending && (
-                    <Button size="icon-sm" icon={RefreshCw} aria-label={`Resend invitation to ${person.name}`} title="Resend invitation"
-                      onClick={() => sendInvite({ name: person.name, email: person.email })} disabled={sending} />
+                  {isOwner && !person.is_you ? (
+                    <select value={person.role} onChange={(e) => changeRole(person, e.target.value)}
+                      aria-label={`What ${person.name} can do`} className={selectClass}>
+                      {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                    </select>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full bg-stone-100 text-[11px] font-medium text-stone-600">{roleLabel(person.role)}</span>
                   )}
-                  {!person.is_you && (
+                  {isOwner && person.pending && (
+                    <Button size="icon-sm" icon={RefreshCw} aria-label={`Resend invitation to ${person.name}`} title="Resend invitation"
+                      onClick={() => sendInvite({ name: person.name, email: person.email, role: person.role })} disabled={sending} />
+                  )}
+                  {isOwner && !person.is_you && (
                     <Button size="icon-sm" variant="danger" icon={Trash2} aria-label={`Remove ${person.name}`} title="Remove access"
                       onClick={() => removeAccess(person)} />
                   )}

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 /**
  * Working together in the admin dashboard:
@@ -74,6 +75,7 @@ class CollaborationController extends Controller
             'id' => $u->id,
             'name' => $u->name,
             'email' => $u->email,
+            'role' => $u->role,
             'is_you' => $u->is($request->user()),
             'pending' => $u->invited_by !== null && $u->invite_accepted_at === null,
             'online' => $u->last_active_at && $u->last_active_at->gt($online),
@@ -88,7 +90,9 @@ class CollaborationController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'message' => 'nullable|string|max:1000',
+            'role' => ['sometimes', Rule::in(User::ROLES)],
         ]);
+        $role = $validated['role'] ?? User::ROLE_EDITOR;
 
         $existing = User::where('email', $validated['email'])->first();
         if ($existing && ($existing->invited_by === null || $existing->invite_accepted_at !== null)) {
@@ -101,7 +105,7 @@ class CollaborationController extends Controller
             'email' => $validated['email'],
             'password' => Str::password(32),
         ]);
-        $invitee->forceFill(['invited_by' => $request->user()->id])->save();
+        $invitee->forceFill(['invited_by' => $request->user()->id, 'role' => $role])->save();
 
         $token = Str::random(64);
         DB::table('password_reset_tokens')->updateOrInsert(
@@ -123,6 +127,27 @@ class CollaborationController extends Controller
             ['id' => $invitee->id, 'invite_link' => $link, 'emailed' => $emailed, 'expires_in_days' => self::INVITE_DAYS],
             $emailed ? "Invitation sent to {$invitee->email}" : 'Invitation created — the email could not be sent, share the link instead',
         );
+    }
+
+    /** Owners change what a collaborator may do; there is always at least one owner. */
+    public function updateRole(Request $request, User $user): JsonResponse
+    {
+        $validated = $request->validate(['role' => ['required', Rule::in(User::ROLES)]]);
+
+        $lastOwner = $user->isOwner()
+            && ! User::where('role', User::ROLE_OWNER)->whereKeyNot($user->getKey())->exists();
+        if ($lastOwner && $validated['role'] !== User::ROLE_OWNER) {
+            return $this->errorResponse('At least one owner must remain', 422);
+        }
+
+        $user->forceFill(['role' => $validated['role']])->save();
+
+        return $this->successResponse(['id' => $user->id, 'role' => $user->role], "{$user->name} is now a{$this->article($user->role)} {$user->role}");
+    }
+
+    private function article(string $role): string
+    {
+        return in_array($role[0], ['a', 'e', 'i', 'o', 'u'], true) ? 'n' : '';
     }
 
     public function accept(Request $request): JsonResponse
@@ -151,7 +176,7 @@ class CollaborationController extends Controller
 
         return $this->successResponse([
             'token' => $user->createToken('wedding-admin')->plainTextToken,
-            'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+            'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role],
         ], 'Welcome aboard!');
     }
 

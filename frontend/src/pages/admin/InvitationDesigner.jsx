@@ -28,6 +28,7 @@ import { saveAs } from 'file-saver';
 import { Skeleton } from '../../components/Skeleton';
 import { toast } from 'react-hot-toast';
 import { confirmAction, notifyError } from '../../utils/feedback';
+import useRole from '../../hooks/useRole';
 
 export default function InvitationDesigner() {
   const [history, setHistory] = useState([]);
@@ -39,6 +40,8 @@ export default function InvitationDesigner() {
   // configuration the public site uses, so the designer preview and exports
   // always reflect the real configured values rather than stale defaults.
   const [weddingInfo, setWeddingInfo] = useState(null);
+  // Viewers can try things on the canvas, but nothing is saved.
+  const { canEdit } = useRole();
   const [activeTab, setActiveTab] = useState('style'); // style, text, layout, items
   const [designType, setDesignType] = useState('invitation'); // invitation, save_the_date
   const [editorLang, setEditorLang] = useState('en');
@@ -259,6 +262,7 @@ export default function InvitationDesigner() {
   // Autosave effect — debounced, intentionally keyed only on `design`.
   useEffect(() => {
       if (loading) return; // Don't autosave while initial loading
+      if (!canEdit) return; // View-only: never write
       if (!loadedOkRef.current) return; // Don't autosave if the load failed (would overwrite saved pages)
 
       const timer = setTimeout(() => {
@@ -767,9 +771,11 @@ export default function InvitationDesigner() {
 
   return (
     <>
-      <AdminHeaderStatus>
-        <InvitationSaveStatus status={saveStatus} />
-      </AdminHeaderStatus>
+      {canEdit && (
+        <AdminHeaderStatus>
+          <InvitationSaveStatus status={saveStatus} />
+        </AdminHeaderStatus>
+      )}
 
       <AdminPageLayout
         fill

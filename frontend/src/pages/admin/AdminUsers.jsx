@@ -4,6 +4,8 @@ import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminUsers } from '../../hooks/useApiHooks';
 import { userService } from '../../services/api';
+import useRole from '../../hooks/useRole';
+import { ROLES, roleLabel } from '../../utils/roles';
 import { useAuth } from '../../context/AuthContext';
 import { useSearch } from '../../context/SearchContext';
 import useFilteredItems from '../../hooks/useFilteredItems';
@@ -16,12 +18,13 @@ import { AdminInput } from '../../components/admin/AdminInput';
 import { confirmAction } from '../../utils/feedback';
 import Button from '../../components/Button';
 
-const EMPTY_FORM = { name: '', email: '', password: '' };
+const EMPTY_FORM = { name: '', email: '', password: '', role: 'editor' };
 const matchesUser = (user, q) => `${user.name} ${user.email}`.toLowerCase().includes(q);
 
 export default function AdminUsers() {
     const { data: users = [], isLoading } = useAdminUsers();
     const { user: currentUser } = useAuth();
+    const { isOwner } = useRole();
     const { searchQuery } = useSearch();
     const queryClient = useQueryClient();
     const filtered = useFilteredItems(users, searchQuery, matchesUser);
@@ -35,7 +38,7 @@ export default function AdminUsers() {
 
     const openModal = (user = {}) => {
         setEditing(user);
-        setForm({ name: user.name || '', email: user.email || '', password: '' });
+        setForm({ name: user.name || '', email: user.email || '', password: '', role: user.role || 'editor' });
         setErrors({});
     };
 
@@ -82,12 +85,12 @@ export default function AdminUsers() {
         <>
             <AdminPageLayout
                 fill
-                actions={[{ id: 'add-user', label: 'Add User', icon: Plus, variant: 'secondary', onClick: () => openModal() }]}
+                actions={isOwner ? [{ id: 'add-user', label: 'Add User', icon: Plus, variant: 'secondary', onClick: () => openModal() }] : []}
                 search="Search users…"
                 hero={
                     <AdminPageHero
                         title="User Management"
-                        description={`${users.length} dashboard users`}
+                        description={isOwner ? `${users.length} dashboard users` : `${users.length} dashboard users · only owners can add or change users`}
                         breadcrumb="Users"
                         icon={<UserCog className="w-5 h-5 text-[#A67B5B]" />}
                     />
@@ -111,9 +114,10 @@ export default function AdminUsers() {
                                                   {user.name} {isSelf && <span className="text-xs text-[#A67B5B]">(You)</span>}
                                               </p>
                                               <p className="text-sm text-stone-500 truncate">{user.email}</p>
+                                              <p className="text-xs font-medium text-[#A67B5B]">{roleLabel(user.role)}</p>
                                           </div>
                                       </div>
-                                      <div className="flex gap-2">
+                                      {isOwner && <div className="flex gap-2">
                                           <Button size="sm" icon={Edit} className="flex-1" onClick={() => openModal(user)}>
                                               Edit
                                           </Button>
@@ -128,7 +132,7 @@ export default function AdminUsers() {
                                           >
                                               Delete
                                           </Button>
-                                      </div>
+                                      </div>}
                                   </div>
                               );
                           })}
@@ -149,6 +153,14 @@ export default function AdminUsers() {
                         autoComplete="new-password"
                         {...field('password')}
                     />
+                    <div>
+                        <label htmlFor="user-role" className="block text-sm font-medium text-stone-600 mb-1">Role</label>
+                        <select id="user-role" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                            className="w-full px-4 py-2 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B]">
+                            {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label} — {r.description}</option>)}
+                        </select>
+                        {errors.role?.[0] && <p className="text-red-500 text-xs mt-1">{errors.role[0]}</p>}
+                    </div>
                     <Button type="submit" variant="secondary" fullWidth loading={saving}>
                         {saving ? 'Saving...' : 'Save User'}
                     </Button>

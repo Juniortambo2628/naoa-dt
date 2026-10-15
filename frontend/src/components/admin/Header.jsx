@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Bell, FlaskConical, Info, BellRing, UserPlus, Gift, Mail, Calendar, CheckCircle, Settings, PieChart, UserCheck, History, Share2 } from 'lucide-react';
 import { useCollaboration } from '../../context/CollaborationContext';
 import CollaboratorAvatars from './CollaboratorAvatars';
+import useRole from '../../hooks/useRole';
 import HeaderAccountMenu from './HeaderAccountMenu';
 import { notificationService } from '../../services/api';
 
@@ -54,6 +55,7 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
   const fetchedRef = useRef(false);
   const { presence, othersHere, openHistory, setShareOpen, badges } = useCollaboration();
   const hasNews = Object.values(badges).some(Boolean);
+  const { canEdit } = useRole();
 
   const fetchNotifications = async () => {
     try {
@@ -136,6 +138,12 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {!canEdit && (
+          <span className="px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 whitespace-nowrap"
+            title="You can look around, but changes won't be saved. Ask an owner for edit access.">
+            View only
+          </span>
+        )}
         {/* Page status (e.g. the designer's save indicator) */}
         <div ref={statusSlotRef} className="flex items-center empty:hidden mr-1" />
 
