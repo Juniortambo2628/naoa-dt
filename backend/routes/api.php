@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\CheckInController;
+use App\Http\Controllers\Api\CollaborationController;
 use App\Http\Controllers\Api\EmergencyNumberController;
 use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\ExportController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PageContentController;
 use App\Http\Controllers\Api\PolaroidImageController;
+use App\Http\Controllers\Api\RevisionController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SongRequestController;
@@ -42,6 +44,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:15,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/verify-2fa', [AuthController::class, 'verify2fa']);
+    Route::post('/collaborators/accept', [CollaborationController::class, 'accept']);
 });
 
 // Public Guest Routes (for RSVP - Throttled)
@@ -311,6 +314,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/2fa/setup', [TwoFactorController::class, 'setup']);
     Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
     Route::post('/2fa/disable', [TwoFactorController::class, 'disable']);
+
+    // Collaboration: presence + module badges, invitations, version history
+    Route::post('/collaboration/heartbeat', [CollaborationController::class, 'heartbeat']);
+    Route::get('/collaborators', [CollaborationController::class, 'collaborators']);
+    Route::post('/collaborators/invite', [CollaborationController::class, 'invite']);
+    Route::get('/revisions', [RevisionController::class, 'index']);
+    Route::post('/revisions/{revision}/restore', [RevisionController::class, 'restore']);
 
     // Notification Routes (admin)
     Route::get('/notifications', [NotificationController::class, 'index']);
