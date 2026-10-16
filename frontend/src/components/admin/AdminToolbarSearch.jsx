@@ -44,7 +44,7 @@ export default function AdminToolbarSearch({ placeholder = 'Search...', value, o
         placeholder={placeholder}
         aria-label={placeholder}
         title="Search (press / to focus)"
-        className="w-36 sm:w-52 xl:w-60 pl-9 pr-8 py-2.5 rounded-xl border border-stone-200/60 bg-white/80 text-sm text-stone-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B] [&::-webkit-search-cancel-button]:hidden"
+        className="w-28 sm:w-52 xl:w-60 pl-9 pr-8 py-2 sm:py-2.5 rounded-xl border border-stone-200/60 bg-white/80 text-sm text-stone-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/30 focus:border-[#A67B5B] [&::-webkit-search-cancel-button]:hidden"
       />
       {query && (
         <button

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, MessageSquare, Utensils, Users, LayoutGrid, List } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { CheckCircle, XCircle, MessageSquare, Utensils, Users, Mail, Phone, Hash, Music, ExternalLink } from 'lucide-react';
 import { useGuests } from '../../hooks/useApiHooks';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -8,6 +10,9 @@ import AdminListPanel from '../../components/admin/AdminListPanel';
 import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 import AdminCard from '../../components/admin/AdminCard';
 import EmptyState from '../../components/admin/EmptyState';
+import Button from '../../components/Button';
+import { guestListLink } from '../../utils/rsvp';
+import { initials } from '../../utils/adminModules';
 import { useSearch } from '../../context/SearchContext';
 import { Skeleton } from '../../components/Skeleton';
 
@@ -30,7 +35,7 @@ export default function AdminRSVPs() {
     const { searchQuery } = useSearch();
     const [rsvps, setRsvps] = useState([]);
     const [filter, setFilter] = useState('all');
-    const [viewMode, setViewMode] = useState('list');
+    const [selectedId, setSelectedId] = useState(null);
     const [stats, setStats] = useState({ total: 0, attending: 0, declined: 0, withMessage: 0 });
 
     useEffect(() => {
@@ -110,6 +115,10 @@ export default function AdminRSVPs() {
         { label: 'With Messages', value: stats.withMessage, icon: MessageSquare, color: '#A67B5B' },
     ];
 
+    // The panel lists the households that replied; the selected one is shown in full on the left.
+    const selected = filteredRsvps.find((guest) => guest.id === selectedId) || filteredRsvps[0] || null;
+    const filterLabel = FILTERS.find((f) => f.id === filter)?.label;
+
     return (
         <AdminPageLayout
             fill
@@ -123,193 +132,164 @@ export default function AdminRSVPs() {
             }
             summary={<AdminSummaryCards cards={statCards} columns={4} />}
             search="Search RSVPs…"
-            filters={{ view: { options: ['list', 'grid'], value: viewMode, onChange: setViewMode } }}
+            filters={{
+              groups: [{
+                id: 'responses',
+                label: 'Show',
+                options: FILTERS.map((f) => ({ id: f.id, label: `${f.label} (${rsvps.filter((guest) => matchesFilter(guest, f.id)).length})` })),
+                value: filter,
+                onChange: setFilter,
+              }],
+            }}
             panel={{
               id: 'rsvps',
               title: 'Responses',
               icon: MessageSquare,
-              subtitle: 'One row per household that replied',
-              items: FILTERS.map((f) => ({ ...f, count: rsvps.filter((guest) => matchesFilter(guest, f.id)).length })),
-              activeId: filter,
-              onChange: setFilter,
+              subtitle: filter === 'all' && !searchQuery
+                ? `${rsvps.length} households replied · newest first`
+                : `${filteredRsvps.length} of ${rsvps.length} · ${filterLabel}${searchQuery ? ' matching your search' : ''}`,
+              items: filteredRsvps.map((guest) => ({
+                id: guest.id,
+                label: guest.name,
+                description: responseSummary(guest),
+                muted: guest.rsvp_status === 'declined',
+              })),
+              activeId: selected?.id,
+              onChange: setSelectedId,
             }}
         >
-                <AdminListPanel
-                    header={
-                        <div className="px-4 py-2.5 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-stone-800">Recent Responses</h2>
-                            <span className="text-sm text-stone-400">{filteredRsvps.length} shown</span>
-                        </div>
-                    }
-                >
-
-                {filteredRsvps.length === 0 ? (
+            <AdminListPanel plain>
+                {!selected ? (
                     <EmptyState
                         icon={CheckCircle}
-                        message={searchQuery ? 'No responses found matching your search' : 'No RSVPs have been submitted yet'}
+                        message={searchQuery || filter !== 'all' ? 'No responses match' : 'No RSVPs have been submitted yet'}
                         searchQuery={searchQuery}
                     />
-                ) : viewMode === 'list' ? (
-                    <div className="divide-y divide-stone-100">
-                        {filteredRsvps.map((guest, index) => {
-                            const isAttending = guest.rsvp_status === 'confirmed';
-                            
-                            return (
-                                <motion.div 
-                                    key={guest.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: Math.min(index * 0.05, 0.5) }}
-                                    className="p-6 hover:bg-stone-50 transition-colors"
-                                >
-                                    <div className="flex flex-col md:flex-row gap-6">
-                                        {/* Status Column */}
-                                        <div className="w-full md:w-1/3 shrink-0">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                {isAttending ? (
-                                                    <CheckCircle className="w-5 h-5 text-green-500" />
-                                                ) : (
-                                                    <XCircle className="w-5 h-5 text-red-400" />
-                                                )}
-                                                <h3 className="font-semibold text-stone-800 text-lg">{guest.name}</h3>
-                                            </div>
-                                            <div className="space-y-1 text-sm text-stone-500 pl-8">
-                                                <p>Group: {guest.group}</p>
-                                                {guest.plus_ones?.length > 0 && (
-                                                    <div className="mt-3 space-y-2">
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#A67B5B]">Party Members</p>
-                                                        <div className="space-y-1.5">
-                                                            {guest.plus_ones.map(po => (
-                                                                <div key={po.id} className="flex items-center gap-2 text-xs">
-                                                                    {po.rsvp_status === 'confirmed' ? (
-                                                                        <CheckCircle className="w-3 h-3 text-green-500" />
-                                                                    ) : (
-                                                                        <XCircle className="w-3 h-3 text-red-400" />
-                                                                    )}
-                                                                    <span className="font-medium text-stone-700">{po.name}</span>
-                                                                    {po.dietary_notes && (
-                                                                        <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100 flex items-center gap-1">
-                                                                            <Utensils className="w-2.5 h-2.5" /> Dietary
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <p className="text-xs text-stone-400 pt-2">
-                                                    {new Date(guest.updated_at).toLocaleString()}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Content Column */}
-                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {/* Message */}
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                                    <MessageSquare className="w-3 h-3" />
-                                                    Message
-                                                </div>
-                                                {guest.rsvp_message ? (
-                                                    <div className="bg-[#FAF8F6] p-4 rounded-xl border border-stone-100">
-                                                        <p className="text-stone-700 italic text-sm leading-relaxed">
-                                                            "{guest.rsvp_message}"
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-stone-300 italic text-xs">No message.</p>
-                                                )}
-                                            </div>
-
-                                            {/* Dietary */}
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                                    <Utensils className="w-3 h-3" />
-                                                    Dietary Notes
-                                                </div>
-                                                {guest.dietary_notes ? (
-                                                    <div className="bg-stone-50 p-4 rounded-xl border border-stone-100">
-                                                        <p className="text-stone-700 text-sm leading-relaxed">
-                                                            {guest.dietary_notes}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-stone-300 italic text-xs">No special requirements.</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
                 ) : (
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {filteredRsvps.map((guest) => (
-                            <RsvpGridCard key={guest.id} guest={guest} />
-                        ))}
-                    </div>
+                    <ResponseDetail key={selected.id} guest={selected} />
                 )}
             </AdminListPanel>
         </AdminPageLayout>
     );
 }
 
-function RsvpGridCard({ guest }) {
-    const isAttending = guest.rsvp_status === 'confirmed';
+const formatWhen = (date) => new Date(date).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+/** "Attending · party of 3 · 2 days ago" for the panel row. */
+function responseSummary(guest) {
+    const party = 1 + (guest.plus_ones?.length || 0);
+    return [
+        guest.rsvp_status === 'confirmed' ? 'Attending' : 'Declined',
+        party > 1 ? `party of ${party}` : null,
+        guest.rsvp_message ? 'message' : null,
+        formatDistanceToNow(new Date(guest.updated_at), { addSuffix: true }),
+    ].filter(Boolean).join(' · ');
+}
+
+function StatusPill({ status, small }) {
+    const attending = status === 'confirmed';
     return (
-        <div className="p-5 rounded-2xl bg-white border border-stone-100 shadow-sm hover:shadow-md transition-all">
-            <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isAttending ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>
-                        {isAttending ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+        <span className={`inline-flex items-center gap-1 rounded-full font-medium ${small ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs'} ${
+            attending ? 'bg-green-50 text-green-700' : status === 'declined' ? 'bg-red-50 text-red-700' : 'bg-stone-100 text-stone-600'}`}>
+            {attending ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+            {attending ? 'Attending' : status === 'declined' ? 'Declined' : 'Pending'}
+        </span>
+    );
+}
+
+function Section({ icon, title, children }) {
+    const Icon = icon;
+    return (
+        <section className="space-y-2">
+            <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest !text-stone-400">
+                <Icon className="w-3.5 h-3.5" /> {title}
+            </h3>
+            {children}
+        </section>
+    );
+}
+
+/** Everything about one household's response. */
+function ResponseDetail({ guest }) {
+    const party = [guest, ...(guest.plus_ones || [])];
+    const attendingCount = party.filter((p) => p.rsvp_status === 'confirmed').length;
+    const contact = [
+        guest.email && { icon: Mail, label: guest.email, href: `mailto:${guest.email}` },
+        guest.phone && { icon: Phone, label: guest.phone, href: `tel:${guest.phone}` },
+        guest.unique_code && { icon: Hash, label: `Code ${guest.unique_code}` },
+    ].filter(Boolean);
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-4">
+            <AdminCard>
+                <div className="flex flex-col @xl:flex-row @xl:items-start gap-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-base font-semibold ${
+                        guest.rsvp_status === 'confirmed' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                        {initials(guest.name)}
                     </div>
-                    <div>
-                        <h3 className="font-semibold text-stone-800">{guest.name}</h3>
-                        <p className="text-xs text-stone-500">{guest.group}</p>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-xl font-medium text-stone-800 break-words">{guest.name}</h2>
+                            <StatusPill status={guest.rsvp_status} />
+                        </div>
+                        <p className="text-sm text-stone-500 mt-1">
+                            {guest.group ? `${guest.group} · ` : ''}Replied {formatWhen(guest.updated_at)}
+                        </p>
+                        {contact.length > 0 && (
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-stone-600">
+                                {contact.map((item) => {
+                                    const Icon = item.icon;
+                                    return item.href ? (
+                                        <a key={item.label} href={item.href} className="inline-flex items-center gap-1.5 hover:text-[#A67B5B] min-w-0 break-words"><Icon className="w-3.5 h-3.5 shrink-0" />{item.label}</a>
+                                    ) : (
+                                        <span key={item.label} className="inline-flex items-center gap-1.5"><Icon className="w-3.5 h-3.5" />{item.label}</span>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
+                    <Button as={Link} to={guestListLink({ q: guest.name })} size="sm" icon={ExternalLink} className="self-start shrink-0">
+                        Open in guest list
+                    </Button>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${isAttending ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {isAttending ? 'Attending' : 'Declined'}
-                </span>
-            </div>
+            </AdminCard>
 
-            {guest.rsvp_message && (
-                <div className="mb-4">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1 flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" /> Message
-                    </p>
-                    <p className="text-sm text-stone-700 italic bg-[#FAF8F6] p-3 rounded-xl border border-stone-100">"{guest.rsvp_message}"</p>
-                </div>
-            )}
+            <AdminCard className="space-y-6">
+                <Section icon={MessageSquare} title="Message">
+                    {guest.rsvp_message ? (
+                        <blockquote className="bg-[#FAF8F6] p-5 rounded-xl border border-stone-100 text-stone-700 italic leading-relaxed text-[15px]">
+                            “{guest.rsvp_message.replace(/^["“]+|["”]+$/g, '')}”
+                        </blockquote>
+                    ) : (
+                        <div className="text-sm text-stone-400 italic">No message.</div>
+                    )}
+                </Section>
 
-            {guest.dietary_notes && (
-                <div className="mb-4">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1 flex items-center gap-1">
-                        <Utensils className="w-3 h-3" /> Dietary
-                    </p>
-                    <p className="text-sm text-stone-700 bg-stone-50 p-3 rounded-xl border border-stone-100">{guest.dietary_notes}</p>
-                </div>
-            )}
-
-            {guest.plus_ones?.length > 0 && (
-                <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#A67B5B] mb-2">Party Members</p>
-                    <div className="flex flex-wrap gap-2">
-                        {guest.plus_ones.map(po => (
-                            <span key={po.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-stone-100 text-stone-700">
-                                {po.rsvp_status === 'confirmed' ? <CheckCircle className="w-3 h-3 text-green-500" /> : <XCircle className="w-3 h-3 text-red-400" />}
-                                {po.name}
-                            </span>
+                <Section icon={Users} title={`Party · ${attendingCount} of ${party.length} attending`}>
+                    <ul className="divide-y divide-stone-100 border border-stone-100 rounded-xl">
+                        {party.map((member) => (
+                            <li key={member.id} className="flex flex-col @lg:flex-row @lg:items-center gap-1 @lg:gap-3 px-4 py-3">
+                                <span className="flex items-center gap-2 min-w-0 @lg:w-1/3">
+                                    <span className="font-medium text-stone-800 truncate">{member.name}</span>
+                                    {member.id === guest.id && <span className="text-[10px] uppercase tracking-wider text-stone-400">main guest</span>}
+                                </span>
+                                <StatusPill status={member.rsvp_status} small />
+                                <span className="text-sm text-stone-600 @lg:ml-auto flex items-center gap-1.5 min-w-0">
+                                    {member.dietary_notes ? (
+                                        <><Utensils className="w-3.5 h-3.5 text-amber-600 shrink-0" /><span className="break-words">{member.dietary_notes}</span></>
+                                    ) : <span className="text-stone-400 text-xs italic">No dietary needs</span>}
+                                </span>
+                            </li>
                         ))}
-                    </div>
-                </div>
-            )}
+                    </ul>
+                </Section>
 
-            <p className="text-xs text-stone-400 mt-4 pt-3 border-t border-stone-100">
-                {new Date(guest.updated_at).toLocaleString()}
-            </p>
-        </div>
+                {guest.song_request && (
+                    <Section icon={Music} title="Song request">
+                        <div className="text-sm text-stone-700">{guest.song_request}</div>
+                    </Section>
+                )}
+            </AdminCard>
+        </motion.div>
     );
 }

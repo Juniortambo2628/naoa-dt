@@ -358,4 +358,17 @@ class GuestTest extends TestCase
         $this->assertNotSoftDeleted('guests', ['id' => $ids[0]]);
         $this->assertSame(3, Guest::count());
     }
+
+    public function test_guest_list_marks_plus_ones_with_their_main_guest(): void
+    {
+        // The admin's RSVP page and "send to all pending" tell plus-ones apart by this.
+        $main = Guest::factory()->create();
+        $plusOne = Guest::factory()->create(['parent_guest_id' => $main->id]);
+
+        $guests = collect($this->actingAs($this->admin, 'sanctum')->getJson('/api/guests')->assertOk()->json('data'))
+            ->keyBy('id');
+
+        $this->assertNull($guests[$main->id]['parent_guest_id']);
+        $this->assertSame($main->id, $guests[$plusOne->id]['parent_guest_id']);
+    }
 }

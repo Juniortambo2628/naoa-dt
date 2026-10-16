@@ -713,3 +713,14 @@ textarea:focus-visible,
 .admin-theme fieldset:disabled :is(input, select, textarea, button, label) {
   cursor: not-allowed;
 }
+
+/* Phones: the shared floating toolbar packs its controls tighter (smaller
+   buttons) so it covers less of the page. Menus that open from it keep their
+   normal sizes. */
+@media (max-width: 639.98px) {
+  .admin-floating-toolbar :is(button, select):not(:where([class*="absolute"] *)) {
+    padding: 0.5rem 0.6rem;
+    min-height: 2.25rem;
+    font-size: 0.75rem;
+  }
+}

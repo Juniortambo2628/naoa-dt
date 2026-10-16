@@ -21,6 +21,7 @@ class GuestResource extends JsonResource
             'phone' => $this->phone,
             'group' => $this->group,
             'plus_ones_allowed' => $this->plus_ones_allowed,
+            'parent_guest_id' => $this->parent_guest_id,
             'unique_code' => $this->unique_code,
             'table_id' => $this->table_id,
             'song_request' => $this->song_request,
