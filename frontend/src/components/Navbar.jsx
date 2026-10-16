@@ -79,10 +79,10 @@ export default function Navbar() {
                     to={link.path}
                     className="relative py-2 transition-colors"
                     style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: '1rem',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '0.95rem',
                     fontWeight: 500,
-                    letterSpacing: '0.05em',
+                    letterSpacing: '0.02em',
                     color: isActive(link.path) ? '#A67B5B' : '#4A3F35',
                     }}
                 >
@@ -106,7 +106,7 @@ export default function Navbar() {
             )}
 
             {isVisible('rsvp') && (
-                <Button as={Link} to="/rsvp" variant="secondary" font="serif">
+                <Button as={Link} to="/rsvp" variant="secondary">
                     {t('nav.rsvp')}
                 </Button>
             )}
@@ -115,7 +115,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
             {isVisible('rsvp') && (
-                <Button as={Link} to="/rsvp" variant="secondary" font="serif" size="sm">
+                <Button as={Link} to="/rsvp" variant="secondary" size="sm">
                     RSVP
                 </Button>
             )}
@@ -156,9 +156,9 @@ export default function Navbar() {
                   <Link
                     to={link.path}
                     onClick={() => setIsOpen(false)}
-                    className="text-4xl transition-colors"
+                    className="text-2xl font-medium transition-colors"
                     style={{
-                      fontFamily: "'Great Vibes', cursive",
+                      fontFamily: 'var(--font-sans)',
                       color: isActive(link.path) ? '#A67B5B' : '#4A3F35',
                     }}
                   >
@@ -177,7 +177,7 @@ export default function Navbar() {
                     to="/rsvp"
                     onClick={() => setIsOpen(false)}
                     variant="secondary"
-                    font="serif"
+                   
                     size="lg"
                     className="mt-8"
                   >
