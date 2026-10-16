@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 
+// Phones: two per row. From tablets up, one row when the cards fit (so four
+// cards never leave one alone on a second row).
 const gridColumns = {
-  1: 'lg:grid-cols-1',
-  2: 'lg:grid-cols-2',
-  3: 'lg:grid-cols-3',
-  4: 'lg:grid-cols-4',
-  5: 'lg:grid-cols-3 xl:grid-cols-5',
-  6: 'lg:grid-cols-3 xl:grid-cols-6',
+  1: 'md:grid-cols-1',
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-3',
+  4: 'md:grid-cols-4',
+  5: 'md:grid-cols-3 xl:grid-cols-5',
+  6: 'md:grid-cols-3 xl:grid-cols-6',
 };
 
 /**
@@ -28,7 +30,7 @@ export default function AdminSummaryCards({ cards = [], columns = 4 }) {
   const iconVisibility = columns >= 5 ? 'flex xl:hidden 2xl:flex' : 'flex';
 
   return (
-    <div className={`grid grid-cols-2 md:grid-cols-3 ${gridCols} gap-3 lg:gap-4`}>
+    <div className={`grid grid-cols-2 ${gridCols} gap-3 lg:gap-4`}>
       {cards.map((stat, index) => {
         const Icon = stat.icon;
         const Tag = stat.onClick ? motion.button : motion.div;
@@ -56,7 +58,7 @@ export default function AdminSummaryCards({ cards = [], columns = 4 }) {
               <p className="text-xl font-semibold leading-tight text-[#4A3F35]">
                 {stat.value}
               </p>
-              <p className="text-sm text-[#8B7B6B] truncate">
+              <p className="text-sm text-[#8B7B6B] leading-snug line-clamp-2">
                 {stat.label}
               </p>
               {stat.hint && (

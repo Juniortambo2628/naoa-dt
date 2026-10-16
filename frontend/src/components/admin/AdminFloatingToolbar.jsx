@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreHorizontal, ChevronUp, ChevronDown } from 'lucide-react';
+import { MoreHorizontal, ChevronUp, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import AdminToolbarSearch from './AdminToolbarSearch';
 import AdminToolbarFilters, { countActiveFilters } from './AdminToolbarFilters';
 import { useSearch } from '../../context/SearchContext';
@@ -44,6 +44,8 @@ export default function AdminFloatingToolbar({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [visible, setVisible] = useState(true);
+  // Phones: a page's custom controls (e.g. the designer's tools) open on demand.
+  const [toolsOpen, setToolsOpen] = useState(false);
   const { searchQuery } = useSearch();
 
   const visibleActions = useVisibleActions(actions).filter((a) => !a.hidden);
@@ -73,10 +75,12 @@ export default function AdminFloatingToolbar({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.96 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className={`fixed bottom-6 left-1/2 lg:left-[calc(50%+140px)] -translate-x-1/2 ${z} w-max max-w-[calc(100vw-1.5rem)] lg:max-w-[calc(100vw-280px-1.5rem)] ${wrapperClassName}`}
+          className={`fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] sm:bottom-6 left-1/2 lg:left-[calc(50%+140px)] -translate-x-1/2 ${z} w-max max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-1.5rem)] lg:max-w-[calc(100vw-280px-1.5rem)] ${wrapperClassName}`}
         >
           <div
-            className="flex flex-wrap items-center justify-center gap-2 px-2 py-2 rounded-2xl border border-white/40 shadow-2xl backdrop-blur-md"
+            // Phones: tighter spacing and smaller buttons (see .admin-floating-toolbar
+            // in index.css), so the bar takes one or two rows instead of four.
+            className="admin-floating-toolbar flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-2xl border border-white/40 shadow-2xl backdrop-blur-md"
             style={{
               background: 'rgba(255, 249, 245, 0.92)',
               boxShadow: '0 12px 40px rgba(74, 63, 53, 0.18)',
@@ -85,11 +89,22 @@ export default function AdminFloatingToolbar({
             {searchProps && <AdminToolbarSearch {...searchProps} />}
             {filters && <AdminToolbarFilters filters={filters} />}
             {hasLeading && (children || visibleActions.length > 0) && (
-              <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+              <div className="hidden sm:block w-px h-6 bg-stone-200/70 mx-0.5" />
             )}
-            {children}
+            {children && (
+              <Button
+                variant={toolsOpen ? 'secondary' : 'primary'}
+                icon={SlidersHorizontal}
+                onClick={() => setToolsOpen((v) => !v)}
+                aria-expanded={toolsOpen}
+                className="sm:hidden"
+              >
+                Tools
+              </Button>
+            )}
+            {children && <div className={toolsOpen ? 'contents' : 'hidden sm:contents'}>{children}</div>}
             {children && visibleActions.length > 0 && (
-              <div className="w-px h-6 bg-stone-200/70 mx-0.5" />
+              <div className="hidden sm:block w-px h-6 bg-stone-200/70 mx-0.5" />
             )}
             {primaryActions.map((action) => (
               <Button
@@ -165,7 +180,7 @@ export default function AdminFloatingToolbar({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setVisible(true)}
-          className={`fixed bottom-6 left-1/2 lg:left-[calc(50%+140px)] -translate-x-1/2 ${z} p-2.5 rounded-full bg-white/90 border border-stone-200 shadow-lg text-[#A67B5B] hover:bg-white transition-colors ${wrapperClassName}`}
+          className={`fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] sm:bottom-6 left-1/2 lg:left-[calc(50%+140px)] -translate-x-1/2 ${z} p-2.5 rounded-full bg-white/90 border border-stone-200 shadow-lg text-[#A67B5B] hover:bg-white transition-colors ${wrapperClassName}`}
           title={narrowed ? 'Show toolbar (search or filters active)' : 'Show toolbar'}
         >
           <ChevronUp className="w-5 h-5" />
