@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate } from 'lucide-react';
+import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
 import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
@@ -36,6 +36,13 @@ const settingSections = [
     icon: Globe,
     description: 'Control public-facing features and primary URL.',
     keys: ['rsvp_enabled', 'public_url'],
+  },
+  {
+    id: 'guests',
+    label: 'Guests',
+    icon: Users,
+    description: 'Cap how many guests can be added to the guest list.',
+    keys: ['guest_limit'],
   },
   {
     id: 'venue',
@@ -88,6 +95,7 @@ export default function AdminSettings() {
     admin_email: '',
     public_url: '',
     song_request_limit_enabled: true,
+    guest_limit: '',
     wedding_date: '',
     bride_name: '',
     groom_name: '',
@@ -138,6 +146,7 @@ export default function AdminSettings() {
           admin_email: settingsData.admin_email || '',
           public_url: settingsData.public_url || '',
           song_request_limit_enabled: String(settingsData.song_request_limit_enabled) !== 'false',
+          guest_limit: settingsData.guest_limit ? String(settingsData.guest_limit) : '',
           wedding_date: (settingsData.wedding_date || '').split('T')[0],
           bride_name: settingsData.bride_name || '',
           groom_name: settingsData.groom_name || '',
@@ -323,6 +332,24 @@ export default function AdminSettings() {
                   <p className="mt-1.5 text-xs text-stone-400">Used for absolute links in generated PDFs and emails.</p>
                 </div>
               </div>
+            </SettingsCard>
+            )}
+
+            {/* Guests */}
+            {activeSection.id === 'guests' && (
+            <SettingsCard icon={Users} title="Guests" description="Limit the size of the guest list.">
+              <AdminInput
+                label="Guest Limit"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="No limit"
+                value={settings.guest_limit}
+                onChange={(e) => setSettings({ ...settings, guest_limit: e.target.value })}
+              />
+              <p className="mt-1.5 text-xs text-stone-400">
+                The most guests the list can hold — plus-ones count as guests. Once it's reached, no more guests can be added, imported or restored. Leave empty (or 0) for no limit.
+              </p>
             </SettingsCard>
             )}
 

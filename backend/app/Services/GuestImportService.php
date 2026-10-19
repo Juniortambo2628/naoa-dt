@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Imports\GuestsImport;
 use App\Models\Guest;
 use App\Models\Invitation;
+use App\Support\GuestLimit;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,7 +24,8 @@ class GuestImportService
      */
     public function import(UploadedFile $file): void
     {
-        Excel::import(new GuestsImport, $file);
+        // All or nothing: a file that would go past the guest limit adds no one.
+        DB::transaction(fn () => Excel::import(new GuestsImport, $file));
     }
 
     /**
@@ -117,6 +119,12 @@ class GuestImportService
     public function confirmImport(array $valid, array $conflicts): array
     {
         $results = ['created' => 0, 'updated' => 0, 'skipped' => 0];
+
+        // Fail fast with the full count when the new rows alone would pass the
+        // guest limit; anything else (e.g. plus-ones added to conflicts) is
+        // caught by the Guest model, and the transaction rolls the import back.
+        GuestLimit::ensureCanAdd(collect($valid)
+            ->sum(fn ($row) => 1 + max(0, (int) ($row['plus_ones_allowed'] ?? 0))));
 
         DB::transaction(function () use ($valid, $conflicts, &$results) {
             foreach ($valid as $data) {

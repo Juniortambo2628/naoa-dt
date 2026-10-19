@@ -56,6 +56,7 @@ class SettingController extends Controller
         $data = $request->validate([
             'settings' => 'required|array',
             'settings.*' => 'nullable', // Allow strings, arrays, etc.
+            'settings.guest_limit' => 'nullable|integer|min:0',
         ]);
 
         \Illuminate\Support\Facades\Log::info('Updating settings', ['data' => $data['settings']]);

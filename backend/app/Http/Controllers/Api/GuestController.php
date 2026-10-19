@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\GuestLimitExceededException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\GuestResource;
 use App\Models\Guest;
@@ -11,6 +12,7 @@ use App\Services\GuestImportService;
 use App\Services\GuestMergeService;
 use App\Services\GuestService;
 use App\Services\InvitationService;
+use App\Support\GuestLimit;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -250,6 +252,11 @@ class GuestController extends Controller
     {
         $request->validate($this->guestValidationRules());
 
+        // The guest and each named plus-one is a record that counts towards the limit.
+        GuestLimit::ensureCanAdd(1 + collect($request->input('plus_ones_data', []))
+            ->filter(fn ($po) => ! empty($po['name']))
+            ->count());
+
         $guest = Guest::create($request->only([
             'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
         ]));
@@ -290,6 +297,11 @@ class GuestController extends Controller
     public function update(Request $request, Guest $guest)
     {
         $request->validate($this->guestValidationRules($guest));
+
+        // New plus-ones (named, no id yet) count towards the limit.
+        GuestLimit::ensureCanAdd(collect($request->input('plus_ones_data', []))
+            ->filter(fn ($po) => ! empty($po['name']) && empty($po['id']))
+            ->count());
 
         $guest->update($request->only([
             'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
@@ -374,7 +386,10 @@ class GuestController extends Controller
             'ids.*' => 'integer',
         ]);
 
-        $count = Guest::onlyTrashed()->whereIn('id', $validated['ids'])->get()->each->restore()->count();
+        $trashed = Guest::onlyTrashed()->whereIn('id', $validated['ids'])->get();
+        GuestLimit::ensureCanAdd($trashed->count());
+
+        $count = $trashed->each->restore()->count();
 
         return $this->successResponse(['restored' => $count], "{$count} guests restored");
     }
@@ -407,6 +422,7 @@ class GuestController extends Controller
 
         return $this->successResponse([
             'total' => $total,
+            'guest_limit' => GuestLimit::limit(),
             'attending' => $attending,
             'declined' => $declined,
             'pending' => $pending,
@@ -428,6 +444,8 @@ class GuestController extends Controller
             $this->importService->import($request->file('file'));
 
             return $this->successResponse(null, 'Guests imported successfully');
+        } catch (GuestLimitExceededException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Guest Import Error: '.$e->getMessage());
             Log::error($e->getTraceAsString());
@@ -471,6 +489,8 @@ class GuestController extends Controller
             );
 
             return $this->successResponse($results, 'Import completed');
+        } catch (GuestLimitExceededException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return $this->errorResponse('Import failed', 500, ['error' => $e->getMessage()]);
         }

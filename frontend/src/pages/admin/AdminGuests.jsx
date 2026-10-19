@@ -736,13 +736,18 @@ ${rows.join('\n')}
     setSearchQuery(view.state.search || '');
   };
 
+  // Guest limit from Settings → Guests (empty / 0 = no limit); the API enforces it.
+  const guestLimit = Number(settingsData?.guest_limit) > 0 ? Number(settingsData.guest_limit) : null;
+
   const summaryCards = [
     {
       label: 'Invited',
       value: stats.total,
       icon: Users,
       color: '#A67B5B',
-      hint: `${stats.plusOnes} plus-ones`,
+      hint: guestLimit
+        ? `${stats.plusOnes} plus-ones · limit ${guestLimit}${stats.total >= guestLimit ? ' reached' : ''}`
+        : `${stats.plusOnes} plus-ones`,
       onClick: () => changeFilter('all'),
       active: filters.status === 'all',
     },
