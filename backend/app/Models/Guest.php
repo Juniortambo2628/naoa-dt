@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\RecordsRevisions;
+use App\Support\GuestLimit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -186,7 +187,12 @@ class Guest extends Model
             if (empty($guest->unique_code)) {
                 $guest->unique_code = self::generateUniqueCode();
             }
+
+            // Backstop for the guest limit: no code path can add a guest past it.
+            GuestLimit::ensureCanAdd(1);
         });
+
+        static::restoring(fn () => GuestLimit::ensureCanAdd(1));
     }
 
     public static function generateUniqueCode(): string
