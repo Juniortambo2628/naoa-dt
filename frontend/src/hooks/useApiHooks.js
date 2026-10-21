@@ -143,7 +143,7 @@ export const useGifts = () => {
   return useQuery({
     queryKey: ['gifts'],
     queryFn: async () => {
-      const { data } = await giftService.getAll();
+      const { data } = await giftService.getAllAdmin();
       return data;
     },
   });

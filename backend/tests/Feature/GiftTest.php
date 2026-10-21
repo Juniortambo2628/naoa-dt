@@ -243,4 +243,23 @@ class GiftTest extends TestCase
         $response->assertOk()
             ->assertJsonCount(1, 'data');
     }
+
+    public function test_admin_list_includes_hidden_gifts_with_claims(): void
+    {
+        Gift::factory()->unavailable()->count(2)->create();
+        $reserved = Gift::factory()->create(['is_cash_fund' => false]);
+        GiftClaim::create(['gift_id' => $reserved->id, 'claimer_name' => 'Aunt May']);
+
+        $response = $this->actingAs($this->admin, 'sanctum')->getJson('/api/gifts/all');
+
+        $response->assertOk()->assertJsonCount(3, 'data');
+        $listed = collect($response->json('data'))->firstWhere('id', $reserved->id);
+        $this->assertTrue($listed['claimed']);
+        $this->assertCount(1, $listed['claims']);
+    }
+
+    public function test_unauthenticated_user_cannot_list_all_gifts(): void
+    {
+        $this->getJson('/api/gifts/all')->assertUnauthorized();
+    }
 }
