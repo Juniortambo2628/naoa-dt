@@ -24,6 +24,15 @@ class GiftController extends Controller
         return $this->successResponse($gifts);
     }
 
+    /**
+     * Every gift, hidden ones included, for the admin registry page. The
+     * public index above only lists gifts guests may see.
+     */
+    public function adminIndex(): JsonResponse
+    {
+        return $this->successResponse(Gift::with('claims')->latest()->get());
+    }
+
     public function claim(Request $request, Gift $gift): JsonResponse
     {
         $request->validate([

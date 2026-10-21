@@ -195,6 +195,9 @@ export const scheduleService = {
 export const giftService = {
   // Get all gifts
   getAll: () => api.get('/gifts'),
+
+  // Get every gift, hidden ones included (admin)
+  getAllAdmin: () => api.get('/gifts/all'),
   
   // Claim a gift
   claim: (id, data) => api.post(`/gifts/${id}/claim`, data),

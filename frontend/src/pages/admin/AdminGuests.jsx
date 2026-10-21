@@ -738,6 +738,7 @@ ${rows.join('\n')}
 
   // Guest limit from Settings → Guests (empty / 0 = no limit); the API enforces it.
   const guestLimit = Number(settingsData?.guest_limit) > 0 ? Number(settingsData.guest_limit) : null;
+  const guestLimitReached = guestLimit !== null && stats.total >= guestLimit;
 
   const summaryCards = [
     {
@@ -746,7 +747,7 @@ ${rows.join('\n')}
       icon: Users,
       color: '#A67B5B',
       hint: guestLimit
-        ? `${stats.plusOnes} plus-ones · limit ${guestLimit}${stats.total >= guestLimit ? ' reached' : ''}`
+        ? `${stats.plusOnes} plus-ones · limit ${guestLimit}${guestLimitReached ? ' reached' : ''}`
         : `${stats.plusOnes} plus-ones`,
       onClick: () => changeFilter('all'),
       active: filters.status === 'all',
@@ -808,10 +809,11 @@ ${rows.join('\n')}
   const toolbarActions = [
     {
       id: 'add-guest',
-      label: 'Add Guest',
+      label: guestLimitReached ? `Guest limit reached (${guestLimit})` : 'Add Guest',
       icon: Plus,
       variant: 'secondary',
       onClick: handleAdd,
+      disabled: guestLimitReached,
     },
     {
       id: 'merge-duplicates',
@@ -992,14 +994,14 @@ ${rows.join('\n')}
         onToggleSelect={toggleSelect}
         onToggleSelectAll={toggleSelectAll}
         onInlineSave={handleInlineSave}
-        onInlineCreate={handleInlineCreate}
+        onInlineCreate={guestLimitReached ? undefined : handleInlineCreate}
         onInviteRequest={handleInviteRequest}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onUpdateGuest={handleUpdateGuest}
         onSetCurrentPage={setCurrentPage}
         sort={sort}
-        onAdd={handleAdd}
+        onAdd={guestLimitReached ? undefined : handleAdd}
         onSort={(key) => setSort(prev => nextSort(prev, key))}
       />
 

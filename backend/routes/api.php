@@ -213,6 +213,7 @@ Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     // Gift Management (admin)
     Route::group(['prefix' => 'gifts'], function () {
         Route::get('/statistics', [GiftController::class, 'statistics']);
+        Route::get('/all', [GiftController::class, 'adminIndex']);
         Route::post('/', [GiftController::class, 'store']);
         Route::put('/{gift}', [GiftController::class, 'update']);
         Route::delete('/{gift}', [GiftController::class, 'destroy']);

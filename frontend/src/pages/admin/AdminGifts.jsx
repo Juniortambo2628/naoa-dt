@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Gift, Plus, Edit, Save, X, DollarSign, ExternalLink, LayoutGrid, List, CheckCircle, Trash2, ShoppingBag, Heart, ArrowUpRight, Undo2 } from 'lucide-react';
+import { Gift, Plus, Edit, Save, X, DollarSign, ExternalLink, LayoutGrid, List, CheckCircle, Trash2, ShoppingBag, Heart, ArrowUpRight, Undo2, EyeOff } from 'lucide-react';
 import { useGifts } from '../../hooks/useApiHooks';
 import { giftService } from '../../services/api';
 import ImageUpload from '../../components/admin/ImageUpload';
@@ -19,9 +19,15 @@ import GiftImage from '../../components/GiftImage';
 import Spinner from '../../components/admin/Spinner';
 import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
+// A gift is reserved once a guest claims it (cash funds never are); hidden
+// gifts (is_available off) stay in the registry but guests don't see them.
+const isReservedGift = (gift) => !!gift.claimed;
+const isAvailableGift = (gift) => gift.is_available && !gift.claimed;
+
 function matchesView(gift, view) {
-  if (view === 'available') return gift.is_available;
-  if (view === 'reserved') return !gift.is_available && !gift.is_cash_fund;
+  if (view === 'available') return isAvailableGift(gift);
+  if (view === 'reserved') return isReservedGift(gift);
+  if (view === 'hidden') return !gift.is_available;
   if (view === 'cash') return gift.is_cash_fund;
   if (view.startsWith('category:')) return gift.category === view.slice('category:'.length);
   return true;
@@ -62,13 +68,14 @@ export default function AdminGifts() {
     { id: 'available', label: 'Available', icon: CheckCircle },
     { id: 'reserved', label: 'Reserved', icon: Heart },
     { id: 'cash', label: 'Cash funds', icon: DollarSign },
+    { id: 'hidden', label: 'Hidden', icon: EyeOff },
     ...categories.map((c) => ({ id: `category:${c}`, label: c, group: 'Category' })),
   ];
 
   const stats = {
     total: gifts.length,
-    available: gifts.filter(g => g.is_available).length,
-    reserved: gifts.filter(g => !g.is_available && !g.is_cash_fund).length,
+    available: gifts.filter(isAvailableGift).length,
+    reserved: gifts.filter(isReservedGift).length,
     cashFunds: gifts.filter(g => g.is_cash_fund).length,
   };
 
@@ -94,10 +101,10 @@ export default function AdminGifts() {
   const bulkToggleAvailability = useBulkAdminAction((id) => {
     const gift = gifts.find(g => g.id === id);
     return giftService.update(id, { is_available: !gift.is_available });
-  }, { success: 'Availability updated', onSuccess: afterBulk });
+  }, { success: 'Visibility updated', onSuccess: afterBulk });
 
   const bulkActions = [
-    { id: 'toggle', label: 'Toggle Available', icon: CheckCircle, variant: 'secondary', action: bulkToggleAvailability, args: [selectedIds] },
+    { id: 'toggle', label: 'Show / Hide', icon: EyeOff, variant: 'secondary', action: bulkToggleAvailability, args: [selectedIds] },
     { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
   ];
 
@@ -190,10 +197,10 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
     <div className="grid grid-cols-1 @md:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-4 gap-4">
       {gifts.map((gift) => {
         const isSelected = selectedIds.includes(gift.id);
-        const isReserved = !gift.is_available;
+        const isReserved = isReservedGift(gift);
         const claimCount = gift.claims?.length || 0;
         const progress = gift.is_cash_fund && gift.price
-          ? Math.min(100, ((gift.contributed_amount || 0) / gift.price) * 100)
+          ? Math.min(100, ((gift.total_contributions || 0) / gift.price) * 100)
           : 0;
 
         return (
@@ -213,6 +220,11 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                 alt={gift.name}
                 className={`w-full h-full object-cover transition-transform duration-500 ${isReserved ? 'grayscale-[0.3]' : 'group-hover:scale-110'}`}
               />
+              {!gift.is_available && (
+                <div className={`absolute ${gift.is_cash_fund ? 'top-11' : 'top-3'} right-3 bg-stone-800/80 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-sm`}>
+                  <EyeOff className="w-3 h-3" /> Hidden
+                </div>
+              )}
               {gift.is_cash_fund && (
                 <div className="absolute top-3 right-3 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-sm">
                   <DollarSign className="w-3 h-3" /> Cash Fund
@@ -261,7 +273,7 @@ function GiftGrid({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                 <div className="mb-4">
                   <div className="flex justify-between text-xs mb-1.5">
                     <span className="text-stone-500">Contributed</span>
-                    <span className="font-medium text-[#4A3F35]">${Number(gift.contributed_amount || 0).toLocaleString()} / ${Number(gift.price).toLocaleString()}</span>
+                    <span className="font-medium text-[#4A3F35]">${Number(gift.total_contributions || 0).toLocaleString()} / ${Number(gift.price).toLocaleString()}</span>
                   </div>
                   <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
                     <div
@@ -329,7 +341,7 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
       <div className="divide-y divide-stone-100">
         {gifts.map((gift) => {
           const isSelected = selectedIds.includes(gift.id);
-          const isReserved = !gift.is_available;
+          const isReserved = isReservedGift(gift);
           const claimCount = gift.claims?.length || 0;
 
           return (
@@ -362,7 +374,7 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
 
               <div className="text-sm text-[#4A3F35]">
                 {gift.is_cash_fund
-                  ? `$${Number(gift.contributed_amount || 0).toLocaleString()} / ${gift.price ? `$${Number(gift.price).toLocaleString()}` : 'Any Amount'}`
+                  ? `$${Number(gift.total_contributions || 0).toLocaleString()} / ${gift.price ? `$${Number(gift.price).toLocaleString()}` : 'Any Amount'}`
                   : (gift.price ? `$${Number(gift.price).toLocaleString()}` : 'Any Amount')}
               </div>
 
@@ -370,6 +382,10 @@ function GiftList({ gifts, selectedIds, onToggleSelect, onEdit, onDelete, onView
                 {isReserved ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                     <Heart className="w-3 h-3" /> Reserved
+                  </span>
+                ) : !gift.is_available ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
+                    <EyeOff className="w-3 h-3" /> Hidden
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">

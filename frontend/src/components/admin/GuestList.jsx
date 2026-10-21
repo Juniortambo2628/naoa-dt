@@ -207,8 +207,8 @@ function SpreadsheetView({ props, cellStatus, saveCell }) {
           </tr>
         ))}
 
-        {/* Empty rows for quick adding */}
-        {[...Array(5)].map((_, index) => (
+        {/* Empty rows for quick adding (not offered once the guest limit is reached) */}
+        {onInlineCreate && [...Array(5)].map((_, index) => (
           <tr key={`empty-${index}`} className="hover:bg-green-50/30">
             <td className="border-r border-stone-200 bg-stone-50" />
             <td className="px-2 py-2 text-center text-stone-400 bg-stone-50 border-r border-stone-200 select-none text-xs italic">New</td>
