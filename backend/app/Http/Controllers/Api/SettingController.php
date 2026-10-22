@@ -31,6 +31,7 @@ class SettingController extends Controller
         'invitation_theme',
         'save_the_date_theme',
         'invitation_sections',
+        'guest_notices',
     ];
 
     public function index()

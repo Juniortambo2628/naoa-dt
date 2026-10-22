@@ -157,6 +157,20 @@ class SettingTest extends TestCase
         $this->assertTrue($response->json('data.invitation_sections.weather'));
     }
 
+    public function test_public_settings_includes_guest_notices(): void
+    {
+        $this->actingAs(User::factory()->create(), 'sanctum')
+            ->postJson('/api/settings', ['settings' => ['guest_notices' => [
+                ['id' => 'dress_code', 'icon' => 'dress', 'enabled' => true, 'text' => 'Dress your best'],
+            ]]])
+            ->assertOk();
+
+        $response = $this->getJson('/api/public/settings')->assertOk();
+
+        $this->assertSame('Dress your best', $response->json('data.guest_notices.0.text'));
+        $this->assertTrue($response->json('data.guest_notices.0.enabled'));
+    }
+
     public function test_public_settings_excludes_private_keys(): void
     {
         Setting::create(['key' => 'wedding_date', 'value' => '2026-11-14']);
