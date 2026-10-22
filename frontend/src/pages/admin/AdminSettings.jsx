@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate, Users } from 'lucide-react';
+import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate, Users, Megaphone, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
 import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
@@ -18,6 +18,7 @@ import Spinner from '../../components/admin/Spinner';
 import Button from '../../components/Button';
 import LocationPicker from '../../components/LocationPicker';
 import { INVITATION_SECTIONS, resolveInvitationSections } from '../../utils/invitationSections';
+import { DEFAULT_GUEST_NOTICES, resolveGuestNotices } from '../../utils/guestNotices';
 import { DEFAULT_WHATSAPP_TEMPLATE, WHATSAPP_PLACEHOLDERS, renderWhatsAppMessage } from '../../utils/whatsappMessage';
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
 
@@ -66,6 +67,13 @@ const settingSections = [
     keys: ['invitation_sections'],
   },
   {
+    id: 'guest-notices',
+    label: 'Guest Notices',
+    icon: Megaphone,
+    description: 'Informational notes shown on the homepage hero and guest invitation.',
+    keys: ['guest_notices'],
+  },
+  {
     id: 'whatsapp',
     label: 'WhatsApp Message',
     icon: MessageCircle,
@@ -105,6 +113,7 @@ export default function AdminSettings() {
     venue_lng: '',
     whatsapp_message_template: DEFAULT_WHATSAPP_TEMPLATE,
     invitation_sections: resolveInvitationSections(),
+    guest_notices: DEFAULT_GUEST_NOTICES.map(n => ({ ...n })),
   });
 
   const { data: settingsData, isLoading } = useSettings();
@@ -156,6 +165,7 @@ export default function AdminSettings() {
           venue_lng: settingsData.venue_lng || '',
           whatsapp_message_template: settingsData.whatsapp_message_template || DEFAULT_WHATSAPP_TEMPLATE,
           invitation_sections: resolveInvitationSections(settingsData.invitation_sections),
+          guest_notices: resolveGuestNotices(settingsData.guest_notices),
         };
         setSettings(loaded);
         markSaved(loaded);
@@ -168,6 +178,18 @@ export default function AdminSettings() {
     loadSettings();
     toast('Unsaved changes discarded');
   };
+
+  const updateNotice = (index, patch) =>
+    setSettings(s => ({ ...s, guest_notices: s.guest_notices.map((n, i) => (i === index ? { ...n, ...patch } : n)) }));
+  const addNotice = () =>
+    setSettings(s => ({
+      ...s,
+      guest_notices: [...s.guest_notices, { id: `custom_${Date.now().toString(36)}`, icon: 'info', enabled: true, text: '' }],
+    }));
+  const removeNotice = (index) =>
+    setSettings(s => ({ ...s, guest_notices: s.guest_notices.filter((_, i) => i !== index) }));
+  const resetNotices = () =>
+    setSettings(s => ({ ...s, guest_notices: DEFAULT_GUEST_NOTICES.map(n => ({ ...n })) }));
 
   const saveSettings = useAdminAction(() => updateSettingsMutation.mutateAsync({
     ...settings,
@@ -456,6 +478,68 @@ export default function AdminSettings() {
                     hint={section.hint}
                   />
                 ))}
+              </div>
+            </SettingsCard>
+            )}
+
+            {/* Guest notices */}
+            {activeSection.id === 'guest-notices' && (
+            <SettingsCard icon={Megaphone} title="Guest Notices" description="Short notes guests see on the homepage hero and their invitation page — switch them on or off and edit the wording.">
+              <div className="space-y-3">
+                {settings.guest_notices.map((notice, index) => {
+                  const isDefault = DEFAULT_GUEST_NOTICES.some(d => d.id === notice.id);
+                  return (
+                    <div key={notice.id} className="flex items-center gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                      <input
+                        type="checkbox"
+                        id={`guest-notice-${notice.id}`}
+                        checked={notice.enabled !== false}
+                        onChange={(e) => updateNotice(index, { enabled: e.target.checked })}
+                        className="w-5 h-5 flex-shrink-0 text-[#A67B5B] rounded focus:ring-[#A67B5B] border-stone-300"
+                        aria-label={`Show "${notice.text || 'notice'}"`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <AdminInput
+                          type="text"
+                          placeholder="e.g. Black tie optional"
+                          value={notice.text || ''}
+                          onChange={(e) => updateNotice(index, { text: e.target.value })}
+                          aria-label={isDefault ? 'Notice text' : 'Custom notice text'}
+                        />
+                      </div>
+                      {!isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => removeNotice(index)}
+                          className="p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                          aria-label="Remove notice"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={addNotice}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#A67B5B] hover:underline"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add notice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetNotices}
+                    className="text-xs text-stone-500 hover:underline"
+                  >
+                    Reset to defaults
+                  </button>
+                </div>
+                <p className="text-xs text-stone-400">
+                  Shown as small pills above a “Good to know” toggle. Disabling every notice hides the widget entirely.
+                </p>
               </div>
             </SettingsCard>
             )}

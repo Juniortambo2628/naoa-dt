@@ -23,6 +23,7 @@ import {
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useScrollAnimation';
 import { Skeleton } from '../components/Skeleton';
 import Button from '../components/Button';
+import GuestNotices from '../components/GuestNotices';
 import { useContent } from '../context/ContentContext';
 
 // Polaroid Floating Image Component
@@ -252,6 +253,9 @@ function HeroSection({ content, settings, loading }) {
         </motion.div>
       </motion.div>
       
+      {/* Guest notices (plus-ones, kids, gifts, dress code) — bottom centre */}
+      <GuestNotices notices={settings?.guest_notices} variant="hero" />
+
       {/* Scroll Indicator */}
       <motion.div
         className="absolute bottom-8 left-1/2 -translate-x-1/2"

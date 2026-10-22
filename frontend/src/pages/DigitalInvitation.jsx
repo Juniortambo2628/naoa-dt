@@ -14,6 +14,7 @@ import EmergencyNumbers from '../components/EmergencyNumbers';
 import GuestQuickActions from '../components/GuestQuickActions';
 import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
+import GuestNotices from '../components/GuestNotices';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import { resolveInvitationSections } from '../utils/invitationSections';
 
@@ -320,6 +321,9 @@ export default function DigitalInvitation() {
 
             {/* Floating quick actions: Where are you · My travel details · Seating chart */}
             {show.quickActions && <GuestQuickActions guestCode={code} />}
+
+            {/* Floating guest notices: plus-ones, kids, gifts, dress code */}
+            <GuestNotices notices={settings?.guest_notices} />
         </div>
     );
 }
