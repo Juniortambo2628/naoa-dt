@@ -538,7 +538,7 @@ export default function AdminSettings() {
                   </button>
                 </div>
                 <p className="text-xs text-stone-400">
-                  Shown as small pills above a “Good to know” toggle. Disabling every notice hides the widget entirely.
+                  Shown under a “Good to know” heading — in place of the RSVP button on the homepage hero, and as a card on the guest invitation. Disabling every notice hides them and brings the hero RSVP button back.
                 </p>
               </div>
             </SettingsCard>

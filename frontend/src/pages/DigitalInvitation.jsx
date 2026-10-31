@@ -16,6 +16,8 @@ import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
 import GuestNotices from '../components/GuestNotices';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
+import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
+import { saveGuestCode } from '../utils/guestSession';
 import { resolveInvitationSections } from '../utils/invitationSections';
 
 export default function DigitalInvitation() {
@@ -123,9 +125,10 @@ export default function DigitalInvitation() {
         document.body.removeChild(link);
     };
 
+    // Remember the code on this device so the guest isn't asked for it again.
     useEffect(() => {
-        // We let InvitationCanvas handle its own scaling now
-    }, [design.orientation]);
+        if (guest?.unique_code) saveGuestCode(guest.unique_code);
+    }, [guest?.unique_code]);
 
     if (isLoading) return <Loader />;
 
@@ -232,6 +235,9 @@ export default function DigitalInvitation() {
                     </div>
                     )}
 
+                    {/* Guest notices: plus-ones, kids, gifts, dress code */}
+                    <GuestNotices notices={settings?.guest_notices} />
+
                     {(showRsvpButton || show.calendar) && (
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
                         {/* Only prompt for RSVP while the guest hasn't responded yet. */}
@@ -265,6 +271,8 @@ export default function DigitalInvitation() {
                             fullWidth
                         />
                     )}
+
+                    <AddToHomeScreenButton startPath={`/invitation/${encodeURIComponent(guest.unique_code || code)}`} />
 
                     {show.rsvp && guest.rsvp_status !== 'pending' && (
                          <motion.div 
@@ -321,9 +329,6 @@ export default function DigitalInvitation() {
 
             {/* Floating quick actions: Where are you · My travel details · Seating chart */}
             {show.quickActions && <GuestQuickActions guestCode={code} />}
-
-            {/* Floating guest notices: plus-ones, kids, gifts, dress code */}
-            <GuestNotices notices={settings?.guest_notices} />
         </div>
     );
 }

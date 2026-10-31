@@ -20,6 +20,7 @@ import Button from '../components/Button';
 import SegmentedControl from '../components/SegmentedControl';
 import { Skeleton } from '../components/Skeleton';
 import SpotifySongSearch from '../components/SpotifySongSearch';
+import { getSavedGuestCode, saveGuestCode, clearGuestCode } from '../utils/guestSession';
 
 // Animation variants - simplified for performance
 const fadeInUp = {
@@ -69,11 +70,14 @@ export default function RSVP() {
     }).catch(err => console.error(err));
   }, [navigate]);
 
+  // A code in the URL wins; otherwise reuse the one remembered on this device.
   useEffect(() => {
-    if (code) {
-      onCodeSubmit({ code });
+    const initial = code || getSavedGuestCode();
+    if (initial) {
+      setValue('code', initial);
+      onCodeSubmit({ code: initial });
     }
-  }, [code]);
+  }, [code, setValue]);
 
   const getTxt = (field, fallback) => getContent(content?.rsvp, field, i18n, fallback, t);
 
@@ -86,7 +90,7 @@ export default function RSVP() {
   const [songRequest, setSongRequest] = useState('');
   const [attending, setAttending] = useState(null);
 
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm();
 
   // Step 0: Find guest by invitation code
   const onCodeSubmit = async (data) => {
@@ -96,6 +100,7 @@ export default function RSVP() {
       const response = await guestService.getByCode(data.code);
       const guest = response.data;
       setGuestData(guest);
+      saveGuestCode(guest.unique_code || data.code);
       
       if (guest.rsvp_status !== 'pending') {
           // If already RSVP'd, show summary
@@ -104,6 +109,8 @@ export default function RSVP() {
           setStep(1);
       }
     } catch {
+      // Forget a remembered code that no longer resolves.
+      if (data.code === getSavedGuestCode()) clearGuestCode();
       setError('Invitation code not found. Please check and try again.');
     }
     setLoading(false);
