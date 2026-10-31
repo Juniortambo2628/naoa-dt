@@ -54,14 +54,14 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay — overlay and drawer sit above the page's floating toolbar (z-50) */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-[55] lg:hidden"
             onClick={onClose}
           />
         )}
@@ -69,7 +69,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Sidebar */}
       <motion.aside
-        className={`admin-sidebar fixed left-0 top-0 h-full z-50 lg:translate-x-0 ${
+        className={`admin-sidebar fixed left-0 top-0 h-full z-[60] lg:z-50 lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } transition-transform lg:transition-none`}
         style={{ 

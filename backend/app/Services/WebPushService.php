@@ -69,9 +69,10 @@ class WebPushService
      * reports as gone (unsubscribed / expired) are deleted.
      *
      * @param  iterable<PushSubscription>  $subscriptions
+     * @param  array|\Closure(PushSubscription): array  $payload  one payload for all, or one per subscription
      * @return array{sent: int, failed: int, expired: int}
      */
-    public function send(iterable $subscriptions, array $payload): array
+    public function send(iterable $subscriptions, array|\Closure $payload): array
     {
         $result = ['sent' => 0, 'failed' => 0, 'expired' => 0];
         $keys = $this->keys();
@@ -98,8 +99,8 @@ class WebPushService
         );
         $webPush->setReuseVAPIDHeaders(true);
 
-        $json = json_encode($payload);
         foreach ($subscriptions as $subscription) {
+            $json = json_encode($payload instanceof \Closure ? $payload($subscription) : $payload);
             $webPush->queueNotification(Subscription::create([
                 'endpoint' => $subscription->endpoint,
                 'publicKey' => $subscription->public_key,

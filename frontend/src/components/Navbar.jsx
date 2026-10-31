@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Heart } from 'lucide-react';
+import { Menu, X, Heart, Mail } from 'lucide-react';
 
 import LanguageSwitcher from './LanguageSwitcher';
 import Button from './Button';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
+import { getSavedGuestCode } from '../utils/guestSession';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -39,6 +40,12 @@ export default function Navbar() {
     return isVisible(link.section);
   });
   const isActive = (path) => location.pathname === path;
+
+  // A guest who has opened their invitation on this device gets a way back to
+  // it from every public page (the installed web app has no back button).
+  // It takes the RSVP button's place: the invitation has its own RSVP button.
+  const savedCode = getSavedGuestCode();
+  const invitePath = savedCode ? `/invitation/${encodeURIComponent(savedCode)}` : null;
 
   return (
     <>
@@ -105,7 +112,11 @@ export default function Navbar() {
                 </>
             )}
 
-            {isVisible('rsvp') && (
+            {invitePath ? (
+                <Button as={Link} to={invitePath} variant="secondary" icon={Mail}>
+                    My Invitation
+                </Button>
+            ) : isVisible('rsvp') && (
                 <Button as={Link} to="/rsvp" variant="secondary">
                     {t('nav.rsvp')}
                 </Button>
@@ -114,7 +125,11 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
-            {isVisible('rsvp') && (
+            {invitePath ? (
+                <Button as={Link} to={invitePath} variant="secondary" size="sm" icon={Mail}>
+                    My Invite
+                </Button>
+            ) : isVisible('rsvp') && (
                 <Button as={Link} to="/rsvp" variant="secondary" size="sm">
                     RSVP
                 </Button>
@@ -166,7 +181,7 @@ export default function Navbar() {
                   </Link>
                 </motion.div>
               ))}
-              {isVisible('rsvp') && (
+              {(invitePath || isVisible('rsvp')) && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -174,14 +189,15 @@ export default function Navbar() {
                 >
                   <Button
                     as={Link}
-                    to="/rsvp"
+                    to={invitePath || '/rsvp'}
+                    icon={invitePath ? Mail : undefined}
                     onClick={() => setIsOpen(false)}
                     variant="secondary"
                    
                     size="lg"
                     className="mt-8"
                   >
-                    RSVP Now
+                    {invitePath ? 'My Invitation' : 'RSVP Now'}
                   </Button>
                 </motion.div>
               )}

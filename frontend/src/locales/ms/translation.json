@@ -77,7 +77,8 @@
     "notes_title": "Nota Penting",
     "note1": "The ceremony starts at 2:00 PM sharp",
     "note2": "Photography is welcome during the reception",
-    "note3": "Dress code: Semi-formal / Garden Party"
+    "note3": "Dress code: Semi-formal / Garden Party",
+    "empty": "Belum ada acara dijadualkan. Sila semak semula tidak lama lagi!"
   },
   "rsvp": {
     "page_title": "RSVP",

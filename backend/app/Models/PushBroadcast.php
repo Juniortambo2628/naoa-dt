@@ -26,6 +26,27 @@ class PushBroadcast extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Where tapping the notification takes a guest. "invite" (the default) is
+     * the guest's own digital invitation, optionally at a section
+     * ("invite#programme"); anything else is a site path or https link.
+     * Devices not linked to a guest go to /rsvp, which reopens the
+     * invitation remembered on that device.
+     */
+    public function urlFor(?Guest $guest): string
+    {
+        $url = $this->url ?: 'invite';
+        if (! str_starts_with($url, 'invite')) {
+            return $url;
+        }
+
+        $hash = str_contains($url, '#') ? '#'.substr($url, strpos($url, '#') + 1) : '';
+
+        return $guest?->unique_code
+            ? '/invitation/'.rawurlencode($guest->unique_code).$hash
+            : '/rsvp';
+    }
+
     /** The subscriptions this broadcast goes to. */
     public function recipients(): Builder
     {

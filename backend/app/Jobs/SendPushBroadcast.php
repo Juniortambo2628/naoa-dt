@@ -32,16 +32,17 @@ class SendPushBroadcast implements ShouldQueue
             return;
         }
 
-        $payload = [
+        // Each guest's notification opens their own invitation.
+        $payload = fn ($subscription) => [
             'title' => $broadcast->title,
             'body' => $broadcast->body,
-            'url' => $broadcast->url ?: '/',
+            'url' => $broadcast->urlFor($subscription->guest),
             'tag' => 'broadcast-'.$broadcast->id,
         ];
 
         $sent = 0;
         $failed = 0;
-        $broadcast->recipients()->chunkById(100, function ($subscriptions) use ($push, $payload, &$sent, &$failed) {
+        $broadcast->recipients()->with('guest:id,unique_code')->chunkById(100, function ($subscriptions) use ($push, $payload, &$sent, &$failed) {
             $result = $push->send($subscriptions, $payload);
             $sent += $result['sent'];
             $failed += $result['failed'];

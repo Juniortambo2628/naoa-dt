@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Calendar, MapPin, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useEffect } from 'react';
@@ -24,6 +24,7 @@ import { resolveInvitationSections } from '../utils/invitationSections';
 export default function DigitalInvitation() {
     const { code } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     
     const { data: guest, isLoading: isGuestLoading, isError: isGuestError } = useGuestByCode(code);
     const { data: settings, isLoading: isSettingsLoading } = usePublicSettings();
@@ -125,6 +126,14 @@ export default function DigitalInvitation() {
         link.click();
         document.body.removeChild(link);
     };
+
+    // Notifications can open a section of the invitation (#programme, #directions…):
+    // scroll to it once the page has rendered.
+    useEffect(() => {
+        if (isLoading || !location.hash) return;
+        const el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }, [isLoading, location.hash]);
 
     // Remember the code on this device so the guest isn't asked for it again.
     useEffect(() => {
@@ -237,7 +246,9 @@ export default function DigitalInvitation() {
                     )}
 
                     {/* Guest notices: plus-ones, kids, gifts, dress code */}
-                    <GuestNotices notices={settings?.guest_notices} />
+                    <div id="good-to-know" className="scroll-mt-24">
+                        <GuestNotices notices={settings?.guest_notices} />
+                    </div>
 
                     {(showRsvpButton || show.calendar) && (
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
@@ -273,7 +284,7 @@ export default function DigitalInvitation() {
                         />
                     )}
 
-                    <AddToHomeScreenButton startPath={`/invitation/${encodeURIComponent(guest.unique_code || code)}`} />
+                    <AddToHomeScreenButton />
 
                     <GuestPushCard guestCode={guest.unique_code || code} />
 
@@ -288,18 +299,18 @@ export default function DigitalInvitation() {
                     )}
 
                     {/* Live programme tracker */}
-                    {show.programme && <LiveEventWidget
+                    {show.programme && <div id="programme" className="scroll-mt-24"><LiveEventWidget
                         programmeVisible={content?.programme_page ? content.programme_page.is_visible !== false && content.programme_page.is_visible !== 0 : false}
                         weddingDate={weddingDate}
                         weddingDateText={weddingDateText}
-                    />}
+                    /></div>}
 
                     {/* Dress code colours */}
-                    {show.dressCode && <DressCodePalette />}
+                    {show.dressCode && <div id="dress-code" className="scroll-mt-24"><DressCodePalette /></div>}
 
                     {/* Guest Info Panel: Maps + Weather */}
                     {infoCount > 0 && (
-                    <div className={`grid grid-cols-1 gap-4 ${infoCount === 2 ? 'md:grid-cols-2' : ''}`}>
+                    <div id="directions" className={`scroll-mt-24 grid grid-cols-1 gap-4 ${infoCount === 2 ? 'md:grid-cols-2' : ''}`}>
                         {show.map && <MapsETA 
                             venueName={venueName}
                             venueAddress={venueAddress}
@@ -311,7 +322,7 @@ export default function DigitalInvitation() {
                     )}
 
                     {/* Emergency Numbers */}
-                    {show.emergency && <EmergencyNumbers compact={true} />}
+                    {show.emergency && <div id="emergency" className="scroll-mt-24"><EmergencyNumbers compact={true} /></div>}
 
                     {show.signoff && (
                     <div className="pt-8 border-t border-stone-200/60">

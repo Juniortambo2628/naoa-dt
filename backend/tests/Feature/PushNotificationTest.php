@@ -110,13 +110,13 @@ class PushNotificationTest extends TestCase
 
         $this->mock(WebPushService::class, function ($m) {
             $m->shouldReceive('send')->once()->withArgs(function ($subs, $payload) {
-                return count($subs) === 1 && $payload['title'] === 'Shuttle' && $payload['url'] === '/programme';
+                return count($subs) === 1 && $payload($subs->first())['title'] === 'Shuttle';
             })->andReturn(['sent' => 1, 'failed' => 0, 'expired' => 0]);
         });
 
         $this->actingAs(User::factory()->create(), 'sanctum')
             ->postJson('/api/push/send', [
-                'title' => 'Shuttle', 'body' => 'Leaves at 1pm', 'url' => '/programme', 'audience' => 'confirmed',
+                'title' => 'Shuttle', 'body' => 'Leaves at 1pm', 'url' => 'invite#programme', 'audience' => 'confirmed',
             ])
             ->assertCreated()
             ->assertJsonPath('data.recipients', 1);
@@ -124,6 +124,44 @@ class PushNotificationTest extends TestCase
         $broadcast = PushBroadcast::first();
         $this->assertSame('sent', $broadcast->status);
         $this->assertSame(1, $broadcast->sent_count);
+    }
+
+    public function test_each_guest_is_sent_to_their_own_invitation(): void
+    {
+        $guest = Guest::factory()->create(['unique_code' => 'ABC123']);
+        $this->postJson('/api/push/subscribe', $this->subscriptionPayload(['code' => 'ABC123']))->assertCreated();
+        $this->postJson('/api/push/subscribe', $this->subscriptionPayload(['endpoint' => 'https://fcm.googleapis.com/fcm/send/anon']))->assertCreated();
+
+        $urls = [];
+        $this->mock(WebPushService::class, function ($m) use (&$urls) {
+            $m->shouldReceive('send')->andReturnUsing(function ($subs, $payload) use (&$urls) {
+                foreach ($subs as $sub) {
+                    $urls[] = $payload($sub)['url'];
+                }
+
+                return ['sent' => count($subs), 'failed' => 0, 'expired' => 0];
+            });
+        });
+
+        $admin = User::factory()->create();
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/push/send', ['title' => 'Hi', 'body' => 'Dinner', 'url' => 'invite#programme'])
+            ->assertCreated();
+        $this->assertEqualsCanonicalizing(['/invitation/ABC123#programme', '/rsvp'], $urls);
+
+        // No link chosen: the invitation itself.
+        $urls = [];
+        $this->actingAs($admin, 'sanctum')->postJson('/api/push/send', ['title' => 'Hi', 'body' => 'x'])->assertCreated();
+        $this->assertContains('/invitation/ABC123', $urls);
+        $this->assertSame($guest->id, PushSubscription::whereNotNull('guest_id')->value('guest_id'));
+    }
+
+    public function test_send_rejects_malformed_invite_sections(): void
+    {
+        $admin = User::factory()->create();
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/push/send', ['title' => 'x', 'body' => 'y', 'url' => 'invite#<script>'])
+            ->assertStatus(422);
     }
 
     public function test_send_rejects_protocol_relative_links(): void

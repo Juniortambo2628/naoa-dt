@@ -5,47 +5,21 @@ import Modal from './Modal';
 import { isStandalone } from '../utils/guestSession';
 import { getInstallPrompt, onInstallPromptChange, promptInstall, isIos } from '../utils/installPrompt';
 
-// While this button is on screen, point the web-app manifest at the guest's
-// own invitation so the home-screen icon opens it directly.
-function useInvitationManifest(startPath) {
-  useEffect(() => {
-    const link = document.querySelector('link[rel="manifest"]');
-    if (!link || !startPath) return undefined;
-    const original = link.getAttribute('href');
-    const origin = window.location.origin;
-    const manifest = {
-      id: '/',
-      name: document.querySelector('meta[name="application-name"]')?.content || document.title,
-      short_name: document.querySelector('meta[name="apple-mobile-web-app-title"]')?.content || document.title,
-      start_url: `${origin}${startPath}`,
-      scope: `${origin}/`,
-      display: 'standalone',
-      background_color: '#FBF7F2',
-      theme_color: '#A67B5B',
-      icons: [
-        { src: `${origin}/icon-192.png`, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-        { src: `${origin}/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
-      ],
-    };
-    link.setAttribute('href', `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}`);
-    return () => link.setAttribute('href', original);
-  }, [startPath]);
-}
-
 /**
  * Prominent "Add to home screen" button for the digital invitation: installs
  * the site as a home-screen app that opens straight to the guest's invite
- * (and remembers their code). Uses the browser's install prompt where there
+ * (and remembers their code). The manifest deliberately has no start_url, so
+ * browsers use the page it was added from — this invitation — as the start
+ * page (iOS ignores a start_url swapped in at runtime). Uses the browser's install prompt where there
  * is one (Android / Chrome / Edge); elsewhere (iPhone Safari) it shows the
  * two-step instructions. Hidden when already running as the installed app.
  */
-export default function AddToHomeScreenButton({ startPath, className = '' }) {
+export default function AddToHomeScreenButton({ className = '' }) {
   const [canPrompt, setCanPrompt] = useState(() => !!getInstallPrompt());
   const [helpOpen, setHelpOpen] = useState(false);
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => onInstallPromptChange((p) => setCanPrompt(!!p)), []);
-  useInvitationManifest(startPath);
 
   if (isStandalone()) return null;
 
