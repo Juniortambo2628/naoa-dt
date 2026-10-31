@@ -4,8 +4,10 @@ import './index.css'
 import './i18n'; // Initialize i18n
 import App from './App.jsx'
 import { initInstallPrompt } from './utils/installPrompt'
+import { registerServiceWorker } from './utils/push'
 
 initInstallPrompt()
+registerServiceWorker()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

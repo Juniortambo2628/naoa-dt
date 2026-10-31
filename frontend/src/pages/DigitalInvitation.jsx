@@ -17,6 +17,7 @@ import DressCodePalette from '../components/DressCodePalette';
 import GuestNotices from '../components/GuestNotices';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
+import GuestPushCard from '../components/GuestPushCard';
 import { saveGuestCode } from '../utils/guestSession';
 import { resolveInvitationSections } from '../utils/invitationSections';
 
@@ -273,6 +274,8 @@ export default function DigitalInvitation() {
                     )}
 
                     <AddToHomeScreenButton startPath={`/invitation/${encodeURIComponent(guest.unique_code || code)}`} />
+
+                    <GuestPushCard guestCode={guest.unique_code || code} />
 
                     {show.rsvp && guest.rsvp_status !== 'pending' && (
                          <motion.div 

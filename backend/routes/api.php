@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PageContentController;
 use App\Http\Controllers\Api\PolaroidImageController;
+use App\Http\Controllers\Api\PushController;
 use App\Http\Controllers\Api\RevisionController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\SettingController;
@@ -64,6 +65,13 @@ Route::middleware('throttle:30,1')->group(function () {
 });
 
 // Public Informational Routes (Throttled)
+// Guest web push notifications (subscribe from the digital invitation)
+Route::middleware('throttle:30,1')->prefix('push')->group(function () {
+    Route::get('/public-key', [PushController::class, 'publicKey']);
+    Route::post('/subscribe', [PushController::class, 'subscribe']);
+    Route::post('/unsubscribe', [PushController::class, 'unsubscribe']);
+});
+
 Route::middleware('throttle:60,1')->group(function () {
     // Public Schedule Routes
     Route::group(['prefix' => 'schedule'], function () {
@@ -306,6 +314,10 @@ Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
         Route::patch('/{guestbookEntry}/approve', [GuestbookController::class, 'approve']);
         Route::delete('/{guestbookEntry}', [GuestbookController::class, 'destroy']);
     });
+
+    // Guest announcements via web push (Admin)
+    Route::get('/push', [PushController::class, 'index']);
+    Route::post('/push/send', [PushController::class, 'send']);
 
     // Enquiry Management (Admin)
     Route::group(['prefix' => 'enquiries'], function () {

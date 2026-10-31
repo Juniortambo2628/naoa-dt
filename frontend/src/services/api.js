@@ -332,6 +332,15 @@ export const userService = {
   delete: (id) => api.delete(`/users/${id}`),
 };
 
+// Guest push notifications: device subscriptions (public) and announcements (admin)
+export const pushService = {
+  getPublicKey: () => api.get('/push/public-key'),
+  subscribe: (subscription) => api.post('/push/subscribe', subscription),
+  unsubscribe: (endpoint) => api.post('/push/unsubscribe', { endpoint }),
+  getOverview: () => api.get('/push'),
+  send: (data) => api.post('/push/send', data),
+};
+
 // Backups (admin)
 export const backupService = {
   getAll: () => api.get('/backups'),

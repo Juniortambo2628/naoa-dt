@@ -84,6 +84,12 @@ const steps = [
     position: "right"
   },
   {
+    title: "Announcements",
+    content: "Send a push notification to guests who turned on updates from their invitation — perfect for timings and changes on the day.",
+    target: "sidebar-announcements",
+    position: "right"
+  },
+  {
     title: "Email Templates",
     content: "Customize the automated emails for RSVPs, thank-yous, and special announcements.",
     target: "header-emails",
