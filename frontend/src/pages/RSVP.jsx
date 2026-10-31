@@ -70,15 +70,6 @@ export default function RSVP() {
     }).catch(err => console.error(err));
   }, [navigate]);
 
-  // A code in the URL wins; otherwise reuse the one remembered on this device.
-  useEffect(() => {
-    const initial = code || getSavedGuestCode();
-    if (initial) {
-      setValue('code', initial);
-      onCodeSubmit({ code: initial });
-    }
-  }, [code, setValue]);
-
   const getTxt = (field, fallback) => getContent(content?.rsvp, field, i18n, fallback, t);
 
   const [step, setStep] = useState(0);
@@ -115,6 +106,16 @@ export default function RSVP() {
     }
     setLoading(false);
   };
+
+  // A code in the URL wins; otherwise reuse the one remembered on this device.
+  // Must stay below useForm: the dependency array is read during render.
+  useEffect(() => {
+    const initial = code || getSavedGuestCode();
+    if (initial) {
+      setValue('code', initial);
+      onCodeSubmit({ code: initial });
+    }
+  }, [code, setValue]);
 
   // Step 1: Submit RSVP
   const onRsvpSubmit = async (data) => {
