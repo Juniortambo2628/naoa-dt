@@ -26,6 +26,7 @@ import Loader from './components/Loader';
 import CookieConsent from './components/CookieConsent';
 import NotFound from './components/NotFound';
 import ModuleDisabled from './components/ModuleDisabled';
+import GuestSessionRedirect from './components/GuestSessionRedirect';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
@@ -50,6 +51,7 @@ function App() {
         <ContentProvider>
           <Router>
           <Toaster position="top-right" />
+          <GuestSessionRedirect />
           <AnimatePresence mode="wait">
             <Suspense fallback={<Loader />}>
               <Routes>

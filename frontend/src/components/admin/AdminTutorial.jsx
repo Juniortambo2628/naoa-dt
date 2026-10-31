@@ -145,8 +145,14 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
     const el = document.getElementById(step.target);
     if (el) {
       const rect = el.getBoundingClientRect();
-      // Only set coords if they are valid numbers
-      if (!isNaN(rect.top) && !isNaN(rect.left)) {
+      // Hidden or off-screen targets (e.g. the collapsed mobile sidebar) get
+      // no spotlight; the box falls back to the centre / bottom sheet.
+      const onScreen = rect.width > 0 && rect.height > 0
+        && rect.right > 0 && rect.left < window.innerWidth
+        && rect.bottom > 0 && rect.top < window.innerHeight;
+      if (!onScreen) {
+        setCoords(null);
+      } else if (!isNaN(rect.top) && !isNaN(rect.left)) {
         setCoords({
             top: rect.top,
             left: rect.left,
@@ -185,37 +191,43 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
 
   const step = steps[currentStep];
 
+  // Phones get a bottom sheet: the targets are often in the off-canvas sidebar
+  // or span the full width, so anchoring next to them pushes the box off-screen.
+  const isCompact = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  // Explicit pixel offsets, clamped to the viewport. framer-motion owns the
+  // transform (scale animation), so translate-based centring can't be used.
   const getBoxStyle = () => {
-    if (!coords) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    if (isCompact) return {};
 
-    const padding = 24;
-    let top = coords.top;
-    let left = coords.left;
+    const margin = 16;
+    const gap = 16;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const boxWidth = Math.min(384, vw - margin * 2);
+    const boxHeight = boxRef.current?.offsetHeight || 280;
+    const clamp = (v, min, max) => Math.max(min, Math.min(v, max));
 
-    if (step.position === 'right') {
-      left = coords.right + padding;
-      top = coords.top + (coords.height / 2);
-      return { top, left, transform: 'translateY(-50%)' };
-    }
-    
-    if (step.position === 'bottom') {
-      top = coords.bottom + padding;
-      left = coords.left + (coords.width / 2);
-      
-      // Keep within horizontal bounds
-      const viewportWidth = window.innerWidth;
-      const boxWidth = 384; // max-w-sm
-      if (left + (boxWidth/2) > viewportWidth - 20) {
-          left = viewportWidth - (boxWidth/2) - 20;
-      }
-      if (left - (boxWidth/2) < 20) {
-          left = (boxWidth/2) + 20;
-      }
-
-      return { top, left, transform: 'translateX(-50%)' };
+    if (!coords) {
+      return { top: (vh - boxHeight) / 2, left: (vw - boxWidth) / 2 };
     }
 
-    return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    if (step.position === 'right' && coords.right + gap + boxWidth <= vw - margin) {
+      return {
+        top: clamp(coords.top + coords.height / 2 - boxHeight / 2, margin, vh - boxHeight - margin),
+        left: coords.right + gap,
+      };
+    }
+
+    // 'bottom' (and 'right' targets with no room beside them)
+    const below = coords.bottom + gap;
+    const top = below + boxHeight <= vh - margin
+      ? below
+      : Math.max(margin, coords.top - gap - boxHeight);
+    return {
+      top,
+      left: clamp(coords.left + coords.width / 2 - boxWidth / 2, margin, vw - boxWidth - margin),
+    };
   };
 
   return (
@@ -238,7 +250,9 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         style={getBoxStyle()}
-        className="absolute w-[calc(100%-48px)] max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden pointer-events-auto border-2 border-[#A67B5B]/30"
+        className={`${isCompact
+          ? 'fixed left-3 right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[70vh] overflow-y-auto'
+          : 'absolute w-[min(24rem,calc(100vw-2rem))] overflow-hidden'} bg-white rounded-3xl shadow-2xl pointer-events-auto border-2 border-[#A67B5B]/30`}
       >
         <div className="h-1.5 w-full bg-stone-100">
           <motion.div 
@@ -248,8 +262,8 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
           />
         </div>
 
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
+        <div className="p-5 md:p-6">
+          <div className="flex justify-between items-start mb-3 md:mb-4">
             <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-[#A67B5B]/10 flex items-center justify-center">
                 {currentStep === steps.length - 1 ? (
@@ -276,9 +290,9 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="min-h-[100px]"
+              className="md:min-h-[100px]"
             >
-              <h3 className="text-xl font-semibold text-[#4A3F35] mb-2 flex items-center gap-2">
+              <h3 className="text-lg md:text-xl font-semibold text-[#4A3F35] mb-2 flex items-center gap-2">
                 {step.title}
                 {currentStep === 0 && <Sparkles className="w-4 h-4 text-[#A67B5B]" />}
               </h3>
@@ -288,7 +302,7 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
             </motion.div>
           </AnimatePresence>
 
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-stone-100">
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-5 md:mt-6 pt-4 border-t border-stone-100">
             <div className="flex gap-1.5">
               <Button
                 size="icon"
@@ -312,13 +326,6 @@ export default function AdminTutorial({ onComplete, isRestarted = false }) {
           </div>
         </div>
         
-        {/* Triangle pointer */}
-        {coords && step.position === 'right' && (
-            <div className="absolute right-full top-1/2 -translate-y-1/2 border-y-[8px] border-y-transparent border-r-[8px] border-r-white" />
-        )}
-        {coords && step.position === 'bottom' && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-x-[8px] border-x-transparent border-b-[8px] border-b-white" />
-        )}
       </motion.div>
     </div>
   );

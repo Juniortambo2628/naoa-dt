@@ -24,6 +24,7 @@ import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../hooks/useSc
 import { Skeleton } from '../components/Skeleton';
 import Button from '../components/Button';
 import GuestNotices from '../components/GuestNotices';
+import { visibleGuestNotices } from '../utils/guestNotices';
 import { useContent } from '../context/ContentContext';
 
 // Polaroid Floating Image Component
@@ -81,6 +82,7 @@ function HeroSection({ content, settings, loading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'home_hero', field, i18n, fallback, t);
   const { brideName, groomName } = getCoupleNames(settings, content, i18n.language);
+  const hasNotices = visibleGuestNotices(settings?.guest_notices).length > 0;
 
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.3 });
@@ -102,7 +104,7 @@ function HeroSection({ content, settings, loading }) {
   }, [isInView]);
 
   return (
-    <section ref={ref} className="relative min-h-[100dvh] flex items-center justify-center py-10 md:py-0 overflow-hidden" style={{ zIndex: 50 }}>
+    <section ref={ref} className="relative min-h-[100dvh] flex items-center justify-center pt-10 pb-20 md:py-0 overflow-hidden" style={{ zIndex: 50 }}>
       {/* Soft gradient background */}
       <div 
         className="absolute inset-0"
@@ -239,7 +241,9 @@ function HeroSection({ content, settings, loading }) {
           </p>
         </motion.div>
 
-        {/* CTA Buttons */}
+        {/* Guest notices take the CTA slot when any are switched on — the
+            RSVP button is already in the navbar, so the hero gives the room
+            to the notices. Otherwise fall back to the RSVP CTA. */}
         <motion.div
           key={`cta-${animationKey}`}
           initial={{ opacity: 0, y: 30 }}
@@ -247,14 +251,15 @@ function HeroSection({ content, settings, loading }) {
           transition={{ delay: 3.3, duration: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Button as={Link} to="/rsvp" variant="secondary" size="lg">
-            {t('hero.rsvp_cta')}
-          </Button>
+          {hasNotices ? (
+            <GuestNotices notices={settings?.guest_notices} variant="hero" />
+          ) : (
+            <Button as={Link} to="/rsvp" variant="secondary" size="lg">
+              {t('hero.rsvp_cta')}
+            </Button>
+          )}
         </motion.div>
       </motion.div>
-      
-      {/* Guest notices (plus-ones, kids, gifts, dress code) — bottom centre */}
-      <GuestNotices notices={settings?.guest_notices} variant="hero" />
 
       {/* Scroll Indicator */}
       <motion.div
