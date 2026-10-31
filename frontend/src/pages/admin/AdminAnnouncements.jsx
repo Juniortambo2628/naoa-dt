@@ -15,14 +15,16 @@ import { pushService } from '../../services/api';
 import useAdminAction from '../../hooks/useAdminAction';
 import usePolling from '../../hooks/usePolling';
 
-// Pages a notification can open when tapped.
+// Where tapping the notification takes each guest: their own digital
+// invitation (optionally scrolled to a section), or — after the day — the
+// photo gallery. Values are resolved per guest on the server.
 const LINKS = [
-  { value: '', label: 'Homepage' },
-  { value: '/programme', label: 'Event programme' },
-  { value: '/gallery', label: 'Gallery' },
-  { value: '/gifts', label: 'Gift registry' },
-  { value: '/songs', label: 'Song requests' },
-  { value: '/faq', label: 'FAQs' },
+  { value: 'invite', label: 'Their invitation' },
+  { value: 'invite#programme', label: 'Their invitation — programme' },
+  { value: 'invite#directions', label: 'Their invitation — map & weather' },
+  { value: 'invite#dress-code', label: 'Their invitation — dress code' },
+  { value: 'invite#good-to-know', label: 'Their invitation — good to know' },
+  { value: '/gallery', label: 'Photo gallery (after the day)' },
 ];
 
 const STATUS = {
@@ -31,7 +33,7 @@ const STATUS = {
   failed: { text: 'Failed', className: 'bg-red-50 text-red-700' },
 };
 
-const EMPTY = { title: '', body: '', url: '', audience: 'all' };
+const EMPTY = { title: '', body: '', url: 'invite', audience: 'all' };
 
 export default function AdminAnnouncements() {
   const { data, isLoading, refetch } = usePushOverview();
@@ -45,7 +47,7 @@ export default function AdminAnnouncements() {
 
   const recipients = form.audience === 'confirmed' ? stats.confirmed_devices : stats.devices;
 
-  const send = useAdminAction(() => pushService.send({ ...form, url: form.url || null }), {
+  const send = useAdminAction(() => pushService.send(form), {
     key: () => 'send',
     confirm: () => ({
       title: 'Send this announcement?',

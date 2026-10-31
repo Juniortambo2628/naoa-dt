@@ -96,8 +96,9 @@ class PushController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:100',
             'body' => 'required|string|max:500',
-            // A page on this site ("/programme") or a full https link.
-            'url' => ['nullable', 'string', 'max:255', 'regex:#^(/(?!/)|https://)#'],
+            // The guest's invitation ("invite", or a section: "invite#programme"),
+            // a page on this site ("/gallery") or a full https link.
+            'url' => ['nullable', 'string', 'max:255', 'regex:#^(invite(\#[a-z-]+)?$|/(?!/)|https://)#'],
             'audience' => ['nullable', Rule::in(PushBroadcast::AUDIENCES)],
         ]);
 

@@ -1,7 +1,8 @@
 {
+  "id": "/",
   "name": "Dinah & Tze Ren | Wedding",
   "short_name": "D & T Wedding",
-  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#FBF7F2",
   "theme_color": "#A67B5B",
