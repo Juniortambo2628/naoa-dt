@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Calendar, Gift, Image, X, Music, MessageSquare, HelpCircle,
-  MailCheck, Armchair, Palette, FileText, Blocks, Inbox,
+  MailCheck, Armchair, Palette, FileText, Blocks, Inbox, BellRing,
 } from 'lucide-react';
 import { useCollaboration } from '../../context/CollaborationContext';
 import { moduleForPath } from '../../utils/adminModules';
@@ -41,6 +41,7 @@ const navSections = [
       { path: '/admin/dashboard/guestbook', icon: MessageSquare, label: 'Write to Us', id: 'sidebar-guestbook' },
       { path: '/admin/dashboard/enquiries', icon: Inbox, label: 'Enquiries', id: 'sidebar-enquiries' },
       { path: '/admin/dashboard/gifts', icon: Gift, label: 'Gifts', id: 'sidebar-gifts' },
+      { path: '/admin/dashboard/announcements', icon: BellRing, label: 'Announcements', id: 'sidebar-announcements' },
     ],
   },
 ];

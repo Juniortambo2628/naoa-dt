@@ -4,7 +4,7 @@ import {
   giftService, guestbookService, faqService, enquiryService,
   songRequestService, scheduleService, tableService,
   notificationService, analyticsService, checkinService,
-  polaroidService, weatherService, userService, backupService,
+  polaroidService, weatherService, userService, backupService, pushService,
 } from '../services/api';
 import usePolling from './usePolling';
 
@@ -167,6 +167,14 @@ export const useGuestbook = () => {
       const { data } = await guestbookService.getAll();
       return data;
     },
+  });
+};
+
+// --- Announcements (guest push notifications) ---
+export const usePushOverview = () => {
+  return useQuery({
+    queryKey: ['push-overview'],
+    queryFn: async () => (await pushService.getOverview()).data,
   });
 };
 

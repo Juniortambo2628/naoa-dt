@@ -17,6 +17,7 @@ export const ADMIN_MODULES = [
   { key: 'guestbook', path: '/admin/dashboard/guestbook', label: 'Write to Us' },
   { key: 'enquiries', path: '/admin/dashboard/enquiries', label: 'Enquiries' },
   { key: 'gifts', path: '/admin/dashboard/gifts', label: 'Gifts' },
+  { key: 'announcements', path: '/admin/dashboard/announcements', label: 'Announcements' },
   { key: 'analytics', path: '/admin/dashboard/analytics', label: 'Analytics' },
   { key: 'checkin', path: '/admin/dashboard/checkin', label: 'Check-In' },
   { key: 'emails', path: '/admin/dashboard/emails', label: 'Email Templates' },

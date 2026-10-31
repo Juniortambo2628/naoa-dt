@@ -44,6 +44,7 @@ const AdminModules = lazy(() => import('./AdminModules'));
 const AdminEnquiries = lazy(() => import('./AdminEnquiries'));
 const AdminRSVPs = lazy(() => import('./AdminRSVPs'));
 const AdminBackups = lazy(() => import('./AdminBackups'));
+const AdminAnnouncements = lazy(() => import('./AdminAnnouncements'));
 
 // Days (and hours on the day) until the wedding.
 function countdownTo(dateStr) {
@@ -262,6 +263,7 @@ export default function AdminDashboard() {
           <Route path="faqs" element={<AdminFAQ />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="backups" element={<AdminBackups />} />
+          <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="test" element={<AdminTestLab />} />
           {/* Unknown admin sub-paths fall back to the overview, as before */}
           <Route path="*" element={<DashboardOverview />} />
