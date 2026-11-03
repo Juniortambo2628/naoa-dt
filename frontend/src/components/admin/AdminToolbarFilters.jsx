@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SlidersHorizontal, List, Grid, LayoutGrid, RotateCcw, Check, Bookmark, BookmarkPlus, X } from 'lucide-react';
 import SegmentedControl from '../SegmentedControl';
+import useViewportClamp from '../../hooks/useViewportClamp';
 
 const viewIcons = {
   list: List,
@@ -32,6 +33,8 @@ export function countActiveFilters(filters) {
 export default function AdminToolbarFilters({ filters }) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef(null);
+  const popoverRef = useRef(null);
+  const shift = useViewportClamp(popoverRef, open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -99,13 +102,15 @@ export default function AdminToolbarFilters({ filters }) {
           <AnimatePresence>
             {open && (
               <motion.div
+                ref={popoverRef}
                 role="dialog"
                 aria-label="Filters"
                 initial={{ opacity: 0, y: 8, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.97 }}
                 transition={{ duration: 0.15 }}
-                className="absolute bottom-full left-0 mb-3 w-[min(20rem,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-stone-100 p-4 space-y-4 text-left"
+                style={{ x: shift }}
+                className="absolute bottom-full left-0 mb-3 w-[min(20rem,calc(100vw-1.5rem))] max-h-[60vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-stone-100 p-4 space-y-4 text-left"
               >
                 {groups.map((group) => (
                   <div key={group.id}>

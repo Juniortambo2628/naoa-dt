@@ -104,7 +104,8 @@ function HeroSection({ content, settings, loading }) {
   }, [isInView]);
 
   return (
-    <section ref={ref} className="relative min-h-[100dvh] flex items-center justify-center pt-10 pb-20 md:py-0 overflow-hidden" style={{ zIndex: 50 }}>
+    <section ref={ref} className="relative min-h-[100dvh] flex items-center justify-center pt-28 pb-20 md:pt-28 md:pb-12 overflow-hidden" style={{ zIndex: 50 }}>
+      {/* Top padding (pt-28) clears the fixed navbar (~96px) so the subtitle never sits under it on phones or short screens. */}
       {/* Soft gradient background */}
       <div 
         className="absolute inset-0"
@@ -126,7 +127,7 @@ function HeroSection({ content, settings, loading }) {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-lg md:text-xl mb-8 tracking-[0.3em] uppercase"
+          className="text-base sm:text-lg md:text-xl mb-6 md:mb-8 tracking-[0.18em] sm:tracking-[0.3em] uppercase"
           style={{ color: '#8B7B6B', fontFamily: "'Cormorant Garamond', serif" }}
         >
           {loading ? (
