@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Copy, Pencil, Trash2, Plus, GripVertical, Check,
 } from 'lucide-react';
 import useDismiss from '../../hooks/useDismiss';
+import useViewportClamp from '../../hooks/useViewportClamp';
 import Button from '../Button';
 
 const pageLabel = (page, index) => (page?.name && page.name.trim()) || `Page ${index + 1}`;
@@ -29,6 +30,8 @@ export default function InvitationPageMenu({
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState('');
   const ref = useRef(null);
+  const menuRef = useRef(null);
+  const shift = useViewportClamp(menuRef, open);
   const close = useCallback(() => { setOpen(false); setEditingId(null); }, []);
   useDismiss(ref, open, close);
 
@@ -55,13 +58,15 @@ export default function InvitationPageMenu({
         <AnimatePresence>
           {open && (
             <motion.div
+              ref={menuRef}
               role="menu"
               aria-label="Pages"
+              style={{ x: shift }}
               initial={{ opacity: 0, y: 8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.97 }}
               transition={{ duration: 0.15 }}
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-stone-100 p-2"
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-stone-100 p-2"
             >
               <p className="px-2 pt-1 pb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-400">
                 Pages · drag to reorder

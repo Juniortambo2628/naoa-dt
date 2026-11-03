@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreHorizontal, ChevronUp, ChevronDown, SlidersHorizontal } from 'lucide-react';
@@ -7,6 +7,7 @@ import AdminToolbarFilters, { countActiveFilters } from './AdminToolbarFilters';
 import { useSearch } from '../../context/SearchContext';
 import Button from '../Button';
 import { useVisibleActions } from '../../hooks/useRole';
+import useViewportClamp from '../../hooks/useViewportClamp';
 
 /**
  * AdminFloatingToolbar — the shared, fixed bottom-center toolbar that every
@@ -43,6 +44,8 @@ export default function AdminFloatingToolbar({
   wrapperClassName = '',
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const menuShift = useViewportClamp(menuRef, menuOpen);
   const [visible, setVisible] = useState(true);
   // Phones: a page's custom controls (e.g. the designer's tools) open on demand.
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -131,10 +134,14 @@ export default function AdminFloatingToolbar({
                 <AnimatePresence>
                   {menuOpen && (
                     <motion.div
+                      ref={menuRef}
                       initial={{ opacity: 0, y: 8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 min-w-[10rem] bg-white rounded-xl shadow-xl border border-stone-100 py-2 overflow-hidden"
+                      style={{ x: menuShift }}
+                      // Right-aligned to the button (it sits at the end of the
+                      // bar); the clamp keeps it on-screen however the bar wraps.
+                      className="absolute bottom-full right-0 mb-2 min-w-[10rem] max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-xl border border-stone-100 py-2 overflow-hidden"
                     >
                       {overflowActions.map((action) => {
                         const Icon = action.icon;
@@ -146,7 +153,7 @@ export default function AdminFloatingToolbar({
                               setMenuOpen(false);
                             }}
                             disabled={action.disabled}
-                            className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 hover:bg-stone-50 transition-colors ${
+                            className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 whitespace-nowrap hover:bg-stone-50 transition-colors ${
                               action.variant === 'danger' ? 'text-red-600' : 'text-stone-700'
                             } ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >

@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, ChevronDown } from 'lucide-react';
 import useDismiss from '../../hooks/useDismiss';
+import useViewportClamp from '../../hooks/useViewportClamp';
 import Button from '../Button';
 import { ELEMENT_KINDS } from './invitationElements';
 
@@ -9,6 +10,8 @@ import { ELEMENT_KINDS } from './invitationElements';
 export default function InvitationAddMenu({ onAdd }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const menuRef = useRef(null);
+  const shift = useViewportClamp(menuRef, open);
   const close = useCallback(() => setOpen(false), []);
   useDismiss(ref, open, close);
 
@@ -27,12 +30,14 @@ export default function InvitationAddMenu({ onAdd }) {
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={menuRef}
             role="menu"
+            style={{ x: shift }}
             initial={{ opacity: 0, y: 8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-3 w-52 bg-white rounded-2xl shadow-2xl border border-stone-100 py-1.5"
+            className="absolute bottom-full left-0 mb-3 w-52 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-stone-100 py-1.5"
           >
             {ELEMENT_KINDS.map((kind) => (
               <button
