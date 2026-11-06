@@ -61,4 +61,37 @@ describe('api services', () => {
 
     post.mockRestore()
   })
+
+  it('story and reaction calls hit the polaroid endpoints', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: { stories: [] } })
+    const post = vi.spyOn(api, 'post').mockResolvedValue({ data: {} })
+    const del = vi.spyOn(api, 'delete').mockResolvedValue({ data: {} })
+
+    await polaroidService.stories('ABC1234')
+    expect(get).toHaveBeenCalledWith('/polaroid-images/stories', { params: { guest_code: 'ABC1234' } })
+
+    await polaroidService.stories(null)
+    expect(get).toHaveBeenLastCalledWith('/polaroid-images/stories', { params: {} })
+
+    const form = new FormData()
+    await polaroidService.batchUpload(form)
+    expect(post.mock.calls[0][0]).toBe('/polaroid-images/batch')
+    expect(post.mock.calls[0][1]).toBe(form)
+    expect(post.mock.calls[0][2]).toEqual(
+      expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+    )
+
+    await polaroidService.addReaction(7, { emoji: '❤️', guest_code: 'ABC1234' })
+    expect(post).toHaveBeenLastCalledWith('/polaroid-images/7/reactions', {
+      emoji: '❤️',
+      guest_code: 'ABC1234',
+    })
+
+    await polaroidService.removeReaction(7, { guest_code: 'ABC1234' })
+    expect(del).toHaveBeenCalledWith('/polaroid-images/7/reactions', {
+      data: { guest_code: 'ABC1234' },
+    })
+
+    vi.restoreAllMocks()
+  })
 })

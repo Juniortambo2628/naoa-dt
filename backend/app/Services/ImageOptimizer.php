@@ -46,7 +46,7 @@ final class ImageOptimizer
      */
     public const RULE = 'required|file|mimetypes:'
         .'image/jpeg,image/png,image/bmp,image/gif,image/webp,image/avif,'
-        .'image/svg+xml,image/heic,image/heif,'
+        .'image/svg+xml,image/heic,image/heif'
         .'|max:'.self::MAX_UPLOAD_KB;
 
     /** Lower-cased client extension => format written out. */
