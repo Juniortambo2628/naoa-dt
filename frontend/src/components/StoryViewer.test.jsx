@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StoryViewer from './StoryViewer';
 import { polaroidService } from '../services/api';
 import { REACTIONS, STORY_DURATION_MS } from '../utils/stories';
@@ -120,5 +120,50 @@ describe('StoryViewer', () => {
     const progress = document.querySelector('[style*="story-progress"]')
     expect(progress).not.toBeNull()
     expect(progress.style.animationDuration).toBe(`${STORY_DURATION_MS}ms`)
+  })
+
+  it('reports each photo as viewed once per device', async () => {
+    const markViewed = vi
+      .spyOn(polaroidService, 'markViewed')
+      .mockResolvedValue({ data: { views: 1, viewed: true } })
+
+    render(<StoryViewer stories={stories} guestCode="ABC1234" guestName="Nelly" onClose={vi.fn()} />)
+
+    await waitFor(() => expect(markViewed).toHaveBeenCalledTimes(1))
+    expect(markViewed).toHaveBeenCalledWith(1, {
+      guest_code: 'ABC1234',
+      guest_name: 'Nelly',
+    })
+
+    fireEvent.click(screen.getByLabelText('Next photo'))
+    await waitFor(() => expect(markViewed).toHaveBeenCalledTimes(2))
+    expect(markViewed).toHaveBeenLastCalledWith(2, {
+      guest_code: 'ABC1234',
+      guest_name: 'Nelly',
+    })
+
+    // Revisiting a photo in the same session must not report it twice.
+    fireEvent.click(screen.getByLabelText('Previous photo'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(markViewed).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not report views without a device id', () => {
+    const markViewed = vi.spyOn(polaroidService, 'markViewed')
+
+    render(<StoryViewer stories={stories} onClose={vi.fn()} />)
+
+    expect(markViewed).not.toHaveBeenCalled()
+  })
+
+  it('shows how many people watched the photo', () => {
+    render(
+      <StoryViewer
+        stories={[{ ...stories[0], items: [photo(1, 'I do', { views: 5 })] }]}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText(/5 watched/)).toBeInTheDocument()
   })
 })

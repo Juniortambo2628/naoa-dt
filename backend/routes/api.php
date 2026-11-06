@@ -157,6 +157,7 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/polaroid-images/batch', [PolaroidImageController::class, 'storeBatch']);
     Route::post('/polaroid-images/{polaroid}/reactions', [PolaroidImageController::class, 'react']);
     Route::delete('/polaroid-images/{polaroid}/reactions', [PolaroidImageController::class, 'unreact']);
+    Route::post('/polaroid-images/{polaroid}/viewed', [PolaroidImageController::class, 'viewed']);
 });
 
 // Public Tables (for seating chart visualization)

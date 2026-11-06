@@ -16,10 +16,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class TestController extends Controller
 {
     use ApiResponse;
+
+    /**
+     * Stand-in image for a simulated polaroid. storage/ never ships with a
+     * release, so a fresh deployment has no placeholder until this writes it.
+     */
+    private const PLACEHOLDER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">'
+        .'<rect width="400" height="400" fill="#F5F0E8"/>'
+        .'<circle cx="200" cy="180" r="58" fill="none" stroke="#A67B5B" stroke-width="6"/>'
+        .'<rect x="150" y="160" width="100" height="70" rx="10" fill="none" stroke="#A67B5B" stroke-width="6"/>'
+        .'<circle cx="200" cy="195" r="18" fill="none" stroke="#A67B5B" stroke-width="6"/>'
+        .'<text x="200" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#8B7355">Test polaroid</text>'
+        .'</svg>';
 
     /**
      * API health check — returns status of all critical services.
@@ -125,6 +138,10 @@ class TestController extends Controller
             'note' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255',
         ]);
+
+        if (! Storage::disk('public')->exists('polaroids/placeholder.svg')) {
+            Storage::disk('public')->put('polaroids/placeholder.svg', self::PLACEHOLDER_SVG);
+        }
 
         $image = PolaroidImage::create([
             'image_path' => '/storage/polaroids/placeholder.svg',

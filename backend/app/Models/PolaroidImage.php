@@ -42,6 +42,11 @@ class PolaroidImage extends Model
         return $this->hasMany(PolaroidReaction::class);
     }
 
+    public function views()
+    {
+        return $this->hasMany(PolaroidView::class);
+    }
+
     /**
      * What a story needs to render reactions: total, per-emoji counts (most
      * popular first) and this viewer's own tap so the button shows as active.

@@ -53,15 +53,33 @@ export default function StoryViewer({ stories, initialIndex = 0, guestCode, gues
     }
   };
 
-  // Remember what has been watched, and preload the next photo.
+  // Which photos this session has already reported as watched (the server
+  // counts once per device, so a re-render must not re-post).
+  const viewedRef = useRef(new Set());
+
+  // Remember what has been watched, tell the server once per photo, and
+  // preload the next one.
   useEffect(() => {
-    if (item) markSeen([item.id]);
+    if (item) {
+      markSeen([item.id]);
+
+      if (guestCode && !viewedRef.current.has(item.id)) {
+        viewedRef.current.add(item.id);
+        polaroidService
+          .markViewed(item.id, {
+            guest_code: guestCode,
+            ...(guestName ? { guest_name: guestName } : {}),
+          })
+          .catch(() => {}); // a view is never worth breaking playback for
+      }
+    }
+
     const next = items[itemIndex + 1] || list[storyIndex + 1]?.items?.[0];
     if (next?.image) {
       const preload = new Image();
       preload.src = getAssetUrl(next.image);
     }
-  }, [item, items, itemIndex, list, storyIndex]);
+  }, [item, items, itemIndex, list, storyIndex, guestCode, guestName]);
 
   // Keyboard: ←/→ navigate, Space pauses, Esc closes.
   useEffect(() => {
@@ -171,6 +189,7 @@ export default function StoryViewer({ stories, initialIndex = 0, guestCode, gues
             <p className="text-sm font-medium truncate">{story.author}</p>
             <p className="text-[11px] text-white/50 truncate">
               {takenAt} · {itemIndex + 1} of {items.length}
+              {item.views > 0 ? ` · ${item.views} watched` : ''}
             </p>
           </div>
         </div>
