@@ -405,6 +405,8 @@ export const testLabService = {
   getStats: () => api.get('/test/stats'),
   simulateLiveUpdate: (data) => api.post('/test/simulate/live-update', data),
   simulatePolaroid: (data) => api.post('/test/simulate/polaroid', data),
+  simulateSongRequest: (data) => api.post('/test/simulate/song-request', data),
+  songRequestChecks: () => api.post('/test/song-requests/checks'),
 };
 
 // Emergency Numbers services

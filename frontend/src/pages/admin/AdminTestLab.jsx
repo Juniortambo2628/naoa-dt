@@ -5,7 +5,7 @@ import {
   Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical,
   Radio, Camera, Wifi, Database, HardDrive, Server, Bell,
   AlertTriangle, Check, X, Activity, Zap, BarChart3,
-  Cloud, Map, ExternalLink, Settings, Plane, Trash2
+  Cloud, Map, ExternalLink, Settings, Plane, Trash2, Music, ListChecks
 } from 'lucide-react';
 import api, { guestService, testLabService, weatherService, tableService, settingService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
@@ -44,7 +44,7 @@ function StatusBadge({ status, label }) {
 
 const SECTIONS = [
   { id: 'health', label: 'API Status', icon: Activity, description: 'Health of the API and its services' },
-  { id: 'simulate', label: 'Simulations', icon: Radio, description: 'Live updates and polaroids' },
+  { id: 'simulate', label: 'Simulations', icon: Radio, description: 'Live updates, polaroids and song requests' },
   { id: 'apis', label: 'API Endpoints', icon: Server, description: 'Weather, seating and settings' },
   { id: 'messaging', label: 'Email & Notifications', icon: Mail, description: 'Test emails and flight alerts' },
   { id: 'codes', label: 'Codes & QR', icon: QrCode, description: 'Generate and verify RSVP codes' },
@@ -62,6 +62,12 @@ export default function AdminTestLab() {
   const [liveType, setLiveType] = useState('normal');
   const [polaroidCaption, setPolaroidCaption] = useState('');
   const [polaroidLocation, setPolaroidLocation] = useState('');
+
+  // Song request simulation + feature tests
+  const [songTitle, setSongTitle] = useState('');
+  const [songArtist, setSongArtist] = useState('');
+  const [songGuest, setSongGuest] = useState('');
+  const [songChecks, setSongChecks] = useState(null);
 
   // API test states
   const [weatherResult, setWeatherResult] = useState(null);
@@ -161,6 +167,60 @@ export default function AdminTestLab() {
     setLoading(true);
     addLog('Simulating polaroid image...', 'info');
     await simulatePolaroid.run();
+    setLoading(false);
+  };
+
+  // --- Simulate Song Request ---
+  // Like the other simulations this writes through useAdminAction, so viewers
+  // never see the button. It skips the guest rate limit and sends no admin
+  // notification: test data must not ping anyone.
+  const simulateSongRequest = useAdminAction((payload) => testLabService.simulateSongRequest(payload), {
+    key: () => 'song-request',
+    error: false,
+    onSuccess: (res) => {
+      addLog(`Song request simulated: "${res?.data?.song_title || songTitle}" — check the Song Requests page`, 'success');
+      setSongTitle('');
+      setSongArtist('');
+      setSongGuest('');
+    },
+    onError: logFailure,
+  });
+  const handleSimulateSongRequest = async () => {
+    if (!songTitle.trim()) return notifyError('Enter a song title');
+    setLoading(true);
+    addLog(`Submitting song request: "${songTitle.trim()}"`, 'info');
+    await simulateSongRequest.run({
+      song_title: songTitle.trim(),
+      artist: songArtist.trim() || undefined,
+      guest_name: songGuest.trim() || undefined,
+    });
+    setLoading(false);
+  };
+
+  // --- Song Request Feature Tests ---
+  // Runs create → list → stats → played → unplayed → delete against the real
+  // feature and cleans up after itself, so it is safe on production data.
+  const runSongChecks = useAdminAction(() => testLabService.songRequestChecks(), {
+    key: () => 'song-checks',
+    error: false,
+    onSuccess: (res) => {
+      const data = res?.data || {};
+      setSongChecks(data);
+      const total = (data.passed || 0) + (data.failed || 0);
+      addLog(
+        data.failed
+          ? `${data.failed} of ${total} song request checks failed`
+          : `All ${total} song request checks passed`,
+        data.failed ? 'error' : 'success',
+      );
+    },
+    onError: logFailure,
+  });
+  const handleRunSongChecks = async () => {
+    setLoading(true);
+    setSongChecks(null);
+    addLog('Running song request feature tests...', 'info');
+    await runSongChecks.run();
     setLoading(false);
   };
 
@@ -358,7 +418,7 @@ export default function AdminTestLab() {
 
       {section === 'simulate' && (<>
       {/* Feature Simulation */}
-      <div className="grid @2xl:grid-cols-2 gap-4 mb-6">
+      <div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 gap-4 mb-6">
         {/* Live Update Simulation */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
@@ -434,7 +494,96 @@ export default function AdminTestLab() {
             <p className="text-xs text-stone-400 text-center">Creates a placeholder entry on Digital Invitation page</p>
           </div>
         </AdminCard>
+
+        {/* Song Request Simulation & Tests */}
+        <AdminCard>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
+              <Music className="w-5 h-5 text-[#A67B5B]" />
+            </div>
+            <h2 className="text-lg font-medium text-stone-800">Song Requests</h2>
+          </div>
+          <div className="space-y-4">
+            <AdminInput
+              label="Song title"
+              value={songTitle}
+              onChange={(e) => setSongTitle(e.target.value)}
+              placeholder="e.g. Perfect"
+            />
+            <AdminInput
+              label="Artist"
+              value={songArtist}
+              onChange={(e) => setSongArtist(e.target.value)}
+              placeholder="e.g. Ed Sheeran"
+            />
+            <AdminInput
+              label="Guest name"
+              value={songGuest}
+              onChange={(e) => setSongGuest(e.target.value)}
+              placeholder="Test Lab"
+            />
+            <Button edit
+              variant="secondary"
+              icon={Music}
+              fullWidth
+              onClick={handleSimulateSongRequest}
+              disabled={loading || !songTitle.trim()}
+            >
+              Submit Test Request
+            </Button>
+            <Button edit
+              icon={ListChecks}
+              fullWidth
+              onClick={handleRunSongChecks}
+              disabled={loading}
+            >
+              Run Song Request Tests
+            </Button>
+            <p className="text-xs text-stone-400 text-center">
+              Skips the guest rate limit and sends no admin notification
+            </p>
+          </div>
+        </AdminCard>
       </div>
+
+      {/* Song Request Test Results */}
+      {songChecks && (
+        <AdminCard className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
+                <ListChecks className="w-5 h-5 text-[#A67B5B]" />
+              </div>
+              <h2 className="text-lg font-medium text-stone-800">Song Request Test Results</h2>
+            </div>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                songChecks.failed ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+              }`}
+            >
+              {songChecks.passed || 0}/{(songChecks.passed || 0) + (songChecks.failed || 0)} passed
+            </span>
+          </div>
+          <ul className="space-y-2">
+            {(songChecks.steps || []).map((step) => (
+              <li
+                key={step.name}
+                className={`flex items-start gap-3 p-3 rounded-lg border ${
+                  step.status === 'ok' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                }`}
+              >
+                {step.status === 'ok'
+                  ? <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                  : <X className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />}
+                <div>
+                  <p className="text-sm font-medium text-stone-700">{step.name}</p>
+                  <p className="text-xs text-stone-500">{step.message}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </AdminCard>
+      )}
       </>)}
 
       {section === 'apis' && (<>
