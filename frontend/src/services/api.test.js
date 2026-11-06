@@ -56,6 +56,9 @@ describe('api services', () => {
     await testLabService.songRequestChecks()
     expect(post).toHaveBeenCalledWith('/test/song-requests/checks')
 
+    await testLabService.songRequestLimitChecks()
+    expect(post).toHaveBeenCalledWith('/test/song-requests/limit-checks')
+
     post.mockRestore()
   })
 })

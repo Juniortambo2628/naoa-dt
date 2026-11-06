@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\Guest;
 use App\Models\LiveUpdate;
 use App\Models\PolaroidImage;
+use App\Models\Setting;
 use App\Models\SongRequest;
 use App\Models\Table;
 use App\Traits\ApiResponse;
@@ -258,6 +259,163 @@ class TestController extends Controller
         if (! $condition) {
             throw new \RuntimeException($message);
         }
+    }
+
+    /**
+     * Exercise the guest hourly limit (5 requests per hour) from the Test Lab.
+     *
+     * The whole run happens inside one transaction that is always rolled
+     * back, so real requests keep their timestamps, the settings toggle comes
+     * back as it was, and no test rows survive. It calls the real public
+     * submit endpoint (SongRequestController::store), so the limit logic
+     * under test is the production one.
+     */
+    public function songRequestLimitChecks()
+    {
+        $steps = [];
+        $baselineCount = SongRequest::count();
+        $baselineSetting = Setting::getValue('song_request_limit_enabled', 'true');
+        $windowFrom = now()->subHour();
+
+        $run = function (string $name, callable $step) use (&$steps) {
+            try {
+                $steps[] = ['name' => $name, 'status' => 'ok', 'message' => (string) ($step() ?? 'Passed')];
+            } catch (\Throwable $e) {
+                $steps[] = ['name' => $name, 'status' => 'error', 'message' => $e->getMessage()];
+            }
+        };
+
+        /** Move this hour's requests out of the window without losing them. */
+        $emptyWindow = function () use ($windowFrom) {
+            SongRequest::where('created_at', '>=', $windowFrom)
+                ->update(['created_at' => now()->subHours(2)]);
+        };
+
+        DB::beginTransaction();
+        try {
+            $run('Limit setting and this hour’s usage', function () use ($baselineSetting, $windowFrom) {
+                $inWindow = SongRequest::where('created_at', '>=', $windowFrom)->count();
+                $oldest = SongRequest::where('created_at', '>=', $windowFrom)->orderBy('created_at')->first();
+                $nextSlot = $oldest ? $oldest->created_at->copy()->addHour()->format('H:i') : null;
+
+                return ($baselineSetting === 'true' ? 'Enabled' : 'Disabled')
+                    ." — {$inWindow}/5 used"
+                    .($nextSlot ? ", next slot at {$nextSlot}" : '');
+            });
+
+            // From here the limit is on, whatever the admin has configured, so
+            // the steps below behave the same on every run (rolled back with
+            // everything else).
+            Setting::updateOrCreate(
+                ['key' => 'song_request_limit_enabled'],
+                ['value' => 'true', 'group' => 'general']
+            );
+
+            $run('A guest can submit while the window is empty', function () use ($emptyWindow) {
+                $emptyWindow();
+                $response = $this->submitAsGuestSongRequest('Test Lab — under the limit');
+                $this->checkSongRequest(
+                    $response->getStatusCode() === 201,
+                    'Expected 201 while under the limit, got '.$response->getStatusCode()
+                );
+
+                return '201 Created';
+            });
+
+            $run('The sixth request in an hour is refused', function () use ($emptyWindow) {
+                $emptyWindow();
+                foreach (range(1, 5) as $i) {
+                    SongRequest::create([
+                        'guest_name' => "Test Lab {$i}",
+                        'song_data' => ['name' => "Filler {$i}", 'artist' => 'Test Lab'],
+                        'song_title' => "Filler {$i}",
+                        'artist' => 'Test Lab',
+                        'is_played' => false,
+                        'created_at' => now(),
+                    ]);
+                }
+
+                $response = $this->submitAsGuestSongRequest('Test Lab — over the limit');
+                $this->checkSongRequest(
+                    $response->getStatusCode() === 429,
+                    'Expected 429 once the window holds5, got '.$response->getStatusCode()
+                );
+
+                $payload = $response->getData(true);
+                $this->checkSongRequest(
+                    isset($payload['errors']['seconds_left']),
+                    'The 429 is missing seconds_left'
+                );
+                $this->checkSongRequest(
+                    str_contains((string) ($payload['message'] ?? ''), '5 per hour'),
+                    'The 429 message no longer explains the limit'
+                );
+
+                return '429 with seconds_left and the5-per-hour message';
+            });
+
+            $run('Switching the limit off lets guests through', function () use ($emptyWindow) {
+                Setting::updateOrCreate(
+                    ['key' => 'song_request_limit_enabled'],
+                    ['value' => 'false', 'group' => 'general']
+                );
+                $emptyWindow();
+                foreach (range(1, 5) as $i) {
+                    SongRequest::create([
+                        'guest_name' => "Test Lab {$i}",
+                        'song_data' => ['name' => "Filler {$i}", 'artist' => 'Test Lab'],
+                        'song_title' => "Filler {$i}",
+                        'artist' => 'Test Lab',
+                        'is_played' => false,
+                        'created_at' => now(),
+                    ]);
+                }
+
+                $response = $this->submitAsGuestSongRequest('Test Lab — limit switched off');
+                $this->checkSongRequest(
+                    $response->getStatusCode() === 201,
+                    'Expected 201 with the limit disabled, got '.$response->getStatusCode()
+                );
+
+                return '201 Created with the Settings toggle off';
+            });
+        } finally {
+            DB::rollBack();
+        }
+
+        $restored = SongRequest::count() === $baselineCount
+            && Setting::getValue('song_request_limit_enabled', 'true') === $baselineSetting;
+        $steps[] = [
+            'name' => 'Rollback restored everything',
+            'status' => $restored ? 'ok' : 'error',
+            'message' => $restored
+                ? 'Row count, timestamps and the toggle are exactly as before'
+                : 'Something survived the rollback — check the song_requests and settings tables',
+        ];
+
+        $passed = collect($steps)->where('status', 'ok')->count();
+        $failed = count($steps) - $passed;
+
+        return $this->successResponse([
+            'passed' => $passed,
+            'failed' => $failed,
+            'steps' => $steps,
+        ], $failed ? "{$failed} hourly limit check(s) failed" : "All {$passed} hourly limit checks passed");
+    }
+
+    /**
+     * Call the real public submit endpoint (SongRequestController::store)
+     * without going through HTTP, so the limit logic runs unmodified.
+     */
+    private function submitAsGuestSongRequest(string $title): \Illuminate\Http\JsonResponse
+    {
+        $request = Request::create('/api/song-requests', 'POST', [
+            'guest_name' => 'Test Lab',
+            'song_data' => ['name' => $title, 'artist' => 'Test Lab'],
+        ]);
+        $request->headers->set('Accept', 'application/json');
+
+        return app(SongRequestController::class)->store($request);
     }
 
     /**

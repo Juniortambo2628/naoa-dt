@@ -407,6 +407,7 @@ export const testLabService = {
   simulatePolaroid: (data) => api.post('/test/simulate/polaroid', data),
   simulateSongRequest: (data) => api.post('/test/simulate/song-request', data),
   songRequestChecks: () => api.post('/test/song-requests/checks'),
+  songRequestLimitChecks: () => api.post('/test/song-requests/limit-checks'),
 };
 
 // Emergency Numbers services

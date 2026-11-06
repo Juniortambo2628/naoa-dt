@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\SongRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -133,6 +134,75 @@ class TestLabSongRequestTest extends TestCase
 
         $this->actingAs($viewer, 'sanctum')
             ->postJson('/api/test/song-requests/checks')
+            ->assertStatus(403);
+
+        $this->assertDatabaseCount('song_requests', 0);
+    }
+
+    public function test_song_request_limit_checks_pass_and_roll_back(): void
+    {
+        // A real request sitting in the current hour: its timestamp must come
+        // back exactly as it was once the checks roll the transaction back.
+        $existing = SongRequest::factory()->create(['created_at' => now()]);
+        $originalCreatedAt = $existing->created_at->toDateTimeString();
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/test/song-requests/limit-checks');
+
+        $response->assertOk()
+            ->assertJsonPath('data.failed', 0)
+            ->assertJsonPath('data.passed', 5);
+
+        foreach ($response->json('data.steps') as $step) {
+            $this->assertSame('ok', $step['status'], "{$step['name']}: {$step['message']}");
+        }
+
+        // Nothing survived: the same row with the same timestamp.
+        $this->assertDatabaseCount('song_requests', 1);
+        $this->assertSame($originalCreatedAt, $existing->fresh()->created_at->toDateTimeString());
+    }
+
+    public function test_song_request_limit_checks_leave_a_disabled_toggle_disabled(): void
+    {
+        Setting::updateOrCreate(
+            ['key' => 'song_request_limit_enabled'],
+            ['value' => 'false', 'group' => 'general']
+        );
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/test/song-requests/limit-checks');
+
+        // The run turns the limit on for itself, then rolls that back too.
+        $response->assertOk()->assertJsonPath('data.failed', 0);
+
+        $this->assertSame('false', Setting::getValue('song_request_limit_enabled'));
+        $this->assertDatabaseCount('song_requests', 0);
+    }
+
+    public function test_song_request_limit_checks_report_the_configured_state(): void
+    {
+        Setting::updateOrCreate(
+            ['key' => 'song_request_limit_enabled'],
+            ['value' => 'false', 'group' => 'general']
+        );
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/test/song-requests/limit-checks');
+
+        $this->assertStringStartsWith('Disabled', $response->json('data.steps.0.message'));
+    }
+
+    public function test_song_request_limit_checks_require_signing_in(): void
+    {
+        $this->postJson('/api/test/song-requests/limit-checks')->assertStatus(401);
+    }
+
+    public function test_viewers_cannot_run_song_request_limit_checks(): void
+    {
+        $viewer = User::factory()->viewer()->create();
+
+        $this->actingAs($viewer, 'sanctum')
+            ->postJson('/api/test/song-requests/limit-checks')
             ->assertStatus(403);
 
         $this->assertDatabaseCount('song_requests', 0);

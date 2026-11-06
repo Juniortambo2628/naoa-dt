@@ -5,7 +5,7 @@ import {
   Mail, QrCode, Send, RefreshCw, CheckCircle, FlaskConical,
   Radio, Camera, Wifi, Database, HardDrive, Server, Bell,
   AlertTriangle, Check, X, Activity, Zap, BarChart3,
-  Cloud, Map, ExternalLink, Settings, Plane, Trash2, Music, ListChecks
+  Cloud, Map, ExternalLink, Settings, Plane, Trash2, Music, ListChecks, Timer
 } from 'lucide-react';
 import api, { guestService, testLabService, weatherService, tableService, settingService } from '../../services/api';
 import AdminCard from '../../components/admin/AdminCard';
@@ -42,6 +42,49 @@ function StatusBadge({ status, label }) {
   );
 }
 
+/** Checklist of steps returned by a Test Lab run (song request checks, hourly limits…). */
+function ChecklistCard({ title, results }) {
+  const passed = results.passed || 0;
+  const failed = results.failed || 0;
+  return (
+    <AdminCard className="mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
+            <ListChecks className="w-5 h-5 text-[#A67B5B]" />
+          </div>
+          <h2 className="text-lg font-medium text-stone-800">{title}</h2>
+        </div>
+        <span
+          className={`px-3 py-1 rounded-full text-sm font-medium ${
+            failed ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+          }`}
+        >
+          {passed}/{passed + failed} passed
+        </span>
+      </div>
+      <ul className="space-y-2">
+        {(results.steps || []).map((step) => (
+          <li
+            key={step.name}
+            className={`flex items-start gap-3 p-3 rounded-lg border ${
+              step.status === 'ok' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+            }`}
+          >
+            {step.status === 'ok'
+              ? <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+              : <X className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />}
+            <div>
+              <p className="text-sm font-medium text-stone-700">{step.name}</p>
+              <p className="text-xs text-stone-500">{step.message}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </AdminCard>
+  );
+}
+
 const SECTIONS = [
   { id: 'health', label: 'API Status', icon: Activity, description: 'Health of the API and its services' },
   { id: 'simulate', label: 'Simulations', icon: Radio, description: 'Live updates, polaroids and song requests' },
@@ -68,6 +111,7 @@ export default function AdminTestLab() {
   const [songArtist, setSongArtist] = useState('');
   const [songGuest, setSongGuest] = useState('');
   const [songChecks, setSongChecks] = useState(null);
+  const [limitChecks, setLimitChecks] = useState(null);
 
   // API test states
   const [weatherResult, setWeatherResult] = useState(null);
@@ -221,6 +265,34 @@ export default function AdminTestLab() {
     setSongChecks(null);
     addLog('Running song request feature tests...', 'info');
     await runSongChecks.run();
+    setLoading(false);
+  };
+
+  // --- Hourly Song Request Limit Tests ---
+  // Exercises the real "5 per hour" guest limit against the public submit
+  // endpoint, inside a transaction that is always rolled back — real
+  // requests, their timestamps and the Settings toggle come back untouched.
+  const runLimitChecks = useAdminAction(() => testLabService.songRequestLimitChecks(), {
+    key: () => 'song-limit-checks',
+    error: false,
+    onSuccess: (res) => {
+      const data = res?.data || {};
+      setLimitChecks(data);
+      const total = (data.passed || 0) + (data.failed || 0);
+      addLog(
+        data.failed
+          ? `${data.failed} of ${total} hourly limit checks failed`
+          : `All ${total} hourly limit checks passed`,
+        data.failed ? 'error' : 'success',
+      );
+    },
+    onError: logFailure,
+  });
+  const handleRunLimitChecks = async () => {
+    setLoading(true);
+    setLimitChecks(null);
+    addLog('Running the5-per-hour song request limit tests...', 'info');
+    await runLimitChecks.run();
     setLoading(false);
   };
 
@@ -531,59 +603,34 @@ export default function AdminTestLab() {
             >
               Submit Test Request
             </Button>
-            <Button edit
-              icon={ListChecks}
-              fullWidth
-              onClick={handleRunSongChecks}
-              disabled={loading}
-            >
-              Run Song Request Tests
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button edit
+                variant="secondary"
+                icon={ListChecks}
+                onClick={handleRunSongChecks}
+                disabled={loading}
+              >
+                Run Feature Tests
+              </Button>
+              <Button edit
+                icon={Timer}
+                onClick={handleRunLimitChecks}
+                disabled={loading}
+              >
+                Hourly Limit Tests
+              </Button>
+            </div>
             <p className="text-xs text-stone-400 text-center">
-              Skips the guest rate limit and sends no admin notification
+              Simulations skip the rate limit and notify nobody; limit tests run in a
+              transaction and roll back, so real requests are untouched
             </p>
           </div>
         </AdminCard>
       </div>
 
-      {/* Song Request Test Results */}
-      {songChecks && (
-        <AdminCard className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
-                <ListChecks className="w-5 h-5 text-[#A67B5B]" />
-              </div>
-              <h2 className="text-lg font-medium text-stone-800">Song Request Test Results</h2>
-            </div>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                songChecks.failed ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-              }`}
-            >
-              {songChecks.passed || 0}/{(songChecks.passed || 0) + (songChecks.failed || 0)} passed
-            </span>
-          </div>
-          <ul className="space-y-2">
-            {(songChecks.steps || []).map((step) => (
-              <li
-                key={step.name}
-                className={`flex items-start gap-3 p-3 rounded-lg border ${
-                  step.status === 'ok' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                }`}
-              >
-                {step.status === 'ok'
-                  ? <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                  : <X className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />}
-                <div>
-                  <p className="text-sm font-medium text-stone-700">{step.name}</p>
-                  <p className="text-xs text-stone-500">{step.message}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </AdminCard>
-      )}
+      {/* Test Results */}
+      {songChecks && <ChecklistCard title="Song Request Test Results" results={songChecks} />}
+      {limitChecks && <ChecklistCard title="Hourly Limit Test Results" results={limitChecks} />}
       </>)}
 
       {section === 'apis' && (<>

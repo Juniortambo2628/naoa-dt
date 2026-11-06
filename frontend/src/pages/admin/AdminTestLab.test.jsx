@@ -86,7 +86,7 @@ describe('Test Lab — song request tests', () => {
     renderPage()
     openSimulations()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run Song Request Tests' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Run Feature Tests' }))
 
     await waitFor(() => expect(testLabService.songRequestChecks).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(screen.getByText('Song Request Test Results')).toBeInTheDocument())
@@ -96,6 +96,33 @@ describe('Test Lab — song request tests', () => {
     expect(screen.getByText('Mark as played')).toBeInTheDocument()
     expect(screen.getByText('Delete and leave no trace')).toBeInTheDocument()
     expect(screen.getByText(/All 6 song request checks passed/)).toBeInTheDocument()
+  })
+
+  it('runs the hourly limit tests and renders their checklist', async () => {
+    vi.spyOn(testLabService, 'songRequestLimitChecks').mockResolvedValue({
+      data: {
+        passed: 5,
+        failed: 0,
+        steps: [
+          { name: 'Limit setting and this hours usage', status: 'ok', message: 'Enabled — 2/5 used' },
+          { name: 'A guest can submit while the window is empty', status: 'ok', message: '201 Created' },
+          { name: 'The sixth request in an hour is refused', status: 'ok', message: '429 with seconds_left' },
+          { name: 'Rollback restored everything', status: 'ok', message: 'Row count, timestamps and the toggle are exactly as before' },
+        ],
+      },
+    })
+
+    renderPage()
+    openSimulations()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hourly Limit Tests' }))
+
+    await waitFor(() => expect(testLabService.songRequestLimitChecks).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(screen.getByText('Hourly Limit Test Results')).toBeInTheDocument())
+
+    expect(screen.getByText('5/5 passed')).toBeInTheDocument()
+    expect(screen.getByText('429 with seconds_left')).toBeInTheDocument()
+    expect(screen.getByText(/All 5 hourly limit checks passed/)).toBeInTheDocument()
   })
 
   it('shows a failed run red in the checklist', async () => {
@@ -113,7 +140,7 @@ describe('Test Lab — song request tests', () => {
     renderPage()
     openSimulations()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run Song Request Tests' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Run Feature Tests' }))
 
     await waitFor(() => expect(screen.getByText('5/6 passed')).toBeInTheDocument())
     expect(screen.getByText('Stats do not count it as pending')).toBeInTheDocument()
