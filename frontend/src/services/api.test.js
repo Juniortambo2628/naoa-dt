@@ -92,6 +92,11 @@ describe('api services', () => {
       data: { guest_code: 'ABC1234' },
     })
 
+    await polaroidService.markViewed(9, { guest_code: 'ABC1234' })
+    expect(post).toHaveBeenLastCalledWith('/polaroid-images/9/viewed', {
+      guest_code: 'ABC1234',
+    })
+
     vi.restoreAllMocks()
   })
 })

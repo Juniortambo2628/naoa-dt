@@ -6,7 +6,9 @@ use App\Events\PolaroidImageCreated;
 use App\Http\Controllers\Controller;
 use App\Models\PolaroidImage;
 use App\Models\PolaroidReaction;
+use App\Models\PolaroidView;
 use App\Services\ImageOptimizer;
+use App\Traits\AdminNotifiable;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +18,7 @@ use Illuminate\Validation\Rule;
 
 class PolaroidImageController extends Controller
 {
-    use ApiResponse;
+    use AdminNotifiable, ApiResponse;
 
     /** The reactions a story offers — one bounded set, UI and API agree. */
     public const REACTIONS = ['❤️', '😂', '👏', '🔥', '😮', '😍', '🎉', '🥳'];
@@ -97,17 +99,21 @@ class PolaroidImageController extends Controller
             'guest_name' => 'required|string|max:100',
             'guest_code' => 'nullable|string|max:64',
             'caption' => 'nullable|string|max:500',
+            // Optional per-photo captions, aligned with `images` by index;
+            // anything without one falls back to the batch `caption`.
+            'captions' => 'nullable|array|max:10',
+            'captions.*' => 'nullable|string|max:500',
             'location' => 'nullable|string|max:255',
         ]);
 
         $created = [];
 
-        foreach ($request->file('images') as $file) {
+        foreach ($request->file('images') as $index => $file) {
             $path = ImageOptimizer::optimize($file)->store('polaroids', 'public');
 
             $polaroid = PolaroidImage::create([
                 'image_path' => '/storage/'.$path,
-                'caption' => $request->caption,
+                'caption' => $request->captions[$index] ?? $request->caption,
                 'location' => $request->location,
                 'guest_name' => $request->guest_name,
                 'guest_code' => $request->guest_code,
@@ -131,7 +137,7 @@ class PolaroidImageController extends Controller
     {
         $viewerCode = trim((string) $request->query('guest_code')) ?: null;
 
-        $items = PolaroidImage::with('reactions')->orderBy('taken_at')->orderBy('id')->get();
+        $items = PolaroidImage::with('reactions')->withCount('views')->orderBy('taken_at')->orderBy('id')->get();
 
         $grouped = $items->groupBy(fn (PolaroidImage $polaroid) => $polaroid->guest_code ?: 'couple');
 
@@ -171,12 +177,22 @@ class PolaroidImageController extends Controller
         $guestCode = $request->guest_code ?: null;
         $guestName = $request->guest_name ?: null;
 
-        PolaroidReaction::updateOrCreate(
+        $reaction = PolaroidReaction::updateOrCreate(
             $guestCode
                 ? ['polaroid_image_id' => $polaroid->id, 'guest_code' => $guestCode]
                 : ['polaroid_image_id' => $polaroid->id, 'guest_code' => null, 'guest_name' => $guestName],
             ['emoji' => $request->emoji, 'guest_name' => $guestName],
         );
+
+        // A brand-new tap is worth a bell ping; changing your mind isn't.
+        if ($reaction?->wasRecentlyCreated) {
+            $this->notifyAdmin(
+                'PolaroidReaction',
+                'Someone reacted to a photo',
+                ($guestName ?: 'A guest').' reacted '.$request->emoji.' to a photo in Captured Moments',
+                'camera',
+            );
+        }
 
         return $this->successResponse(
             $polaroid->fresh(['reactions'])->reactionsSummary($guestCode),
@@ -221,7 +237,35 @@ class PolaroidImageController extends Controller
             'author' => $polaroid->guest_name ?: 'The couple',
             'taken_at' => $polaroid->taken_at ? Carbon::parse($polaroid->taken_at)->toIso8601String() : null,
             'reactions' => $polaroid->reactionsSummary($viewerCode),
+            'views' => (int) ($polaroid->views_count ?? $polaroid->views()->count()),
         ];
+    }
+
+    /**
+     * Record that a device watched a photo (the "seen by" count the couple
+     * sees on a story). Replays update the same row rather than counting.
+     */
+    public function viewed(Request $request, PolaroidImage $polaroid): JsonResponse
+    {
+        $request->validate([
+            'guest_code' => 'required_without:guest_name|nullable|string|max:64',
+            'guest_name' => 'required_without:guest_code|nullable|string|max:100',
+        ]);
+
+        $guestCode = $request->guest_code ?: null;
+        $guestName = $request->guest_name ?: null;
+
+        PolaroidView::updateOrCreate(
+            $guestCode
+                ? ['polaroid_image_id' => $polaroid->id, 'guest_code' => $guestCode]
+                : ['polaroid_image_id' => $polaroid->id, 'guest_code' => null, 'guest_name' => $guestName],
+            ['guest_name' => $guestName],
+        );
+
+        return $this->successResponse([
+            'views' => $polaroid->views()->count(),
+            'viewed' => true,
+        ]);
     }
 
     public function update(Request $request, PolaroidImage $polaroid): JsonResponse

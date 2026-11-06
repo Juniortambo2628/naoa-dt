@@ -23,6 +23,10 @@ const pickFiles = (files) => {
 }
 
 describe('SnapStudio', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('falls back to the file picker when there is no camera', async () => {
     openStudio()
 
@@ -52,7 +56,7 @@ describe('SnapStudio', () => {
     await screen.findByText('Camera unavailable')
     pickFiles([jpg('a.jpg')])
 
-    fireEvent.change(screen.getByPlaceholderText(/Add a caption/), {
+    fireEvent.change(screen.getByPlaceholderText(/Default caption/), {
       target: { value: 'Sunset drinks' },
     })
     fireEvent.click(screen.getByRole('button', { name: /^Share/ }))
@@ -93,5 +97,27 @@ describe('SnapStudio', () => {
     expect(await screen.findAllByLabelText('Remove this photo from the selection')).toHaveLength(10)
     expect(screen.getByText(/maximum of 10 per share/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Share/ })).toHaveTextContent('Share 10')
+  })
+
+  it('sends a caption per photo, aligned with the images', async () => {
+    const batchUpload = vi.spyOn(polaroidService, 'batchUpload').mockResolvedValue({ data: [{}] })
+
+    openStudio()
+    await screen.findByText('Camera unavailable')
+    pickFiles([jpg('a.jpg'), jpg('b.jpg')])
+
+    const captions = screen.getAllByLabelText('Caption for this photo')
+    expect(captions).toHaveLength(2)
+    fireEvent.change(captions[0], { target: { value: 'First one' } })
+
+    fireEvent.click(screen.getByRole('button', { name: /^Share/ }))
+
+    await waitFor(() => expect(batchUpload).toHaveBeenCalledTimes(1))
+
+    const [form] = batchUpload.mock.calls[0]
+    expect(form.getAll('images[]')).toHaveLength(2)
+    expect(form.getAll('captions[]')).toEqual(['First one', ''])
+    // No batch caption typed, so the empty slots fall back server-side.
+    expect(form.get('caption')).toBeNull()
   })
 })

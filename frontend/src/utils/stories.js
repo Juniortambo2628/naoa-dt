@@ -10,6 +10,22 @@ export const REACTIONS = ['❤️', '😂', '👏', '🔥', '😮', '😍', '�
 /** Milliseconds each photo is on screen before auto-advancing. */
 export const STORY_DURATION_MS = 5000;
 
+/** A story is "today" when its newest photo landed within the last 24h. */
+export const FRESH_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * @param {?string} latestAt  `taken_at`/`created_at` from the API — either
+ *   ISO (`2026-11-06T07:22:30+00:00`) or SQL (`2026-11-06 07:22:30`).
+ *   SQL form is parsed as local time (close enough for a 24h bucket).
+ */
+export function isFresh(latestAt, now = Date.now()) {
+  if (!latestAt) return false;
+  const value = String(latestAt);
+  const iso = value.includes('T') ? value : value.replace(' ', 'T');
+  const time = Date.parse(iso);
+  return Number.isNaN(time) ? false : time >= now - FRESH_WINDOW_MS;
+}
+
 const SEEN_KEY = 'polaroidStoriesSeen';
 const SEEN_CAP = 300;
 

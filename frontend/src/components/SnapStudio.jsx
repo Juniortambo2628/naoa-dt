@@ -137,6 +137,7 @@ export default function SnapStudio({ guestCode, guestName, onClose }) {
             url,
             file: new File([blob], `snap-${prev.length + 1}.jpg`, { type: 'image/jpeg' }),
             selected: true,
+            caption: '',
           },
         ];
       });
@@ -173,6 +174,7 @@ export default function SnapStudio({ guestCode, guestName, onClose }) {
         url: objectUrl(file),
         file,
         selected: true,
+        caption: '',
       }));
       return [...prev, ...added];
     });
@@ -181,6 +183,9 @@ export default function SnapStudio({ guestCode, guestName, onClose }) {
 
   const toggleShot = (id) =>
     setShots((prev) => prev.map((s) => (s.id === id ? { ...s, selected: !s.selected } : s)));
+
+  const setCaptionFor = (id, value) =>
+    setShots((prev) => prev.map((s) => (s.id === id ? { ...s, caption: value } : s)));
 
   const backToCamera = () => {
     setError(null);
@@ -210,6 +215,9 @@ export default function SnapStudio({ guestCode, guestName, onClose }) {
 
       const form = new FormData();
       compressed.forEach((file) => form.append('images[]', file));
+      // One caption per photo, in the same order as the images (empty when
+      // the guest left it blank, so the API can fall back to the default).
+      selected.forEach((shot) => form.append('captions[]', shot.caption || ''));
       form.append('guest_name', guestName || 'Wedding Guest');
       if (guestCode) form.append('guest_code', guestCode);
       if (caption.trim()) form.append('caption', caption.trim());
@@ -326,25 +334,38 @@ export default function SnapStudio({ guestCode, guestName, onClose }) {
         <div className="flex-1 overflow-y-auto px-4 py-3">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {shots.map((shot) => (
-              <button
-                key={shot.id}
-                type="button"
-                onClick={() => toggleShot(shot.id)}
-                aria-pressed={shot.selected}
-                aria-label={shot.selected ? 'Remove this photo from the selection' : 'Keep this photo'}
-                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition ${
-                  shot.selected ? 'border-[#A67B5B]' : 'border-white/20 opacity-40'
-                }`}
-              >
-                <img src={shot.url} alt="" className="w-full h-full object-cover" />
-                <span
-                  className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center ${
-                    shot.selected ? 'bg-[#A67B5B] text-white' : 'bg-black/60 text-white'
+              <div key={shot.id}>
+                <button
+                  type="button"
+                  onClick={() => toggleShot(shot.id)}
+                  aria-pressed={shot.selected}
+                  aria-label={shot.selected ? 'Remove this photo from the selection' : 'Keep this photo'}
+                  className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition ${
+                    shot.selected ? 'border-[#A67B5B]' : 'border-white/20 opacity-40'
                   }`}
                 >
-                  {shot.selected ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                </span>
-              </button>
+                  <img src={shot.url} alt="" className="w-full h-full object-cover" />
+                  <span
+                    className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center ${
+                      shot.selected ? 'bg-[#A67B5B] text-white' : 'bg-black/60 text-white'
+                    }`}
+                  >
+                    {shot.selected ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                  </span>
+                </button>
+
+                {shot.selected && (
+                  <input
+                    type="text"
+                    value={shot.caption}
+                    onChange={(e) => setCaptionFor(shot.id, e.target.value)}
+                    maxLength={500}
+                    placeholder="Caption (optional)"
+                    aria-label="Caption for this photo"
+                    className="mt-1.5 w-full px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]"
+                  />
+                )}
+              </div>
             ))}
           </div>
 
@@ -353,7 +374,7 @@ export default function SnapStudio({ guestCode, guestName, onClose }) {
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             maxLength={500}
-            placeholder="Add a caption for these photos (optional)"
+            placeholder="Default caption for photos without one (optional)"
             className="mt-4 w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]"
           />
 

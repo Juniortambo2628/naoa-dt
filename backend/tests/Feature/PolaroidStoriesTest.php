@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\PolaroidImage;
 use App\Models\PolaroidReaction;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -223,5 +224,109 @@ class PolaroidStoriesTest extends TestCase
         $this->assertSame('Nelly Okanda', $item['guest_name']);
         $this->assertSame(1, $item['reactions']['count']);
         $this->assertNull($item['reactions']['mine']);
+    }
+
+    public function test_per_photo_captions_are_stored_by_index(): void
+    {
+        $response = $this->postJson('/api/polaroid-images/batch', [
+            'images' => [
+                UploadedFile::fake()->image('one.jpg', 640, 480),
+                UploadedFile::fake()->image('two.jpg', 640, 480),
+                UploadedFile::fake()->image('three.jpg', 640, 480),
+            ],
+            'captions' => ['First one', ''],
+            'caption' => 'The batch caption',
+            'guest_name' => 'Nelly Okanda',
+            'guest_code' => 'AAAA1111',
+        ]);
+
+        $response->assertStatus(201);
+        $items = $response->json('data');
+
+        $this->assertSame('First one', $items[0]['caption']);
+        // An empty slot falls back to the batch caption…
+        $this->assertSame('The batch caption', $items[1]['caption']);
+        // …and so does anything past the captions array.
+        $this->assertSame('The batch caption', $items[2]['caption']);
+
+        $this->forgetStoredImages($items);
+    }
+
+    public function test_views_count_once_per_device_and_appear_in_stories(): void
+    {
+        $polaroid = PolaroidImage::create(['image_path' => '/storage/polaroids/a.jpg', 'taken_at' => '2026-11-02 10:00:00']);
+
+        $this->postJson("/api/polaroid-images/{$polaroid->id}/viewed", ['guest_code' => 'AAAA1111'])
+            ->assertOk()
+            ->assertJsonPath('data.views', 1);
+
+        // Watching again must not inflate the count.
+        $this->postJson("/api/polaroid-images/{$polaroid->id}/viewed", ['guest_code' => 'AAAA1111'])
+            ->assertOk()
+            ->assertJsonPath('data.views', 1);
+
+        $this->postJson("/api/polaroid-images/{$polaroid->id}/viewed", ['guest_code' => 'BBBB2222'])
+            ->assertOk()
+            ->assertJsonPath('data.views', 2);
+
+        $stories = $this->getJson('/api/polaroid-images/stories')->json('data.stories');
+        $this->assertSame(2, $stories[0]['items'][0]['views']);
+    }
+
+    public function test_viewed_needs_some_identifier(): void
+    {
+        $polaroid = PolaroidImage::create(['image_path' => '/storage/polaroids/a.jpg', 'taken_at' => '2026-11-02 10:00:00']);
+
+        $this->postJson("/api/polaroid-images/{$polaroid->id}/viewed", [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['guest_code', 'guest_name']);
+
+        $this->assertDatabaseCount('polaroid_views', 0);
+    }
+
+    public function test_simulate_polaroid_provides_its_placeholder_image(): void
+    {
+        $path = storage_path('app/public/polaroids/placeholder.svg');
+        $existed = file_exists($path);
+
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/test/simulate/polaroid', [
+                'note' => 'First dance',
+                'location' => 'Main Hall',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.image_path', '/storage/polaroids/placeholder.svg');
+
+        // storage/ never ships with a release, so the simulate writes it.
+        $this->assertFileExists($path);
+
+        if (! $existed) {
+            @unlink($path);
+        }
+    }
+
+    public function test_a_new_reaction_pings_the_admin_but_changing_it_does_not(): void
+    {
+        $polaroid = PolaroidImage::create(['image_path' => '/storage/polaroids/a.jpg', 'taken_at' => '2026-11-02 10:00:00']);
+
+        $this->postJson("/api/polaroid-images/{$polaroid->id}/reactions", [
+            'emoji' => '❤️',
+            'guest_name' => 'Nelly',
+            'guest_code' => 'AAAA1111',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('notifications', ['type' => 'PolaroidReaction']);
+        $this->assertSame(1, \App\Models\Notification::where('type', 'PolaroidReaction')->count());
+
+        // Changing the emoji updates in place: no second ping.
+        $this->postJson("/api/polaroid-images/{$polaroid->id}/reactions", [
+            'emoji' => '🔥',
+            'guest_name' => 'Nelly',
+            'guest_code' => 'AAAA1111',
+        ])->assertOk();
+
+        $this->assertSame(1, \App\Models\Notification::where('type', 'PolaroidReaction')->count());
     }
 }

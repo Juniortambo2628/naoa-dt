@@ -1,13 +1,16 @@
 import { useMemo } from 'react';
 import { Play } from 'lucide-react';
 import { getAssetUrl } from '../utils/assetUrl';
-import { getSeenIds } from '../utils/stories';
+import { getSeenIds, isFresh } from '../utils/stories';
 import { buttonClass } from './buttonStyles';
 
 /**
  * The story tray above the polaroid feed: one circle per author (newest
  * photo as the thumb), a gradient ring for anything unwatched, and a
  * "Watch all" shortcut into the viewer.
+ *
+ * Stories split into **Today** (newest photo within the last 24h) and
+ * **Earlier**, so the wedding day's story leads without hiding the rest.
  *
  * `seenTick` is bumped by the parent whenever the viewer closes, so the rings
  * refresh without refetching.
@@ -25,6 +28,57 @@ export default function StoryTray({ stories, onOpen, seenTick = 0 }) {
   if (!stories?.length) return null;
 
   const unseen = stories.filter((story) => story.items?.some((item) => !seen.has(item.id)));
+  const indexed = stories.map((story, index) => ({ story, index }));
+  const today = indexed.filter(({ story }) => isFresh(story.latest_at));
+  const earlier = indexed.filter(({ story }) => !isFresh(story.latest_at));
+
+  const renderStory = ({ story, index }) => {
+    const watched = !story.items?.some((item) => !seen.has(item.id));
+    const thumb = story.items[story.items.length - 1];
+
+    return (
+      <button
+        key={story.key}
+        type="button"
+        onClick={() => onOpen(index)}
+        aria-label={`Watch ${story.author}'s story${watched ? '' : ', new photos'}`}
+        className="flex flex-col items-center gap-1 w-16 shrink-0 group focus:outline-none"
+      >
+        <span
+          className={`p-0.5 rounded-full transition ${
+            watched
+              ? 'bg-stone-300'
+              : 'bg-gradient-to-tr from-[#A67B5B] via-[#C9A184] to-[#E8CBA9]'
+          }`}
+        >
+          <span className="block w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
+            <img
+              src={getAssetUrl(thumb.image)}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </span>
+        </span>
+        <span className="text-[11px] text-stone-600 truncate w-16 text-center">
+          {story.author}
+        </span>
+        {!watched && <span className="w-1.5 h-1.5 rounded-full bg-[#A67B5B]" aria-hidden="true" />}
+      </button>
+    );
+  };
+
+  const section = (label, entries) =>
+    entries.length > 0 && (
+      <div className="mb-3 last:mb-0">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-2">
+          {label}
+        </p>
+        <div className="flex gap-4 overflow-x-auto pb-1 -mx-1 px-1">
+          {entries.map(renderStory)}
+        </div>
+      </div>
+    );
 
   return (
     <div className="mb-8">
@@ -39,49 +93,17 @@ export default function StoryTray({ stories, onOpen, seenTick = 0 }) {
           Watch all
           {unseen.length > 0 && (
             <span className="ml-0.5 min-w-4 h-4 px-1 rounded-full bg-white/25 text-[10px] flex items-center justify-center tabular-nums">
-              {unseen.reduce((sum, story) => sum + story.items.filter((item) => !seen.has(item.id)).length, 0)}
+              {unseen.reduce(
+                (sum, story) => sum + story.items.filter((item) => !seen.has(item.id)).length,
+                0,
+              )}
             </span>
           )}
         </button>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-1 -mx-1 px-1">
-        {stories.map((story, index) => {
-          const watched = !story.items?.some((item) => !seen.has(item.id));
-          const thumb = story.items[story.items.length - 1];
-
-          return (
-            <button
-              key={story.key}
-              type="button"
-              onClick={() => onOpen(index)}
-              aria-label={`Watch ${story.author}'s story${watched ? '' : ', new photos'}`}
-              className="flex flex-col items-center gap-1 w-16 shrink-0 group focus:outline-none"
-            >
-              <span
-                className={`p-0.5 rounded-full transition ${
-                  watched
-                    ? 'bg-stone-300'
-                    : 'bg-gradient-to-tr from-[#A67B5B] via-[#C9A184] to-[#E8CBA9]'
-                }`}
-              >
-                <span className="block w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
-                  <img
-                    src={getAssetUrl(thumb.image)}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </span>
-              </span>
-              <span className="text-[11px] text-stone-600 truncate w-16 text-center">
-                {story.author}
-              </span>
-              {!watched && <span className="w-1.5 h-1.5 rounded-full bg-[#A67B5B]" aria-hidden="true" />}
-            </button>
-          );
-        })}
-      </div>
+      {section('Today', today)}
+      {section('Earlier', earlier)}
     </div>
   );
 }

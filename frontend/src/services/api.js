@@ -371,6 +371,7 @@ export const polaroidService = {
   }),
   addReaction: (id, data) => api.post(`/polaroid-images/${id}/reactions`, data),
   removeReaction: (id, data) => api.delete(`/polaroid-images/${id}/reactions`, { data }),
+  markViewed: (id, data) => api.post(`/polaroid-images/${id}/viewed`, data),
 };
 
 // Enquiry services
