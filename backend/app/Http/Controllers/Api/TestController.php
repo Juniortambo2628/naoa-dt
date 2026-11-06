@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\Guest;
 use App\Models\LiveUpdate;
 use App\Models\PolaroidImage;
+use App\Models\SongRequest;
 use App\Models\Table;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -88,6 +89,7 @@ class TestController extends Controller
             'polaroid_images' => PolaroidImage::count(),
             'schedule_events' => Event::count(),
             'live_updates' => LiveUpdate::count(),
+            'song_requests' => SongRequest::count(),
         ]);
     }
 
@@ -135,6 +137,127 @@ class TestController extends Controller
         }
 
         return $this->successResponse($image, 'Polaroid simulated');
+    }
+
+    /**
+     * Simulate a guest song request from the Test Lab.
+     *
+     * Goes straight to the database: it skips the guest rate limit and does
+     * not raise an admin notification, so test data never pings anyone.
+     */
+    public function simulateSongRequest(Request $request)
+    {
+        $request->validate([
+            'song_title' => 'required|string|max:255',
+            'artist' => 'nullable|string|max:255',
+            'guest_name' => 'nullable|string|max:100',
+        ]);
+
+        $artist = $request->artist ?: 'Test Lab';
+        $guestName = $request->guest_name ?: 'Test Lab';
+
+        $song = SongRequest::create([
+            'guest_name' => $guestName,
+            'song_data' => ['name' => $request->song_title, 'artist' => $artist],
+            'song_title' => $request->song_title,
+            'artist' => $artist,
+            'is_played' => false,
+        ]);
+
+        return $this->createdResponse($song, 'Song request simulated — open the Song Requests page to see it');
+    }
+
+    /**
+     * Walk the song request feature end to end (create → list → stats →
+     * played → unplayed → delete) and report how each step went.
+     *
+     * Everything it creates it deletes again, so running this on production
+     * leaves no test rows behind.
+     */
+    public function songRequestChecks()
+    {
+        $baseline = SongRequest::count();
+        $steps = [];
+        $song = null;
+
+        $run = function (string $name, callable $step) use (&$steps) {
+            try {
+                $steps[] = ['name' => $name, 'status' => 'ok', 'message' => (string) ($step() ?? 'Passed')];
+            } catch (\Throwable $e) {
+                $steps[] = ['name' => $name, 'status' => 'error', 'message' => $e->getMessage()];
+            }
+        };
+
+        $run('Create a test request', function () use (&$song) {
+            $song = SongRequest::create([
+                'guest_name' => 'Test Lab',
+                'song_data' => ['name' => 'Test Lab Song', 'artist' => 'Test Lab Artist'],
+                'song_title' => 'Test Lab Song',
+                'artist' => 'Test Lab Artist',
+                'is_played' => false,
+            ]);
+            $this->checkSongRequest($song->exists && $song->id !== null, 'The record was not saved');
+
+            return "Saved request #{$song->id}";
+        });
+
+        $run('Appears in the guest list', function () use ($song) {
+            $this->checkSongRequest($song !== null && SongRequest::whereKey($song->id)->exists(), 'Not found after saving');
+
+            return 'Present in '.SongRequest::count().' request(s)';
+        });
+
+        $run('Counted as pending in the stats', function () use ($song) {
+            $this->checkSongRequest(
+                $song !== null && SongRequest::whereKey($song->id)->where('is_played', false)->exists(),
+                'Stats do not count it as pending'
+            );
+
+            return 'Pending stats include it';
+        });
+
+        $run('Mark as played', function () use ($song) {
+            $song->update(['is_played' => true, 'played_at' => now()]);
+            $song->refresh();
+            $this->checkSongRequest($song->is_played === true, 'is_played was not set');
+            $this->checkSongRequest($song->played_at !== null, 'played_at was not set');
+
+            return 'is_played=true with played_at';
+        });
+
+        $run('Mark as not played again', function () use ($song) {
+            $song->update(['is_played' => false, 'played_at' => null]);
+            $song->refresh();
+            $this->checkSongRequest($song->is_played === false, 'is_played was not cleared');
+            $this->checkSongRequest($song->played_at === null, 'played_at was not cleared');
+
+            return 'Back to pending';
+        });
+
+        $run('Delete and leave no trace', function () use ($song, $baseline) {
+            $song->delete();
+            $this->checkSongRequest(! SongRequest::whereKey($song->id)->exists(), 'The record still exists');
+            $this->checkSongRequest(SongRequest::count() === $baseline, "Row count changed (expected {$baseline})");
+
+            return 'Cleaned up';
+        });
+
+        $passed = collect($steps)->where('status', 'ok')->count();
+        $failed = count($steps) - $passed;
+
+        return $this->successResponse([
+            'passed' => $passed,
+            'failed' => $failed,
+            'steps' => $steps,
+        ], $failed ? "{$failed} song request check(s) failed" : "All {$passed} song request checks passed");
+    }
+
+    /** Assert inside a check step; failures are reported, not thrown at the client. */
+    private function checkSongRequest(bool $condition, string $message): void
+    {
+        if (! $condition) {
+            throw new \RuntimeException($message);
+        }
     }
 
     /**
