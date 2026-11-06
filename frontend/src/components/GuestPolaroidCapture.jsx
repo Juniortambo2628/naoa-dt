@@ -3,35 +3,8 @@ import { motion } from 'framer-motion';
 import { Camera, Check, RefreshCw, Upload } from 'lucide-react';
 import { galleryService } from '../services/api';
 import { useGuestByCode } from '../hooks/useApiHooks';
+import { compressImage } from '../utils/compressImage';
 import Button from './Button';
-
-/**
- * Downscale a captured photo so uploads stay snappy and within the backend's
- * 5MB limit. Falls back to the original file if the canvas path is unavailable.
- */
-async function downscaleImage(file, maxDim = 1600, quality = 0.85) {
-  try {
-    if (typeof createImageBitmap !== 'function') return file;
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
-    // Small enough already — don't re-encode.
-    if (scale === 1 && file.size < 4 * 1024 * 1024) {
-      bitmap.close?.();
-      return file;
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close?.();
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
-    if (!blob) return file;
-    return new File([blob], 'polaroid.jpg', { type: 'image/jpeg' });
-  } catch {
-    return file;
-  }
-}
 
 /**
  * Guest "Polaroid" quick action: snap a photo with the device camera, add a
@@ -83,7 +56,7 @@ export default function GuestPolaroidCapture({ guestCode }) {
     setStatus('uploading');
     setError(null);
     try {
-      const image = await downscaleImage(file);
+      const image = await compressImage(file, { maxWidthOrHeight: 2048, maxSizeMB: 6 });
       const form = new FormData();
       form.append('image', image);
       form.append('guest_name', guest?.name || 'Wedding Guest');

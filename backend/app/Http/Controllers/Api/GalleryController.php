@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\GalleryItem;
+use App\Services\ImageOptimizer;
 use App\Traits\ApiResponse;
 use App\Traits\NormalizesUrls;
 use App\Traits\Reorderable;
@@ -85,14 +86,14 @@ class GalleryController extends Controller
     public function guestUpload(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|max:5120', // 5MB max
+            'image' => ImageOptimizer::RULE,
             'guest_name' => 'required|string|max:100',
             'caption' => 'nullable|string|max:255',
         ]);
 
         // Store directly under public/ (same as MediaController) so the file is
         // served without relying on the storage symlink or APP_URL host.
-        $file = $request->file('image');
+        $file = ImageOptimizer::optimize($request->file('image'));
         $filename = time().'_'.Str::random(10).'.'.($file->guessExtension() ?: 'jpg');
         $file->move(public_path('uploads/guest-uploads'), $filename);
         $url = '/uploads/guest-uploads/'.$filename;
