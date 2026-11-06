@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\PolaroidImage;
 use App\Models\PolaroidReaction;
+use App\Models\PolaroidView;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -328,5 +329,99 @@ class PolaroidStoriesTest extends TestCase
         ])->assertOk();
 
         $this->assertSame(1, \App\Models\Notification::where('type', 'PolaroidReaction')->count());
+    }
+
+    public function test_a_guest_can_list_only_their_own_photos(): void
+    {
+        PolaroidImage::create(['image_path' => '/storage/polaroids/mine1.jpg', 'taken_at' => '2026-11-02 10:00:00', 'guest_code' => 'AAAA1111']);
+        PolaroidImage::create(['image_path' => '/storage/polaroids/mine2.jpg', 'taken_at' => '2026-11-02 11:00:00', 'guest_code' => 'AAAA1111']);
+        PolaroidImage::create(['image_path' => '/storage/polaroids/theirs.jpg', 'taken_at' => '2026-11-02 12:00:00', 'guest_code' => 'BBBB2222']);
+
+        $response = $this->getJson('/api/polaroid-images/mine?guest_code=AAAA1111')->assertOk();
+
+        $this->assertCount(2, $response->json('data'));
+        $paths = array_column($response->json('data'), 'image_path');
+        $this->assertNotContains('/storage/polaroids/theirs.jpg', $paths);
+        // Newest first, so the manage grid reads in share order.
+        $this->assertSame('/storage/polaroids/mine2.jpg', $paths[0]);
+    }
+
+    public function test_mine_needs_a_device_code(): void
+    {
+        $this->getJson('/api/polaroid-images/mine')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('guest_code');
+
+        $this->getJson('/api/polaroid-images/mine?guest_code=')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('guest_code');
+    }
+
+    public function test_a_guest_can_delete_their_own_photo_and_its_counts(): void
+    {
+        Storage::disk('public')->put('polaroids/manage-me.jpg', '<svg/>');
+        $polaroid = PolaroidImage::create([
+            'image_path' => '/storage/polaroids/manage-me.jpg',
+            'taken_at' => '2026-11-02 10:00:00',
+            'guest_code' => 'AAAA1111',
+        ]);
+        PolaroidReaction::create(['polaroid_image_id' => $polaroid->id, 'emoji' => '❤️', 'guest_code' => 'AAAA1111']);
+        PolaroidView::create(['polaroid_image_id' => $polaroid->id, 'guest_code' => 'AAAA1111']);
+
+        $this->deleteJson("/api/polaroid-images/{$polaroid->id}/mine", ['guest_code' => 'AAAA1111'])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('polaroid_images', ['id' => $polaroid->id]);
+        $this->assertDatabaseCount('polaroid_reactions', 0);
+        $this->assertDatabaseCount('polaroid_views', 0);
+        $this->assertFileDoesNotExist(Storage::disk('public')->path('polaroids/manage-me.jpg'));
+    }
+
+    public function test_a_guest_cannot_delete_someone_elses_photo(): void
+    {
+        $polaroid = PolaroidImage::create([
+            'image_path' => '/storage/polaroids/theirs.jpg',
+            'taken_at' => '2026-11-02 10:00:00',
+            'guest_code' => 'BBBB2222',
+        ]);
+
+        $this->deleteJson("/api/polaroid-images/{$polaroid->id}/mine", ['guest_code' => 'AAAA1111'])
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('polaroid_images', ['id' => $polaroid->id]);
+    }
+
+    public function test_uncoded_photos_are_not_reachable_by_guests(): void
+    {
+        // Admin / Test Lab photos carry no device code: nothing to prove.
+        $polaroid = PolaroidImage::create(['image_path' => '/storage/polaroids/a.jpg', 'taken_at' => '2026-11-02 10:00:00']);
+
+        $this->deleteJson("/api/polaroid-images/{$polaroid->id}/mine", ['guest_code' => 'AAAA1111'])
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('polaroid_images', ['id' => $polaroid->id]);
+    }
+
+    public function test_a_file_shared_by_several_photos_survives_until_the_last_one_goes(): void
+    {
+        Storage::disk('public')->put('polaroids/placeholder.svg', '<svg/>');
+        $file = Storage::disk('public')->path('polaroids/placeholder.svg');
+        $admin = User::factory()->create();
+
+        $first = PolaroidImage::create(['image_path' => '/storage/polaroids/placeholder.svg', 'taken_at' => '2026-11-02 10:00:00']);
+        $second = PolaroidImage::create(['image_path' => '/storage/polaroids/placeholder.svg', 'taken_at' => '2026-11-02 11:00:00']);
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson("/api/polaroid-images/{$first->id}")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('polaroid_images', ['id' => $first->id]);
+        $this->assertFileExists($file); // the other photo still points at it
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson("/api/polaroid-images/{$second->id}")
+            ->assertOk();
+
+        $this->assertFileDoesNotExist($file);
     }
 }

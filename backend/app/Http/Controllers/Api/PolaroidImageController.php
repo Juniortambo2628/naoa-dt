@@ -287,14 +287,79 @@ class PolaroidImageController extends Controller
 
     public function destroy(PolaroidImage $polaroid): JsonResponse
     {
-        $relativePath = str_replace('/storage/', '', $polaroid->image_path);
-
-        if (Storage::disk('public')->exists($relativePath)) {
-            Storage::disk('public')->delete($relativePath);
-        }
-
-        $polaroid->delete();
+        $this->removePolaroid($polaroid);
 
         return $this->deletedResponse('Deleted successfully');
+    }
+
+    /**
+     * The photos this device shared — the guest-facing "manage my photos"
+     * list behind the Snap a polaroid panel.
+     */
+    public function mine(Request $request): JsonResponse
+    {
+        $request->validate(['guest_code' => 'required|string|max:64']);
+
+        $viewerCode = trim((string) $request->guest_code);
+
+        $items = PolaroidImage::with(['reactions', 'views'])
+            ->withCount('views')
+            ->where('guest_code', $viewerCode)
+            ->orderByDesc('taken_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (PolaroidImage $polaroid) => array_merge(
+                $polaroid->makeHidden('reactions')->toArray(),
+                [
+                    'reactions' => $polaroid->reactionsSummary($viewerCode),
+                    'views' => (int) ($polaroid->views_count ?? 0),
+                ],
+            ));
+
+        return $this->successResponse($items);
+    }
+
+    /**
+     * Delete a photo you shared. Ownership is proven by the device code and
+     * the file, reactions and view counts go with it.
+     */
+    public function destroyMine(Request $request, PolaroidImage $polaroid): JsonResponse
+    {
+        $request->validate(['guest_code' => 'required|string|max:64']);
+
+        $guestCode = trim((string) $request->guest_code);
+
+        // 404 rather than 403: never confirm that someone else's photo exists.
+        if (! $polaroid->guest_code || ! hash_equals((string) $polaroid->guest_code, $guestCode)) {
+            return $this->notFoundResponse('Photo not found');
+        }
+
+        $this->removePolaroid($polaroid);
+
+        return $this->deletedResponse('Photo deleted');
+    }
+
+    /**
+     * Row + file + reactions + views. The file survives while any other photo
+     * still points at it (Test Lab rows share one placeholder image).
+     */
+    private function removePolaroid(PolaroidImage $polaroid): void
+    {
+        $stillReferenced = PolaroidImage::where('image_path', $polaroid->image_path)
+            ->whereKeyNot($polaroid->getKey())
+            ->exists();
+
+        if (! $stillReferenced) {
+            $relativePath = ltrim(str_replace('/storage/', '', $polaroid->image_path), '/');
+
+            if (Storage::disk('public')->exists($relativePath)) {
+                Storage::disk('public')->delete($relativePath);
+            }
+        }
+
+        PolaroidReaction::where('polaroid_image_id', $polaroid->id)->delete();
+        PolaroidView::where('polaroid_image_id', $polaroid->id)->delete();
+
+        $polaroid->delete();
     }
 }
