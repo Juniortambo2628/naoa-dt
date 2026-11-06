@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ImageOptimizer;
 use App\Traits\ApiResponse;
 use App\Traits\NormalizesUrls;
 use Illuminate\Http\Request;
@@ -15,11 +16,11 @@ class MediaController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|max:10240', // Max 10MB
+            'image' => ImageOptimizer::RULE,
         ]);
 
         if ($request->hasFile('image')) {
-            $file = $request->file('image');
+            $file = ImageOptimizer::optimize($request->file('image'));
             $filename = time().'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
 
             $file->move(public_path('uploads'), $filename);

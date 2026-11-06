@@ -489,8 +489,8 @@ export default function AdminTestLab() {
       </>)}
 
       {section === 'simulate' && (<>
-      {/* Feature Simulation */}
-      <div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 gap-4 mb-6">
+      {/* Feature Simulation — two cards side by side */}
+      <div className="grid @2xl:grid-cols-2 gap-4 mb-6">
         {/* Live Update Simulation */}
         <AdminCard>
           <div className="flex items-center gap-3 mb-6">
@@ -567,66 +567,72 @@ export default function AdminTestLab() {
           </div>
         </AdminCard>
 
-        {/* Song Request Simulation & Tests */}
-        <AdminCard>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
-              <Music className="w-5 h-5 text-[#A67B5B]" />
-            </div>
-            <h2 className="text-lg font-medium text-stone-800">Song Requests</h2>
-          </div>
-          <div className="space-y-4">
-            <AdminInput
-              label="Song title"
-              value={songTitle}
-              onChange={(e) => setSongTitle(e.target.value)}
-              placeholder="e.g. Perfect"
-            />
-            <AdminInput
-              label="Artist"
-              value={songArtist}
-              onChange={(e) => setSongArtist(e.target.value)}
-              placeholder="e.g. Ed Sheeran"
-            />
-            <AdminInput
-              label="Guest name"
-              value={songGuest}
-              onChange={(e) => setSongGuest(e.target.value)}
-              placeholder="Test Lab"
-            />
-            <Button edit
-              variant="secondary"
-              icon={Music}
-              fullWidth
-              onClick={handleSimulateSongRequest}
-              disabled={loading || !songTitle.trim()}
-            >
-              Submit Test Request
-            </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button edit
-                variant="secondary"
-                icon={ListChecks}
-                onClick={handleRunSongChecks}
-                disabled={loading}
-              >
-                Run Feature Tests
-              </Button>
-              <Button edit
-                icon={Timer}
-                onClick={handleRunLimitChecks}
-                disabled={loading}
-              >
-                Hourly Limit Tests
-              </Button>
-            </div>
-            <p className="text-xs text-stone-400 text-center">
-              Simulations skip the rate limit and notify nobody; limit tests run in a
-              transaction and roll back, so real requests are untouched
-            </p>
-          </div>
-        </AdminCard>
       </div>
+
+      {/* Song Requests — full width so the inputs and test buttons can breathe */}
+      <AdminCard className="mb-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 bg-[#A67B5B]/10 rounded-lg">
+            <Music className="w-5 h-5 text-[#A67B5B]" />
+          </div>
+          <h2 className="text-lg font-medium text-stone-800">Song Requests</h2>
+        </div>
+
+        <div className="grid gap-4 @xl:grid-cols-3">
+          <AdminInput
+            label="Song title"
+            value={songTitle}
+            onChange={(e) => setSongTitle(e.target.value)}
+            placeholder="e.g. Perfect"
+          />
+          <AdminInput
+            label="Artist"
+            value={songArtist}
+            onChange={(e) => setSongArtist(e.target.value)}
+            placeholder="e.g. Ed Sheeran"
+          />
+          <AdminInput
+            label="Guest name"
+            value={songGuest}
+            onChange={(e) => setSongGuest(e.target.value)}
+            placeholder="Test Lab"
+          />
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button edit
+            variant="secondary"
+            icon={Music}
+            onClick={handleSimulateSongRequest}
+            disabled={loading || !songTitle.trim()}
+            className="flex-1 min-w-[190px]"
+          >
+            Submit Test Request
+          </Button>
+          <Button edit
+            variant="secondary"
+            icon={ListChecks}
+            onClick={handleRunSongChecks}
+            disabled={loading}
+            className="flex-1 min-w-[190px]"
+          >
+            Run Feature Tests
+          </Button>
+          <Button edit
+            icon={Timer}
+            onClick={handleRunLimitChecks}
+            disabled={loading}
+            className="flex-1 min-w-[190px]"
+          >
+            Hourly Limit Tests
+          </Button>
+        </div>
+
+        <p className="mt-4 text-xs text-stone-400">
+          Simulations skip the guest rate limit and notify nobody; the limit tests run inside a
+          transaction and roll back, so real requests are untouched.
+        </p>
+      </AdminCard>
 
       {/* Test Results */}
       {songChecks && <ChecklistCard title="Song Request Test Results" results={songChecks} />}

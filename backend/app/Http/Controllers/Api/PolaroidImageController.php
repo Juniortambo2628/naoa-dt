@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Events\PolaroidImageCreated;
 use App\Http\Controllers\Controller;
 use App\Models\PolaroidImage;
+use App\Services\ImageOptimizer;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,11 +29,11 @@ class PolaroidImageController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => 'required|image|max:5120',
+            'image' => ImageOptimizer::RULE,
         ]);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('polaroids', 'public');
+            $path = ImageOptimizer::optimize($request->file('image'))->store('polaroids', 'public');
 
             $polaroid = PolaroidImage::create([
                 'image_path' => '/storage/'.$path,
@@ -47,14 +48,14 @@ class PolaroidImageController extends Controller
     public function storeLive(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => 'required|image|max:10240',
+            'image' => ImageOptimizer::RULE,
             'title' => 'nullable|string|max:255',
             'caption' => 'nullable|string|max:500',
             'taken_at' => 'nullable|date',
             'location' => 'nullable|string|max:255',
         ]);
 
-        $path = $request->file('image')->store('polaroids', 'public');
+        $path = ImageOptimizer::optimize($request->file('image'))->store('polaroids', 'public');
 
         $polaroid = PolaroidImage::create([
             'image_path' => '/storage/'.$path,
