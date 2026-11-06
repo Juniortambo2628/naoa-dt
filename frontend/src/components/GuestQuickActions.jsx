@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, MapPin, Plane, Armchair, Camera, CalendarClock } from 'lucide-react';
+import { Plus, X, MapPin, Plane, Armchair, Camera, CalendarClock, Play } from 'lucide-react';
 import Modal from './Modal';
 import TabbedTwoColumn from './TabbedTwoColumn';
 import GuestLocationPicker from './GuestLocationPicker';
@@ -35,6 +35,13 @@ const ACTIONS = [
     icon: CalendarClock,
     gradient: 'from-palette-burnt-orange to-palette-rust',
     href: '/programme', // navigates instead of opening the modal
+  },
+  {
+    id: 'stories',
+    label: 'Watch stories',
+    icon: Play,
+    gradient: 'from-palette-rust to-palette-burnt-orange',
+    href: '/programme?stories=1', // opens the story viewer on arrival
   },
   {
     id: 'polaroid',

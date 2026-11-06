@@ -158,6 +158,8 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/polaroid-images/{polaroid}/reactions', [PolaroidImageController::class, 'react']);
     Route::delete('/polaroid-images/{polaroid}/reactions', [PolaroidImageController::class, 'unreact']);
     Route::post('/polaroid-images/{polaroid}/viewed', [PolaroidImageController::class, 'viewed']);
+    Route::get('/polaroid-images/mine', [PolaroidImageController::class, 'mine']);
+    Route::delete('/polaroid-images/{polaroid}/mine', [PolaroidImageController::class, 'destroyMine']);
 });
 
 // Public Tables (for seating chart visualization)
@@ -290,8 +292,8 @@ Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     // Polaroid Images (Admin)
     Route::post('/polaroid-images', [PolaroidImageController::class, 'store']);
     Route::post('/polaroid-images/live', [PolaroidImageController::class, 'storeLive']);
-    Route::match(['put', 'patch'], '/polaroid-images/{id}', [PolaroidImageController::class, 'update']);
-    Route::delete('/polaroid-images/{id}', [PolaroidImageController::class, 'destroy']);
+    Route::match(['put', 'patch'], '/polaroid-images/{polaroid}', [PolaroidImageController::class, 'update']);
+    Route::delete('/polaroid-images/{polaroid}', [PolaroidImageController::class, 'destroy']);
 
     // Auto-Translation Support
     Route::post('/translate', [TranslateController::class, 'translate']);

@@ -97,6 +97,16 @@ describe('api services', () => {
       guest_code: 'ABC1234',
     })
 
+    await polaroidService.mine('ABC1234')
+    expect(get).toHaveBeenLastCalledWith('/polaroid-images/mine', {
+      params: { guest_code: 'ABC1234' },
+    })
+
+    await polaroidService.deleteMine(4, 'ABC1234')
+    expect(del).toHaveBeenLastCalledWith('/polaroid-images/4/mine', {
+      data: { guest_code: 'ABC1234' },
+    })
+
     vi.restoreAllMocks()
   })
 })

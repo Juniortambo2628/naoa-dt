@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import { Camera, MapPin, Clock } from 'lucide-react';
 import { polaroidService } from '../services/api';
 import { getAssetUrl } from '../utils/assetUrl';
@@ -76,6 +77,17 @@ export default function PolaroidFeed() {
     const [viewerIndex, setViewerIndex] = useState(null);
     const [seenTick, setSeenTick] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Arriving from the invite's "Watch stories" action (?stories=1) opens
+    // the viewer as soon as the stories land; the param is dropped again so
+    // a refresh doesn't reopen it.
+    useEffect(() => {
+        if (searchParams.get('stories') === '1' && stories.length > 0 && viewerIndex === null) {
+            setViewerIndex(0);
+            setSearchParams({}, { replace: true });
+        }
+    }, [searchParams, stories, viewerIndex, setSearchParams]);
 
     const fetchImages = async () => {
         let feed = [];
