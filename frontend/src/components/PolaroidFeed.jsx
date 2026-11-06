@@ -3,10 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, MapPin, Clock } from 'lucide-react';
 import { polaroidService } from '../services/api';
 import { getAssetUrl } from '../utils/assetUrl';
+import { getSavedGuestCode } from '../utils/guestSession';
 import { useSmartPolling } from '../hooks/useSmartPolling';
+import StoryTray from './StoryTray';
+import StoryViewer from './StoryViewer';
 
 function PolaroidCard({ image, index }) {
     const [loaded, setLoaded] = useState(false);
+    const topEmoji = Object.keys(image.reactions?.by_emoji || {})[0];
 
     return (
         <motion.div
@@ -54,6 +58,13 @@ function PolaroidCard({ image, index }) {
                         <span className="truncate max-w-[60px]">{image.location}</span>
                     </div>
                 )}
+
+                {topEmoji && image.reactions?.count > 0 && (
+                    <div className="absolute bottom-1.5 left-2 inline-flex items-center gap-1 text-[9px] text-stone-500 bg-white/85 rounded-full px-1.5 py-0.5">
+                        <span aria-hidden="true">{topEmoji}</span>
+                        <span className="tabular-nums">{image.reactions.count}</span>
+                    </div>
+                )}
             </div>
         </motion.div>
     );
@@ -61,19 +72,31 @@ function PolaroidCard({ image, index }) {
 
 export default function PolaroidFeed() {
     const [images, setImages] = useState([]);
+    const [stories, setStories] = useState([]);
+    const [viewerIndex, setViewerIndex] = useState(null);
+    const [seenTick, setSeenTick] = useState(0);
     const [loading, setLoading] = useState(true);
 
     const fetchImages = async () => {
+        let feed = [];
         try {
             const res = await polaroidService.getAll();
-            setImages(res.data || []);
-            return res.data || [];
+            feed = res.data || [];
+            setImages(feed);
         } catch (err) {
             console.error('Failed to fetch polaroid images', err);
-            return [];
+        }
+        try {
+            // Grouped view for the tray + viewer, with this device's own
+            // reactions filled in so a tap shows as active.
+            const res = await polaroidService.stories(getSavedGuestCode());
+            setStories(res.data?.stories || []);
+        } catch (err) {
+            console.error('Failed to fetch stories', err);
         } finally {
             setLoading(false);
         }
+        return feed;
     };
 
     useEffect(() => {
@@ -139,6 +162,12 @@ export default function PolaroidFeed() {
                 </h2>
             </div>
 
+            <StoryTray
+                stories={stories}
+                seenTick={seenTick}
+                onOpen={(index) => setViewerIndex(index)}
+            />
+
             <div className="columns-2 md:columns-3 lg:columns-4 gap-4 max-w-5xl mx-auto">
                 <AnimatePresence>
                     {Object.entries(groupedByDate).map(([date, imgs]) => (
@@ -154,6 +183,18 @@ export default function PolaroidFeed() {
                     ))}
                 </AnimatePresence>
             </div>
+
+            {viewerIndex !== null && stories.length > 0 && (
+                <StoryViewer
+                    stories={stories}
+                    initialIndex={viewerIndex}
+                    guestCode={getSavedGuestCode()}
+                    onClose={() => {
+                        setViewerIndex(null);
+                        setSeenTick((tick) => tick + 1);
+                    }}
+                />
+            )}
         </motion.div>
     );
 }

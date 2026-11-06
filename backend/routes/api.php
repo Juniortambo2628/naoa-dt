@@ -151,6 +151,14 @@ Route::get('/schedule/full', [ScheduleController::class, 'index']);
 // Public Polaroid Images
 Route::get('/polaroid-images', [PolaroidImageController::class, 'index']);
 
+// Polaroid stories (throttled: batch snaps and reaction taps)
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/polaroid-images/stories', [PolaroidImageController::class, 'stories']);
+    Route::post('/polaroid-images/batch', [PolaroidImageController::class, 'storeBatch']);
+    Route::post('/polaroid-images/{polaroid}/reactions', [PolaroidImageController::class, 'react']);
+    Route::delete('/polaroid-images/{polaroid}/reactions', [PolaroidImageController::class, 'unreact']);
+});
+
 // Public Tables (for seating chart visualization)
 Route::get('/tables/public', [TableController::class, 'publicIndex']);
 

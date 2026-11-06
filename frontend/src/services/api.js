@@ -361,6 +361,16 @@ export const polaroidService = {
   }),
   update: (id, data) => api.put(`/polaroid-images/${id}`, data),
   delete: (id) => api.delete(`/polaroid-images/${id}`),
+  // Snap Studio + Stories
+  batchUpload: (formData, onUploadProgress) => api.post('/polaroid-images/batch', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
+  }),
+  stories: (guestCode) => api.get('/polaroid-images/stories', {
+    params: guestCode ? { guest_code: guestCode } : {},
+  }),
+  addReaction: (id, data) => api.post(`/polaroid-images/${id}/reactions`, data),
+  removeReaction: (id, data) => api.delete(`/polaroid-images/${id}/reactions`, { data }),
 };
 
 // Enquiry services
