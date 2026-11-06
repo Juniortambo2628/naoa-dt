@@ -354,4 +354,5 @@ Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     Route::post('/test/simulate/polaroid', [TestController::class, 'simulatePolaroid']);
     Route::post('/test/simulate/song-request', [TestController::class, 'simulateSongRequest']);
     Route::post('/test/song-requests/checks', [TestController::class, 'songRequestChecks']);
+    Route::post('/test/song-requests/limit-checks', [TestController::class, 'songRequestLimitChecks']);
 });
