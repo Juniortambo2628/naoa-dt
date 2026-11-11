@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { Heart, Instagram, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Monogram, DiamondBand } from './HeritageMotifs';
-import { initialOf } from '../utils/heritage';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
 import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
@@ -13,7 +12,7 @@ export default function Footer() {
   const { i18n } = useTranslation();
   const { isVisible, getContent: getFromContext, contents, settings } = useContent();
   const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
-  const { coupleNames, brideName, groomName } = getCoupleNames(settings, contents, i18n.language);
+  const { coupleNames } = getCoupleNames(settings, contents, i18n.language);
 
   return (
     <footer
@@ -33,7 +32,7 @@ export default function Footer() {
           className="text-center mb-12"
         >
           <div className="flex justify-center mb-4">
-            <Monogram first={initialOf(groomName, 'T')} second={initialOf(brideName, 'D')} size={80} />
+            <Monogram size={68} title={coupleNames} />
           </div>
           <h3 
             className="text-4xl mb-4"

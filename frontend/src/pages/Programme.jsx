@@ -23,7 +23,7 @@ import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
 import { getWeddingDateText } from '../utils/weddingInfo';
 import { formatRange, parseNames } from '../utils/programme';
-import { SunStrip } from '../components/HeritageMotifs';
+import { DiamondBand } from '../components/HeritageMotifs';
 
 const iconMap = {
   'Ceremony': Heart,
@@ -157,14 +157,6 @@ export default function Programme() {
           <FloatingFlower type="secondary-top-left" size={90} duration={12} delay={1} />
         </div>
         
-        {/* The approved long strips, either side of the title (wide screens). */}
-        <div className="hidden 2xl:block absolute left-8 top-28 pointer-events-none" aria-hidden="true">
-          <SunStrip width={40} height={300} />
-        </div>
-        <div className="hidden 2xl:block absolute right-8 top-28 pointer-events-none" aria-hidden="true">
-          <SunStrip width={40} height={300} />
-        </div>
-
         <div className="container-wedding relative z-10">
           {/* Header */}
           <motion.div
@@ -186,6 +178,10 @@ export default function Programme() {
             >
               {getWeddingDateText(content, i18n.language, settings)}
             </p>
+            {/* The approved strip design */}
+            <div className="w-40 md:w-56 mx-auto mt-5">
+              <DiamondBand height={10} />
+            </div>
           </motion.div>
 
           <div className="grid lg:grid-cols-3 gap-8">
