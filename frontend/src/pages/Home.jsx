@@ -264,7 +264,9 @@ function HeroSection({ content, settings, loading }) {
           </p>
           <p className="flex items-center justify-center gap-2 text-lg md:text-xl" style={{ color: '#6B5D52' }}>
             <MapPin className="w-5 h-5 flex-shrink-0" style={{ color: '#A67B5B' }} />
-            {loading ? <Skeleton variant="text" width="300px" height="24px" as="span" /> : getTxt('location', 'hero.location')}
+            {loading ? <Skeleton variant="text" width="300px" height="24px" as="span" /> : (settings?.venue_name
+              ? [settings.venue_name, settings.venue_address].filter(Boolean).join(', ')
+              : getTxt('location', 'hero.location'))}
           </p>
         </motion.div>
 

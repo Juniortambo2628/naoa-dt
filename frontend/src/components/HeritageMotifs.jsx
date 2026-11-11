@@ -106,7 +106,8 @@ export const MotifCorner = memo(function MotifCorner({
       width={size}
       height={size}
       className={`pointer-events-none ${className}`}
-      style={{ opacity, ...style }}
+      // Sized by `size`, but a parent's width class (e.g. w-48 on phones) can shrink it.
+      style={{ opacity, maxWidth: '100%', height: 'auto', ...style }}
     >
       <defs>
         <MotifPatternDef id={`p${uid}`} color={color} bg="transparent" scale={0.32} />

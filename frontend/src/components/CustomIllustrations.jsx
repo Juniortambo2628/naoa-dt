@@ -153,7 +153,7 @@ export const MainFlowerTopLeft = memo(function MainFlowerTopLeft({ size = 300, c
       transition={{ duration: 0.8, ease: "easeOut" }}
       style={gpuAccelStyle}
     >
-      <MotifCorner size={size} corner="top-left" />
+      <MotifCorner size={size} corner="top-left" className="block" />
     </motion.div>
   );
 });
@@ -172,7 +172,7 @@ export const MainFlowerBottomRight = memo(function MainFlowerBottomRight({ size 
       transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
       style={gpuAccelStyle}
     >
-      <MotifCorner size={size} corner="bottom-right" />
+      <MotifCorner size={size} corner="bottom-right" className="block" />
     </motion.div>
   );
 });
