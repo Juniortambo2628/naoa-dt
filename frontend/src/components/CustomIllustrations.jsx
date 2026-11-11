@@ -1,6 +1,6 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef, memo } from 'react';
-import { MotifCorner, MotifEmblem, Monogram } from './HeritageMotifs';
+import { MotifCorner, MotifEmblem, Monogram, BackdropStrip } from './HeritageMotifs';
 
 /**
  * PERFORMANCE-OPTIMIZED Custom Illustrations Component
@@ -23,27 +23,20 @@ const gpuAccelStyle = {
 };
 
 /**
- * Pulsing Heart Logo/Loader - Memoized
+ * Loader mark: the couple's T&D monogram, gently breathing (name kept for callers)
  */
 export const PulsingHeartLogo = memo(function PulsingHeartLogo({ size = 80, className = '' }) {
   return (
-    <motion.img
-      src="/Naoa-logo.png"
-      alt="Logo"
-      width={size}
-      height={size}
-      loading="eager"
-      className={className}
-      animate={{
-        scale: [1, 1.12, 1],
-      }}
-      transition={{
-        duration: 1.8,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
+    <motion.div
+      className={`inline-flex items-center justify-center ${className}`}
+      role="img"
+      aria-label="Loading"
+      animate={{ opacity: [0.55, 1, 0.55] }}
+      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+      style={gpuAccelStyle}
+    >
+      <Monogram size={size * 0.7} />
+    </motion.div>
   );
 });
 
@@ -70,17 +63,14 @@ export const LoadingHeart = memo(function LoadingHeart({ size = 100, className =
           ease: "easeInOut",
         }}
       />
-      <motion.img
-        src="/Naoa-logo.png"
-        alt="Loading..."
-        width={size}
-        height={size}
-        loading="eager"
-        className="relative z-10 rounded-xl"
-        animate={{ scale: [1, 1.15, 1] }}
+      <motion.div
+        className="relative z-10 flex items-center justify-center"
+        animate={{ opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-      />
+        style={{ ...gpuAccelStyle, width: size, height: size }}
+      >
+        <Monogram size={size * 0.7} />
+      </motion.div>
     </div>
   );
 });
@@ -309,29 +299,21 @@ export const ParallaxFlower = memo(function ParallaxFlower({
   );
 });
 
-/** Divider: two hairlines with a carved eye emblem between them. */
+/** Section break: a miniature of the couple's décor backdrop (arches and T&D). */
 export const FlowerDivider = memo(function FlowerDivider({ className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
 
   return (
-    <div ref={ref} className={`flex items-center justify-center gap-4 py-6 ${className}`}>
-      <motion.div
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={isInView ? { scaleX: 1, opacity: 1 } : undefined}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="h-px w-20 md:w-32 origin-right"
-        style={{ background: 'linear-gradient(90deg, transparent, #B8936C)', ...gpuAccelStyle }}
-      />
-      <MotifEmblem size={34} variant="eye" />
-      <motion.div
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={isInView ? { scaleX: 1, opacity: 1 } : undefined}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-        className="h-px w-20 md:w-32 origin-left"
-        style={{ background: 'linear-gradient(90deg, #B8936C, transparent)', ...gpuAccelStyle }}
-      />
-    </div>
+    <motion.div
+      ref={ref}
+      className={`py-6 ${className}`}
+      initial={{ opacity: 0, y: 8 }}
+      animate={isInView ? { opacity: 1, y: 0 } : undefined}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      <BackdropStrip height={52} />
+    </motion.div>
   );
 });
 

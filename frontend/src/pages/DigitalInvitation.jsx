@@ -16,8 +16,8 @@ import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
 import GuestNotices from '../components/GuestNotices';
 import CashGiftCard from '../components/CashGiftCard';
-import EnvelopeReveal from '../components/envelope/EnvelopeReveal';
-import { Monogram, DiamondBand, MotifCorner } from '../components/HeritageMotifs';
+import CardReveal from '../components/invite/CardReveal';
+import { Monogram, MotifCorner } from '../components/HeritageMotifs';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
 import GuestPushCard from '../components/GuestPushCard';
@@ -164,16 +164,15 @@ export default function DigitalInvitation() {
 
     return (
         <div className="relative min-h-screen bg-[#FBF8F3] selection:bg-palette-cinnamon/15">
-            {/* The couple's mood board: a patterned edge and cloth in the corners. */}
-            <DiamondBand height={14} />
+            {/* The couple's mood board: patterned cloth in the corners. */}
             <div className="absolute inset-x-0 top-0 h-[520px] pointer-events-none overflow-hidden" aria-hidden="true">
                 <MotifCorner size={300} corner="top-left" opacity={0.35} className="absolute top-0 left-0 w-44 h-44 md:w-[300px] md:h-[300px]" />
                 <MotifCorner size={300} corner="top-right" opacity={0.35} className="absolute top-0 right-0 w-44 h-44 md:w-[300px] md:h-[300px]" />
             </div>
 
-            {/* Opening: the 3D envelope opens as the guest scrolls (closes going back up). */}
+            {/* Opening: the guest's card peeks out and pulls up to reveal the details. */}
             {show.envelope && (
-                <EnvelopeReveal
+                <CardReveal
                     guestName={guest.name}
                     coupleNames={coupleNames}
                     dateText={weddingDateText}
@@ -225,7 +224,7 @@ export default function DigitalInvitation() {
                     <div className={`text-center space-y-4 ${show.card ? 'lg:text-left' : ''}`}>
                         <div className={`flex justify-center ${show.card ? 'lg:justify-start' : ''}`}>
                             <Monogram
-                                size={72}
+                                size={56}
                                 title={coupleNames}
                             />
                         </div>
