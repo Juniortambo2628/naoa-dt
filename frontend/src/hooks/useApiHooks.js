@@ -162,6 +162,18 @@ export const useMpesaPayments = () => {
   });
 };
 
+// Owner only: how M-Pesa is connected (never the keys themselves).
+export const useMpesaSettings = (enabled = true) => {
+  return useQuery({
+    queryKey: ['gifts', 'mpesa-settings'],
+    queryFn: async () => {
+      const { data } = await giftService.mpesaSettings();
+      return data;
+    },
+    enabled,
+  });
+};
+
 export const useGiftStats = () => {
   return useQuery({
     queryKey: ['giftStats'],

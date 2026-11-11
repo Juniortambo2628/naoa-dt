@@ -20,7 +20,20 @@ Go Live can take from hours to several days. Until then, fill in the Pay Bill
 number in Admin and guests can pay from their M-Pesa menu; the prompt switches
 on by itself once the keys are on the server.
 
-## Server configuration (`backend/.env`)
+## Connecting (the easy way: in the admin)
+
+Sign in as an **owner** → **Gifts** → **M-Pesa gifts** → **Connect M-Pesa**:
+
+1. Choose **Test (sandbox)** or **Live**, and **Pay Bill** or **Till**.
+2. Enter the Pay Bill number, Consumer Key, Consumer Secret and Passkey.
+3. Press **Save**, then **Check connection**.
+
+The keys are stored encrypted (never in Settings, never shown again) and
+take precedence over the `.env` values below. The callback token is made
+for you. **Remove keys** goes back to the `.env` values (or the Pay Bill
+details, if there are none).
+
+## Server configuration (`backend/.env`) — alternative
 
 ```
 MPESA_ENV=production            # or sandbox for testing
@@ -35,8 +48,7 @@ MPESA_CALLBACK_BASE_URL=https://api.example.com
 
 Then `php artisan config:clear` (or `config:cache`) and `php artisan migrate`.
 
-Keep these values in the server's `.env` only — never in Admin settings, the
-repository or chat.
+Never put these values in the repository, in Admin → Settings, or in chat.
 
 The scheduler must run every minute (`* * * * * php artisan schedule:run`):
 it runs `mpesa:reconcile`, which asks Safaricom about any prompt whose callback

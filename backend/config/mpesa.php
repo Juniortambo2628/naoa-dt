@@ -5,9 +5,10 @@
 | M-Pesa (Safaricom Daraja) — Lipa Na M-Pesa Online / STK Push
 |--------------------------------------------------------------------------
 |
-| Credentials live ONLY in the server's .env file. They are never stored in
-| the settings table and never returned by any API: admins toggle the feature
-| and the paybill shown to guests in Settings, but the keys stay here.
+| Credentials come from the server's .env, or — simpler for the couple — an
+| owner enters them in the admin (Gifts → M-Pesa gifts → Connect M-Pesa).
+| Those are stored encrypted (integration_credentials table), override the
+| values here, and are never returned by any API or kept in `settings`.
 |
 | Getting the values (see docs/mpesa-setup.md):
 | - MPESA_ENV: "sandbox" while testing, "production" after Daraja "Go Live".
@@ -42,6 +43,9 @@ return [
     // https://api.dntwed.okjtech.co.ke — the callback is built from it.
     'callback_base_url' => env('MPESA_CALLBACK_BASE_URL', env('APP_URL')),
     'callback_token' => env('MPESA_CALLBACK_TOKEN'),
+
+    // What callback_base_url is when the admin leaves "API address" blank.
+    'default_callback_base_url' => env('MPESA_CALLBACK_BASE_URL', env('APP_URL')),
 
     // Shown on the guest's prompt / statement when the invite has no code.
     'default_account_reference' => env('MPESA_ACCOUNT_REFERENCE', 'WEDDING'),

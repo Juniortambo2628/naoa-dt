@@ -7,6 +7,7 @@ import Button from '../Button';
 import EmptyState from './EmptyState';
 import useAdminAction from '../../hooks/useAdminAction';
 import { formatKes } from '../../utils/mpesa';
+import MpesaConnectCard from './MpesaConnectCard';
 
 const STATUS_STYLES = {
   success: 'bg-green-50 text-green-700',
@@ -36,7 +37,7 @@ function ConnectionBanner({ data }) {
       <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
         <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
         <p className="text-sm">
-          M-Pesa prompts are not connected yet: the Safaricom (Daraja) keys still need to be added to the server.
+          M-Pesa prompts are not connected yet: add the Safaricom (Daraja) details in “Connect M-Pesa” below.
           Until then, guests see the Pay Bill details below, if you fill them in.
         </p>
       </div>
@@ -113,6 +114,8 @@ export default function MpesaGiftsPanel() {
           <p className="text-2xl font-semibold text-stone-800">{summary?.pending_count ?? 0}</p>
         </div>
       </div>
+
+      <MpesaConnectCard />
 
       <section className="rounded-2xl border border-stone-100 bg-white p-5 space-y-4">
         <div className="flex items-center gap-2">

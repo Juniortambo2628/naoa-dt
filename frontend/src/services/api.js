@@ -210,6 +210,11 @@ export const giftService = {
 
   // Every M-Pesa gift attempt with totals (admin)
   mpesaPayments: () => api.get('/gifts/mpesa-payments'),
+  // Owner only: connect M-Pesa (keys are write-only; reads say which are saved).
+  mpesaSettings: () => api.get('/gifts/mpesa-settings'),
+  saveMpesaSettings: (data) => api.put('/gifts/mpesa-settings', data),
+  testMpesaConnection: () => api.post('/gifts/mpesa-settings/test'),
+  removeMpesaSettings: () => api.delete('/gifts/mpesa-settings'),
   
   // Create gift (admin)
   create: (data) => api.post('/gifts', data),

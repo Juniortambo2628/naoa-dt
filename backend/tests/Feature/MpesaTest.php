@@ -39,9 +39,10 @@ class MpesaTest extends TestCase
             'mpesa.callback_base_url' => 'https://api.example.test',
             'mpesa.callback_token' => self::TOKEN,
         ]);
+        MpesaService::applyStoredCredentials(true);
     }
 
-    private function fakeDaraja(array $stk = null, array $query = null): void
+    private function fakeDaraja(?array $stk = null, ?array $query = null): void
     {
         Http::fake([
             '*/oauth/v1/generate*' => Http::response(['access_token' => 'access-token', 'expires_in' => '3599']),
@@ -69,7 +70,7 @@ class MpesaTest extends TestCase
         ], $overrides));
     }
 
-    private function sendCallback(MpesaPayment $payment, int $resultCode = 0, array $metadata = null, string $token = self::TOKEN)
+    private function sendCallback(MpesaPayment $payment, int $resultCode = 0, ?array $metadata = null, string $token = self::TOKEN)
     {
         $metadata ??= [
             ['Name' => 'Amount', 'Value' => $payment->amount],

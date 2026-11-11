@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\IntegrationCredential;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,69 @@ class MpesaService
 
     /** Daraja's "still waiting for the customer" error code on STK Query. */
     private const STILL_PROCESSING = '500.001.1001';
+
+    /** Name of the encrypted credentials row an owner fills in the admin. */
+    public const CREDENTIAL_NAME = 'mpesa';
+
+    /** Keys an owner may set from the admin (Gifts → M-Pesa gifts → Connect). */
+    public const DASHBOARD_KEYS = [
+        'env', 'consumer_key', 'consumer_secret', 'shortcode', 'passkey',
+        'transaction_type', 'till_number', 'callback_token', 'callback_base_url',
+    ];
+
+    /** Whether the keys in use came from the admin rather than the server .env. */
+    private static ?bool $fromDashboard = null;
+
+    public function __construct()
+    {
+        self::applyStoredCredentials();
+    }
+
+    /**
+     * Overlay the credentials saved in the admin on config('mpesa'), so the
+     * couple can connect M-Pesa without editing the server's .env. Values
+     * saved in the admin win; anything left blank falls back to .env.
+     */
+    public static function applyStoredCredentials(bool $fresh = false): void
+    {
+        if (self::$fromDashboard !== null && ! $fresh) {
+            return;
+        }
+
+        try {
+            $stored = IntegrationCredential::payloadFor(self::CREDENTIAL_NAME);
+        } catch (\Throwable) {
+            $stored = []; // table not migrated yet, or APP_KEY changed
+        }
+
+        $overrides = [];
+        foreach (self::DASHBOARD_KEYS as $key) {
+            if (filled($stored[$key] ?? null)) {
+                $overrides["mpesa.$key"] = $stored[$key];
+            }
+        }
+        if (isset($overrides['mpesa.env'])) {
+            $overrides['mpesa.base_url'] = $overrides['mpesa.env'] === 'production'
+                ? 'https://api.safaricom.co.ke'
+                : 'https://sandbox.safaricom.co.ke';
+        }
+
+        config($overrides);
+        self::$fromDashboard = filled($stored['consumer_key'] ?? null);
+    }
+
+    public static function credentialsFromDashboard(): bool
+    {
+        self::applyStoredCredentials();
+
+        return (bool) self::$fromDashboard;
+    }
+
+    /** Forget the cached token, e.g. after the keys change. */
+    public static function forgetToken(): void
+    {
+        Cache::forget(self::TOKEN_CACHE_KEY);
+    }
 
     public function isConfigured(): bool
     {
@@ -150,7 +214,7 @@ class MpesaService
      * Ask Safaricom for the outcome of a prompt.
      *
      * @return array{pending: bool, result_code: ?string, result_desc: ?string}|null
-     *                                                                             null when Safaricom could not be reached (try again later).
+     *                                                                               null when Safaricom could not be reached (try again later).
      */
     public function stkQuery(string $checkoutRequestId): ?array
     {

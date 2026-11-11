@@ -20,6 +20,11 @@ return new class extends Migration
 
     public function up(): void
     {
+        // Test databases start empty; the import's own test runs it directly.
+        if (app()->runningUnitTests() && ! app()->bound('programme-import.force')) {
+            return;
+        }
+
         if (DB::table('settings')->where('key', self::MARKER)->exists()) {
             return;
         }
