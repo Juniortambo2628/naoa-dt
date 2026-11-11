@@ -1,10 +1,55 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
-import { Sparkles, Home, Clock } from 'lucide-react';
+import { Hourglass, Home } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import Button from './Button';
-import { WeddingRingsIllustration } from './Illustrations';
+
+const LINE = '#C4A385';
+
+/** Two fine-line rings that draw themselves in, with a twinkle above. No backdrop. */
+function OutlineRings() {
+  const reduce = useReducedMotion();
+  const draw = (delay) => (reduce
+    ? {}
+    : {
+      initial: { pathLength: 0, opacity: 0 },
+      animate: { pathLength: 1, opacity: 1 },
+      transition: { duration: 1.6, delay, ease: [0.65, 0, 0.35, 1] },
+    });
+  const ring = { fill: 'none', stroke: LINE, strokeLinecap: 'round' };
+  return (
+    <svg viewBox="0 0 240 160" className="w-56 sm:w-64 mx-auto" role="img" aria-label="Two wedding rings">
+      {/* left ring: outer and inner edge of the band */}
+      <motion.circle cx="98" cy="96" r="44" strokeWidth="1.4" {...ring} {...draw(0)} />
+      <motion.circle cx="98" cy="96" r="38" strokeWidth="0.7" opacity="0.6" {...ring} {...draw(0.15)} />
+      {/* right ring */}
+      <motion.circle cx="142" cy="96" r="44" strokeWidth="1.4" {...ring} {...draw(0.35)} />
+      <motion.circle cx="142" cy="96" r="38" strokeWidth="0.7" opacity="0.6" {...ring} {...draw(0.5)} />
+      {/* a small solitaire where they meet */}
+      <motion.path
+        d="M120 34 L128 44 L120 56 L112 44 Z M112 44 H128"
+        strokeWidth="1.1"
+        strokeLinejoin="round"
+        {...ring}
+        {...draw(1.2)}
+      />
+      {/* twinkles */}
+      {[[120, 18, 6, 2.0], [168, 34, 4, 2.4], [74, 38, 3.5, 2.8]].map(([x, y, r, d]) => (
+        <motion.path
+          key={`${x}-${y}`}
+          d={`M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r} Z`}
+          fill="none"
+          stroke={LINE}
+          strokeWidth="0.9"
+          initial={{ opacity: 0 }}
+          animate={reduce ? { opacity: 0.8 } : { opacity: [0, 0.9, 0.3, 0.9] }}
+          transition={reduce ? {} : { duration: 3.2, delay: d, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+        />
+      ))}
+    </svg>
+  );
+}
 
 export default function ModuleDisabled() {
   const { module } = useParams();
@@ -20,23 +65,8 @@ export default function ModuleDisabled() {
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-2xl mx-auto"
           >
-            <div className="relative mb-8">
-              {/* Built-in illustration (no external image to break) */}
-              <div
-                role="img"
-                aria-label="Coming soon"
-                className="w-full max-w-md mx-auto aspect-[4/3] rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden"
-                style={{ background: 'radial-gradient(circle at 30% 20%, #FCEDDA 0%, #DDBAA4 55%, #9B4621 140%)' }}
-              >
-                <WeddingRingsIllustration size={220} />
-              </div>
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-4 -left-4 bg-[#8B9A7D] text-white p-4 rounded-full shadow-lg"
-              >
-                <Clock className="w-6 h-6" />
-              </motion.div>
+            <div className="mb-6">
+              <OutlineRings />
             </div>
 
             <h1 
@@ -54,14 +84,14 @@ export default function ModuleDisabled() {
               We're polishing things up to make sure everything is perfect for the big day!
             </p>
 
-            <div className="bg-white/50 backdrop-blur-sm border border-stone-200 rounded-2xl p-6 mb-12 flex items-center gap-4 text-left">
-                <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
-                    <Sparkles className="w-6 h-6" />
-                </div>
-                <div>
-                    <h3 className="font-bold text-stone-800">Coming Soon</h3>
-                    <p className="text-sm text-stone-500">Check back later for updates. We're working hard on this section!</p>
-                </div>
+            <div className="max-w-md mx-auto mb-12 flex items-center gap-4 text-left border-y py-5" style={{ borderColor: 'rgba(196, 163, 133, 0.45)' }}>
+              <span className="w-11 h-11 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: LINE, color: '#A67B5B' }}>
+                <Hourglass className="w-5 h-5" strokeWidth={1.4} />
+              </span>
+              <div>
+                <h3 className="font-serif text-xl" style={{ color: '#4A3F35' }}>Coming soon</h3>
+                <p className="text-sm text-stone-500">Check back later for updates. We&apos;re working hard on this section!</p>
+              </div>
             </div>
 
             <Button as={Link} to="/" variant="secondary" size="lg" icon={Home}>
