@@ -172,8 +172,8 @@ function HeroSection({ content, settings, loading }) {
       />
       
       {/* Custom Flower Corners */}
-      {/* Below the header, so the T&D logo stays clear. */}
-      <MainFlowerTopLeft size={350} className="hidden md:block top-24!" />
+      {/* Blended in behind the header logo, softer and smaller on phones */}
+      <MainFlowerTopLeft size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
       {/* Phones: only the top corner, so the pattern never sits behind the notices. */}
       <MainFlowerBottomRight size={350} className="hidden md:block" />
 

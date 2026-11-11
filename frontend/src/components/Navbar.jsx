@@ -70,8 +70,14 @@ export default function Navbar() {
         <div className="container-wedding flex items-center justify-between">
           {/* Logo */}
           {/* The couple's T&D monogram (the approved backdrop artwork) */}
-          <Link to="/" className="flex items-center gap-2 group" aria-label="Home">
-            <Monogram size={44} title="T&D — home" className="transition-transform group-hover:scale-105" />
+          <Link to="/" className="relative flex items-center gap-2 group" aria-label="Home">
+            {/* Soft ivory halo so the T&D reads over the corner pattern */}
+            <span
+              aria-hidden="true"
+              className="absolute -inset-x-4 -inset-y-3 rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(closest-side, rgba(253,250,245,0.95) 55%, rgba(253,250,245,0.7) 75%, rgba(253,250,245,0) 100%)' }}
+            />
+            <Monogram size={44} title="T&D — home" className="relative transition-transform group-hover:scale-105" />
           </Link>
 
           {/* Desktop Navigation */}
