@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Monogram, BackdropStrip } from '../HeritageMotifs';
@@ -43,45 +43,122 @@ function InviteCard({ guestName, coupleNames, dateText, venue }) {
   );
 }
 
-/** The ivory sleeve the card slides out of (two soft folds, like an envelope pocket). */
-function Sleeve() {
+const PAPER = '#F7F0E5';
+const PAPER_DEEP = '#EDE2D1';
+const FOLD = '#E2D3BD';
+
+/** Envelope back: the inside wall the card sits against. */
+function EnvelopeBack() {
+  return <div className="absolute inset-0 rounded-t-md" style={{ background: PAPER_DEEP }} />;
+}
+
+/** Envelope front pocket: the two side folds and bottom, which hide the card. */
+function EnvelopePocket() {
   return (
-    <div className="relative w-full h-full">
-      <svg viewBox="0 0 400 200" preserveAspectRatio="none" className="absolute inset-0 w-full h-full" aria-hidden="true">
-        <defs>
-          <linearGradient id="sleeve-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#F7F0E5" />
-            <stop offset="1" stopColor="#F1E7D8" />
-          </linearGradient>
-        </defs>
-        <path d="M0 6 Q0 0 6 0 H394 Q400 0 400 6 V200 H0Z" fill="url(#sleeve-fill)" />
-        <path d="M0 4 L200 92 L400 4" fill="none" stroke="#E2D3BD" strokeWidth="1.2" />
-      </svg>
-      <div className="absolute inset-x-0 -top-3 h-3 rounded-t-full" style={{ boxShadow: '0 -6px 14px rgba(74, 63, 53, 0.08)' }} />
-    </div>
+    <svg viewBox="0 0 400 200" preserveAspectRatio="none" className="absolute inset-0 w-full h-full" aria-hidden="true">
+      <defs>
+        <linearGradient id="pocket-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={PAPER} />
+          <stop offset="1" stopColor="#F1E7D8" />
+        </linearGradient>
+      </defs>
+      {/* Side folds meet in a V below the opening, like a real envelope */}
+      {/* Shallower than the closed flap, so the flap always covers the opening */}
+      <path d="M0 0 L200 70 L400 0 V200 H0Z" fill="url(#pocket-fill)" />
+      <path d="M0 0 L200 70 L400 0" fill="none" stroke={FOLD} strokeWidth="1.2" />
+      <path d="M0 200 L170 112 M400 200 L230 112" fill="none" stroke={FOLD} strokeWidth="0.8" opacity="0.7" />
+    </svg>
   );
 }
 
 /**
- * The invitation's opening. The guest's card peeks out of a sleeve under the
- * T&D monogram; scrolling pulls it up to reveal the details while the sleeve
- * slips away (scrolling back tucks it in again). The stage stays pinned while
- * this plays. Transforms only (smooth on phones); guests who prefer reduced
- * motion get the card, still.
+ * The top flap, hinged on the envelope's top edge. Closed it folds down over
+ * the pocket with the T&D seal; open it stands up behind the card, showing
+ * the patterned liner.
+ */
+function EnvelopeFlap({ rotateX, zIndex, sealOpacity }) {
+  const face = 'absolute inset-0 [backface-visibility:hidden]';
+  return (
+    <motion.div
+      className="absolute inset-x-0 top-0 h-[58%] origin-top"
+      style={{ rotateX, zIndex, transformPerspective: 1100, transformStyle: 'preserve-3d' }}
+    >
+      {/* Outside of the flap (seen when closed) */}
+      <svg viewBox="0 0 400 120" preserveAspectRatio="none" className={face} aria-hidden="true">
+        <path d="M0 0 H400 L210 114 Q200 120 190 114 Z" fill={PAPER} stroke={FOLD} strokeWidth="1.2" />
+      </svg>
+      <motion.div className={`${face} flex items-end justify-center pb-[6%]`} style={{ opacity: sealOpacity }}>
+        <span
+          className="flex items-center justify-center rounded-full w-14 h-14 sm:w-16 sm:h-16 bg-[#FFFDF8]"
+          style={{ boxShadow: '0 2px 8px rgba(74, 63, 53, 0.18)', border: `1px solid ${CARAMEL}` }}
+        >
+          <Monogram size={26} />
+        </span>
+      </motion.div>
+      {/* Inside of the flap (the liner, seen when open) */}
+      <div className={face} style={{ transform: 'rotateX(180deg)' }}>
+        <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="absolute inset-0 w-full h-full" aria-hidden="true">
+          <defs>
+            <pattern id="flap-liner" width="26" height="26" patternUnits="userSpaceOnUse">
+              <rect width="26" height="26" fill="#FBF6EE" />
+              <path d="M13 4 L22 13 L13 22 L4 13Z" fill="none" stroke={CARAMEL} strokeWidth="1" opacity="0.55" />
+              <circle cx="13" cy="13" r="2" fill={CARAMEL} opacity="0.55" />
+            </pattern>
+          </defs>
+          {/* Drawn upside down: this face is flipped twice (here and by the hinge) */}
+          <path d="M0 120 H400 L210 6 Q200 0 190 6 Z" fill="url(#flap-liner)" stroke={FOLD} strokeWidth="1.2" />
+        </svg>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Where a first visit starts: envelope open, card peeking (see the timeline below). */
+const PEEK = 0.13;
+
+/**
+ * The invitation's opening, pinned while it plays. A first visit lands with
+ * the envelope open and the guest's card peeking out under the T&D.
+ * Scrolling down pulls the card up to reveal the details while the envelope
+ * slips away; scrolling all the way up tucks the card back in and closes the
+ * flap over it, sealed. Transforms only (smooth on phones); guests who
+ * prefer reduced motion get the card, still.
+ *
+ * Timeline (scroll progress through the section):
+ *   0 → 0.06   flap opens        (scrolling up: closes)
+ *   0.06 → 0.11 card rises to its peek
+ *   0.11 → 0.16 resting peek (where the page opens)
+ *   0.16 → 0.72 card comes all the way out
+ *   0.55 → 0.90 envelope slips away
  */
 export default function CardReveal({ guestName, coupleNames, dateText, venue }) {
   const sectionRef = useRef(null);
   const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] });
 
-  // Card: peeking (greeting showing above the sleeve) -> fully out.
-  const cardY = useTransform(scrollYProgress, [0.08, 0.72], ['33svh', '0svh']);
-  const cardScale = useTransform(scrollYProgress, [0.08, 0.72], [0.96, 1]);
-  // Sleeve: stays while the card rises, then slips down and away.
-  const sleeveY = useTransform(scrollYProgress, [0.55, 0.9], ['0svh', '30svh']);
-  const sleeveOpacity = useTransform(scrollYProgress, [0.6, 0.9], [1, 0]);
-  const hintOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
+  const cardY = useTransform(scrollYProgress, [0, 0.06, 0.11, 0.16, 0.72], ['54svh', '54svh', '33svh', '33svh', '0svh']);
+  const cardScale = useTransform(scrollYProgress, [0.16, 0.72], [0.96, 1]);
+  const flapRotate = useTransform(scrollYProgress, [0, 0.06], [0, 180]);
+  // In front of the card while closed, behind it once past upright.
+  const flapZ = useTransform(flapRotate, (deg) => (deg < 90 ? 30 : 5));
+  const sealOpacity = useTransform(scrollYProgress, [0, 0.03], [1, 0]);
+  const envelopeY = useTransform(scrollYProgress, [0.55, 0.9], ['0svh', '34svh']);
+  const envelopeOpacity = useTransform(scrollYProgress, [0.6, 0.9], [1, 0]);
+  const hintOpacity = useTransform(scrollYProgress, [0, 0.16, 0.22], [1, 1, 0]);
   const moreOpacity = useTransform(scrollYProgress, [0.85, 0.95], [0, 1]);
+
+  // Open on the peek (envelope open) rather than the sealed envelope, unless
+  // the guest arrived for a specific part of the page or has already scrolled.
+  useEffect(() => {
+    if (reduceMotion) return undefined;
+    const el = sectionRef.current;
+    if (!el || window.location.hash || window.scrollY > 4) return undefined;
+    const raf = requestAnimationFrame(() => {
+      const travel = el.offsetHeight - window.innerHeight;
+      if (travel > 0) window.scrollTo({ top: el.offsetTop + travel * PEEK, behavior: 'instant' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [reduceMotion]);
 
   const card = { guestName, coupleNames, dateText, venue };
 
@@ -102,12 +179,20 @@ export default function CardReveal({ guestName, coupleNames, dateText, venue }) 
   };
 
   return (
-    <section ref={sectionRef} className="relative h-[230svh]" aria-label="Your invitation">
+    <section ref={sectionRef} className="relative h-[250svh]" aria-label="Your invitation">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* T&D, top centre */}
-        <div className="absolute inset-x-0 top-5 sm:top-7 flex justify-center z-30">
+        <div className="absolute inset-x-0 top-5 sm:top-7 flex justify-center z-40">
           <Monogram size={46} title={coupleNames} />
         </div>
+
+        {/* The envelope: back wall, flap (behind or over the card), front pocket */}
+        <motion.div
+          className="absolute left-1/2 top-[64svh] w-[min(96vw,440px)] h-[40svh] will-change-transform"
+          style={{ y: envelopeY, opacity: envelopeOpacity, x: '-50%', zIndex: 5 }}
+        >
+          <EnvelopeBack />
+        </motion.div>
 
         {/* The card */}
         <motion.div
@@ -117,16 +202,23 @@ export default function CardReveal({ guestName, coupleNames, dateText, venue }) 
           <InviteCard {...card} />
         </motion.div>
 
-        {/* The sleeve it slides out of */}
         <motion.div
-          className="absolute left-1/2 top-[64svh] z-20 w-[min(96vw,440px)] h-[40svh] will-change-transform"
-          style={{ y: sleeveY, opacity: sleeveOpacity, x: '-50%' }}
+          className="absolute left-1/2 top-[64svh] w-[min(96vw,440px)] h-[40svh] will-change-transform pointer-events-none"
+          style={{ y: envelopeY, opacity: envelopeOpacity, x: '-50%', zIndex: 20 }}
         >
-          <Sleeve />
+          <EnvelopePocket />
+        </motion.div>
+
+        {/* The flap sits outside the pocket layer so it can pass behind the card */}
+        <motion.div
+          className="absolute left-1/2 top-[64svh] w-[min(96vw,440px)] h-[40svh] will-change-transform pointer-events-none"
+          style={{ y: envelopeY, opacity: envelopeOpacity, x: '-50%', zIndex: flapZ }}
+        >
+          <EnvelopeFlap rotateX={flapRotate} zIndex={1} sealOpacity={sealOpacity} />
         </motion.div>
 
         <motion.div
-          className="absolute inset-x-0 bottom-28 z-30 flex flex-col items-center gap-1 text-center pointer-events-none"
+          className="absolute inset-x-0 top-[31svh] z-40 flex flex-col items-center gap-1 text-center pointer-events-none"
           style={{ opacity: hintOpacity }}
         >
           <p className="font-serif text-lg text-stone-700">Scroll to open your invitation</p>
@@ -134,7 +226,7 @@ export default function CardReveal({ guestName, coupleNames, dateText, venue }) 
         </motion.div>
 
         <motion.div
-          className="absolute inset-x-0 bottom-24 z-30 flex flex-col items-center gap-0.5 text-center pointer-events-none"
+          className="absolute inset-x-0 bottom-24 z-40 flex flex-col items-center gap-0.5 text-center pointer-events-none"
           style={{ opacity: moreOpacity }}
         >
           <p className="font-serif text-base text-stone-600">Keep scrolling for the details</p>
@@ -144,7 +236,7 @@ export default function CardReveal({ guestName, coupleNames, dateText, venue }) 
         <button
           type="button"
           onClick={skip}
-          className="absolute top-6 right-4 z-30 px-4 py-2 rounded-full bg-white/70 backdrop-blur-md border border-white/80 text-sm font-medium text-stone-700 shadow-sm"
+          className="absolute top-6 right-4 z-40 px-4 py-2 rounded-full bg-white/70 backdrop-blur-md border border-white/80 text-sm font-medium text-stone-700 shadow-sm"
         >
           Skip
         </button>
