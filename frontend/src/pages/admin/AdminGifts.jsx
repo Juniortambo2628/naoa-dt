@@ -84,7 +84,7 @@ export default function AdminGifts() {
   const statCards = [
     { label: 'Total Gifts', value: stats.total, icon: Gift, color: '#A67B5B' },
     { label: 'Available', value: stats.available, icon: CheckCircle, color: '#8B9A7D' },
-    { label: 'Reserved', value: stats.reserved, icon: Heart, color: '#D4A59A' },
+    { label: 'Reserved', value: stats.reserved, icon: Heart, color: '#B8936C' },
     { label: 'Cash Funds', value: stats.cashFunds, icon: DollarSign, color: '#C8A68E' },
   ];
 

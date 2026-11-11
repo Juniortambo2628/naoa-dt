@@ -159,7 +159,7 @@ export function TimelineIllustration({ items = [] }) {
         <motion.path
           d="M50 0 Q 30 100, 50 200 T 50 400 T 50 600 T 50 800 T 50 1000"
           fill="none"
-          stroke="#E8D4C8"
+          stroke="#E4D6C2"
           strokeWidth="4"
         />
         <motion.path

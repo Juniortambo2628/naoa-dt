@@ -75,7 +75,7 @@ export function InfinitySign({
 export function LineArtFlower({ 
   size = 200, 
   color = '#A67B5B',
-  accentColor = '#E8C4B8',
+  accentColor = '#DCC8AE',
   className = '',
   style = {},
   showAccentCircle = true,

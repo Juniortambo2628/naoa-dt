@@ -65,7 +65,7 @@ export default function Faq() {
                         wrapper.className = 'table-wrapper relative my-4 rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden';
                         
                         const header = document.createElement('div');
-                        header.className = 'bg-[#FFF9F5] px-3 py-2 border-b border-stone-200 flex justify-between items-center';
+                        header.className = 'bg-[#FDFAF5] px-3 py-2 border-b border-stone-200 flex justify-between items-center';
                         const titleSpan = document.createElement('span');
                         titleSpan.className = 'text-xs font-semibold text-stone-700';
                         titleSpan.innerText = 'Table Data';
@@ -117,7 +117,7 @@ export default function Faq() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="h-screen bg-[#FFF9F5] font-sans flex flex-col overflow-hidden"
+            className="h-screen bg-[#FDFAF5] font-sans flex flex-col overflow-hidden"
         >
             <Navbar />
             
@@ -217,7 +217,7 @@ export default function Faq() {
                             {/* Desktop: Two-column layout */}
                             <div className="hidden md:flex flex-1 bg-white rounded-[2rem] shadow-sm border border-stone-100 overflow-hidden flex-row min-h-0">
                                 {/* Left Column: Questions List */}
-                                <div className="w-72 shrink-0 bg-[#FFF9F5]/30 border-r border-stone-100 flex flex-col min-h-0">
+                                <div className="w-72 shrink-0 bg-[#FDFAF5]/30 border-r border-stone-100 flex flex-col min-h-0">
                                     <div className="px-6 py-4 border-b border-stone-100">
                                         <h2 className="font-serif text-lg text-stone-800">Topics</h2>
                                     </div>
@@ -306,7 +306,7 @@ export default function Faq() {
                             className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-6xl max-h-[85vh] md:max-h-[90vh] flex flex-col overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
-                            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-stone-100 flex justify-between items-center bg-[#FFF9F5] shrink-0">
+                            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-stone-100 flex justify-between items-center bg-[#FDFAF5] shrink-0">
                                 <h3 className="font-serif text-lg md:text-xl text-stone-800">Table View</h3>
                                 <button 
                                     onClick={() => setExpandedTableHtml(null)}

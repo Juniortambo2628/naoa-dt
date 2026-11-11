@@ -10,7 +10,7 @@ export function CollaboratorAvatar({ person, size = 'sm', className = '' }) {
   const where = moduleByKey(person.current_module)?.label;
   return (
     <span
-      className={`${SIZES[size]} rounded-full ring-2 ring-[#FFF9F5] text-white font-semibold flex items-center justify-center shrink-0 ${className}`}
+      className={`${SIZES[size]} rounded-full ring-2 ring-[#FDFAF5] text-white font-semibold flex items-center justify-center shrink-0 ${className}`}
       style={{ background: collaboratorColor(person.id) }}
       title={where ? `${person.name} — on ${where}` : person.name}
     >
@@ -28,7 +28,7 @@ export default function CollaboratorAvatars({ people = [], max = 3, size = 'sm' 
     <span className="flex items-center -space-x-1.5">
       {shown.map((person) => <CollaboratorAvatar key={person.id} person={person} size={size} />)}
       {extra > 0 && (
-        <span className={`${SIZES[size]} rounded-full ring-2 ring-[#FFF9F5] bg-stone-200 text-stone-700 font-semibold flex items-center justify-center`}>
+        <span className={`${SIZES[size]} rounded-full ring-2 ring-[#FDFAF5] bg-stone-200 text-stone-700 font-semibold flex items-center justify-center`}>
           +{extra}
         </span>
       )}

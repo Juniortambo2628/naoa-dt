@@ -111,7 +111,7 @@ export default function AdminRSVPs() {
     const statCards = [
         { label: 'Total Responses', value: stats.total, icon: Users, color: '#4A3F35' },
         { label: 'Attending', value: stats.attending, icon: CheckCircle, color: '#8B9A7D' },
-        { label: 'Declined', value: stats.declined, icon: XCircle, color: '#D4A59A' },
+        { label: 'Declined', value: stats.declined, icon: XCircle, color: '#B8936C' },
         { label: 'With Messages', value: stats.withMessage, icon: MessageSquare, color: '#A67B5B' },
     ];
 

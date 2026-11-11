@@ -72,7 +72,7 @@ export default function CheckInScanner() {
     const summaryCards = [
         { label: 'Expected', value: stats.total_expected, icon: Users, color: '#A67B5B' },
         { label: 'Checked In', value: stats.checked_in, icon: UserCheck, color: '#8B9A7D' },
-        { label: 'Remaining', value: stats.remaining, icon: AlertCircle, color: '#D4A59A' },
+        { label: 'Remaining', value: stats.remaining, icon: AlertCircle, color: '#B8936C' },
         { label: 'Progress', value: `${stats.percentage}%`, icon: CheckCircle, color: '#C8A68E' },
     ];
 

@@ -153,7 +153,7 @@ export default function RSVP() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)', minHeight: '100vh' }}
+      style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)', minHeight: '100vh' }}
     >
       
       <main className="pt-32 pb-20 relative overflow-hidden">
@@ -236,8 +236,8 @@ export default function RSVP() {
                         <div 
                           className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
                           style={{ 
-                            background: 'linear-gradient(135deg, #F8E8E0 0%, #FDF5F2 100%)',
-                            border: '2px solid #D4A59A',
+                            background: 'linear-gradient(135deg, #F3EBDF 0%, #FBF8F3 100%)',
+                            border: '2px solid #B8936C',
                           }}
                         >
                           <Heart className="w-8 h-8" style={{ color: '#A67B5B' }} />
@@ -381,7 +381,7 @@ export default function RSVP() {
                               />
                               <div 
                                 className="p-4 rounded-xl text-center transition-all border-2 peer-checked:border-[#A67B5B] peer-checked:bg-[#A67B5B]/5 relative"
-                                style={{ borderColor: '#E8D4C8' }}
+                                style={{ borderColor: '#E4D6C2' }}
                               >
                                 {/* Checkmark icon - only visible when selected */}
                                 <CheckCircle2 

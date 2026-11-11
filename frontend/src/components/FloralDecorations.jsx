@@ -74,7 +74,7 @@ const Flower = ({ className, style, delay = 0 }) => (
       />
     ))}
     {/* Center */}
-    <circle cx="50" cy="50" r="15" fill="#D4A59A" />
+    <circle cx="50" cy="50" r="15" fill="#B8936C" />
     <circle cx="50" cy="50" r="8" fill="#C8A68E" />
   </motion.svg>
 );
@@ -133,7 +133,7 @@ const Branch = ({ className, style, delay = 0, flip = false }) => (
       cx="75"
       cy="100"
       r="6"
-      fill="#E8C4B8"
+      fill="#DCC8AE"
       initial={{ opacity: 0, scale: 0 }}
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: false }}

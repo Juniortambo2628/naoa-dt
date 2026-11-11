@@ -126,7 +126,7 @@ export default function TabbedTwoColumn({
 
       {/* Desktop: two-column layout */}
       <div className={`hidden md:flex flex-row min-h-0 ${heightClass}`}>
-        <div className={`${navWidthClass} shrink-0 bg-[#FFF9F5]/40 border-r border-stone-100 flex flex-col min-h-0`}>
+        <div className={`${navWidthClass} shrink-0 bg-[#FDFAF5]/40 border-r border-stone-100 flex flex-col min-h-0`}>
           <div className="px-6 py-4 border-b border-stone-100">
             <h2 className="font-serif text-lg text-stone-800">{title}</h2>
           </div>

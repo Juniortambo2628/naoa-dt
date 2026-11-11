@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save } from 'lucide-react';
-import { useSchedule } from '../../hooks/useApiHooks';
+import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save, Users } from 'lucide-react';
+import { useSchedule, useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
 import { scheduleService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
@@ -23,6 +23,7 @@ export default function AdminSchedule() {
   const [targetEventId, setTargetEventId] = useState(null);
   const { searchQuery } = useSearch();
   const [activeEventId, setActiveEventId] = useState(null);
+  const [extrasOpen, setExtrasOpen] = useState(false);
 
   useEffect(() => {
     if (events.length > 0 && !targetEventId) {
@@ -124,6 +125,7 @@ export default function AdminSchedule() {
             hidden: !activeEvent,
           },
           { id: 'add-event', label: 'Add Major Event', icon: Calendar, onClick: handleCreateEvent },
+          { id: 'programme-extras', label: 'Notes & Bridal Party', icon: Users, onClick: () => setExtrasOpen(true) },
           { id: 'edit-event', label: 'Edit Event', icon: Edit, onClick: () => handleEditEvent(activeEvent), hidden: !activeEvent },
           {
             id: 'delete-event',
@@ -224,8 +226,51 @@ export default function AdminSchedule() {
         event={selectedEvent}
       />
       </AdminPageLayout>
+      <ProgrammeExtrasModal isOpen={extrasOpen} onClose={() => setExtrasOpen(false)} />
     </>
   );
+}
+
+/** The note and bridal party shown beside the timeline on the Programme page. */
+function ProgrammeExtrasModal({ isOpen, onClose }) {
+    const { data: settings } = useSettings();
+    const updateSettings = useUpdateSettings();
+    const [form, setForm] = useState({ note: '', party: '' });
+
+    useEffect(() => {
+        if (!isOpen) return;
+        setForm({ note: settings?.programme_note || '', party: settings?.bridal_party || '' });
+    }, [settings, isOpen]);
+
+    const save = useAdminAction(() => updateSettings.mutateAsync({
+        programme_note: form.note.trim(),
+        bridal_party: form.party.split('\n').map((n) => n.trim()).filter(Boolean).join('\n'),
+    }), {
+        key: () => 'save',
+        success: 'Programme notes saved',
+        error: 'Could not save the programme notes',
+        onSuccess: onClose,
+    });
+
+    return (
+        <AdminModal isOpen={isOpen} onClose={onClose} title="Programme notes & bridal party" size="md">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+                <AdminTextarea
+                    label="Programme note (shown beside the timeline)"
+                    rows={4}
+                    value={form.note}
+                    onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+                />
+                <AdminTextarea
+                    label="Bridal party (one name per line)"
+                    rows={8}
+                    value={form.party}
+                    onChange={(e) => setForm((f) => ({ ...f, party: e.target.value }))}
+                />
+                <Button type="submit" variant="secondary" fullWidth action={save} args={['save']} icon={Save}>Save</Button>
+            </form>
+        </AdminModal>
+    );
 }
 
 function EventModal({ isOpen, onClose, onSave, event }) {

@@ -16,6 +16,8 @@ import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
 import GuestNotices from '../components/GuestNotices';
 import CashGiftCard from '../components/CashGiftCard';
+import { Monogram, MotifBand, MotifCorner } from '../components/HeritageMotifs';
+import { initialOf } from '../utils/heritage';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
 import GuestPushCard from '../components/GuestPushCard';
@@ -161,11 +163,12 @@ export default function DigitalInvitation() {
     }
 
     return (
-        <div className="min-h-screen bg-palette-cream-soft selection:bg-palette-cinnamon/15">
-            {/* Background elements */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
-                <div className="absolute -top-[10%] -left-[5%] w-[40%] h-[40%] bg-palette-burnt-orange/20 blur-[120px] rounded-full" />
-                <div className="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-palette-forest/15 blur-[150px] rounded-full" />
+        <div className="relative min-h-screen bg-[#FBF8F3] selection:bg-palette-cinnamon/15">
+            {/* The couple's mood board: a patterned edge and cloth in the corners. */}
+            <MotifBand height={26} opacity={0.85} />
+            <div className="absolute inset-x-0 top-0 h-[520px] pointer-events-none overflow-hidden" aria-hidden="true">
+                <MotifCorner size={300} corner="top-left" opacity={0.35} className="absolute top-0 left-0 w-44 h-44 md:w-[300px] md:h-[300px]" />
+                <MotifCorner size={300} corner="top-right" opacity={0.35} className="absolute top-0 right-0 w-44 h-44 md:w-[300px] md:h-[300px]" />
             </div>
 
             <div className="relative max-w-screen-xl mx-auto px-4 py-12 md:py-20 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-center">
@@ -210,7 +213,15 @@ export default function DigitalInvitation() {
                     className={`w-full space-y-10 ${show.card ? 'max-w-lg' : 'max-w-2xl'}`}
                 >
                     <div className={`text-center space-y-4 ${show.card ? 'lg:text-left' : ''}`}>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-palette-forest/10 text-palette-forest rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+                        <div className={`flex justify-center ${show.card ? 'lg:justify-start' : ''}`}>
+                            <Monogram
+                                first={initialOf(weddingInfo.groom_name, 'T')}
+                                second={initialOf(weddingInfo.bride_name, 'D')}
+                                size={58}
+                                title={coupleNames}
+                            />
+                        </div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#9A7148]/10 text-[#9A7148] rounded-full text-xs font-bold uppercase tracking-wider mb-2">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Official Invitation
                         </div>
@@ -227,19 +238,19 @@ export default function DigitalInvitation() {
                     <div className={`grid grid-cols-1 gap-4 ${detailCount === 2 ? 'md:grid-cols-2' : ''}`}>
                         {show.when && (
                         <div className="bg-white p-6 rounded-2xl border border-palette-light-brown/40 shadow-sm hover:shadow-md transition-shadow group">
-                            <div className="w-10 h-10 bg-palette-forest/10 text-palette-forest rounded-xl flex items-center justify-center mb-4 group-hover:bg-palette-forest group-hover:text-white transition-colors">
+                            <div className="w-10 h-10 bg-[#9A7148]/10 text-[#9A7148] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#9A7148] group-hover:text-white transition-colors">
                                 <Calendar className="w-5 h-5" />
                             </div>
-                            <h3 className="font-bold text-palette-olive! mb-1 italic">When</h3>
+                            <h3 className="font-bold text-[#9A7148]! mb-1 italic">When</h3>
                             <p className="text-sm text-stone-500">{weddingDateText}</p>
                         </div>
                         )}
                         {show.where && (
                         <div className="bg-white p-6 rounded-2xl border border-palette-light-brown/40 shadow-sm hover:shadow-md transition-shadow group">
-                            <div className="w-10 h-10 bg-palette-forest/10 text-palette-forest rounded-xl flex items-center justify-center mb-4 group-hover:bg-palette-forest group-hover:text-white transition-colors">
+                            <div className="w-10 h-10 bg-[#9A7148]/10 text-[#9A7148] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#9A7148] group-hover:text-white transition-colors">
                                 <MapPin className="w-5 h-5" />
                             </div>
-                            <h3 className="font-bold text-palette-olive! mb-1 italic">Where</h3>
+                            <h3 className="font-bold text-[#9A7148]! mb-1 italic">Where</h3>
                             <p className="text-sm text-stone-500">{venueName}</p>
                         </div>
                         )}

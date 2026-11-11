@@ -29,7 +29,7 @@ const QUILL_MODULES = {
     toolbar: [
         [{ header: [1, 2, 3, false] }],
         ['bold', 'italic', 'underline', 'strike'],
-        [{ color: ['#000000', '#ffffff', '#4A3F35', '#A67B5B', '#8B6A4D', '#7D8B9A', '#8B9A7D', '#D4A59A', '#F8E8E0', '#6B5E53', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff'] }, { background: [] }],
+        [{ color: ['#000000', '#ffffff', '#4A3F35', '#A67B5B', '#8B6A4D', '#7D8B9A', '#8B9A7D', '#B8936C', '#F3EBDF', '#6B5E53', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff'] }, { background: [] }],
         [{ list: 'ordered' }, { list: 'bullet' }],
         [{ align: [] }],
         ['link', 'clean'],

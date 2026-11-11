@@ -158,7 +158,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="fixed inset-0 z-[90] md:hidden"
-            style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}
+            style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)' }}
           >
             <div className="flex flex-col items-center justify-center min-h-screen gap-8">
               {filteredLinks.map((link, index) => (

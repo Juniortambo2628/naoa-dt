@@ -129,7 +129,7 @@ export default function AdminSongRequests() {
               icon={<Clock className="w-6 h-6" />}
               label="Pending"
               value={stats.pending}
-              color="#D4A59A"
+              color="#B8936C"
             />
             <StatCard
               icon={<Check className="w-6 h-6" />}

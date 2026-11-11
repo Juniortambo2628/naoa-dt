@@ -61,7 +61,7 @@ function TableShape({ table, isGuestsTable, guestCount, onClick, isSelected }) {
               ? '#A67B5B'
               : isFull
                 ? '#fbbf24'
-                : '#E8D4C8',
+                : '#E4D6C2',
           boxShadow: isGuestsTable 
             ? '0 12px 40px rgba(166, 123, 91, 0.4)' 
             : isSelected
@@ -76,7 +76,7 @@ function TableShape({ table, isGuestsTable, guestCount, onClick, isSelected }) {
             cy="50"
             r="48"
             fill="none"
-            stroke={isGuestsTable ? 'rgba(255,255,255,0.3)' : '#E8D4C8'}
+            stroke={isGuestsTable ? 'rgba(255,255,255,0.3)' : '#E4D6C2'}
             strokeWidth="2"
           />
           <circle
@@ -319,8 +319,8 @@ export default function PublicSeatingChart({ guestCode, embedded = true, showExp
   const chartContent = (
     <div className="relative bg-gradient-to-br from-[#FAF7F2] to-[#F5EDE6] rounded-2xl p-4 md:p-6 min-h-[250px]">
       {/* Decorative elements */}
-      <div className="absolute top-4 left-4 w-8 h-8 border-2 border-[#E8D4C8] rounded-lg opacity-30" />
-      <div className="absolute bottom-4 right-4 w-12 h-12 border-2 border-[#E8D4C8] rounded-full opacity-20" />
+      <div className="absolute top-4 left-4 w-8 h-8 border-2 border-[#E4D6C2] rounded-lg opacity-30" />
+      <div className="absolute bottom-4 right-4 w-12 h-12 border-2 border-[#E4D6C2] rounded-full opacity-20" />
       
       {/* Floor plan grid */}
       <div className="relative flex flex-wrap items-center justify-center gap-8 md:gap-10">

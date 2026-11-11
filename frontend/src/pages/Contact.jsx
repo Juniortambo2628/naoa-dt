@@ -77,7 +77,7 @@ export default function Contact() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-[#FFF9F5] flex flex-col"
+      className="min-h-screen bg-[#FDFAF5] flex flex-col"
     >
 
       <main className="flex-grow pt-32 pb-20 relative overflow-hidden">

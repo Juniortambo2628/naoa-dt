@@ -62,7 +62,7 @@ export function WeddingRingsIllustration({ size = 200, className = '' }) {
 /**
  * Animated Heart with Pulse
  */
-export function AnimatedHeart({ size = 100, color = '#D4A59A', className = '' }) {
+export function AnimatedHeart({ size = 100, color = '#B8936C', className = '' }) {
   return (
     <motion.svg
       width={size}
@@ -123,11 +123,11 @@ export function LoveBirdsIllustration({ size = 300, className = '' }) {
         animate={isInView ? { x: 0, opacity: 1 } : { x: -50, opacity: 0 }}
         transition={{ delay: 0.8, duration: 0.8, type: "spring" }}
       >
-        <ellipse cx="100" cy="105" rx="25" ry="20" fill="#D4A59A" />
-        <circle cx="110" cy="95" r="12" fill="#D4A59A" />
+        <ellipse cx="100" cy="105" rx="25" ry="20" fill="#B8936C" />
+        <circle cx="110" cy="95" r="12" fill="#B8936C" />
         <circle cx="113" cy="93" r="3" fill="#4A3F35" />
         <path d="M120 95 L130 92 L120 98" fill="#A67B5B" />
-        <ellipse cx="85" cy="110" rx="15" ry="8" fill="#E8C4B8" />
+        <ellipse cx="85" cy="110" rx="15" ry="8" fill="#DCC8AE" />
       </motion.g>
       
       {/* Right Bird */}
@@ -140,13 +140,13 @@ export function LoveBirdsIllustration({ size = 300, className = '' }) {
         <circle cx="190" cy="90" r="12" fill="#C8A68E" />
         <circle cx="187" cy="88" r="3" fill="#4A3F35" />
         <path d="M180 90 L170 87 L180 93" fill="#A67B5B" />
-        <ellipse cx="215" cy="105" rx="15" ry="8" fill="#D4A59A" />
+        <ellipse cx="215" cy="105" rx="15" ry="8" fill="#B8936C" />
       </motion.g>
       
       {/* Heart between birds */}
       <motion.path
         d="M150 75 C145 70 138 70 138 78 C138 85 150 95 150 95 C150 95 162 85 162 78 C162 70 155 70 150 75"
-        fill="#D4A59A"
+        fill="#B8936C"
         initial={{ scale: 0, opacity: 0 }}
         animate={isInView ? { 
           scale: [0, 1.2, 1],
@@ -190,8 +190,8 @@ export function WeddingCakeIllustration({ size = 200, className = '' }) {
       <motion.rect
         x="30" y="140" width="140" height="40"
         rx="5"
-        fill="#FDF5F2"
-        stroke="#E8D4C8"
+        fill="#FBF8F3"
+        stroke="#E4D6C2"
         strokeWidth="2"
         initial={{ scaleY: 0, opacity: 0 }}
         animate={isInView ? { scaleY: 1, opacity: 1 } : { scaleY: 0, opacity: 0 }}
@@ -203,8 +203,8 @@ export function WeddingCakeIllustration({ size = 200, className = '' }) {
       <motion.rect
         x="50" y="100" width="100" height="40"
         rx="5"
-        fill="#FDF5F2"
-        stroke="#E8D4C8"
+        fill="#FBF8F3"
+        stroke="#E4D6C2"
         strokeWidth="2"
         initial={{ scaleY: 0, opacity: 0 }}
         animate={isInView ? { scaleY: 1, opacity: 1 } : { scaleY: 0, opacity: 0 }}
@@ -216,8 +216,8 @@ export function WeddingCakeIllustration({ size = 200, className = '' }) {
       <motion.rect
         x="70" y="60" width="60" height="40"
         rx="5"
-        fill="#FDF5F2"
-        stroke="#E8D4C8"
+        fill="#FBF8F3"
+        stroke="#E4D6C2"
         strokeWidth="2"
         initial={{ scaleY: 0, opacity: 0 }}
         animate={isInView ? { scaleY: 1, opacity: 1 } : { scaleY: 0, opacity: 0 }}
@@ -232,9 +232,9 @@ export function WeddingCakeIllustration({ size = 200, className = '' }) {
         transition={{ delay: 1, duration: 0.5 }}
       >
         {/* Flowers */}
-        <circle cx="60" cy="155" r="6" fill="#D4A59A" />
-        <circle cx="100" cy="155" r="6" fill="#D4A59A" />
-        <circle cx="140" cy="155" r="6" fill="#D4A59A" />
+        <circle cx="60" cy="155" r="6" fill="#B8936C" />
+        <circle cx="100" cy="155" r="6" fill="#B8936C" />
+        <circle cx="140" cy="155" r="6" fill="#B8936C" />
         <circle cx="75" cy="115" r="5" fill="#C8A68E" />
         <circle cx="125" cy="115" r="5" fill="#C8A68E" />
         <circle cx="100" cy="75" r="5" fill="#A67B5B" />
@@ -279,11 +279,11 @@ export function ChampagneToastIllustration({ size = 180, className = '' }) {
       >
         <path
           d="M45 50 L40 100 L55 105 L55 140 L45 145 L75 145 L65 140 L65 105 L80 100 L75 50 Z"
-          fill="#FDF5F2"
-          stroke="#D4A59A"
+          fill="#FBF8F3"
+          stroke="#B8936C"
           strokeWidth="2"
         />
-        <ellipse cx="60" cy="50" rx="17" ry="6" fill="#F7E8D0" stroke="#D4A59A" strokeWidth="2" />
+        <ellipse cx="60" cy="50" rx="17" ry="6" fill="#F7E8D0" stroke="#B8936C" strokeWidth="2" />
       </motion.g>
       
       {/* Right Glass */}
@@ -295,7 +295,7 @@ export function ChampagneToastIllustration({ size = 180, className = '' }) {
       >
         <path
           d="M105 50 L100 100 L115 105 L115 140 L105 145 L135 145 L125 140 L125 105 L140 100 L135 50 Z"
-          fill="#FDF5F2"
+          fill="#FBF8F3"
           stroke="#C8A68E"
           strokeWidth="2"
         />
@@ -384,11 +384,11 @@ export function BouquetIllustration({ size = 200, className = '' }) {
       {/* Flowers */}
       {[
         { cx: 100, cy: 80, r: 25, color: '#F8D4D4', delay: 0.5 },
-        { cx: 70, cy: 95, r: 20, color: '#FDF5F2', delay: 0.6 },
-        { cx: 130, cy: 95, r: 20, color: '#FDF5F2', delay: 0.7 },
-        { cx: 85, cy: 115, r: 18, color: '#E8C4B8', delay: 0.8 },
-        { cx: 115, cy: 115, r: 18, color: '#E8C4B8', delay: 0.9 },
-        { cx: 100, cy: 50, r: 18, color: '#D4A59A', delay: 1.0 },
+        { cx: 70, cy: 95, r: 20, color: '#FBF8F3', delay: 0.6 },
+        { cx: 130, cy: 95, r: 20, color: '#FBF8F3', delay: 0.7 },
+        { cx: 85, cy: 115, r: 18, color: '#DCC8AE', delay: 0.8 },
+        { cx: 115, cy: 115, r: 18, color: '#DCC8AE', delay: 0.9 },
+        { cx: 100, cy: 50, r: 18, color: '#B8936C', delay: 1.0 },
       ].map((flower, i) => (
         <motion.g
           key={i}
@@ -410,7 +410,7 @@ export function BouquetIllustration({ size = 200, className = '' }) {
             />
           ))}
           {/* Center */}
-          <circle cx={flower.cx} cy={flower.cy} r={flower.r * 0.3} fill="#D4A59A" />
+          <circle cx={flower.cx} cy={flower.cy} r={flower.r * 0.3} fill="#B8936C" />
         </motion.g>
       ))}
     </svg>

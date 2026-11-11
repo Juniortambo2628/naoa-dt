@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="min-h-screen bg-[#FFF9F5]"
+            className="min-h-screen bg-[#FDFAF5]"
         >
 
             <main className="pt-32 pb-20 container-wedding max-w-4xl">
@@ -55,10 +55,10 @@ export default function PrivacyPolicy() {
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: idx * 0.1 }}
-                            className="bg-white p-8 rounded-2xl border border-[#D4A59A]/20 shadow-sm"
+                            className="bg-white p-8 rounded-2xl border border-[#B8936C]/20 shadow-sm"
                         >
                             <div className="flex items-center gap-4 mb-4">
-                                <div className="p-3 rounded-xl bg-[#F8E8E0] text-[#A67B5B]">
+                                <div className="p-3 rounded-xl bg-[#F3EBDF] text-[#A67B5B]">
                                     <section.icon size={24} />
                                 </div>
                                 <h2 className="text-xl font-bold text-stone-800">{section.title}</h2>
@@ -70,7 +70,7 @@ export default function PrivacyPolicy() {
                     ))}
                 </div>
 
-                <div className="mt-16 p-8 bg-[#F8E8E0]/30 rounded-2xl text-center border border-[#A67B5B]/10">
+                <div className="mt-16 p-8 bg-[#F3EBDF]/30 rounded-2xl text-center border border-[#A67B5B]/10">
                     <p className="text-stone-700">
                         If you have any questions about this Privacy Policy, please reach out to us.
                     </p>

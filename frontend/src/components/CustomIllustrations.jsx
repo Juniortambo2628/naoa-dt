@@ -1,5 +1,6 @@
 import { motion, useInView } from 'framer-motion';
-import { useRef, memo, useMemo } from 'react';
+import { useRef, memo } from 'react';
+import { MotifCorner, MotifEmblem, Monogram } from './HeritageMotifs';
 
 /**
  * PERFORMANCE-OPTIMIZED Custom Illustrations Component
@@ -132,178 +133,111 @@ export const FemaleIcon = memo(function FemaleIcon({ size = 60, className = '', 
   );
 });
 
-/**
- * Main Flower Top Left - Memoized with once animation
+/*
+ * Decorations below keep their historical "Flower" names (every page imports
+ * them) but now draw the couple's mood board: patterned cloth in the corners,
+ * carved-motif emblems and the monogram frame (see HeritageMotifs.jsx).
  */
+
+/** Patterned corner, top left (was the big corner flower). */
 export const MainFlowerTopLeft = memo(function MainFlowerTopLeft({ size = 300, className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
-  
+
   return (
-    <motion.img
+    <motion.div
       ref={ref}
-      src={`${ILLUSTRATIONS_PATH}/main-flower-top-left-brown.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
       className={`absolute top-0 left-0 pointer-events-none ${className}`}
-      initial={{ opacity: 0, x: -30, y: -30 }}
-      animate={isInView ? { opacity: 1, x: 0, y: 0 } : undefined}
+      initial={{ opacity: 0 }}
+      animate={isInView ? { opacity: 1 } : undefined}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
+      style={gpuAccelStyle}
+    >
+      <MotifCorner size={size} corner="top-left" />
+    </motion.div>
   );
 });
 
-/**
- * Main Flower Bottom Right - Memoized with once animation
- */
+/** Patterned corner, bottom right. */
 export const MainFlowerBottomRight = memo(function MainFlowerBottomRight({ size = 300, className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
-  
+
   return (
-    <motion.img
+    <motion.div
       ref={ref}
-      src={`${ILLUSTRATIONS_PATH}/main-flower-bottom-right-brown.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
       className={`absolute bottom-0 right-0 pointer-events-none ${className}`}
-      initial={{ opacity: 0, x: 30, y: 30 }}
-      animate={isInView ? { opacity: 1, x: 0, y: 0 } : undefined}
+      initial={{ opacity: 0 }}
+      animate={isInView ? { opacity: 1 } : undefined}
       transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
+      style={gpuAccelStyle}
+    >
+      <MotifCorner size={size} corner="bottom-right" />
+    </motion.div>
   );
 });
 
-/**
- * Secondary Flowers - Memoized
- */
+/** Smaller patterned corners. */
 export const SecondaryFlowerTopLeft = memo(function SecondaryFlowerTopLeft({ size = 150, className = '' }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
-  
-  return (
-    <motion.img
-      ref={ref}
-      src={`${ILLUSTRATIONS_PATH}/flower-secondary-top-left.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className={`pointer-events-none ${className}`}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={isInView ? { opacity: 1, scale: 1 } : undefined}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
-  );
+  return <MotifCorner size={size} corner="top-left" opacity={0.45} className={className} />;
 });
 
 export const SecondaryFlowerBottomRight = memo(function SecondaryFlowerBottomRight({ size = 150, className = '' }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
-  
-  return (
-    <motion.img
-      ref={ref}
-      src={`${ILLUSTRATIONS_PATH}/flower-secondary-bottom-right.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className={`pointer-events-none ${className}`}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={isInView ? { opacity: 1, scale: 1 } : undefined}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
-  );
+  return <MotifCorner size={size} corner="bottom-right" opacity={0.45} className={className} />;
 });
 
-/**
- * Centered Flower - Memoized
- */
-export const CenteredFlower = memo(function CenteredFlower({ size = 120, className = '', delay = 0 }) {
+/** A single carved-motif emblem. */
+function FadeInEmblem({ size, className, delay = 0, variant, scaleFrom = 0.85 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
-  
   return (
-    <motion.img
+    <motion.div
       ref={ref}
-      src={`${ILLUSTRATIONS_PATH}/flower-centered.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className={`pointer-events-none ${className}`}
-      initial={{ opacity: 0, scale: 0.8 }}
+      className={`pointer-events-none inline-flex items-center justify-center ${className}`}
+      initial={{ opacity: 0, scale: scaleFrom }}
       animate={isInView ? { opacity: 1, scale: 1 } : undefined}
       transition={{ duration: 0.5, ease: "easeOut", delay }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
+      style={{ ...gpuAccelStyle, width: size, height: size }}
+    >
+      <MotifEmblem size={size * 0.6} variant={variant} />
+    </motion.div>
   );
+}
+
+export const CenteredFlower = memo(function CenteredFlower({ size = 120, className = '', delay = 0 }) {
+  return <FadeInEmblem size={size} className={className} delay={delay} variant="sun" />;
 });
 
-/**
- * Flowers Centered cluster - Memoized
- */
+/** Three emblems in a row: mask, eye, mask. */
 export const FlowersCentered = memo(function FlowersCentered({ size = 200, className = '', delay = 0 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
-  
+  const unit = size / 4;
   return (
-    <motion.img
+    <motion.div
       ref={ref}
-      src={`${ILLUSTRATIONS_PATH}/flowers-centered.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className={`pointer-events-none ${className}`}
+      className={`pointer-events-none inline-flex items-center justify-center gap-2 ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={isInView ? { opacity: 1, y: 0 } : undefined}
       transition={{ duration: 0.6, ease: "easeOut", delay }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
+      style={{ ...gpuAccelStyle, width: size }}
+    >
+      <MotifEmblem size={unit} variant="mask" />
+      <MotifEmblem size={unit * 1.3} variant="eye" />
+      <MotifEmblem size={unit} variant="mask" />
+    </motion.div>
   );
 });
 
-/**
- * Flower Color Circles - Memoized
- */
 export const FlowerColorCircles = memo(function FlowerColorCircles({ size = 250, className = '' }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
-  
-  return (
-    <motion.img
-      ref={ref}
-      src={`${ILLUSTRATIONS_PATH}/flower-color-circles.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className={`pointer-events-none ${className}`}
-      initial={{ opacity: 0 }}
-      animate={isInView ? { opacity: 1 } : undefined}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
-  );
+  return <FadeInEmblem size={size} className={className} variant="sun" scaleFrom={1} />;
 });
 
-/**
- * Invitation Name Frame - Memoized
- */
+/** Oval frame with leaf sprigs (the monogram's frame) around children. */
 export const InvitationNameFrame = memo(function InvitationNameFrame({ size = 400, className = '', children }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
-  
+
   return (
     <motion.div
       ref={ref}
@@ -313,15 +247,7 @@ export const InvitationNameFrame = memo(function InvitationNameFrame({ size = 40
       transition={{ duration: 0.6, ease: "easeOut" }}
       style={gpuAccelStyle}
     >
-      <img
-        src={`${ILLUSTRATIONS_PATH}/invitation-name-frame.png`}
-        alt=""
-        width={size}
-        height={size}
-        loading="lazy"
-        className="pointer-events-none"
-        style={{ objectFit: 'contain' }}
-      />
+      <Monogram size={size / 1.32} first="" second="" />
       {children && (
         <div className="absolute inset-0 flex items-center justify-center">
           {children}
@@ -331,54 +257,35 @@ export const InvitationNameFrame = memo(function InvitationNameFrame({ size = 40
   );
 });
 
-/**
- * Floating Flower - Optimized with CSS animation for better performance
- */
-const flowerSrcMap = {
-  'centered': 'flower-centered.png',
-  'secondary-top-left': 'flower-secondary-top-left.png',
-  'secondary-bottom-right': 'flower-secondary-bottom-right.png',
-  'color-circles': 'flower-color-circles.png',
+const emblemForType = {
+  'centered': 'sun',
+  'secondary-top-left': 'mask',
+  'secondary-bottom-right': 'eye',
+  'color-circles': 'sun',
+  'flowers': 'eye',
 };
 
-export const FloatingFlower = memo(function FloatingFlower({ 
-  type = 'centered', 
-  size = 100, 
+/** Gently floating emblem. */
+export const FloatingFlower = memo(function FloatingFlower({
+  type = 'centered',
+  size = 100,
   className = '',
   duration = 6,
   distance = 10,
   delay = 0,
 }) {
-  const src = useMemo(() => 
-    `${ILLUSTRATIONS_PATH}/${flowerSrcMap[type] || flowerSrcMap['centered']}`,
-    [type]
-  );
-  
   return (
-    <motion.img
-      src={src}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className={`pointer-events-none ${className}`}
-      animate={{
-        y: [-distance / 2, distance / 2, -distance / 2],
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
+    <motion.div
+      className={`pointer-events-none hidden md:block ${className}`}
+      animate={{ y: [-distance / 2, distance / 2, -distance / 2] }}
+      transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+      style={{ ...gpuAccelStyle, opacity: 0.55 }}
+    >
+      <MotifEmblem size={size * 0.55} variant={emblemForType[type] || 'sun'} />
+    </motion.div>
   );
 });
 
-/**
- * Parallax Flower - Memoized
- */
 export const ParallaxFlower = memo(function ParallaxFlower({
   type = 'centered',
   size = 150,
@@ -387,40 +294,26 @@ export const ParallaxFlower = memo(function ParallaxFlower({
 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0 });
-  
-  const src = useMemo(() => {
-    const srcMap = {
-      'centered': 'flower-centered.png',
-      'flowers': 'flowers-centered.png',
-      'color-circles': 'flower-color-circles.png',
-    };
-    return `${ILLUSTRATIONS_PATH}/${srcMap[type] || srcMap['centered']}`;
-  }, [type]);
-  
+
   return (
-    <motion.img
+    <motion.div
       ref={ref}
-      src={src}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
       className={`pointer-events-none ${className}`}
       initial={{ y: parallaxOffset, opacity: 0 }}
-      animate={isInView ? { y: 0, opacity: 1 } : undefined}
+      animate={isInView ? { y: 0, opacity: 0.6 } : undefined}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      style={{ ...gpuAccelStyle, objectFit: 'contain' }}
-    />
+      style={gpuAccelStyle}
+    >
+      <MotifEmblem size={size * 0.5} variant={emblemForType[type] || 'sun'} />
+    </motion.div>
   );
 });
 
-/**
- * Flower Divider - Memoized, simplified animation
- */
+/** Divider: two hairlines with a carved eye emblem between them. */
 export const FlowerDivider = memo(function FlowerDivider({ className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
-  
+
   return (
     <div ref={ref} className={`flex items-center justify-center gap-4 py-6 ${className}`}>
       <motion.div
@@ -428,23 +321,15 @@ export const FlowerDivider = memo(function FlowerDivider({ className = '' }) {
         animate={isInView ? { scaleX: 1, opacity: 1 } : undefined}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="h-px w-20 md:w-32 origin-right"
-        style={{ background: 'linear-gradient(90deg, transparent, #C8A68E)', ...gpuAccelStyle }}
+        style={{ background: 'linear-gradient(90deg, transparent, #B8936C)', ...gpuAccelStyle }}
       />
-      <img
-        src={`${ILLUSTRATIONS_PATH}/flower-centered.png`}
-        alt=""
-        width={40}
-        height={40}
-        loading="lazy"
-        className="pointer-events-none"
-        style={{ objectFit: 'contain' }}
-      />
+      <MotifEmblem size={34} variant="eye" />
       <motion.div
         initial={{ scaleX: 0, opacity: 0 }}
         animate={isInView ? { scaleX: 1, opacity: 1 } : undefined}
         transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
         className="h-px w-20 md:w-32 origin-left"
-        style={{ background: 'linear-gradient(90deg, #C8A68E, transparent)', ...gpuAccelStyle }}
+        style={{ background: 'linear-gradient(90deg, #B8936C, transparent)', ...gpuAccelStyle }}
       />
     </div>
   );

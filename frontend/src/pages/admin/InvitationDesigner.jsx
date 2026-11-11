@@ -691,7 +691,7 @@ export default function InvitationDesigner() {
     'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80'
   ];
 
-  const presetColors = ['#A67B5B', '#8B9A7D', '#D4A59A', '#4A3F35', '#2C3E50', '#E74C3C'];
+  const presetColors = ['#A67B5B', '#8B9A7D', '#B8936C', '#4A3F35', '#2C3E50', '#E74C3C'];
 
   const canvas = canvasSize(design.orientation);
   const pageItems = activePageDesign.items || [];

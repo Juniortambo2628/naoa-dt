@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Heart, Instagram, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { FlowerDivider } from './CustomIllustrations';
+import { Monogram, MotifBand } from './HeritageMotifs';
+import { initialOf } from '../utils/heritage';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
 import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
@@ -12,13 +13,16 @@ export default function Footer() {
   const { i18n } = useTranslation();
   const { isVisible, getContent: getFromContext, contents, settings } = useContent();
   const getTxt = (field, fallback) => getFromContext('footer', field, i18n.language, fallback);
-  const { coupleNames } = getCoupleNames(settings, contents, i18n.language);
+  const { coupleNames, brideName, groomName } = getCoupleNames(settings, contents, i18n.language);
 
   return (
     <footer
       className="sticky top-[100vh]"
-      style={{ background: 'linear-gradient(180deg, #F8E8E0 0%, #E8D4C8 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #F3EBDF 0%, #E4D6C2 100%)' }}
     >
+      {/* Mood board pattern edge */}
+      <MotifBand height={30} opacity={0.85} />
+
       {/* Main Footer */}
       <div className="container-wedding py-16">
         <motion.div
@@ -28,7 +32,9 @@ export default function Footer() {
           transition={{ duration: 0.8 }}
           className="text-center mb-12"
         >
-          <FlowerDivider />
+          <div className="flex justify-center mb-4">
+            <Monogram first={initialOf(groomName, 'T')} second={initialOf(brideName, 'D')} size={56} />
+          </div>
           <h3 
             className="text-4xl mb-4"
             style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}

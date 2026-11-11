@@ -337,7 +337,7 @@ export default function GiftRegistry() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)', minHeight: '100vh' }}
+      style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)', minHeight: '100vh' }}
     >
       
       <main className="pt-32 pb-20 relative overflow-hidden">
@@ -429,7 +429,7 @@ export default function GiftRegistry() {
                   className="rounded-2xl overflow-hidden transition-all hover:shadow-lg"
                   style={{ 
                     background: 'rgba(255, 255, 255, 0.9)',
-                    border: '1px solid rgba(232, 212, 200, 0.5)',
+                    border: '1px solid rgba(228, 214, 194, 0.5)',
                   }}
                 >
                   {/* Image */}
@@ -548,7 +548,7 @@ export default function GiftRegistry() {
 
           {filteredGifts.length === 0 && (
             <div className="text-center py-16">
-              <Gift className="w-16 h-16 mx-auto mb-4" style={{ color: '#D4A59A' }} />
+              <Gift className="w-16 h-16 mx-auto mb-4" style={{ color: '#B8936C' }} />
               <p style={{ color: '#6B5D52' }}>{t('gifts.no_results')}</p>
             </div>
           )}

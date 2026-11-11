@@ -1,4 +1,6 @@
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import { Monogram, MotifArch } from '../components/HeritageMotifs';
+import { initialOf } from '../utils/heritage';
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -109,18 +111,42 @@ function HeroSection({ content, settings, loading }) {
       {/* Soft gradient background */}
       <div 
         className="absolute inset-0"
-        style={{ background: 'linear-gradient(180deg, #FFFDF9 0%, #FDF5F0 50%, #FFF9F5 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #FFFDF9 0%, #FBF8F3 50%, #FDFAF5 100%)' }}
       />
       
       {/* Custom Flower Corners */}
       <MainFlowerTopLeft size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
       <MainFlowerBottomRight size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
+
+      {/* Patterned arches, as on the décor backdrop (wide screens only). */}
+      <div className="hidden xl:block absolute left-10 bottom-0 pointer-events-none" aria-hidden="true">
+        <MotifArch width={104} height={340} />
+      </div>
+      <div className="hidden xl:block absolute right-10 bottom-0 pointer-events-none" aria-hidden="true">
+        <MotifArch width={104} height={340} />
+      </div>
       
       {/* Hero Content */}
       <motion.div 
         className="relative z-20 text-center px-4 max-w-6xl mx-auto"
         style={{ y, opacity }}
       >
+        {/* The couple's monogram (initials from Settings). */}
+        <motion.div
+          key={`monogram-${animationKey}`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="flex justify-center mb-4 md:mb-6"
+        >
+          <Monogram
+            first={initialOf(groomName, 'T')}
+            second={initialOf(brideName, 'D')}
+            size={64}
+            title={`${groomName} & ${brideName}`}
+          />
+        </motion.div>
+
         {/* "We're Getting Married" subtitle */}
         <motion.div
           key={`subtitle-${animationKey}`}
@@ -322,7 +348,7 @@ function CountdownSection({ content, settings, loading: cmsLoading }) {
   ];
 
   return (
-    <section className="section relative" style={{ background: '#FDF5F2', zIndex: 40 }}>
+    <section className="section relative" style={{ background: '#FBF8F3', zIndex: 40 }}>
       <div className="container-wedding relative z-10">
         <motion.div
           initial="hidden"
@@ -373,7 +399,7 @@ function CountdownSection({ content, settings, loading: cmsLoading }) {
                 >
                   {String(item.value).padStart(2, '0')}
                 </motion.span>
-                <div className="w-8 h-[1px] bg-[#D4A59A]/50 my-4"></div>
+                <div className="w-8 h-[1px] bg-[#B8936C]/50 my-4"></div>
                 <span 
                   className="text-xs md:text-sm uppercase tracking-[0.25em]"
                   style={{ color: '#8B7B6B' }}
@@ -453,7 +479,7 @@ function StorySection({ content, settings, loading: cmsLoading }) {
                 </div>
                 <motion.div
                   className="absolute inset-0 -m-3 rounded-full border-2"
-                  style={{ borderColor: '#D4A59A' }}
+                  style={{ borderColor: '#B8936C' }}
                   animate={{ rotate: 360 }}
                   transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
                 />
@@ -487,7 +513,7 @@ function StorySection({ content, settings, loading: cmsLoading }) {
               >
                 <Heart 
                   className="w-16 h-16 md:w-20 md:h-20 fill-current" 
-                  style={{ color: '#D4A59A' }} 
+                  style={{ color: '#B8936C' }} 
                 />
               </motion.div>
             </motion.div>
@@ -628,7 +654,7 @@ function EventDetails({ content, loading: cmsLoading }) {
   return (
     <section 
       className="section relative"
-      style={{ background: 'linear-gradient(180deg, #FDF5F2 0%, #F8E8E0 100%)', zIndex: 20 }}
+      style={{ background: 'linear-gradient(180deg, #FBF8F3 0%, #F3EBDF 100%)', zIndex: 20 }}
     >
       <div className="absolute top-8 left-24 pointer-events-none">
          {(() => {
@@ -695,7 +721,7 @@ function EventDetails({ content, loading: cmsLoading }) {
               <motion.div
                 className="w-full h-full"
                 style={{ 
-                  background: 'linear-gradient(180deg, #D4A59A, #A67B5B, #D4A59A)',
+                  background: 'linear-gradient(180deg, #B8936C, #A67B5B, #B8936C)',
                   transformOrigin: 'top',
                 }}
                 initial={{ scaleY: 0 }}
@@ -771,7 +797,7 @@ function EventDetails({ content, loading: cmsLoading }) {
                   <div 
                     className="w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center"
                     style={{ 
-                      background: 'linear-gradient(135deg, #FFF9F5 0%, #F8E8E0 100%)',
+                      background: 'linear-gradient(135deg, #FDFAF5 0%, #F3EBDF 100%)',
                       border: '4px solid #A67B5B',
                       boxShadow: '0 10px 30px rgba(166, 123, 91, 0.2)',
                     }}
@@ -894,7 +920,7 @@ function CTASection({ content, loading: cmsLoading }) {
   return (
     <section 
       className="section relative"
-      style={{ background: 'linear-gradient(135deg, #F8E8E0 0%, #FDF5F2 50%, #F8E8E0 100%)', zIndex: 0 }}
+      style={{ background: 'linear-gradient(135deg, #F3EBDF 0%, #FBF8F3 50%, #F3EBDF 100%)', zIndex: 0 }}
     >
       <div className="container-wedding relative z-10">
         <motion.div

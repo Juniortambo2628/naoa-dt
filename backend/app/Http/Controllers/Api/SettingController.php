@@ -38,6 +38,9 @@ class SettingController extends Controller
         'mpesa_paybill_number',
         'mpesa_paybill_account',
         'cash_gift_note',
+        // Programme page extras (Admin → Schedule).
+        'programme_note',
+        'bridal_party',
     ];
 
     public function index()

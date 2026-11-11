@@ -77,7 +77,7 @@ export default function AdminShell({ children }) {
       <ResetSearchOnNavigate pathname={location.pathname} />
       <div 
         className="min-h-screen"
-        style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)' }}
       >
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
