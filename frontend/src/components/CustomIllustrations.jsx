@@ -247,7 +247,7 @@ export const InvitationNameFrame = memo(function InvitationNameFrame({ size = 40
       transition={{ duration: 0.6, ease: "easeOut" }}
       style={gpuAccelStyle}
     >
-      <Monogram size={size / 1.32} first="" second="" />
+      <Monogram size={size * 0.6} />
       {children && (
         <div className="absolute inset-0 flex items-center justify-center">
           {children}

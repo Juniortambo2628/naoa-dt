@@ -1,5 +1,6 @@
 import { memo, useId } from 'react';
 import { HERITAGE } from '../utils/heritage';
+import { MONOGRAM_COLOR, MONOGRAM_PATHS, MONOGRAM_TRANSFORM, MONOGRAM_VIEWBOX } from '../utils/monogramPath';
 
 /**
  * The couple's mood board, drawn as SVG: warm white with caramel-bronze
@@ -195,31 +196,29 @@ export const MotifEmblem = memo(function MotifEmblem({ size = 40, color = HERITA
 });
 
 /**
- * The couple's approved monogram: a calligraphic T crossing a D (as on the
- * décor backdrop), set in the site's script face. Initials come from the
- * names in Settings; the frame of the original oval design is gone.
+ * The couple's approved TD monogram, traced from the décor backdrop
+ * artwork (see utils/monogramPath.js). `size` is the width in px.
  */
 export const Monogram = memo(function Monogram({
-  first = 'T',
-  second = 'D',
   size = 120,
-  color = HERITAGE.monogram,
+  color = MONOGRAM_COLOR,
   className = '',
   title,
 }) {
+  const { x, y, width, height } = MONOGRAM_VIEWBOX;
+  const { tx, ty, sx, sy } = MONOGRAM_TRANSFORM;
   return (
     <svg
-      viewBox="16 6 124 116"
+      viewBox={`${x} ${y} ${width} ${height}`}
       width={size}
-      height={(size * 116) / 124}
+      height={(size * height) / width}
       className={className}
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
     >
-      <g fill={color} fontFamily="'Great Vibes', cursive">
-        <text x="22" y="78" fontSize="80">{first}</text>
-        <text x="42" y="88" fontSize="70">{second}</text>
+      <g transform={`translate(${tx} ${ty}) scale(${sx} ${sy})`} fill={color}>
+        {MONOGRAM_PATHS.map((d, i) => <path key={i} d={d} />)}
       </g>
     </svg>
   );

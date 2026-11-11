@@ -20,7 +20,7 @@ function canShowEnvelope() {
  * when this runs, and devices without WebGL (or with reduced motion on) get
  * the normal page instead.
  */
-export default function EnvelopeReveal({ guestName, coupleNames, initials, dateText, venue }) {
+export default function EnvelopeReveal({ guestName, coupleNames, dateText, venue }) {
   const [supported] = useState(canShowEnvelope);
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
@@ -44,7 +44,6 @@ export default function EnvelopeReveal({ guestName, coupleNames, initials, dateT
         sceneRef.current = createEnvelopeScene(stageRef.current, {
           greeting: guestName ? `Dear ${guestName},` : 'You are invited',
           couple: coupleNames,
-          initials,
           when: dateText,
           where: venue,
         });
@@ -59,13 +58,15 @@ export default function EnvelopeReveal({ guestName, coupleNames, initials, dateT
       sceneRef.current?.dispose();
       sceneRef.current = null;
     };
-  }, [supported, guestName, coupleNames, initials, dateText, venue]);
+  }, [supported, guestName, coupleNames, dateText, venue]);
 
   // Scroll drives the animation; pause rendering when off screen.
   useEffect(() => {
     if (!supported) return undefined;
     const section = sectionRef.current;
+    let raf = 0;
     const update = () => {
+      raf = 0;
       if (!section) return;
       const rect = section.getBoundingClientRect();
       const travel = rect.height - window.innerHeight;
@@ -82,15 +83,20 @@ export default function EnvelopeReveal({ guestName, coupleNames, initials, dateT
       if (entry.isIntersecting) sceneRef.current?.resume();
       else sceneRef.current?.pause();
     });
+    // At most one update per frame, however fast the scroll events come.
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
     io.observe(section);
     update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
     window.addEventListener('pointermove', onPointer, { passive: true });
     return () => {
       io.disconnect();
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
       window.removeEventListener('pointermove', onPointer);
     };
   }, [supported, ready]);

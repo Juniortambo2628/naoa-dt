@@ -10,6 +10,7 @@
  * Kept free of React so the wrapper can load it (and three) on demand.
  */
 import * as THREE from 'three';
+import { MONOGRAM_PATHS, MONOGRAM_TRANSFORM, MONOGRAM_VIEWBOX } from '../../utils/monogramPath';
 
 const W = 3.2;
 const H = 2.1;
@@ -21,7 +22,7 @@ const COLORS = {
   flap: '#FBF6EE',
   fold: '#E2D3BD',
   sunset: '#BF560F',
-  monogram: '#C19A73',
+  monogram: '#C5A78A',
   ink: '#4A3F35',
   paper: '#FFFDF8',
 };
@@ -42,6 +43,24 @@ function canvasTexture(width, height, draw) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   return texture;
+}
+
+let monogramPaths = null;
+
+/** The approved TD artwork, centred at (cx, cy) and `width` px wide. */
+function drawMonogram(ctx, cx, cy, width, color) {
+  monogramPaths ??= MONOGRAM_PATHS.map((d) => new Path2D(d));
+  const { x, y, width: vw, height: vh } = MONOGRAM_VIEWBOX;
+  const { tx, ty, sx, sy } = MONOGRAM_TRANSFORM;
+  const k = width / vw;
+  ctx.save();
+  ctx.translate(cx - width / 2, cy - (vh * k) / 2);
+  ctx.scale(k, k);
+  ctx.translate(-x + tx, -y + ty);
+  ctx.scale(sx, sy);
+  ctx.fillStyle = color;
+  monogramPaths.forEach((p) => ctx.fill(p));
+  ctx.restore();
 }
 
 /** Fit a line of text inside maxWidth by shrinking the font. */
@@ -83,12 +102,8 @@ function drawCard(ctx, w, h, d) {
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  // Monogram: script T crossing D.
-  ctx.fillStyle = COLORS.monogram;
-  ctx.font = '150px "Great Vibes", cursive';
-  ctx.fillText(d.initials[0], w / 2 - 22, 225);
-  ctx.font = '132px "Great Vibes", cursive';
-  ctx.fillText(d.initials[1], w / 2 + 18, 243);
+  // The approved TD monogram.
+  drawMonogram(ctx, w / 2, 178, 150, COLORS.monogram);
 
   ctx.fillStyle = COLORS.ink;
   const serif = (s) => `${s}px "Cormorant Garamond", Georgia, serif`;
@@ -137,7 +152,7 @@ function drawLiner(ctx, w, h) {
   }
 }
 
-function drawSeal(ctx, w, h, d) {
+function drawSeal(ctx, w, h) {
   ctx.fillStyle = COLORS.sunset;
   ctx.beginPath();
   ctx.arc(w / 2, h / 2, w / 2 - 2, 0, Math.PI * 2);
@@ -147,12 +162,7 @@ function drawSeal(ctx, w, h, d) {
   ctx.beginPath();
   ctx.arc(w / 2, h / 2, w / 2 - 22, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.fillStyle = '#FFF8EF';
-  ctx.textAlign = 'center';
-  ctx.font = '150px "Great Vibes", cursive';
-  ctx.fillText(d.initials[0], w / 2 - 20, h / 2 + 50);
-  ctx.font = '132px "Great Vibes", cursive';
-  ctx.fillText(d.initials[1], w / 2 + 16, h / 2 + 66);
+  drawMonogram(ctx, w / 2, h / 2, 250, '#FFF8EF');
 }
 
 function uvFromPositions(geometry, minX, maxX, minY, maxY) {
@@ -262,7 +272,7 @@ export function createEnvelopeScene(container, details) {
   flap.add(flapFront, flapLiner);
 
   // Wax seal on the flap's tip; it lifts away as the envelope opens.
-  const sealTex = keep(canvasTexture(512, 512, (ctx, w, h) => drawSeal(ctx, w, h, details)));
+  const sealTex = keep(canvasTexture(512, 512, (ctx, w, h) => drawSeal(ctx, w, h)));
   const seal = new THREE.Mesh(
     keep(new THREE.CircleGeometry(0.3, 64)),
     keep(new THREE.MeshBasicMaterial({ map: sealTex, transparent: true })),

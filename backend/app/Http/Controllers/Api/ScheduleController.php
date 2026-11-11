@@ -17,7 +17,19 @@ class ScheduleController extends Controller
     use ApiResponse;
 
     /**
-     * Get the wedding schedule
+     * The programme guests see: only items shown to guests (Admin → Schedule).
+     */
+    public function publicIndex()
+    {
+        $events = Event::with(['scheduleItems' => fn ($q) => $q->where('is_public', true)->with('liveUpdates')])
+            ->orderBy('event_date')
+            ->get();
+
+        return $this->successResponse($events);
+    }
+
+    /**
+     * Get the wedding schedule (admin: every item, hidden ones included)
      */
     public function index()
     {
@@ -33,7 +45,7 @@ class ScheduleController extends Controller
      */
     public function getSchedule(?Event $event = null)
     {
-        $query = ScheduleItem::with('liveUpdates');
+        $query = ScheduleItem::with('liveUpdates')->where('is_public', true);
 
         if ($event) {
             $query->where('event_id', $event->id);
@@ -47,7 +59,8 @@ class ScheduleController extends Controller
      */
     public function getLiveUpdates()
     {
-        $updates = LiveUpdate::with('scheduleItem')
+        // The linked item only when guests may see it (hidden items stay private).
+        $updates = LiveUpdate::with(['scheduleItem' => fn ($q) => $q->where('is_public', true)])
             ->latest()
             ->take(20)
             ->get();
@@ -67,10 +80,11 @@ class ScheduleController extends Controller
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'status' => 'sometimes|in:upcoming,current,completed',
+            'is_public' => 'sometimes|boolean',
         ]);
 
         $scheduleItem->update($request->only([
-            'title', 'start_time', 'end_time', 'description', 'location', 'status',
+            'title', 'start_time', 'end_time', 'description', 'location', 'status', 'is_public',
         ]));
 
         // If setting to current, set all others to upcoming or completed
@@ -86,8 +100,8 @@ class ScheduleController extends Controller
                 ->update(['status' => 'upcoming']);
         }
 
-        // Notify confirmed guests of schedule changes
-        if ($request->has('notify_guests') && $request->notify_guests) {
+        // Notify confirmed guests of schedule changes (never about hidden items)
+        if ($request->boolean('notify_guests') && $scheduleItem->is_public) {
             $confirmedGuests = Guest::where('rsvp_status', 'confirmed')
                 ->whereNotNull('email')
                 ->get();
@@ -191,12 +205,13 @@ class ScheduleController extends Controller
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'type' => 'nullable|string|max:50',
+            'is_public' => 'sometimes|boolean',
         ]);
 
         $order = $event->scheduleItems()->max('order') + 1;
 
         $item = $event->scheduleItems()->create([
-            ...$request->only(['title', 'start_time', 'end_time', 'description', 'location', 'type']),
+            ...$request->only(['title', 'start_time', 'end_time', 'description', 'location', 'type', 'is_public']),
             'order' => $order,
         ]);
 

@@ -18,7 +18,6 @@ import GuestNotices from '../components/GuestNotices';
 import CashGiftCard from '../components/CashGiftCard';
 import EnvelopeReveal from '../components/envelope/EnvelopeReveal';
 import { Monogram, DiamondBand, MotifCorner } from '../components/HeritageMotifs';
-import { initialOf } from '../utils/heritage';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
 import GuestPushCard from '../components/GuestPushCard';
@@ -177,7 +176,6 @@ export default function DigitalInvitation() {
                 <EnvelopeReveal
                     guestName={guest.name}
                     coupleNames={coupleNames}
-                    initials={`${initialOf(weddingInfo.groom_name, 'T')}${initialOf(weddingInfo.bride_name, 'D')}`}
                     dateText={weddingDateText}
                     venue={venueName}
                 />
@@ -227,9 +225,7 @@ export default function DigitalInvitation() {
                     <div className={`text-center space-y-4 ${show.card ? 'lg:text-left' : ''}`}>
                         <div className={`flex justify-center ${show.card ? 'lg:justify-start' : ''}`}>
                             <Monogram
-                                first={initialOf(weddingInfo.groom_name, 'T')}
-                                second={initialOf(weddingInfo.bride_name, 'D')}
-                                size={84}
+                                size={72}
                                 title={coupleNames}
                             />
                         </div>

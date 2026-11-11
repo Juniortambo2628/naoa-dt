@@ -1,6 +1,5 @@
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { Monogram, SunStrip } from '../components/HeritageMotifs';
-import { initialOf } from '../utils/heritage';
+import { motion, useInView } from 'framer-motion';
+import { Monogram, DiamondBand } from '../components/HeritageMotifs';
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -87,27 +86,16 @@ function HeroSection({ content, settings, loading }) {
   const hasNotices = visibleGuestNotices(settings?.guest_notices).length > 0;
 
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: false, amount: 0.3 });
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"]
-  });
-  
-  const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-
-  // Animation key to force replay when returning to view
-  const [animationKey, setAnimationKey] = useState(0);
-  
-  useEffect(() => {
-    if (isInView) {
-      setAnimationKey(prev => prev + 1);
-    }
-  }, [isInView]);
+  // Reveal once. The hero used to replay its entrance every time it came back
+  // into view and drift/fade with the scroll (parallax), which stuttered on
+  // phones (iOS Safari especially); now it scrolls like normal content.
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
+  const animationKey = 0;
 
   return (
-    <section ref={ref} className="relative min-h-[100dvh] flex items-center justify-center pt-28 pb-20 md:pt-28 md:pb-12 overflow-hidden" style={{ zIndex: 50 }}>
-      {/* Top padding (pt-28) clears the fixed navbar (~96px) so the subtitle never sits under it on phones or short screens. */}
+    <section ref={ref} className="relative min-h-[100svh] flex items-center justify-center pt-28 pb-20 md:pt-28 md:pb-12 overflow-hidden" style={{ zIndex: 50 }}>
+      {/* Top padding (pt-28) clears the fixed navbar (~96px) so the subtitle never sits under it on phones or short screens.
+          svh (not dvh): the height must not change while Safari's toolbar collapses mid-scroll. */}
       {/* Soft gradient background */}
       <div 
         className="absolute inset-0"
@@ -116,21 +104,13 @@ function HeroSection({ content, settings, loading }) {
       
       {/* Custom Flower Corners */}
       <MainFlowerTopLeft size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
-      <MainFlowerBottomRight size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
+      {/* Phones: only the top corner, so the pattern never sits behind the notices. */}
+      <MainFlowerBottomRight size={350} className="hidden md:block" />
 
-      {/* The approved long strips (sun over a diamond-edged runner), hung
-          either side like the blessing-area banners (wide screens only). */}
-      <div className="hidden xl:block absolute left-16 top-36 pointer-events-none" aria-hidden="true">
-        <SunStrip width={40} height={420} />
-      </div>
-      <div className="hidden xl:block absolute right-16 top-36 pointer-events-none" aria-hidden="true">
-        <SunStrip width={40} height={420} />
-      </div>
       
       {/* Hero Content */}
       <motion.div 
         className="relative z-20 text-center px-4 max-w-6xl mx-auto"
-        style={{ y, opacity }}
       >
         {/* The couple's monogram (initials from Settings). */}
         <motion.div
@@ -141,9 +121,7 @@ function HeroSection({ content, settings, loading }) {
           className="flex justify-center mb-4 md:mb-6"
         >
           <Monogram
-            first={initialOf(groomName, 'T')}
-            second={initialOf(brideName, 'D')}
-            size={92}
+            size={78}
             title={`${groomName} & ${brideName}`}
           />
         </motion.div>
@@ -243,11 +221,11 @@ function HeroSection({ content, settings, loading }) {
           initial={{ scaleX: 0 }}
           animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
           transition={{ delay: 2.8, duration: 1, ease: "easeOut" }}
-          className="w-32 md:w-64 h-0.5 mx-auto mb-8 md:mb-10"
-          style={{ 
-            background: 'linear-gradient(90deg, transparent, #C8A68E, #A67B5B, #C8A68E, transparent)',
-          }}
-        />
+          className="w-36 md:w-64 mx-auto mb-8 md:mb-10 origin-center"
+        >
+          {/* The approved strip design: diamond lattice in burnt orange */}
+          <DiamondBand height={12} />
+        </motion.div>
         
         {/* Date & Venue */}
         <motion.div
@@ -356,7 +334,7 @@ function CountdownSection({ content, settings, loading: cmsLoading }) {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: false, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.3 }}
           variants={staggerContainer}
           className="text-center"
         >
@@ -742,7 +720,7 @@ function EventDetails({ content, loading: cmsLoading }) {
                 }`}
                 initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
               >
                 <div className={`flex-1 ${index % 2 === 0 ? 'md:text-right' : 'md:text-left'}`}>
@@ -929,7 +907,7 @@ function CTASection({ content, loading: cmsLoading }) {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: false, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.3 }}
           variants={staggerContainer}
           className="text-center max-w-2xl mx-auto"
         >
