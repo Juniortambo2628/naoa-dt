@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, MapPin, Clock, Info, RefreshCw, AlertCircle, 
-  Music, GlassWater, Utensils, Camera, Heart, Bell
+  Music, GlassWater, Utensils, Camera, Heart, Bell, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { scheduleService } from '../services/api';
@@ -33,6 +33,9 @@ const iconMap = {
   'Default': Calendar,
 };
 
+/** Fallback height of the fixed navbar (it is measured once the page is up). */
+const NAV_FALLBACK = 72;
+
 const demoUpdates = [
   { id: 1, title: 'Welcome!', message: 'We are so glad you are here.', time: '2:00 PM' },
 ];
@@ -58,7 +61,53 @@ export default function Programme() {
   const [schedule, setSchedule] = useState([]);
   const [updates, setUpdates] = useState(demoUpdates);
   const [loading, setLoading] = useState(true);
+  // Phones show one panel at a time; desktop shows them side by side.
+  const [tab, setTab] = useState('programme');
+  const [stuck, setStuck] = useState(false);
+  const [headerH, setHeaderH] = useState(0);
+  const [navH, setNavH] = useState(NAV_FALLBACK);
+  const sentinelRef = useRef(null);
+  const headerRef = useRef(null);
   const navigate = useNavigate();
+
+  // Track the fixed navbar's height (it differs on phones and shrinks on scroll).
+  useEffect(() => {
+    const nav = document.querySelector('nav.fixed');
+    if (!nav || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(() => setNavH(Math.round(nav.getBoundingClientRect().height)));
+    ro.observe(nav, { box: 'border-box' });
+    return () => ro.disconnect();
+  }, [contentLoading]);
+
+  // The title bar pins under the navbar; it compacts once it is pinned.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(
+      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < navH + 1),
+      { rootMargin: `-${navH}px 0px 0px 0px`, threshold: 0 }
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [contentLoading, navH]);
+
+  // The desktop side panel pins just below the title bar.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(() => setHeaderH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [contentLoading]);
+
+  const showTab = (next) => {
+    setTab(next);
+    // Start the new panel at its top, not wherever the last one was scrolled to.
+    const sentinel = sentinelRef.current;
+    if (sentinel && stuck) {
+      window.scrollTo({ top: sentinel.getBoundingClientRect().top + window.scrollY - navH, behavior: 'instant' });
+    }
+  };
 
   useEffect(() => {
     if (!contentLoading && !isVisible('programme_page')) {
@@ -143,7 +192,8 @@ export default function Programme() {
       style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)', minHeight: '100vh' }}
     >
       
-      <main className="pt-32 pb-20 relative overflow-hidden">
+      {/* overflow-x-clip (not hidden) so the title bar and side panel can stick */}
+      <main className="pt-28 md:pt-32 pb-20 relative overflow-x-clip">
         {/* Custom flower decorations */}
         <MainFlowerTopLeft size={250} />
         <MainFlowerBottomRight size={250} />
@@ -157,31 +207,101 @@ export default function Programme() {
         </div>
         
         <div className="container-wedding relative z-10">
-          {/* Header */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            className="text-center mb-16"
-          >
-            <FlowerDivider />
-            <h1 
-              className="text-5xl md:text-6xl mb-4"
-              style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-            >
-              {getTxt('programme_page', 'title', 'programme.title')}
-            </h1>
-            <p 
-              className="text-lg"
-              style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
-            >
-              {getWeddingDateText(content, i18n.language, settings)}
-            </p>
-          </motion.div>
+          <FlowerDivider />
+          <div ref={sentinelRef} aria-hidden="true" />
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          {/* Title and date: stay pinned under the navbar while scrolling */}
+          <div
+            ref={headerRef}
+            className="sticky z-30 -mx-4 px-4 sm:mx-0 sm:px-0"
+            style={{ top: navH }}
+          >
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeInUp}
+              className={`text-center transition-all duration-300 rounded-b-3xl ${
+                stuck
+                  ? 'py-2.5 bg-[#FDFAF5]/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(74,63,53,0.08)] border-b border-[#E4D6C2]/70'
+                  : 'pb-4 lg:pb-8'
+              }`}
+            >
+              <h1
+                className={`leading-tight transition-all duration-300 ${stuck ? 'text-[1.75rem]! md:text-4xl!' : 'text-5xl md:text-6xl mb-2 md:mb-4'}`}
+                style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
+              >
+                {getTxt('programme_page', 'title', 'programme.title')}
+              </h1>
+              <p
+                className={`transition-all duration-300 ${stuck ? 'text-sm md:text-base' : 'text-lg'}`}
+                style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
+              >
+                {getWeddingDateText(content, i18n.language, settings)}
+              </p>
+
+              {/* Phones: switch between the timeline, updates and notes */}
+              <div
+                role="tablist"
+                aria-label="Programme sections"
+                className={`lg:hidden mx-auto max-w-sm grid grid-cols-3 gap-1 rounded-full p-1 bg-white/80 border border-[#E4D6C2] shadow-sm ${stuck ? 'mt-2' : 'mt-5'}`}
+              >
+                {[
+                  { id: 'programme', label: t('programme.tab_timeline', 'Timeline') },
+                  { id: 'updates', label: t('programme.tab_updates', 'Updates'), dot: hasNewItems },
+                  { id: 'notes', label: t('programme.tab_notes', 'Notes & party') },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === item.id}
+                    onClick={() => showTab(item.id)}
+                    className={`relative rounded-full px-2 py-2 text-[13px] font-medium transition-colors ${
+                      tab === item.id ? 'text-white' : 'text-stone-600'
+                    }`}
+                  >
+                    {tab === item.id && (
+                      <motion.span
+                        layoutId="programme-tab"
+                        className="absolute inset-0 rounded-full"
+                        style={{ background: 'linear-gradient(135deg, #A67B5B 0%, #C4A385 100%)' }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                      />
+                    )}
+                    <span className="relative">{item.label}</span>
+                    {item.dot && tab !== item.id && (
+                      <span className="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8 mt-6 lg:mt-4">
             {/* Timeline - Left Side */}
-            <div className="lg:col-span-2 relative">
+            <div className={`lg:col-span-2 relative ${tab === 'programme' ? '' : 'hidden lg:block'}`}>
+              {/* Phones: the latest update, one tap from the full list */}
+              {!loading && updates.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => showTab('updates')}
+                  className="lg:hidden w-full mb-6 flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-white/80 border border-[#E4D6C2]"
+                >
+                  <span className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center" style={{ background: 'rgba(166, 123, 91, 0.1)' }}>
+                    <Bell className="w-4 h-4" style={{ color: '#A67B5B' }} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em]" style={{ color: '#8B7B6B' }}>
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#8B9A7D' }} />
+                      {t('programme.latest_update', 'Latest update')}
+                    </span>
+                    <span className="block truncate text-sm" style={{ color: '#4A3F35' }}>{updates[0].message || updates[0].title}</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 shrink-0 text-stone-400" />
+                </button>
+              )}
+
               {/* Decorative centered flowers */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none opacity-30">
                 <FlowersCentered size={120} />
@@ -210,12 +330,12 @@ export default function Programme() {
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, amount: 0.2 }}
-                        className="relative flex gap-6 mb-8 last:mb-0"
+                        className="relative flex gap-3 sm:gap-6 mb-5 sm:mb-8 last:mb-0"
                       >
                         {/* Timeline Line */}
                         {index < schedule.length - 1 && (
                           <div 
-                            className="absolute left-8 top-20 w-0.5 h-full -z-10"
+                            className="absolute left-6 sm:left-8 top-14 sm:top-20 w-0.5 h-full -z-10"
                             style={{ 
                               background: isCompleted 
                                 ? 'linear-gradient(180deg, #8B9A7D, #C5D4B9)'
@@ -227,7 +347,7 @@ export default function Programme() {
                         {/* Icon */}
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center z-10"
+                          className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center z-10"
                           style={{ 
                             background: isCurrent 
                               ? 'linear-gradient(135deg, #A67B5B 0%, #C8A68E 100%)'
@@ -239,14 +359,14 @@ export default function Programme() {
                           }}
                         >
                           <Icon 
-                            className="w-7 h-7"
+                            className="w-5 h-5 sm:w-7 sm:h-7"
                             style={{ color: isCurrent || isCompleted ? 'white' : '#A67B5B' }}
                           />
                         </motion.div>
                         
                         {/* Content */}
                         <div 
-                          className="flex-1 p-6 rounded-2xl transition-all"
+                          className="flex-1 min-w-0 p-4 sm:p-6 rounded-2xl transition-all"
                           style={{ 
                             background: isCurrent 
                               ? 'rgba(166, 123, 91, 0.08)'
@@ -307,15 +427,17 @@ export default function Programme() {
             </div>
 
             {/* Live Updates - Right Side */}
-            <div className="lg:col-span-1">
+            <aside className="lg:col-span-1" aria-label="Updates and notes">
+              {/* Desktop: pinned beside the timeline, scrolling on its own if taller than the screen */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: false }}
-                className="sticky top-32"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="lg:sticky lg:top-(--aside-top) lg:max-h-[calc(100svh-var(--aside-top)-1rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:pb-2 programme-aside"
+                style={{ '--aside-top': `${navH + headerH + 12}px` }}
               >
                 <div 
-                  className="card-elevated"
+                  className={`card-elevated ${tab === 'updates' ? '' : 'hidden lg:block'}`}
                   style={{ background: 'rgba(255, 255, 255, 0.95)' }}
                 >
                   <div className="flex items-center gap-3 mb-6">
@@ -380,7 +502,7 @@ export default function Programme() {
 
                 {/* Important Notes */}
                 <div 
-                  className="mt-6 p-6 rounded-2xl"
+                  className={`lg:mt-6 p-6 rounded-2xl ${tab === 'notes' ? '' : 'hidden lg:block'}`}
                   style={{ background: 'rgba(184, 147, 108, 0.08)', border: '1px solid rgba(184, 147, 108, 0.35)' }}
                 >
                   <h4 
@@ -408,7 +530,7 @@ export default function Programme() {
                 {/* Bridal party (Admin → Schedule) */}
                 {bridalParty.length > 0 && (
                   <div
-                    className="mt-6 p-6 rounded-2xl bg-white/80"
+                    className={`mt-6 p-6 rounded-2xl bg-white/80 ${tab === 'notes' ? '' : 'hidden lg:block'}`}
                     style={{ border: '1px solid rgba(184, 147, 108, 0.35)' }}
                   >
                     <h4
@@ -431,7 +553,7 @@ export default function Programme() {
                   </div>
                 )}
               </motion.div>
-            </div>
+            </aside>
           </div>
         </div>
 

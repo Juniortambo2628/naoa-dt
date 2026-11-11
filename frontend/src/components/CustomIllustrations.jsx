@@ -1,6 +1,6 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef, memo } from 'react';
-import { MotifCorner, MotifEmblem, Monogram, BackdropStrip } from './HeritageMotifs';
+import { MotifCorner, MotifEmblem, Monogram } from './HeritageMotifs';
 
 /**
  * PERFORMANCE-OPTIMIZED Custom Illustrations Component
@@ -299,7 +299,7 @@ export const ParallaxFlower = memo(function ParallaxFlower({
   );
 });
 
-/** Section break: a miniature of the couple's décor backdrop (arches and T&D). */
+/** Section break: the couple's T&D monogram on its own. */
 export const FlowerDivider = memo(function FlowerDivider({ className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
@@ -307,12 +307,12 @@ export const FlowerDivider = memo(function FlowerDivider({ className = '' }) {
   return (
     <motion.div
       ref={ref}
-      className={`py-6 ${className}`}
+      className={`py-5 flex justify-center ${className}`}
       initial={{ opacity: 0, y: 8 }}
       animate={isInView ? { opacity: 1, y: 0 } : undefined}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <BackdropStrip height={52} />
+      <Monogram size={40} />
     </motion.div>
   );
 });
