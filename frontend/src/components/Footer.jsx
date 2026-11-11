@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart, Instagram, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { BackdropStrip } from './HeritageMotifs';
+import { Monogram } from './HeritageMotifs';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
 import { WEDDING_DEFAULTS } from '../utils/weddingDefaults';
@@ -28,7 +28,7 @@ export default function Footer() {
           transition={{ duration: 0.8 }}
           className="text-center mb-12"
         >
-          <BackdropStrip height={60} className="mb-4" />
+          <div className="flex justify-center mb-4"><Monogram size={48} /></div>
           <h3 
             className="text-4xl mb-4"
             style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
