@@ -5,7 +5,7 @@
  * is shown, so new sections appear by default.
  */
 export const INVITATION_SECTIONS = [
-  { id: 'envelope', label: 'Opening envelope', hint: '3D envelope at the top that opens as the guest scrolls down (and closes when they scroll back).' },
+  { id: 'envelope', label: 'Opening card', hint: 'At the top: the guest\'s card peeks out under the T&D and pulls up to reveal the details as they scroll.' },
   { id: 'card', label: 'Invitation card', hint: 'The designed card beside the welcome text (desktop).' },
   { id: 'welcome', label: 'Welcome message', hint: 'The greeting paragraph under "You\'re Invited!".' },
   { id: 'when', label: 'When (date)', hint: 'Wedding date card.' },

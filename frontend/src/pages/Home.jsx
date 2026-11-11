@@ -1,5 +1,4 @@
 import { motion, useInView } from 'framer-motion';
-import { Monogram, DiamondBand } from '../components/HeritageMotifs';
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -78,6 +77,76 @@ const getContent = (content, section, field, i18n, fallbackKey, t) => {
   return val;
 };
 
+/** A fine-line heart that draws itself in, then breathes gently. */
+function LineHeart() {
+  return (
+    <motion.svg
+      viewBox="0 0 48 44"
+      className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14"
+      fill="none"
+      aria-hidden="true"
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.6 }}
+      animate={{ scale: [1, 1.06, 1] }}
+      transition={{ scale: { duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 1.8 } }}
+    >
+      <motion.path
+        d="M24 40C24 40 5 28.5 3.4 16.6 2.3 8.6 7.6 3.5 13.8 3.5 18.3 3.5 21.6 6.2 24 10.2 26.4 6.2 29.7 3.5 34.2 3.5 40.4 3.5 45.7 8.6 44.6 16.6 43 28.5 24 40 24 40Z"
+        stroke="#C4A385"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        variants={{ hidden: { pathLength: 0, opacity: 0 }, visible: { pathLength: 1, opacity: 1 } }}
+        transition={{ duration: 1.6, ease: 'easeInOut' }}
+      />
+      <motion.path
+        d="M24 33C24 33 11.5 25 10.4 17.2 9.7 12.3 12.9 9.2 16.6 9.2"
+        stroke="#C4A385"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.6"
+        variants={{ hidden: { pathLength: 0 }, visible: { pathLength: 1 } }}
+        transition={{ duration: 1.2, ease: 'easeInOut', delay: 0.6 }}
+      />
+    </motion.svg>
+  );
+}
+
+/** One of the couple: portrait in a fine double ring, name, optional role. */
+function CouplePortrait({ image, name, role, alt, loading, from }) {
+  return (
+    <motion.div
+      className="text-center min-w-0"
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.9, ease: 'easeOut', delay: from === 'right' ? 0.15 : 0 }}
+    >
+      <div className="relative mx-auto mb-3 sm:mb-4 w-[120px] h-[120px] sm:w-[176px] sm:h-[176px] md:w-[240px] md:h-[240px]">
+        <div className="absolute -inset-1.5 sm:-inset-2.5 rounded-full border" style={{ borderColor: 'rgba(196, 163, 133, 0.9)' }} />
+        <div className="absolute -inset-3 sm:-inset-5 rounded-full border" style={{ borderColor: 'rgba(196, 163, 133, 0.35)' }} />
+        <div className="w-full h-full rounded-full overflow-hidden bg-stone-100">
+          {image ? (
+            <img src={getAssetUrl(image)} alt={alt} className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <Skeleton variant="image" width="100%" height="100%" />
+          )}
+        </div>
+      </div>
+      <h3
+        className="text-3xl sm:text-4xl mt-4 mb-1 truncate"
+        style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
+      >
+        {loading ? <Skeleton variant="text" width="110px" height="36px" className="mx-auto" as="span" /> : name}
+      </h3>
+      {!loading && role && (
+        <p className="text-sm sm:text-base" style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>{role}</p>
+      )}
+    </motion.div>
+  );
+}
+
 // Hero Section with Horizontal Names, Female/Male Icons, and Infinity Sign
 function HeroSection({ content, settings, loading }) {
   const { t, i18n } = useTranslation();
@@ -103,7 +172,8 @@ function HeroSection({ content, settings, loading }) {
       />
       
       {/* Custom Flower Corners */}
-      <MainFlowerTopLeft size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
+      {/* Below the header, so the T&D logo stays clear. */}
+      <MainFlowerTopLeft size={350} className="hidden md:block top-24!" />
       {/* Phones: only the top corner, so the pattern never sits behind the notices. */}
       <MainFlowerBottomRight size={350} className="hidden md:block" />
 
@@ -112,20 +182,7 @@ function HeroSection({ content, settings, loading }) {
       <motion.div 
         className="relative z-20 text-center px-4 max-w-6xl mx-auto"
       >
-        {/* The couple's monogram (initials from Settings). */}
-        <motion.div
-          key={`monogram-${animationKey}`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-          className="flex justify-center mb-4 md:mb-6"
-        >
-          <Monogram
-            size={78}
-            title={`${groomName} & ${brideName}`}
-          />
-        </motion.div>
-
+        {/* (The T&D monogram now sits in the header, in place of the platform logo.) */}
         {/* "We're Getting Married" subtitle */}
         <motion.div
           key={`subtitle-${animationKey}`}
@@ -221,11 +278,9 @@ function HeroSection({ content, settings, loading }) {
           initial={{ scaleX: 0 }}
           animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
           transition={{ delay: 2.8, duration: 1, ease: "easeOut" }}
-          className="w-36 md:w-64 mx-auto mb-8 md:mb-10 origin-center"
-        >
-          {/* The approved strip design: diamond lattice in burnt orange */}
-          <DiamondBand height={12} />
-        </motion.div>
+          className="w-32 md:w-64 h-px mx-auto mb-8 md:mb-10 origin-center"
+          style={{ background: 'linear-gradient(90deg, transparent, #C4A385, transparent)' }}
+        />
         
         {/* Date & Venue */}
         <motion.div
@@ -428,115 +483,30 @@ function StorySection({ content, settings, loading: cmsLoading }) {
             </motion.div>
           </div>
           
+          {/* The couple, side by side on every screen (no scrolling between them) */}
           <motion.div
-            variants={fadeInUp}
-            className="flex justify-center mb-12"
-          >
-            <FlowersCentered size={300} />
-          </motion.div>
-          
-          <motion.div 
             variants={staggerContainer}
-            className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-20 mb-16"
+            className="grid grid-cols-[1fr_auto_1fr] items-start justify-items-center gap-2 sm:gap-8 md:gap-16 max-w-4xl mx-auto mb-16"
           >
-            {/* Bride */}
-            <RevealOnScroll direction="left" className="text-center">
-              <motion.div 
-                className="relative mb-4"
-                whileHover={{ scale: 1.05 }}
-              >
-                <div className="w-56 h-56 md:w-64 md:h-64 rounded-full overflow-hidden relative">
-                  {getTxt('bride_image') ? (
-                    <img
-                      src={getAssetUrl(getTxt('bride_image'))}
-                      alt={getTxt('bride_name', 'Bride')}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-stone-100 flex items-center justify-center">
-                      <Skeleton variant="image" width="100%" height="100%" />
-                    </div>
-                  )}
-                </div>
-                <motion.div
-                  className="absolute inset-0 -m-3 rounded-full border-2"
-                  style={{ borderColor: '#B8936C' }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                />
-              </motion.div>
-              <h3 
-                className="text-4xl mb-1"
-                style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-              >
-                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : brideName}
-              </h3>
-              {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.bride_role && (
-                <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
-                  {getTxt('bride_role', 'story.bride_role')}
-                </p>
-              ))}
-            </RevealOnScroll>
-            
-            {/* Animated Heart */}
-            <motion.div
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              viewport={{ once: false }}
-              transition={{ type: "spring", delay: 0.3 }}
-            >
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Heart 
-                  className="w-16 h-16 md:w-20 md:h-20 fill-current" 
-                  style={{ color: '#B8936C' }} 
-                />
-              </motion.div>
-            </motion.div>
-            
-            {/* Groom */}
-            <RevealOnScroll direction="right" className="text-center">
-              <motion.div 
-                className="relative mb-4"
-                whileHover={{ scale: 1.05 }}
-              >
-                <div className="w-56 h-56 md:w-64 md:h-64 rounded-full overflow-hidden relative">
-                  {getTxt('groom_image') ? (
-                    <img
-                      src={getAssetUrl(getTxt('groom_image'))}
-                      alt={getTxt('groom_name', 'Groom')}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-stone-100 flex items-center justify-center">
-                      <Skeleton variant="image" width="100%" height="100%" />
-                    </div>
-                  )}
-                </div>
-                <motion.div
-                  className="absolute inset-0 -m-3 rounded-full border-2"
-                  style={{ borderColor: '#C8A68E' }}
-                  animate={{ rotate: -360 }}
-                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                />
-              </motion.div>
-              <h3 
-                className="text-4xl mb-1"
-                style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-              >
-                {cmsLoading ? <Skeleton variant="text" width="150px" height="40px" className="mx-auto" as="span" /> : groomName}
-              </h3>
-              {cmsLoading ? <Skeleton variant="text" width="100px" className="mx-auto" as="span" /> : (content?.our_story?.content?.groom_role && (
-                <p style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}>
-                  {getTxt('groom_role', 'story.groom_role')}
-                </p>
-              ))}
-            </RevealOnScroll>
+            <CouplePortrait
+              image={getTxt('bride_image')}
+              name={brideName}
+              role={content?.our_story?.content?.bride_role ? getTxt('bride_role', 'story.bride_role') : null}
+              alt={getTxt('bride_name', 'Bride')}
+              loading={cmsLoading}
+              from="left"
+            />
+            <div className="mt-[52px] sm:mt-[78px] md:mt-[110px]">
+              <LineHeart />
+            </div>
+            <CouplePortrait
+              image={getTxt('groom_image')}
+              name={groomName}
+              role={content?.our_story?.content?.groom_role ? getTxt('groom_role', 'story.groom_role') : null}
+              alt={getTxt('groom_name', 'Groom')}
+              loading={cmsLoading}
+              from="right"
+            />
           </motion.div>
           
           <motion.div 

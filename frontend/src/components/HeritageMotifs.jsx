@@ -132,6 +132,7 @@ export const MotifArch = memo(function MotifArch({
   height = 220,
   color = HERITAGE.bronze,
   bg = '#ffffff',
+  patternScale = 0.5,
   className = '',
   style,
 }) {
@@ -141,10 +142,44 @@ export const MotifArch = memo(function MotifArch({
   return (
     <svg aria-hidden="true" viewBox={`0 0 ${width} ${height}`} width={width} height={height} className={`pointer-events-none ${className}`} style={style}>
       <defs>
-        <MotifPatternDef id={`a${uid}`} color={color} bg={bg} scale={0.5} />
+        <MotifPatternDef id={`a${uid}`} color={color} bg={bg} scale={patternScale} />
       </defs>
       <path d={d} fill={`url(#a${uid})`} />
     </svg>
+  );
+});
+
+/**
+ * A miniature of the décor backdrop, the couple's final strip: patterned
+ * arches either side of the T&D panel, with hairlines running out to the
+ * sides. Used as the section break above section titles.
+ */
+export const BackdropStrip = memo(function BackdropStrip({ height = 52, className = '' }) {
+  const big = { width: Math.round(height * 0.42), height };
+  const small = { width: Math.round(height * 0.34), height: Math.round(height * 0.72) };
+  const archColor = MONOGRAM_COLOR;
+  const arch = (dims) => <MotifArch {...dims} color={archColor} patternScale={height / 360} />;
+  const line = (dir) => (
+    <span
+      aria-hidden="true"
+      className="h-px w-8 sm:w-16 md:w-24 self-center"
+      style={{ background: `linear-gradient(${dir}, transparent, ${archColor})` }}
+    />
+  );
+  return (
+    <div className={`flex items-end justify-center gap-1.5 sm:gap-2 ${className}`} aria-hidden="true">
+      {line('90deg')}
+      {arch(big)}
+      {arch(small)}
+      <span className="hidden sm:block">{arch(big)}</span>
+      <span className="px-2 sm:px-3 self-center">
+        <Monogram size={Math.round(height * 0.62)} />
+      </span>
+      <span className="hidden sm:block">{arch(big)}</span>
+      {arch(small)}
+      {arch(big)}
+      {line('270deg')}
+    </div>
   );
 });
 

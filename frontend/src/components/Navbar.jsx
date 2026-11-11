@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Monogram } from './HeritageMotifs';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Heart, Mail } from 'lucide-react';
@@ -68,13 +69,9 @@ export default function Navbar() {
       >
         <div className="container-wedding flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <img 
-              src="/Naoa-logo.png" 
-              alt="Logo" 
-              className="h-14 w-auto rounded-lg"
-              style={{ boxShadow: '0 4px 12px rgba(166, 123, 91, 0.3)' }}
-            />
+          {/* The couple's T&D monogram (the approved backdrop artwork) */}
+          <Link to="/" className="flex items-center gap-2 group" aria-label="Home">
+            <Monogram size={44} title="T&D — home" className="transition-transform group-hover:scale-105" />
           </Link>
 
           {/* Desktop Navigation */}

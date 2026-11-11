@@ -23,7 +23,6 @@ import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
 import { getWeddingDateText } from '../utils/weddingInfo';
 import { formatRange, parseNames } from '../utils/programme';
-import { DiamondBand } from '../components/HeritageMotifs';
 
 const iconMap = {
   'Ceremony': Heart,
@@ -178,10 +177,6 @@ export default function Programme() {
             >
               {getWeddingDateText(content, i18n.language, settings)}
             </p>
-            {/* The approved strip design */}
-            <div className="w-40 md:w-56 mx-auto mt-5">
-              <DiamondBand height={10} />
-            </div>
           </motion.div>
 
           <div className="grid lg:grid-cols-3 gap-8">
