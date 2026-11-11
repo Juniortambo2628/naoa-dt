@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save, Users } from 'lucide-react';
+import { Calendar, Clock, MapPin, Plus, Trash2, Edit, Save, Users, Eye, EyeOff } from 'lucide-react';
 import { useSchedule, useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
 import { scheduleService } from '../../services/api';
 import AdminPageHero from '../../components/admin/AdminPageHero';
@@ -66,6 +66,17 @@ export default function AdminSchedule() {
       onSuccess: () => refetch(),
   });
   const handleDeleteItem = deleteItem.run;
+
+  // Show/hide an item on the guests' programme (e.g. bridal preparations).
+  const toggleVisibility = useAdminAction(
+      (item) => scheduleService.updateItem(item.id, { is_public: item.is_public === false }),
+      {
+          key: (item) => `visibility-${item.id}`,
+          success: (_res, item) => (item.is_public === false ? `"${item.title}" is now shown to guests` : `"${item.title}" is now hidden from guests`),
+          error: 'Could not change who sees this item',
+          onSuccess: () => refetch(),
+      },
+  );
 
   // Saves re-throw so the form stays open when they fail.
   const saveItem = useAdminAction((data) => (selectedItem
@@ -179,13 +190,20 @@ export default function AdminSchedule() {
 
               <div className="space-y-3">
                   {activeEvent.display_items.map(item => (
-                      <div key={item.id} className="flex items-center gap-3 sm:gap-4 p-4 rounded-xl bg-stone-50 hover:bg-stone-100 transition-colors">
+                      <div key={item.id} className={`flex items-center gap-3 sm:gap-4 p-4 rounded-xl transition-colors ${item.is_public === false ? 'bg-stone-50/60 border border-dashed border-stone-200' : 'bg-stone-50 hover:bg-stone-100'}`}>
                           <div className="w-14 sm:w-16 text-center flex-shrink-0">
                               <p className="font-bold text-[#A67B5B]">{item.start_time.slice(0,5)}</p>
                               <p className="text-xs text-stone-400">{item.end_time?.slice(0,5)}</p>
                           </div>
                           <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-stone-800 break-words">{item.title}</h3>
+                              <h3 className={`font-medium break-words ${item.is_public === false ? 'text-stone-500' : 'text-stone-800'}`}>
+                                  {item.title}
+                                  {item.is_public === false && (
+                                      <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-200/70 text-stone-600 text-[11px] font-medium align-middle">
+                                          <EyeOff className="w-3 h-3" /> Hidden from guests
+                                      </span>
+                                  )}
+                              </h3>
                               {item.location && (
                                   <p className="text-sm text-stone-500 flex items-center gap-1">
                                       <MapPin className="w-3 h-3 flex-shrink-0" /> <span className="break-words min-w-0">{item.location}</span>
@@ -193,6 +211,11 @@ export default function AdminSchedule() {
                               )}
                           </div>
                           <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                              <Button size="icon-sm" icon={item.is_public === false ? EyeOff : Eye}
+                                  action={toggleVisibility} args={[item]}
+                                  aria-label={item.is_public === false ? 'Show this item to guests' : 'Hide this item from guests'}
+                                  title={item.is_public === false ? 'Hidden from guests: click to show' : 'Shown to guests: click to hide'}
+                              />
                               <Button edit size="icon-sm" icon={Edit} aria-label="Edit schedule item" title="Edit"
                                   onClick={() => handleEditItem(item, activeEvent.id)}
                               />
@@ -338,7 +361,8 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
         end_time: '',
         description: '',
         location: '',
-        type: 'ceremony'
+        type: 'ceremony',
+        is_public: true,
     });
     const [loading, setLoading] = useState(false);
 
@@ -350,7 +374,8 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
                 end_time: item.end_time?.slice(0,5) || '',
                 description: item.description || '',
                 location: item.location || '',
-                type: item.type || 'ceremony'
+                type: item.type || 'ceremony',
+                is_public: item.is_public !== false,
             });
         } else {
             setFormData({ 
@@ -359,7 +384,8 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
                 end_time: '', 
                 description: '', 
                 location: '', 
-                type: 'ceremony' 
+                type: 'ceremony',
+                is_public: true,
             });
         }
     }, [item, isOpen]);
@@ -386,6 +412,18 @@ function ScheduleModal({ isOpen, onClose, onSave, item }) {
                 </div>
                 <AdminInput label="Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
                 <AdminTextarea label="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <label className="flex items-start gap-3 rounded-xl bg-stone-50 p-3 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        className="mt-1 w-4 h-4 accent-[#A67B5B]"
+                        checked={formData.is_public}
+                        onChange={e => setFormData({...formData, is_public: e.target.checked})}
+                    />
+                    <span>
+                        <span className="block text-sm font-medium text-stone-700">Show to guests</span>
+                        <span className="block text-xs text-stone-500">Untick for behind-the-scenes items (e.g. bridal preparations): they stay here but don&apos;t appear on the guests&apos; programme.</span>
+                    </span>
+                </label>
                 <Button edit type="submit" variant="secondary" fullWidth loading={loading} icon={Save}>Save Event</Button>
             </form>
         </AdminModal>

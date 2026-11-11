@@ -158,7 +158,7 @@ Route::prefix('gifts/mpesa')->group(function () {
 Route::post('/mpesa/callback/{token}', [MpesaController::class, 'callback']);
 
 // Full Schedule for Public Programme (Events + Items)
-Route::get('/schedule/full', [ScheduleController::class, 'index']);
+Route::get('/schedule/full', [ScheduleController::class, 'publicIndex']);
 
 // Public Polaroid Images
 Route::get('/polaroid-images', [PolaroidImageController::class, 'index']);

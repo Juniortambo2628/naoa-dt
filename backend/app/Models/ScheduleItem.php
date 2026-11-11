@@ -24,11 +24,13 @@ class ScheduleItem extends Model
         'type',
         'status',
         'order',
+        'is_public',
     ];
 
     protected $casts = [
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
+        'is_public' => 'boolean',
     ];
 
     public function event(): BelongsTo
