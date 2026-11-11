@@ -13,11 +13,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('integration_credentials')) {
+            return;
+        }
+
         Schema::create('integration_credentials', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
             $table->text('payload');
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('updated_by')->nullable(); // user id (no FK: MySQL hosts reject them)
             $table->timestamps();
         });
     }

@@ -18,6 +18,9 @@ use Illuminate\Support\Facades\Schema;
  * - `checkout_request_id` / `mpesa_receipt` are unique: a repeated callback
  *   can never record the same payment twice.
  *
+ * A run that failed half-way on MySQL (table created, a later step not)
+ * can simply run again: each step checks what already exists.
+ *
  * `gift_claims` gains `payment_method` / `payment_reference` so a confirmed
  * M-Pesa gift shows up in the existing gift registry with its receipt number.
  */
@@ -32,8 +35,10 @@ return new class extends Migration
                 $table->string('idempotency_key', 64)->unique();
 
                 // Who gave: the invite it came from, and the name to thank.
-                $table->foreignId('guest_id')->nullable()->constrained()->nullOnDelete();
-                $table->foreignId('gift_id')->nullable()->constrained()->nullOnDelete();
+                // Plain indexed ids, not foreign-key constraints: the MySQL
+                // hosts reject them (errno 150), as the push migration notes.
+                $table->unsignedBigInteger('guest_id')->nullable()->index();
+                $table->unsignedBigInteger('gift_id')->nullable()->index();
                 $table->string('giver_name', 255);
                 $table->boolean('on_behalf')->default(false);
                 $table->string('message', 500)->nullable();
@@ -51,7 +56,7 @@ return new class extends Migration
                 $table->string('mpesa_receipt', 30)->nullable()->unique();
                 $table->string('paid_phone', 20)->nullable();
                 $table->timestamp('paid_at')->nullable();
-                $table->foreignId('gift_claim_id')->nullable()->constrained('gift_claims')->nullOnDelete();
+                $table->unsignedBigInteger('gift_claim_id')->nullable()->index();
                 $table->json('raw_callback')->nullable();
                 $table->timestamp('last_queried_at')->nullable();
                 $table->timestamps();
