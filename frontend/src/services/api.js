@@ -201,6 +201,15 @@ export const giftService = {
   
   // Claim a gift
   claim: (id, data) => api.post(`/gifts/${id}/claim`, data),
+
+  // Cash gift by M-Pesa: sends the PIN prompt to the guest's phone
+  mpesaSend: (data) => api.post('/gifts/mpesa', data),
+
+  // Poll a cash gift's outcome while the guest enters their PIN
+  mpesaStatus: (id) => api.get(`/gifts/mpesa/${id}`),
+
+  // Every M-Pesa gift attempt with totals (admin)
+  mpesaPayments: () => api.get('/gifts/mpesa-payments'),
   
   // Create gift (admin)
   create: (data) => api.post('/gifts', data),

@@ -15,6 +15,7 @@ import GuestQuickActions from '../components/GuestQuickActions';
 import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
 import GuestNotices from '../components/GuestNotices';
+import CashGiftCard from '../components/CashGiftCard';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
 import GuestPushCard from '../components/GuestPushCard';
@@ -250,6 +251,9 @@ export default function DigitalInvitation() {
                         <GuestNotices notices={settings?.guest_notices} />
                     </div>
 
+                    {/* Cash gift by M-Pesa prompt (or Pay Bill details) */}
+                    {show.cashGift && <CashGiftCard guest={guest} settings={settings} />}
+
                     {(showRsvpButton || show.calendar) && (
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
                         {/* Only prompt for RSVP while the guest hasn't responded yet. */}
@@ -342,7 +346,7 @@ export default function DigitalInvitation() {
             </footer>
 
             {/* Floating quick actions: Where are you · My travel details · Seating chart */}
-            {show.quickActions && <GuestQuickActions guestCode={code} />}
+            {show.quickActions && <GuestQuickActions guestCode={code} settings={settings} />}
         </div>
     );
 }

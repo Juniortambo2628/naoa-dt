@@ -19,6 +19,11 @@ Schedule::command('backups:create --label=scheduled --keep=14 --offsite')->daily
 // in-memory database; the real database is never touched).
 Schedule::command('backups:verify')->weeklyOn(0, '03:00')->withoutOverlapping();
 
+// M-Pesa gifts whose confirmation callback never arrived: ask Safaricom for
+// the outcome, and time out prompts nobody answered (MpesaPaymentRecorder
+// keeps a gift from being recorded twice).
+Schedule::command('mpesa:reconcile')->everyMinute()->withoutOverlapping();
+
 // Queued jobs (e.g. schedule-change notifications) are drained by a
 // long-running worker, not by the scheduler: the VPS runs a PM2
 // `<app>-queue` process (deploy-kit), and shared hosting runs the sync

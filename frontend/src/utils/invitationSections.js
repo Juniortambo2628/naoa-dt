@@ -10,6 +10,7 @@ export const INVITATION_SECTIONS = [
   { id: 'when', label: 'When (date)', hint: 'Wedding date card.' },
   { id: 'where', label: 'Where (venue)', hint: 'Venue name card.' },
   { id: 'rsvp', label: 'RSVP button & status', hint: 'Respond button, or the guest\'s current RSVP status.' },
+  { id: 'cashGift', label: 'Cash gift (M-Pesa)', hint: 'Send a cash gift with an M-Pesa prompt to the phone, or see the Pay Bill details.' },
   { id: 'calendar', label: 'Add to Calendar', hint: 'Calendar download button.' },
   { id: 'download', label: 'Download invitation (PDF)', hint: 'Lets the guest save their personalised invitation card as a PDF.' },
   { id: 'programme', label: 'Live programme', hint: 'Happening now / up next widget.' },

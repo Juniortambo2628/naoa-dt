@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Gift, Plus, Edit, Save, X, DollarSign, ExternalLink, LayoutGrid, List, CheckCircle, Trash2, ShoppingBag, Heart, ArrowUpRight, Undo2, EyeOff } from 'lucide-react';
+import { Gift, Plus, Edit, Save, X, DollarSign, ExternalLink, LayoutGrid, List, CheckCircle, Trash2, ShoppingBag, Heart, ArrowUpRight, Undo2, EyeOff, Smartphone } from 'lucide-react';
+import MpesaGiftsPanel from '../../components/admin/MpesaGiftsPanel';
 import { useGifts } from '../../hooks/useApiHooks';
 import { giftService } from '../../services/api';
 import ImageUpload from '../../components/admin/ImageUpload';
@@ -68,6 +69,7 @@ export default function AdminGifts() {
     { id: 'available', label: 'Available', icon: CheckCircle },
     { id: 'reserved', label: 'Reserved', icon: Heart },
     { id: 'cash', label: 'Cash funds', icon: DollarSign },
+    { id: 'mpesa', label: 'M-Pesa gifts', icon: Smartphone },
     { id: 'hidden', label: 'Hidden', icon: EyeOff },
     ...categories.map((c) => ({ id: `category:${c}`, label: c, group: 'Category' })),
   ];
@@ -137,7 +139,8 @@ export default function AdminGifts() {
           title: 'Registry',
           icon: Gift,
           subtitle: `${stats.available} of ${stats.total} still available to guests`,
-          items: views.map((v) => ({ ...v, count: gifts.filter((gift) => matchesView(gift, v.id)).length })),
+          // The M-Pesa view lists payments, not registry gifts, so it has no gift count.
+          items: views.map((v) => (v.id === 'mpesa' ? v : { ...v, count: gifts.filter((gift) => matchesView(gift, v.id)).length })),
           activeId: views.some((v) => v.id === view) ? view : 'all',
           onChange: (id) => { setView(id); setSelectedIds([]); },
         }}
@@ -148,6 +151,9 @@ export default function AdminGifts() {
           actions={bulkActions}
         />
 
+        {view === 'mpesa' ? (
+          <MpesaGiftsPanel />
+        ) : (
         <AdminListPanel plain>
           {loading ? (
             <EmptyState loading />
@@ -173,6 +179,7 @@ export default function AdminGifts() {
             />
           )}
         </AdminListPanel>
+        )}
 
         <GiftModal
           isOpen={modalOpen}
@@ -518,7 +525,11 @@ function ClaimsModal({ isOpen, onClose, gift, removeClaim }) {
                   <p className="text-xs text-stone-500 truncate">{claim.claimer_email}</p>
                 )}
                 {isCashFund && claim.amount != null && (
-                  <p className="text-xs font-medium text-[#8B9A7D] mt-0.5">${Number(claim.amount).toLocaleString()}</p>
+                  <p className="text-xs font-medium text-[#8B9A7D] mt-0.5">
+                    {claim.payment_method === 'mpesa'
+                      ? `KES ${Number(claim.amount).toLocaleString()} · M-Pesa${claim.payment_reference ? ` ${claim.payment_reference}` : ''}`
+                      : `$${Number(claim.amount).toLocaleString()}`}
+                  </p>
                 )}
                 {claim.message && (
                   <p className="text-xs text-stone-500 italic mt-1 line-clamp-2">&ldquo;{claim.message}&rdquo;</p>

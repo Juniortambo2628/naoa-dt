@@ -3,9 +3,13 @@
 namespace App\Providers;
 
 use App\Models\Revision;
+use App\Services\MpesaService;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\MigrationsStarted;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -29,5 +33,18 @@ class AppServiceProvider extends ServiceProvider
         // database) aren't edits anyone made: keep them out of version history.
         Event::listen(MigrationsStarted::class, fn () => Revision::pause());
         Event::listen(MigrationsEnded::class, fn () => Revision::resume());
+
+        // M-Pesa gifts: guests at the venue share one WiFi IP, so limit per
+        // phone number (a few prompts a minute) with a generous per-IP cap.
+        RateLimiter::for('mpesa-initiate', fn (Request $request) => [
+            Limit::perMinute(4)->by('mpesa-phone:'.(MpesaService::normalizePhone($request->input('phone')) ?? $request->ip())),
+            Limit::perMinute(120)->by('mpesa-ip:'.$request->ip()),
+        ]);
+        // Status checks are polled every few seconds while the guest enters
+        // their PIN: limit per payment, not per IP.
+        RateLimiter::for('mpesa-status', fn (Request $request) => [
+            Limit::perMinute(40)->by('mpesa-status:'.$request->route('publicId')),
+            Limit::perMinute(1200)->by('mpesa-status-ip:'.$request->ip()),
+        ]);
     }
 }
