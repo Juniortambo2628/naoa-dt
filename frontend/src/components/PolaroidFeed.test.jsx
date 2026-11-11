@@ -33,9 +33,9 @@ function LocationProbe() {
   return <span data-testid="location">{location.pathname + location.search}</span>
 }
 
-function renderFeed(initialEntry = '/programme') {
+function renderFeed(initialEntry = '/programme', { stories = [STORY] } = {}) {
   vi.spyOn(polaroidService, 'getAll').mockResolvedValue({ data: [PHOTO] })
-  vi.spyOn(polaroidService, 'stories').mockResolvedValue({ data: { stories: [STORY], total: 1 } })
+  vi.spyOn(polaroidService, 'stories').mockResolvedValue({ data: { stories, total: stories.length } })
 
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
@@ -67,9 +67,8 @@ describe('PolaroidFeed story entry', () => {
   })
 
   it('ignores the param when there are no stories to show', async () => {
-    vi.spyOn(polaroidService, 'stories').mockResolvedValue({ data: { stories: [], total: 0 } })
-
-    renderFeed('/programme?stories=1')
+    // (Passed through renderFeed, which would otherwise stub one story.)
+    renderFeed('/programme?stories=1', { stories: [] })
 
     expect(await screen.findByText('Captured Moments')).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

@@ -5,6 +5,7 @@
  * is shown, so new sections appear by default.
  */
 export const INVITATION_SECTIONS = [
+  { id: 'envelope', label: 'Opening envelope', hint: '3D envelope at the top that opens as the guest scrolls down (and closes when they scroll back).' },
   { id: 'card', label: 'Invitation card', hint: 'The designed card beside the welcome text (desktop).' },
   { id: 'welcome', label: 'Welcome message', hint: 'The greeting paragraph under "You\'re Invited!".' },
   { id: 'when', label: 'When (date)', hint: 'Wedding date card.' },
@@ -19,7 +20,7 @@ export const INVITATION_SECTIONS = [
   { id: 'weather', label: 'Weather', hint: 'Forecast for the wedding day.' },
   { id: 'emergency', label: 'Emergency numbers', hint: 'Contacts for the day.' },
   { id: 'signoff', label: 'Sign-off', hint: '"With love" and the couple\'s names.' },
-  { id: 'quickActions', label: 'Quick actions button', hint: 'Floating menu: location, travel, seating, programme, polaroid.' },
+  { id: 'quickActions', label: 'Quick actions bar', hint: 'Bottom bar: programme, gift, polaroid, and More (location, travel, seating, stories).' },
 ];
 
 export function resolveInvitationSections(stored) {
