@@ -12,7 +12,6 @@ import {
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
   FloatingFlower, 
-  FlowerDivider,
   PulsingHeartLogo,
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
@@ -21,18 +20,9 @@ import SegmentedControl from '../components/SegmentedControl';
 import { Skeleton } from '../components/Skeleton';
 import SpotifySongSearch from '../components/SpotifySongSearch';
 import { getSavedGuestCode, saveGuestCode, clearGuestCode } from '../utils/guestSession';
+import StickyPageHeader from '../components/StickyPageHeader';
 
 // Animation variants - simplified for performance
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
-  },
-  exit: { opacity: 0, y: -15 }
-};
-
 const scaleIn = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { 
@@ -156,7 +146,7 @@ export default function RSVP() {
       style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)', minHeight: '100vh' }}
     >
       
-      <main className="pt-32 pb-20 relative overflow-hidden">
+      <main className="pt-32 pb-20 relative overflow-x-clip">
         {/* Custom flower decorations */}
         <MainFlowerTopLeft size={250} />
         <MainFlowerBottomRight size={250} />
@@ -170,34 +160,11 @@ export default function RSVP() {
         </div>
         
         <div className="container-wedding relative z-10">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            className="text-center mb-12"
-          >
-            <FlowerDivider />
-            <div 
-              className="text-5xl md:text-6xl mb-4"
-              style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-            >
-                {content ? (
-                  getTxt('title', 'rsvp.page_title')
-                ) : (
-                  <Skeleton variant="text" width="60%" height="48px" className="mx-auto" />
-                )}
-            </div>
-            <div 
-              className="text-lg"
-              style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
-            >
-              {content ? (
-                getTxt('description', 'rsvp.page_subtitle')
-              ) : (
-                <Skeleton variant="text" width="40%" height="24px" className="mx-auto" />
-              )}
-            </div>
-          </motion.div>
+          <StickyPageHeader
+            title={content ? getTxt('title', 'rsvp.page_title') : <Skeleton variant="text" width="60%" height="48px" className="mx-auto" />}
+            subtitle={content ? getTxt('description', 'rsvp.page_subtitle') : <Skeleton variant="text" width="40%" height="24px" className="mx-auto" />}
+          />
+          <div className="mb-10" />
 
           <AnimatePresence mode="wait">
             {!submitted ? (

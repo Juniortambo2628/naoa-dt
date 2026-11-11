@@ -6,7 +6,6 @@ import { enquiryService } from '../services/api';
 import { 
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
-  FlowerDivider,
   CenteredFlower
 } from '../components/CustomIllustrations';
 import { useContent } from '../context/ContentContext';
@@ -14,6 +13,7 @@ import { fadeInUp, staggerContainer } from '../hooks/useScrollAnimation';
 import Loader from '../components/Loader';
 import Button from '../components/Button';
 import { useNavigate } from 'react-router-dom';
+import StickyPageHeader from '../components/StickyPageHeader';
 
 const getContent = (content, section, field, i18n, fallback) => {
   const sectionData = content?.[section]?.content;
@@ -80,28 +80,16 @@ export default function Contact() {
       className="min-h-screen bg-[#FDFAF5] flex flex-col"
     >
 
-      <main className="flex-grow pt-32 pb-20 relative overflow-hidden">
+      <main className="flex-grow pt-32 pb-20 relative overflow-x-clip">
         <MainFlowerTopLeft size={300} className="opacity-40" />
         <MainFlowerBottomRight size={300} className="opacity-40" />
 
         <div className="container-wedding relative z-10">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            className="text-center mb-16"
-          >
-            <FlowerDivider />
-            <h1 
-              className="text-5xl md:text-6xl text-[#A67B5B] mb-4" 
-              style={{ fontFamily: "'Great Vibes', cursive" }}
-            >
-              {getTxt('contact', 'title', 'Get in Touch')}
-            </h1>
-            <p className="text-[#6B5D52] font-serif text-lg max-w-2xl mx-auto">
-              {getTxt('contact', 'description', 'Have questions or need more information? We are here to help. Send us a message and we will get back to you as soon as possible.')}
-            </p>
-          </motion.div>
+          <StickyPageHeader
+            title={getTxt('contact', 'title', 'Get in Touch')}
+            subtitle={getTxt('contact', 'description', 'Have questions or need more information? We are here to help. Send us a message and we will get back to you as soon as possible.')}
+          />
+          <div className="mb-12" />
 
           <div className="max-w-3xl mx-auto">
             {success ? (

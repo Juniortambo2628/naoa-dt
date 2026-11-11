@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, MapPin, Clock, Info, RefreshCw, AlertCircle, 
-  Music, GlassWater, Utensils, Camera, Heart, Bell, ChevronRight
+  Music, GlassWater, Utensils, Camera, Heart, Bell, ChevronRight, ChevronDown, Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { scheduleService } from '../services/api';
@@ -13,16 +13,16 @@ import {
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
   FloatingFlower, 
-  FlowerDivider,
   FlowersCentered
 } from '../components/CustomIllustrations';
 import { Skeleton, TimelineSkeleton } from '../components/Skeleton';
 import Loader from '../components/Loader';
-import { fadeInUp, staggerContainer, staggerItem } from '../hooks/useScrollAnimation';
+import { staggerContainer, staggerItem } from '../hooks/useScrollAnimation';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
 import { getWeddingDateText } from '../utils/weddingInfo';
 import { formatRange, parseNames } from '../utils/programme';
+import StickyPageHeader from '../components/StickyPageHeader';
 
 const iconMap = {
   'Ceremony': Heart,
@@ -33,8 +33,39 @@ const iconMap = {
   'Default': Calendar,
 };
 
-/** Fallback height of the fixed navbar (it is measured once the page is up). */
-const NAV_FALLBACK = 72;
+/**
+ * One section of the side panel. Desktop: an accordion row (click the title
+ * to open it). Phones: always open, shown when its tab is selected.
+ */
+function PanelSection({ title, icon, meta = null, open, onToggle, showOnPhone, children }) {
+  const Icon = icon;
+  return (
+    <section className={`border-b last:border-b-0 border-[#E4D6C2]/70 ${showOnPhone ? '' : 'hidden lg:block'}`}>
+      <h3>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="w-full flex items-center gap-3 px-5 py-4 text-left"
+        >
+          <span className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center" style={{ background: 'rgba(166, 123, 91, 0.1)' }}>
+            <Icon className="w-[18px] h-[18px]" style={{ color: '#A67B5B' }} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-lg leading-tight" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#4A3F35' }}>
+              {title}
+            </span>
+            {meta}
+          </span>
+          <ChevronDown
+            className={`hidden lg:block w-4 h-4 shrink-0 text-stone-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          />
+        </button>
+      </h3>
+      <div className={`px-5 pb-5 ${open ? '' : 'lg:hidden'}`}>{children}</div>
+    </section>
+  );
+}
 
 const demoUpdates = [
   { id: 1, title: 'Welcome!', message: 'We are so glad you are here.', time: '2:00 PM' },
@@ -63,42 +94,13 @@ export default function Programme() {
   const [loading, setLoading] = useState(true);
   // Phones show one panel at a time; desktop shows them side by side.
   const [tab, setTab] = useState('programme');
-  const [stuck, setStuck] = useState(false);
-  const [headerH, setHeaderH] = useState(0);
-  const [navH, setNavH] = useState(NAV_FALLBACK);
+  const [layout, setLayout] = useState({ navH: 72, headerH: 0, stuck: false });
+  // Desktop side panel: one section open at a time, so it never needs to scroll.
+  const [openPanel, setOpenPanel] = useState('updates');
   const sentinelRef = useRef(null);
-  const headerRef = useRef(null);
   const navigate = useNavigate();
-
-  // Track the fixed navbar's height (it differs on phones and shrinks on scroll).
-  useEffect(() => {
-    const nav = document.querySelector('nav.fixed');
-    if (!nav || typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(() => setNavH(Math.round(nav.getBoundingClientRect().height)));
-    ro.observe(nav, { box: 'border-box' });
-    return () => ro.disconnect();
-  }, [contentLoading]);
-
-  // The title bar pins under the navbar; it compacts once it is pinned.
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || typeof IntersectionObserver === 'undefined') return undefined;
-    const io = new IntersectionObserver(
-      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < navH + 1),
-      { rootMargin: `-${navH}px 0px 0px 0px`, threshold: 0 }
-    );
-    io.observe(sentinel);
-    return () => io.disconnect();
-  }, [contentLoading, navH]);
-
-  // The desktop side panel pins just below the title bar.
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(() => setHeaderH(el.offsetHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [contentLoading]);
+  const { navH, headerH, stuck } = layout;
+  const onLayout = useCallback((next) => setLayout(next), []);
 
   const showTab = (next) => {
     setTab(next);
@@ -207,76 +209,52 @@ export default function Programme() {
         </div>
         
         <div className="container-wedding relative z-10">
-          <FlowerDivider />
-          <div ref={sentinelRef} aria-hidden="true" />
-
-          {/* Title and date: stay pinned under the navbar while scrolling */}
-          <div
-            ref={headerRef}
-            className="sticky z-30 -mx-4 px-4 sm:mx-0 sm:px-0"
-            style={{ top: navH }}
-          >
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={fadeInUp}
-              className={`text-center transition-all duration-300 rounded-b-3xl ${
-                stuck
-                  ? 'py-2.5 bg-[#FDFAF5]/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(74,63,53,0.08)] border-b border-[#E4D6C2]/70'
-                  : 'pb-4 lg:pb-8'
-              }`}
-            >
-              <h1
-                className={`leading-tight transition-all duration-300 ${stuck ? 'text-[1.75rem]! md:text-4xl!' : 'text-5xl md:text-6xl mb-2 md:mb-4'}`}
-                style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-              >
-                {getTxt('programme_page', 'title', 'programme.title')}
-              </h1>
-              <p
-                className={`transition-all duration-300 ${stuck ? 'text-sm md:text-base' : 'text-lg'}`}
-                style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
-              >
-                {getWeddingDateText(content, i18n.language, settings)}
-              </p>
-
-              {/* Phones: switch between the timeline, updates and notes */}
-              <div
-                role="tablist"
-                aria-label="Programme sections"
-                className={`lg:hidden mx-auto max-w-sm grid grid-cols-3 gap-1 rounded-full p-1 bg-white/80 border border-[#E4D6C2] shadow-sm ${stuck ? 'mt-2' : 'mt-5'}`}
-              >
-                {[
-                  { id: 'programme', label: t('programme.tab_timeline', 'Timeline') },
-                  { id: 'updates', label: t('programme.tab_updates', 'Updates'), dot: hasNewItems },
-                  { id: 'notes', label: t('programme.tab_notes', 'Notes & party') },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={tab === item.id}
-                    onClick={() => showTab(item.id)}
-                    className={`relative rounded-full px-2 py-2 text-[13px] font-medium transition-colors ${
-                      tab === item.id ? 'text-white' : 'text-stone-600'
-                    }`}
-                  >
-                    {tab === item.id && (
-                      <motion.span
-                        layoutId="programme-tab"
-                        className="absolute inset-0 rounded-full"
-                        style={{ background: 'linear-gradient(135deg, #A67B5B 0%, #C4A385 100%)' }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 40 }}
-                      />
-                    )}
-                    <span className="relative">{item.label}</span>
-                    {item.dot && tab !== item.id && (
-                      <span className="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </div>
+          {/* Title and date: pinned under the navbar while scrolling */}
+          <StickyPageHeader
+            title={getTxt('programme_page', 'title', 'programme.title')}
+            subtitle={getWeddingDateText(content, i18n.language, settings)}
+            sentinelRef={sentinelRef}
+            onLayout={onLayout}
+            // Phones: switch between the timeline, updates and notes
+            barClassName="lg:hidden"
+            bar={(
+                <div
+                  role="tablist"
+                  aria-label="Programme sections"
+                  className="lg:hidden mx-auto max-w-sm grid grid-cols-3 gap-1 rounded-full p-1 bg-white/80 border border-[#E4D6C2] shadow-sm"
+                >
+                  {[
+                    { id: 'programme', label: t('programme.tab_timeline', 'Timeline') },
+                    { id: 'updates', label: t('programme.tab_updates', 'Updates'), dot: hasNewItems },
+                    { id: 'notes', label: t('programme.tab_notes', 'Notes & party') },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={tab === item.id}
+                      onClick={() => showTab(item.id)}
+                      className={`relative rounded-full px-2 py-2 text-[13px] font-medium transition-colors ${
+                        tab === item.id ? 'text-white' : 'text-stone-600'
+                      }`}
+                    >
+                      {tab === item.id && (
+                        <motion.span
+                          layoutId="programme-tab"
+                          className="absolute inset-0 rounded-full"
+                          style={{ background: 'linear-gradient(135deg, #A67B5B 0%, #C4A385 100%)' }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                        />
+                      )}
+                      <span className="relative">{item.label}</span>
+                      {item.dot && tab !== item.id && (
+                        <span className="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+            )}
+          />
 
           <div className="grid lg:grid-cols-3 gap-8 mt-6 lg:mt-4">
             {/* Timeline - Left Side */}
@@ -428,121 +406,91 @@ export default function Programme() {
 
             {/* Live Updates - Right Side */}
             <aside className="lg:col-span-1" aria-label="Updates and notes">
-              {/* Desktop: pinned beside the timeline, scrolling on its own if taller than the screen */}
+              {/* Desktop: pinned beside the timeline as one compact card; a
+                  section opens at a time so it fits without scrolling. */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="lg:sticky lg:top-(--aside-top) lg:max-h-[calc(100svh-var(--aside-top)-1rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:pb-2 programme-aside"
+                className="lg:sticky lg:top-(--aside-top) lg:max-h-[calc(100svh-var(--aside-top)-1rem)] lg:overflow-y-auto lg:overscroll-contain rounded-3xl bg-white/90 border border-[#E4D6C2]/80 shadow-[0_12px_40px_rgba(74,63,53,0.08)]"
                 style={{ '--aside-top': `${navH + headerH + 12}px` }}
               >
-                <div 
-                  className={`card-elevated ${tab === 'updates' ? '' : 'hidden lg:block'}`}
-                  style={{ background: 'rgba(255, 255, 255, 0.95)' }}
+                <PanelSection
+                  title={t('programme.live_updates')}
+                  icon={Bell}
+                  open={openPanel === 'updates'}
+                  onToggle={() => setOpenPanel('updates')}
+                  showOnPhone={tab === 'updates'}
+                  meta={(
+                    <span className="flex items-center gap-1.5 text-xs" style={{ color: '#8B7B6B' }}>
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#8B9A7D' }} />
+                      {t('programme.real_time')}
+                      {hasNewItems && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
+                    </span>
+                  )}
                 >
-                  <div className="flex items-center gap-3 mb-6">
-                    <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ background: 'rgba(166, 123, 91, 0.1)' }}
-                    >
-                      <Bell className="w-5 h-5" style={{ color: '#A67B5B' }} />
-                    </div>
-                    <div>
-                      <h3 
-                        className="text-xl"
-                        style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-                      >
-                        {t('programme.live_updates')}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <span 
-                          className="w-2 h-2 rounded-full animate-pulse"
-                          style={{ background: '#8B9A7D' }}
-                        />
-                        <span className="text-xs" style={{ color: '#8B7B6B' }}>
-                          {t('programme.real_time')}
-                        </span>
-                        {hasNewItems && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse ml-1" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
+                  <div className="space-y-2.5 lg:max-h-[34svh] lg:overflow-y-auto">
                     {loading ? (
-                       Array(2).fill(0).map((_, i) => <Skeleton key={i} variant="text" height="60px" />)
+                      Array(2).fill(0).map((_, i) => <Skeleton key={i} variant="text" height="52px" />)
                     ) : updates.length > 0 ? (
                       updates.map((update) => (
                         <motion.div
                           key={update.id}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="p-4 rounded-xl"
-                          style={{ 
-                            background: update.type === 'important' 
-                              ? 'rgba(166, 123, 91, 0.1)'
-                              : 'rgba(243, 235, 223, 0.5)',
-                            borderLeft: `3px solid ${update.type === 'important' ? '#A67B5B' : '#B8936C'}`,
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="px-4 py-3 rounded-2xl text-[15px] leading-snug"
+                          style={{
+                            background: update.type === 'important' ? '#6F7F62' : '#8B9A7D',
+                            color: '#FBF8F3',
                           }}
                         >
-                          <p style={{ color: '#4A3F35' }}>{update.message}</p>
+                          {update.message}
                         </motion.div>
                       ))
                     ) : (
-                      <p 
-                        className="text-center py-8"
-                        style={{ color: '#8B7B6B' }}
-                      >
+                      <p className="text-center py-6 text-sm" style={{ color: '#8B7B6B' }}>
                         {t('programme.no_updates')}
                       </p>
                     )}
                   </div>
-                </div>
+                </PanelSection>
 
-                {/* Important Notes */}
-                <div 
-                  className={`lg:mt-6 p-6 rounded-2xl ${tab === 'notes' ? '' : 'hidden lg:block'}`}
-                  style={{ background: 'rgba(184, 147, 108, 0.08)', border: '1px solid rgba(184, 147, 108, 0.35)' }}
+                <PanelSection
+                  title={t('programme.notes_title')}
+                  icon={Info}
+                  open={openPanel === 'notes'}
+                  onToggle={() => setOpenPanel('notes')}
+                  showOnPhone={tab === 'notes'}
                 >
-                  <h4 
-                    className="font-medium mb-4"
-                    style={{ color: '#4A3F35', fontFamily: "'Cormorant Garamond', serif" }}
-                  >
-                    {t('programme.notes_title')}
-                  </h4>
                   {settings?.programme_note ? (
                     <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#6B5D52' }}>
                       {settings.programme_note}
                     </p>
                   ) : (
-                  <ul className="space-y-3 text-sm" style={{ color: '#6B5D52' }}>
-                    {['programme.note1', 'programme.note2', 'programme.note3'].map((key) => (
-                      <li key={key} className="flex items-start gap-2">
-                        <span style={{ color: '#9A7148' }}>•</span>
-                        {t(key)}
-                      </li>
-                    ))}
-                  </ul>
+                    <ul className="space-y-2 text-sm" style={{ color: '#6B5D52' }}>
+                      {['programme.note1', 'programme.note2', 'programme.note3'].map((key) => (
+                        <li key={key} className="flex items-start gap-2">
+                          <span style={{ color: '#9A7148' }}>•</span>
+                          {t(key)}
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </div>
+                </PanelSection>
 
                 {/* Bridal party (Admin → Schedule) */}
                 {bridalParty.length > 0 && (
-                  <div
-                    className={`mt-6 p-6 rounded-2xl bg-white/80 ${tab === 'notes' ? '' : 'hidden lg:block'}`}
-                    style={{ border: '1px solid rgba(184, 147, 108, 0.35)' }}
+                  <PanelSection
+                    title="The Bridal Party"
+                    icon={Users}
+                    open={openPanel === 'party'}
+                    onToggle={() => setOpenPanel('party')}
+                    showOnPhone={tab === 'notes'}
                   >
-                    <h4
-                      className="font-medium mb-1"
-                      style={{ color: '#4A3F35', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.25rem' }}
-                    >
-                      The Bridal Party
-                    </h4>
-                    <p className="text-xs mb-4" style={{ color: '#8B7B6B' }}>
+                    <p className="text-xs mb-3" style={{ color: '#8B7B6B' }}>
                       With love and appreciation, we celebrate the bride&apos;s party.
                     </p>
-                    <ol className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm" style={{ color: '#4A3F35' }}>
+                    <ol className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm" style={{ color: '#4A3F35' }}>
                       {bridalParty.map((name, i) => (
                         <li key={`${name}-${i}`} className="flex items-baseline gap-2">
                           <span className="text-xs tabular-nums" style={{ color: '#9A7148' }}>{String(i + 1).padStart(2, '0')}</span>
@@ -550,7 +498,7 @@ export default function Programme() {
                         </li>
                       ))}
                     </ol>
-                  </div>
+                  </PanelSection>
                 )}
               </motion.div>
             </aside>
