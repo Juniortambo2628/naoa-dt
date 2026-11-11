@@ -13,7 +13,6 @@ import {
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
   FloatingFlower, 
-  FlowerDivider,
 } from '../components/CustomIllustrations';
 import Loader from '../components/Loader';
 import Button from '../components/Button';
@@ -22,6 +21,7 @@ import SegmentedControl from '../components/SegmentedControl';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
+import StickyPageHeader from '../components/StickyPageHeader';
 
 // Demo gifts
 const demoGifts = [
@@ -94,15 +94,6 @@ const getContent = (content, section, field, i18n, fallbackKey, t) => {
 const categories = ['All', 'Kitchen', 'Home', 'Bedroom', 'Experience'];
 
 // Animation variants - optimized
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
-  },
-};
-
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
@@ -340,7 +331,7 @@ export default function GiftRegistry() {
       style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)', minHeight: '100vh' }}
     >
       
-      <main className="pt-32 pb-20 relative overflow-hidden">
+      <main className="pt-32 pb-20 relative overflow-x-clip">
         {/* Custom flower decorations */}
         <MainFlowerTopLeft size={250} />
         <MainFlowerBottomRight size={250} />
@@ -355,26 +346,11 @@ export default function GiftRegistry() {
         
         <div className="container-wedding relative z-10">
           {/* Header */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            className="text-center mb-12"
-          >
-            <FlowerDivider />
-            <h1 
-              className="text-5xl md:text-6xl mb-4"
-              style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-            >
-              {getTxt('gifts', 'title', 'gifts.page_title')}
-            </h1>
-            <p 
-              className="text-lg max-w-2xl mx-auto"
-              style={{ color: '#6B5D52', fontFamily: "'Cormorant Garamond', serif" }}
-            >
-              {getTxt('gifts', 'description', 'gifts.page_subtitle')}
-            </p>
-          </motion.div>
+          <StickyPageHeader
+            title={getTxt('gifts', 'title', 'gifts.page_title')}
+            subtitle={getTxt('gifts', 'description', 'gifts.page_subtitle')}
+          />
+          <div className="mb-10" />
 
           {/* Filters */}
           <motion.div
@@ -395,7 +371,7 @@ export default function GiftRegistry() {
                 placeholder={t('gifts.search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input-field pl-12"
+                className="input-field pl-12!"
               />
             </div>
 
