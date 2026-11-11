@@ -222,7 +222,7 @@ export default function AdminDashboard() {
     return (
       <div 
         className="min-h-screen flex items-center justify-center"
-        style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)' }}
       >
         <div className="text-center">
           <motion.div

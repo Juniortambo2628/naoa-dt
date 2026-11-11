@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\MpesaService;
 use App\Traits\ApiResponse;
 use App\Traits\NormalizesUrls;
 use Illuminate\Http\Request;
@@ -32,6 +33,14 @@ class SettingController extends Controller
         'save_the_date_theme',
         'invitation_sections',
         'guest_notices',
+        // Cash gifts: the paybill guests can pay manually (never the API keys,
+        // which live only in the server's .env — see config/mpesa.php).
+        'mpesa_paybill_number',
+        'mpesa_paybill_account',
+        'cash_gift_note',
+        // Programme page extras (Admin → Schedule).
+        'programme_note',
+        'bridal_party',
     ];
 
     public function index()
@@ -48,8 +57,12 @@ class SettingController extends Controller
     public function publicIndex()
     {
         $settings = Setting::whereIn('key', self::PUBLIC_KEYS)->get();
+        $data = $this->formatSettings($settings);
 
-        return $this->successResponse($this->formatSettings($settings));
+        // Computed, not stored: whether the invite may offer the M-Pesa prompt.
+        $data['mpesa_stk_enabled'] = MpesaController::isEnabled(app(MpesaService::class));
+
+        return $this->successResponse($data);
     }
 
     public function update(Request $request)

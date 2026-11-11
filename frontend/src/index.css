@@ -41,14 +41,14 @@
 /* Wedding Theme - Romantic Blush & Warm Brown (Tailwind CSS v4) */
 @theme {
   /* Colors - Soft Romantic Palette */
-  --color-blush: #F8E8E0;
-  --color-blush-light: #FDF5F2;
-  --color-blush-dark: #E8C4B8;
-  --color-rose: #D4A59A;
+  --color-blush: #F3EBDF;
+  --color-blush-light: #FBF8F3;
+  --color-blush-dark: #DCC8AE;
+  --color-rose: #B8936C;
   --color-rose-gold: #C8A68E;
   --color-warm-brown: #C09578;
   --color-copper: #B87333;
-  --color-cream: #FFF9F5;
+  --color-cream: #FDFAF5;
   --color-ivory: #FFFEF8;
   --color-sage: #8B9A7D;
   --color-sage-light: #C5D4B9;
@@ -266,7 +266,7 @@ textarea:focus-visible,
   inset: 0;
   background: linear-gradient(180deg, 
     rgba(255, 249, 245, 0.3) 0%, 
-    rgba(248, 232, 224, 0.5) 50%,
+    rgba(243, 235, 223, 0.5) 50%,
     rgba(255, 249, 245, 0.7) 100%);
 }
 
@@ -423,7 +423,7 @@ textarea:focus-visible,
 
 /* Skeleton Loading */
 .skeleton {
-  background: linear-gradient(90deg, #f0e6e0, #fff9f5, #f0e6e0);
+  background: linear-gradient(90deg, #f0e6e0, #FDFAF5, #f0e6e0);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
@@ -531,7 +531,7 @@ textarea:focus-visible,
 
 .faq-answer-prose th {
   border: 1px solid #d6d3d1;
-  background-color: #F8E8E0;
+  background-color: #F3EBDF;
   padding: 0.75rem;
   text-align: left;
   font-weight: 600;

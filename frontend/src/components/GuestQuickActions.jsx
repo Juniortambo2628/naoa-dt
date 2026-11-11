@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, MapPin, Plane, Armchair, Camera, CalendarClock, Play } from 'lucide-react';
+import { Plus, X, MapPin, Plane, Armchair, Camera, CalendarClock, Play, Gift } from 'lucide-react';
 import Modal from './Modal';
 import TabbedTwoColumn from './TabbedTwoColumn';
 import GuestLocationPicker from './GuestLocationPicker';
@@ -44,6 +44,14 @@ const ACTIONS = [
     href: '/programme?stories=1', // opens the story viewer on arrival
   },
   {
+    id: 'gift',
+    label: 'Send a gift',
+    icon: Gift,
+    gradient: 'from-palette-cinnamon to-palette-rust',
+    href: '#cash-gift', // opens the cash gift sheet on the invitation
+    when: (settings) => Boolean(settings?.mpesa_stk_enabled || settings?.mpesa_paybill_number),
+  },
+  {
     id: 'polaroid',
     label: 'Snap a polaroid',
     icon: Camera,
@@ -58,7 +66,7 @@ const MODAL_ACTIONS = ACTIONS.filter(a => !a.href);
 // pulse only nudges first-time visitors instead of looping forever.
 const SEEN_KEY = 'guestQuickActionsSeen';
 
-export default function GuestQuickActions({ guestCode }) {
+export default function GuestQuickActions({ guestCode, settings = null }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
@@ -73,6 +81,8 @@ export default function GuestQuickActions({ guestCode }) {
   }, []);
 
   const isModalOpen = activeAction !== null;
+  // Some actions only make sense once set up (e.g. cash gifts).
+  const visibleActions = ACTIONS.filter((a) => !a.when || a.when(settings));
 
   const markSeen = () => {
     setHasInteracted(true);
@@ -123,7 +133,7 @@ export default function GuestQuickActions({ guestCode }) {
       <div className="fixed bottom-6 right-6 z-[9990] flex flex-col items-end gap-3">
         <AnimatePresence>
           {open &&
-            ACTIONS.map((action, i) => {
+            visibleActions.map((action, i) => {
               const Icon = action.icon;
               return (
                 <motion.button

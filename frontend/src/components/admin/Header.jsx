@@ -117,7 +117,7 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
           className="lg:hidden relative p-2 rounded-lg hover:bg-black/5 shrink-0"
         >
           <Menu className="w-6 h-6 text-[#4A3F35]" />
-          {hasNews && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#A67B5B] ring-2 ring-[#FFF9F5]" aria-hidden="true" />}
+          {hasNews && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#A67B5B] ring-2 ring-[#FDFAF5]" aria-hidden="true" />}
         </button>
         {/* Compact page title, filled by AdminPageHero once it scrolls away */}
         <div ref={titleSlotRef} className="min-w-0 flex-1" />

@@ -7,7 +7,7 @@ import Button from './Button';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)' }}>
       <Navbar />
       
       <main className="flex-1 flex items-center justify-center pt-32 pb-20">

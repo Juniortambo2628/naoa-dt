@@ -16,7 +16,7 @@ export default function GiftImage({ src, alt, className = '' }) {
       <div
         role="img"
         aria-label={alt}
-        className={`flex items-center justify-center bg-gradient-to-br from-[#F8E8E0] to-[#E8D5C4] text-[#A67B5B] ${className}`}
+        className={`flex items-center justify-center bg-gradient-to-br from-[#F3EBDF] to-[#E8D5C4] text-[#A67B5B] ${className}`}
       >
         <Gift className="w-1/3 h-1/3 max-w-12 max-h-12 opacity-60" aria-hidden="true" />
       </div>

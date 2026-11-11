@@ -40,7 +40,7 @@ export default function AnalyticsCharts() {
     const statCards = [
         { label: 'Total Invited', value: summary.totalGuests, icon: Users, color: '#A67B5B' },
         { label: 'Confirmed', value: summary.totalConfirmed, icon: UserCheck, color: '#8B9A7D' },
-        { label: 'Pending', value: summary.pendingResponses, icon: Clock, color: '#D4A59A' },
+        { label: 'Pending', value: summary.pendingResponses, icon: Clock, color: '#B8936C' },
     ];
 
     return (

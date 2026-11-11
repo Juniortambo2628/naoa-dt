@@ -518,7 +518,7 @@ export function SidePanelMobileBar({ panel }) {
   const Icon = panel.icon;
 
   return (
-    <div className="lg:hidden sticky top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-[#FFF9F5]/95 backdrop-blur border-b border-[#A67B5B]/10">
+    <div className="lg:hidden sticky top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-[#FDFAF5]/95 backdrop-blur border-b border-[#A67B5B]/10">
       {hasItems && (
         <div className="flex items-center gap-2">
           <ChipRow panel={panel} className={manageable ? 'flex-1 min-w-0 -ml-4 pl-4 pr-1' : '-mx-4 px-4 flex-1 min-w-0'}

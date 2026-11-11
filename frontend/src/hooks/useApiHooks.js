@@ -149,6 +149,31 @@ export const useGifts = () => {
   });
 };
 
+// Every M-Pesa cash gift attempt with totals; refreshed while the page is open
+// so gifts sent during the wedding appear without reloading.
+export const useMpesaPayments = () => {
+  return useQuery({
+    queryKey: ['gifts', 'mpesa-payments'],
+    queryFn: async () => {
+      const { data } = await giftService.mpesaPayments();
+      return data;
+    },
+    refetchInterval: 15000,
+  });
+};
+
+// Owner only: how M-Pesa is connected (never the keys themselves).
+export const useMpesaSettings = (enabled = true) => {
+  return useQuery({
+    queryKey: ['gifts', 'mpesa-settings'],
+    queryFn: async () => {
+      const { data } = await giftService.mpesaSettings();
+      return data;
+    },
+    enabled,
+  });
+};
+
 export const useGiftStats = () => {
   return useQuery({
     queryKey: ['giftStats'],

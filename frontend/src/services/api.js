@@ -201,6 +201,20 @@ export const giftService = {
   
   // Claim a gift
   claim: (id, data) => api.post(`/gifts/${id}/claim`, data),
+
+  // Cash gift by M-Pesa: sends the PIN prompt to the guest's phone
+  mpesaSend: (data) => api.post('/gifts/mpesa', data),
+
+  // Poll a cash gift's outcome while the guest enters their PIN
+  mpesaStatus: (id) => api.get(`/gifts/mpesa/${id}`),
+
+  // Every M-Pesa gift attempt with totals (admin)
+  mpesaPayments: () => api.get('/gifts/mpesa-payments'),
+  // Owner only: connect M-Pesa (keys are write-only; reads say which are saved).
+  mpesaSettings: () => api.get('/gifts/mpesa-settings'),
+  saveMpesaSettings: (data) => api.put('/gifts/mpesa-settings', data),
+  testMpesaConnection: () => api.post('/gifts/mpesa-settings/test'),
+  removeMpesaSettings: () => api.delete('/gifts/mpesa-settings'),
   
   // Create gift (admin)
   create: (data) => api.post('/gifts', data),

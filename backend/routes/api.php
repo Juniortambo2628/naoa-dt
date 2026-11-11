@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\GuestTravelController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\MediaController;
+use App\Http\Controllers\Api\MpesaController;
+use App\Http\Controllers\Api\MpesaSettingsController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PageContentController;
 use App\Http\Controllers\Api\PolaroidImageController;
@@ -145,6 +147,16 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/enquiries', [EnquiryController::class, 'store']);
 });
 
+// Cash gifts by M-Pesa STK Push (see MpesaController). Limits are per phone
+// and per payment rather than per IP, because guests at the venue share one
+// WiFi address (limiters are defined in AppServiceProvider).
+Route::prefix('gifts/mpesa')->group(function () {
+    Route::post('/', [MpesaController::class, 'initiate'])->middleware('throttle:mpesa-initiate');
+    Route::get('/{publicId}', [MpesaController::class, 'status'])->middleware('throttle:mpesa-status');
+});
+// Safaricom's payment confirmation (secret token in the URL; no auth or throttle).
+Route::post('/mpesa/callback/{token}', [MpesaController::class, 'callback']);
+
 // Full Schedule for Public Programme (Events + Items)
 Route::get('/schedule/full', [ScheduleController::class, 'index']);
 
@@ -233,6 +245,14 @@ Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     Route::group(['prefix' => 'gifts'], function () {
         Route::get('/statistics', [GiftController::class, 'statistics']);
         Route::get('/all', [GiftController::class, 'adminIndex']);
+        Route::get('/mpesa-payments', [MpesaController::class, 'adminIndex']);
+        // Connecting M-Pesa (Daraja keys): owners only; keys never leave the server.
+        Route::middleware(EnforceRole::class.':owner')->prefix('mpesa-settings')->group(function () {
+            Route::get('/', [MpesaSettingsController::class, 'show']);
+            Route::put('/', [MpesaSettingsController::class, 'update']);
+            Route::post('/test', [MpesaSettingsController::class, 'test']);
+            Route::delete('/', [MpesaSettingsController::class, 'destroy']);
+        });
         Route::post('/', [GiftController::class, 'store']);
         Route::put('/{gift}', [GiftController::class, 'update']);
         Route::delete('/{gift}', [GiftController::class, 'destroy']);

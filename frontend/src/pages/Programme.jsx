@@ -22,6 +22,7 @@ import { fadeInUp, staggerContainer, staggerItem } from '../hooks/useScrollAnima
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
 import { getWeddingDateText } from '../utils/weddingInfo';
+import { formatRange, parseNames } from '../utils/programme';
 
 const iconMap = {
   'Ceremony': Heart,
@@ -85,7 +86,7 @@ export default function Programme() {
           });
           
           if (allItems.length) {
-            const sorted = allItems.sort((a, b) => a.start_time.localeCompare(b.start_time));
+            const sorted = allItems.sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)) || (a.order ?? 0) - (b.order ?? 0));
             setSchedule(sorted);
           }
         }
@@ -132,13 +133,14 @@ export default function Programme() {
   }
 
   const getTxt = (section, field, fallback) => getContent(content, section, field, i18n, fallback, t);
+  const bridalParty = parseNames(settings?.bridal_party);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{ background: 'linear-gradient(180deg, #FFF9F5 0%, #F8E8E0 100%)', minHeight: '100vh' }}
+      style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)', minHeight: '100vh' }}
     >
       
       <main className="pt-32 pb-20 relative overflow-hidden">
@@ -203,6 +205,11 @@ export default function Programme() {
                       <motion.div
                         key={item.id}
                         variants={staggerItem}
+                        // Each item reveals itself: they arrive after the list's
+                        // own in-view animation has already run.
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.2 }}
                         className="relative flex gap-6 mb-8 last:mb-0"
                       >
                         {/* Timeline Line */}
@@ -212,7 +219,7 @@ export default function Programme() {
                             style={{ 
                               background: isCompleted 
                                 ? 'linear-gradient(180deg, #8B9A7D, #C5D4B9)'
-                                : 'linear-gradient(180deg, #E8D4C8, #F8E8E0)',
+                                : 'linear-gradient(180deg, #E4D6C2, #F3EBDF)',
                             }}
                           />
                         )}
@@ -226,8 +233,8 @@ export default function Programme() {
                               ? 'linear-gradient(135deg, #A67B5B 0%, #C8A68E 100%)'
                               : isCompleted
                                 ? 'linear-gradient(135deg, #8B9A7D 0%, #9CAF88 100%)'
-                                : 'linear-gradient(135deg, #F8E8E0 0%, #FDF5F2 100%)',
-                            border: isCurrent || isCompleted ? 'none' : '2px solid #D4A59A',
+                                : 'linear-gradient(135deg, #F3EBDF 0%, #FBF8F3 100%)',
+                            border: isCurrent || isCompleted ? 'none' : '2px solid #B8936C',
                             boxShadow: isCurrent ? '0 8px 30px rgba(166, 123, 91, 0.3)' : '0 4px 15px rgba(0,0,0,0.05)',
                           }}
                         >
@@ -244,7 +251,7 @@ export default function Programme() {
                             background: isCurrent 
                               ? 'rgba(166, 123, 91, 0.08)'
                               : 'rgba(255, 255, 255, 0.7)',
-                            border: isCurrent ? '2px solid #A67B5B' : '1px solid rgba(232, 212, 200, 0.5)',
+                            border: isCurrent ? '2px solid #A67B5B' : '1px solid rgba(228, 214, 194, 0.5)',
                           }}
                         >
                           <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -252,7 +259,7 @@ export default function Programme() {
                               className="text-lg font-medium"
                               style={{ color: '#A67B5B', fontFamily: "'Cormorant Garamond', serif" }}
                             >
-                              {item.start_time} - {item.end_time}
+                              {formatRange(item)}
                             </span>
                             {isCurrent && (
                               <span 
@@ -275,13 +282,15 @@ export default function Programme() {
                           >
                             {item.description}
                           </p>
-                          <p 
-                            className="text-sm flex items-center gap-2"
-                            style={{ color: '#8B7B6B' }}
-                          >
-                            <MapPin className="w-4 h-4" />
-                            {item.location}
-                          </p>
+                          {item.location && (
+                            <p
+                              className="text-sm flex items-center gap-2"
+                              style={{ color: '#8B7B6B' }}
+                            >
+                              <MapPin className="w-4 h-4" />
+                              {item.location}
+                            </p>
+                          )}
                         </div>
                       </motion.div>
                     );
@@ -351,8 +360,8 @@ export default function Programme() {
                           style={{ 
                             background: update.type === 'important' 
                               ? 'rgba(166, 123, 91, 0.1)'
-                              : 'rgba(248, 232, 224, 0.5)',
-                            borderLeft: `3px solid ${update.type === 'important' ? '#A67B5B' : '#D4A59A'}`,
+                              : 'rgba(243, 235, 223, 0.5)',
+                            borderLeft: `3px solid ${update.type === 'important' ? '#A67B5B' : '#B8936C'}`,
                           }}
                         >
                           <p style={{ color: '#4A3F35' }}>{update.message}</p>
@@ -372,7 +381,7 @@ export default function Programme() {
                 {/* Important Notes */}
                 <div 
                   className="mt-6 p-6 rounded-2xl"
-                  style={{ background: 'rgba(139, 154, 125, 0.1)', border: '1px solid #C5D4B9' }}
+                  style={{ background: 'rgba(184, 147, 108, 0.08)', border: '1px solid rgba(184, 147, 108, 0.35)' }}
                 >
                   <h4 
                     className="font-medium mb-4"
@@ -380,21 +389,47 @@ export default function Programme() {
                   >
                     {t('programme.notes_title')}
                   </h4>
+                  {settings?.programme_note ? (
+                    <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#6B5D52' }}>
+                      {settings.programme_note}
+                    </p>
+                  ) : (
                   <ul className="space-y-3 text-sm" style={{ color: '#6B5D52' }}>
-                    <li className="flex items-start gap-2">
-                      <span style={{ color: '#8B9A7D' }}>•</span>
-                      {t('programme.note1')}
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span style={{ color: '#8B9A7D' }}>•</span>
-                      {t('programme.note2')}
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span style={{ color: '#8B9A7D' }}>•</span>
-                      {t('programme.note3')}
-                    </li>
+                    {['programme.note1', 'programme.note2', 'programme.note3'].map((key) => (
+                      <li key={key} className="flex items-start gap-2">
+                        <span style={{ color: '#9A7148' }}>•</span>
+                        {t(key)}
+                      </li>
+                    ))}
                   </ul>
+                  )}
                 </div>
+
+                {/* Bridal party (Admin → Schedule) */}
+                {bridalParty.length > 0 && (
+                  <div
+                    className="mt-6 p-6 rounded-2xl bg-white/80"
+                    style={{ border: '1px solid rgba(184, 147, 108, 0.35)' }}
+                  >
+                    <h4
+                      className="font-medium mb-1"
+                      style={{ color: '#4A3F35', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.25rem' }}
+                    >
+                      The Bridal Party
+                    </h4>
+                    <p className="text-xs mb-4" style={{ color: '#8B7B6B' }}>
+                      With love and appreciation, we celebrate the bride&apos;s party.
+                    </p>
+                    <ol className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm" style={{ color: '#4A3F35' }}>
+                      {bridalParty.map((name, i) => (
+                        <li key={`${name}-${i}`} className="flex items-baseline gap-2">
+                          <span className="text-xs tabular-nums" style={{ color: '#9A7148' }}>{String(i + 1).padStart(2, '0')}</span>
+                          {name}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
               </motion.div>
             </div>
           </div>

@@ -21,6 +21,8 @@ class GiftClaim extends Model
         'amount',
         'message',
         'is_purchased',
+        'payment_method',    // 'mpesa' when paid by STK Push from the invitation
+        'payment_reference', // M-Pesa receipt number
     ];
 
     protected $casts = [

@@ -34,7 +34,7 @@ export default function CookieConsent() {
                     exit={{ y: 100, opacity: 0 }}
                     className="fixed bottom-6 left-6 right-6 md:left-auto md:right-6 md:w-[400px] z-[100]"
                 >
-                    <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-[#D4A59A]/30 p-6 overflow-hidden relative">
+                    <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-[#B8936C]/30 p-6 overflow-hidden relative">
                         {/* Background Decoration */}
                         <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
                             <Cookie size={120} className="rotate-12" />
@@ -42,7 +42,7 @@ export default function CookieConsent() {
 
                         <div className="relative z-10">
                             <div className="flex items-start gap-4 mb-4">
-                                <div className="p-3 rounded-xl bg-[#F8E8E0] text-[#A67B5B]">
+                                <div className="p-3 rounded-xl bg-[#F3EBDF] text-[#A67B5B]">
                                     <ShieldCheck size={24} />
                                 </div>
                                 <div>
