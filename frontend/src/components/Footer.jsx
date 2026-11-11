@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart, Instagram, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Monogram, MotifBand } from './HeritageMotifs';
+import { Monogram, DiamondBand } from './HeritageMotifs';
 import { initialOf } from '../utils/heritage';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
@@ -21,7 +21,7 @@ export default function Footer() {
       style={{ background: 'linear-gradient(180deg, #F3EBDF 0%, #E4D6C2 100%)' }}
     >
       {/* Mood board pattern edge */}
-      <MotifBand height={30} opacity={0.85} />
+      <DiamondBand height={16} />
 
       {/* Main Footer */}
       <div className="container-wedding py-16">
@@ -33,7 +33,7 @@ export default function Footer() {
           className="text-center mb-12"
         >
           <div className="flex justify-center mb-4">
-            <Monogram first={initialOf(groomName, 'T')} second={initialOf(brideName, 'D')} size={56} />
+            <Monogram first={initialOf(groomName, 'T')} second={initialOf(brideName, 'D')} size={80} />
           </div>
           <h3 
             className="text-4xl mb-4"

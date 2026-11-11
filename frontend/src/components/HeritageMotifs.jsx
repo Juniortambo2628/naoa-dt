@@ -194,53 +194,94 @@ export const MotifEmblem = memo(function MotifEmblem({ size = 40, color = HERITA
   );
 });
 
-/** A leafy sprig (as on the monogram). */
-function Sprig({ transform, color }) {
-  const leaves = [
-    [8, -4, -35], [16, -9, -30], [24, -13, -25], [32, -16, -20],
-    [10, 5, 40], [19, 1, 35], [28, -3, 30],
-  ];
-  return (
-    <g transform={transform} fill={color}>
-      <path d="M0 0 Q20 -6 40 -20" fill="none" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
-      {leaves.map(([x, y, r]) => (
-        <ellipse key={`${x}-${y}`} cx={x} cy={y} rx="4.4" ry="1.9" transform={`rotate(${r} ${x} ${y})`} />
-      ))}
-    </g>
-  );
-}
-
 /**
- * The couple's monogram: two serif initials with an ampersand, in an oval
- * framed by two leaf sprigs. Initials come from the names in Settings.
+ * The couple's approved monogram: a calligraphic T crossing a D (as on the
+ * décor backdrop), set in the site's script face. Initials come from the
+ * names in Settings; the frame of the original oval design is gone.
  */
 export const Monogram = memo(function Monogram({
   first = 'T',
   second = 'D',
   size = 120,
-  color = HERITAGE.bronzeSoft,
+  color = HERITAGE.monogram,
   className = '',
   title,
 }) {
-  const h = size * 1.32;
   return (
     <svg
-      viewBox="0 0 100 132"
+      viewBox="16 6 124 116"
       width={size}
-      height={h}
+      height={(size * 116) / 124}
       className={className}
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
     >
-      <rect x="10" y="6" width="80" height="120" rx="40" fill="none" stroke={color} strokeWidth="1.6" />
-      <Sprig transform="translate(62 30) rotate(-10)" color={color} />
-      <Sprig transform="translate(38 104) rotate(170)" color={color} />
-      <g fill={color} fontFamily="'Cormorant Garamond', 'Playfair Display', Georgia, serif">
-        <text x="40" y="62" fontSize="40" textAnchor="middle">{first}</text>
-        <text x="52" y="80" fontSize="28" textAnchor="middle" fontStyle="italic">&amp;</text>
-        <text x="60" y="104" fontSize="40" textAnchor="middle">{second}</text>
+      <g fill={color} fontFamily="'Great Vibes', cursive">
+        <text x="22" y="78" fontSize="80">{first}</text>
+        <text x="42" y="88" fontSize="70">{second}</text>
       </g>
+    </svg>
+  );
+});
+
+/**
+ * The approved "long strip": a burnt-orange sun above a white runner edged
+ * with a diamond lattice (as for the blessing area). Vertical by default;
+ * `sun={false}` gives just the runner.
+ */
+export const SunStrip = memo(function SunStrip({
+  width = 56,
+  height = 320,
+  color = HERITAGE.sunset,
+  sun = true,
+  className = '',
+  style,
+}) {
+  const uid = useId().replace(/:/g, '');
+  const sunR = sun ? width * 0.95 : 0;
+  const edge = width * 0.28;
+  const vbW = sun ? sunR * 2 : width;
+  const x0 = (vbW - width) / 2;
+  const cell = edge / 2;
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox={`0 0 ${vbW} ${height}`}
+      width={vbW}
+      height={height}
+      className={`pointer-events-none ${className}`}
+      style={style}
+    >
+      <defs>
+        <pattern id={`d${uid}`} width={cell} height={cell} patternUnits="userSpaceOnUse" x={x0}>
+          <rect width={cell} height={cell} fill={color} />
+          <path d={`M${cell / 2} ${cell * 0.12} L${cell * 0.88} ${cell / 2} L${cell / 2} ${cell * 0.88} L${cell * 0.12} ${cell / 2}Z`} fill="#fff" />
+          <path d={`M${cell / 2} ${cell * 0.32} L${cell * 0.68} ${cell / 2} L${cell / 2} ${cell * 0.68} L${cell * 0.32} ${cell / 2}Z`} fill={color} />
+        </pattern>
+      </defs>
+      <rect x={x0} y={sun ? sunR : 0} width={width} height={height - (sun ? sunR : 0)} fill="#fff" />
+      <rect x={x0} y={sun ? sunR : 0} width={edge} height={height - (sun ? sunR : 0)} fill={`url(#d${uid})`} />
+      <rect x={x0 + width - edge} y={sun ? sunR : 0} width={edge} height={height - (sun ? sunR : 0)} fill={`url(#d${uid})`} />
+      {sun && <circle cx={vbW / 2} cy={sunR} r={sunR} fill={color} />}
+    </svg>
+  );
+});
+
+/** A horizontal diamond-lattice band in burnt orange (the strip's edging). */
+export const DiamondBand = memo(function DiamondBand({ height = 18, color = HERITAGE.sunset, className = '' }) {
+  const uid = useId().replace(/:/g, '');
+  const c = height;
+  return (
+    <svg aria-hidden="true" width="100%" height={height} className={`block pointer-events-none ${className}`}>
+      <defs>
+        <pattern id={`h${uid}`} width={c} height={c} patternUnits="userSpaceOnUse">
+          <rect width={c} height={c} fill={color} />
+          <path d={`M${c / 2} ${c * 0.12} L${c * 0.88} ${c / 2} L${c / 2} ${c * 0.88} L${c * 0.12} ${c / 2}Z`} fill="#fff" />
+          <path d={`M${c / 2} ${c * 0.32} L${c * 0.68} ${c / 2} L${c / 2} ${c * 0.68} L${c * 0.32} ${c / 2}Z`} fill={color} />
+        </pattern>
+      </defs>
+      <rect width="100%" height={height} fill={`url(#h${uid})`} />
     </svg>
   );
 });

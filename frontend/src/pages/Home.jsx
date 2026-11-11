@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { Monogram, MotifArch } from '../components/HeritageMotifs';
+import { Monogram, SunStrip } from '../components/HeritageMotifs';
 import { initialOf } from '../utils/heritage';
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -118,12 +118,13 @@ function HeroSection({ content, settings, loading }) {
       <MainFlowerTopLeft size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
       <MainFlowerBottomRight size={350} className="w-48 opacity-40 md:w-auto md:opacity-100" />
 
-      {/* Patterned arches, as on the décor backdrop (wide screens only). */}
-      <div className="hidden xl:block absolute left-10 bottom-0 pointer-events-none" aria-hidden="true">
-        <MotifArch width={104} height={340} />
+      {/* The approved long strips (sun over a diamond-edged runner), hung
+          either side like the blessing-area banners (wide screens only). */}
+      <div className="hidden xl:block absolute left-16 top-36 pointer-events-none" aria-hidden="true">
+        <SunStrip width={40} height={420} />
       </div>
-      <div className="hidden xl:block absolute right-10 bottom-0 pointer-events-none" aria-hidden="true">
-        <MotifArch width={104} height={340} />
+      <div className="hidden xl:block absolute right-16 top-36 pointer-events-none" aria-hidden="true">
+        <SunStrip width={40} height={420} />
       </div>
       
       {/* Hero Content */}
@@ -142,7 +143,7 @@ function HeroSection({ content, settings, loading }) {
           <Monogram
             first={initialOf(groomName, 'T')}
             second={initialOf(brideName, 'D')}
-            size={64}
+            size={92}
             title={`${groomName} & ${brideName}`}
           />
         </motion.div>

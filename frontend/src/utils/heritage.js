@@ -5,6 +5,9 @@ export const HERITAGE = {
   sand: '#E9DCC9',
   ivory: '#FBF8F3',
   ink: '#4A3F35',
+  // Approved branding: the script TD monogram and the burnt-orange strip.
+  monogram: '#C19A73',
+  sunset: '#BF560F',
 };
 
 /** First letter of a name, upper-cased ("Tze Ren" → "T"). */

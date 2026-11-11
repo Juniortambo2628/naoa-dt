@@ -43,7 +43,8 @@
     "react-moveable": "^0.56.0",
     "react-quill-new": "^3.8.3",
     "react-router-dom": "^7.10.1",
-    "recharts": "^3.5.1"
+    "recharts": "^3.5.1",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@babel/parser": "^7.29.9",

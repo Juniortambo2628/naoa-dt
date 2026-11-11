@@ -16,7 +16,8 @@ import LiveEventWidget from '../components/LiveEventWidget';
 import DressCodePalette from '../components/DressCodePalette';
 import GuestNotices from '../components/GuestNotices';
 import CashGiftCard from '../components/CashGiftCard';
-import { Monogram, MotifBand, MotifCorner } from '../components/HeritageMotifs';
+import EnvelopeReveal from '../components/envelope/EnvelopeReveal';
+import { Monogram, DiamondBand, MotifCorner } from '../components/HeritageMotifs';
 import { initialOf } from '../utils/heritage';
 import InvitationDownloadButton from '../components/InvitationDownloadButton';
 import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
@@ -165,13 +166,24 @@ export default function DigitalInvitation() {
     return (
         <div className="relative min-h-screen bg-[#FBF8F3] selection:bg-palette-cinnamon/15">
             {/* The couple's mood board: a patterned edge and cloth in the corners. */}
-            <MotifBand height={26} opacity={0.85} />
+            <DiamondBand height={14} />
             <div className="absolute inset-x-0 top-0 h-[520px] pointer-events-none overflow-hidden" aria-hidden="true">
                 <MotifCorner size={300} corner="top-left" opacity={0.35} className="absolute top-0 left-0 w-44 h-44 md:w-[300px] md:h-[300px]" />
                 <MotifCorner size={300} corner="top-right" opacity={0.35} className="absolute top-0 right-0 w-44 h-44 md:w-[300px] md:h-[300px]" />
             </div>
 
-            <div className="relative max-w-screen-xl mx-auto px-4 py-12 md:py-20 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-center">
+            {/* Opening: the 3D envelope opens as the guest scrolls (closes going back up). */}
+            {show.envelope && (
+                <EnvelopeReveal
+                    guestName={guest.name}
+                    coupleNames={coupleNames}
+                    initials={`${initialOf(weddingInfo.groom_name, 'T')}${initialOf(weddingInfo.bride_name, 'D')}`}
+                    dateText={weddingDateText}
+                    venue={venueName}
+                />
+            )}
+
+            <div className="relative max-w-screen-xl mx-auto px-4 pt-12 pb-32 md:pt-20 md:pb-36 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-center">
                 
                 {/* Left Side: The Interactive Card */}
                 {show.card && (
@@ -217,7 +229,7 @@ export default function DigitalInvitation() {
                             <Monogram
                                 first={initialOf(weddingInfo.groom_name, 'T')}
                                 second={initialOf(weddingInfo.bride_name, 'D')}
-                                size={58}
+                                size={84}
                                 title={coupleNames}
                             />
                         </div>

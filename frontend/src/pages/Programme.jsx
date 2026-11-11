@@ -23,6 +23,7 @@ import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
 import { getWeddingDateText } from '../utils/weddingInfo';
 import { formatRange, parseNames } from '../utils/programme';
+import { SunStrip } from '../components/HeritageMotifs';
 
 const iconMap = {
   'Ceremony': Heart,
@@ -156,6 +157,14 @@ export default function Programme() {
           <FloatingFlower type="secondary-top-left" size={90} duration={12} delay={1} />
         </div>
         
+        {/* The approved long strips, either side of the title (wide screens). */}
+        <div className="hidden 2xl:block absolute left-8 top-28 pointer-events-none" aria-hidden="true">
+          <SunStrip width={40} height={300} />
+        </div>
+        <div className="hidden 2xl:block absolute right-8 top-28 pointer-events-none" aria-hidden="true">
+          <SunStrip width={40} height={300} />
+        </div>
+
         <div className="container-wedding relative z-10">
           {/* Header */}
           <motion.div
