@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { twoFactorService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate, Users, Megaphone, Plus, Trash2 } from 'lucide-react';
+import { Save, RotateCcw, Shield, ShieldCheck, Settings, Info, Mail, Music, Globe, Lock, MapPin, Heart, MessageCircle, LayoutTemplate, Users, Megaphone, Plus, Trash2, Smartphone } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChangesGuard';
 import UnsavedChangesStatus from '../../components/admin/UnsavedChangesStatus';
@@ -13,7 +13,8 @@ import AdminModal from '../../components/admin/AdminModal';
 import EditableFieldset from '../../components/admin/EditableFieldset';
 import useAdminAction from '../../hooks/useAdminAction';
 
-import { AdminInput } from '../../components/admin/AdminInput';
+import { AdminInput, AdminTextarea } from '../../components/admin/AdminInput';
+import MpesaConnectCard from '../../components/admin/MpesaConnectCard';
 import Spinner from '../../components/admin/Spinner';
 import Button from '../../components/Button';
 import LocationPicker from '../../components/LocationPicker';
@@ -81,6 +82,13 @@ const settingSections = [
     keys: ['whatsapp_message_template'],
   },
   {
+    id: 'mpesa',
+    label: 'M-Pesa Gifts',
+    icon: Smartphone,
+    description: 'Connect M-Pesa and set the Pay Bill details guests see.',
+    keys: ['mpesa_enabled', 'mpesa_paybill_number', 'mpesa_paybill_account', 'cash_gift_note'],
+  },
+  {
     id: 'notifications',
     label: 'Notifications',
     icon: Mail,
@@ -114,6 +122,10 @@ export default function AdminSettings() {
     whatsapp_message_template: DEFAULT_WHATSAPP_TEMPLATE,
     invitation_sections: resolveInvitationSections(),
     guest_notices: DEFAULT_GUEST_NOTICES.map(n => ({ ...n })),
+    mpesa_enabled: true,
+    mpesa_paybill_number: '',
+    mpesa_paybill_account: '',
+    cash_gift_note: '',
   });
 
   const { data: settingsData, isLoading } = useSettings();
@@ -166,6 +178,10 @@ export default function AdminSettings() {
           whatsapp_message_template: settingsData.whatsapp_message_template || DEFAULT_WHATSAPP_TEMPLATE,
           invitation_sections: resolveInvitationSections(settingsData.invitation_sections),
           guest_notices: resolveGuestNotices(settingsData.guest_notices),
+          mpesa_enabled: !['false', '0', 'off', 'no'].includes(String(settingsData.mpesa_enabled ?? 'true').toLowerCase()),
+          mpesa_paybill_number: settingsData.mpesa_paybill_number || '',
+          mpesa_paybill_account: settingsData.mpesa_paybill_account || '',
+          cash_gift_note: settingsData.cash_gift_note || '',
         };
         setSettings(loaded);
         markSaved(loaded);
@@ -196,6 +212,10 @@ export default function AdminSettings() {
     rsvp_enabled: String(settings.rsvp_enabled),
     admin_email_notifications: String(settings.admin_email_notifications),
     song_request_limit_enabled: String(settings.song_request_limit_enabled),
+    mpesa_enabled: String(settings.mpesa_enabled),
+    mpesa_paybill_number: settings.mpesa_paybill_number.trim(),
+    mpesa_paybill_account: settings.mpesa_paybill_account.trim(),
+    cash_gift_note: settings.cash_gift_note.trim(),
   }), {
     key: () => 'save',
     success: 'System settings saved successfully',
@@ -594,6 +614,46 @@ export default function AdminSettings() {
             </SettingsCard>
             )}
 
+            {/* M-Pesa gifts: what guests see (the Daraja keys card sits below the form) */}
+            {activeSection.id === 'mpesa' && (
+            <SettingsCard icon={Smartphone} title="What guests see" description="How guests can send a cash gift from their invitation.">
+              <div className="space-y-5">
+                <Toggle
+                  id="mpesaToggle"
+                  checked={settings.mpesa_enabled}
+                  onChange={(checked) => setSettings({ ...settings, mpesa_enabled: checked })}
+                  label="Let guests send a gift with an M-Pesa prompt to their phone"
+                  hint="Works once M-Pesa is connected below."
+                />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <AdminInput
+                    label="Pay Bill business number"
+                    value={settings.mpesa_paybill_number}
+                    onChange={(e) => setSettings({ ...settings, mpesa_paybill_number: e.target.value })}
+                    placeholder="e.g. 123456"
+                    inputMode="numeric"
+                  />
+                  <AdminInput
+                    label="Account number to show"
+                    value={settings.mpesa_paybill_account}
+                    onChange={(e) => setSettings({ ...settings, mpesa_paybill_account: e.target.value })}
+                    placeholder="Blank = each guest's invite code"
+                  />
+                </div>
+                <AdminTextarea
+                  label="Note on the invitation (optional)"
+                  value={settings.cash_gift_note}
+                  onChange={(e) => setSettings({ ...settings, cash_gift_note: e.target.value })}
+                  rows={2}
+                  placeholder="Your presence is our greatest gift. If you would like to give a cash gift…"
+                />
+                <p className="text-xs text-stone-500">
+                  The Pay Bill details are shown to guests who prefer to pay from their M-Pesa menu, and whenever the prompt is unavailable. Received gifts are listed under Gifts → M-Pesa gifts.
+                </p>
+              </div>
+            </SettingsCard>
+            )}
+
             {/* Features */}
             {activeSection.id === 'features' && (
             <SettingsCard icon={Music} title="Features" description="Optional guest-facing modules.">
@@ -609,6 +669,9 @@ export default function AdminSettings() {
 
           </EditableFieldset>
           </form>
+
+          {/* Its own form and Save: the Safaricom keys go to a separate, encrypted endpoint. */}
+          {activeSection.id === 'mpesa' && <div className="mt-4"><MpesaConnectCard /></div>}
 
       <AdminModal isOpen={show2faModal && !!twoFactorData} onClose={() => setShow2faModal(false)} title="Setup Two-Factor Authentication" size="md">
         <form onSubmit={handleConfirm2fa} className="space-y-6">
