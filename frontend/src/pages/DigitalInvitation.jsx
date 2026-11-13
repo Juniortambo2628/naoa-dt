@@ -364,7 +364,7 @@ export default function DigitalInvitation() {
             </footer>
 
             {/* Floating quick actions: Where are you · My travel details · Seating chart */}
-            {show.quickActions && <GuestQuickActions guestCode={code} settings={settings} />}
+            {show.quickActions && <GuestQuickActions guestCode={code} guest={guest} settings={settings} />}
         </div>
     );
 }

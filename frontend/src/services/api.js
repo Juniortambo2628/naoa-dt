@@ -419,6 +419,8 @@ export const analyticsService = {
 export const checkinService = {
   getStats: () => api.get('/checkin/stats'),
   scan: (data) => api.post('/checkin/scan', data),
+  checkInGuest: (guestId) => api.post(`/checkin/guests/${guestId}`),
+  undo: (guestId) => api.delete(`/checkin/guests/${guestId}`),
   generateQR: (guestId) => api.post(`/checkin/guests/${guestId}/generate-qr`),
   getCheckedInGuests: () => api.get('/checkin/guests'),
 };

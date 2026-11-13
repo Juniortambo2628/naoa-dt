@@ -136,7 +136,7 @@ class CheckInTest extends TestCase
         $response->assertStatus(404)
             ->assertJson([
                 'success' => false,
-                'message' => 'Invalid QR code. Guest not found.',
+                'message' => 'This code doesn\'t match any guest. Search for them by name instead.',
             ]);
     }
 
@@ -179,5 +179,61 @@ class CheckInTest extends TestCase
         $response->assertOk();
         $data = $response->json('data');
         $this->assertEquals(3, $data['total_expected']);
+    }
+
+    public function test_scanning_the_invitation_link_checks_the_guest_in(): void
+    {
+        $guest = Guest::factory()->confirmed()->create(['checked_in_at' => null]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/checkin/scan', ['qr_code' => "https://dntwed.okjtech.co.ke/invitation/{$guest->unique_code}"])
+            ->assertOk()
+            ->assertJsonPath('data.guest.id', $guest->id)
+            ->assertJsonPath('data.guest.name', $guest->name);
+
+        $this->assertNotNull($guest->fresh()->checked_in_at);
+    }
+
+    public function test_the_bare_invite_code_works_in_any_case(): void
+    {
+        $guest = Guest::factory()->create(['checked_in_at' => null]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/checkin/scan', ['qr_code' => strtolower($guest->unique_code)])
+            ->assertOk();
+
+        $this->assertNotNull($guest->fresh()->checked_in_at);
+    }
+
+    public function test_a_guest_can_be_checked_in_by_hand_and_undone(): void
+    {
+        $guest = Guest::factory()->create(['checked_in_at' => null]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/checkin/guests/{$guest->id}")
+            ->assertOk()
+            ->assertJsonPath('success', true);
+        $this->assertNotNull($guest->fresh()->checked_in_at);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/checkin/guests/{$guest->id}")
+            ->assertStatus(400)
+            ->assertJsonPath('errors.guest.id', $guest->id);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/checkin/guests/{$guest->id}")
+            ->assertOk();
+        $this->assertNull($guest->fresh()->checked_in_at);
+    }
+
+    public function test_a_viewer_cannot_check_guests_in(): void
+    {
+        $viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);
+        $guest = Guest::factory()->create(['checked_in_at' => null]);
+
+        $this->actingAs($viewer, 'sanctum')
+            ->postJson("/api/checkin/guests/{$guest->id}")
+            ->assertForbidden();
+        $this->assertNull($guest->fresh()->checked_in_at);
     }
 }

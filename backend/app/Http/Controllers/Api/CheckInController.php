@@ -34,39 +34,94 @@ class CheckInController extends Controller
         ]);
     }
 
+    /**
+     * Check a guest in from a scan. The QR on the guest's card and digital
+     * invite holds their invitation link (…/invitation/CODE), so the scanner
+     * accepts that link, the bare invite code, or an older generated QR code.
+     */
     public function checkIn(Request $request): JsonResponse
     {
         $request->validate([
-            'qr_code' => 'required|string',
+            'qr_code' => 'required|string|max:500',
         ]);
 
-        $guest = Guest::with('table')->where('qr_code', $request->qr_code)->first();
+        $guest = $this->findScannedGuest($request->input('qr_code'));
 
         if (! $guest) {
-            return $this->notFoundResponse('Invalid QR code. Guest not found.');
+            return $this->notFoundResponse('This code doesn\'t match any guest. Search for them by name instead.');
         }
+
+        return $this->markArrived($guest);
+    }
+
+    /** Check a guest in by hand (found by name at the door). */
+    public function checkInGuest(Guest $guest): JsonResponse
+    {
+        return $this->markArrived($guest);
+    }
+
+    /** Undo a check-in made by mistake. */
+    public function undoCheckIn(Guest $guest): JsonResponse
+    {
+        $guest->checked_in_at = null;
+        $guest->save();
+
+        return $this->successResponse(['guest' => $this->summary($guest)], $guest->name.' is no longer checked in.');
+    }
+
+    private function findScannedGuest(string $scanned): ?Guest
+    {
+        $value = trim($scanned);
+
+        // An invitation link: take the code after /invitation/.
+        if (preg_match('~/invitation/([A-Za-z0-9]+)~', $value, $m)) {
+            $value = $m[1];
+        }
+
+        return Guest::with('table')
+            ->where('unique_code', strtoupper($value))
+            ->orWhere('qr_code', $value)
+            ->first();
+    }
+
+    private function markArrived(Guest $guest): JsonResponse
+    {
+        $guest->loadMissing('table');
 
         if ($guest->checked_in_at) {
             return $this->errorResponse(
-                'Guest already checked in at '.$guest->checked_in_at->format('g:i A'),
+                $guest->name.' was already checked in at '.$guest->checked_in_at->format('g:i A').'.',
                 400,
-                ['guest' => $guest]
+                ['guest' => $this->summary($guest)]
             );
         }
 
         $guest->checked_in_at = now();
         $guest->save();
 
-        // Load table relationship for broadcasting
-        $guest->load('table');
-
-        // Broadcast the check-in event
         event(new GuestCheckedIn($guest));
 
         return $this->successResponse(
-            ['guest' => $guest],
+            ['guest' => $this->summary($guest)],
             'Welcome, '.$guest->name.'!'
         );
+    }
+
+    /** What the usher needs to see: who, where they sit, and anything to watch for. */
+    private function summary(Guest $guest): array
+    {
+        $guest->loadMissing('table', 'parentGuest:id,name');
+
+        return [
+            'id' => $guest->id,
+            'name' => $guest->name,
+            'group' => $guest->group,
+            'table' => $guest->table ? ['id' => $guest->table->id, 'name' => $guest->table->name] : null,
+            'rsvp_status' => $guest->rsvp_status,
+            'dietary_notes' => $guest->dietary_notes,
+            'guest_of' => $guest->parentGuest?->name,
+            'checked_in_at' => $guest->checked_in_at,
+        ];
     }
 
     public function getStats(): JsonResponse

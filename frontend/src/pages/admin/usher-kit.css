@@ -50,14 +50,14 @@
 .usher-table-no { white-space: nowrap; font-weight: 700; }
 .usher-notes { font-size: 9pt; color: #5F554C; }
 
-/* ---- Guest cards: 8 per A4 page (2 x 4) ---- */
+/* ---- Guest cards: 6 per A4 page (2 x 3) ---- */
 .usher-cards-page {
   background: #fff;
   box-sizing: border-box;
   padding: 12mm;
   display: grid;
   grid-template-columns: repeat(2, 90mm);
-  grid-auto-rows: 65mm;
+  grid-auto-rows: 86mm;
   column-gap: 6mm;
   row-gap: 4mm;
   justify-content: center;
@@ -90,7 +90,14 @@
 .usher-card-rule { display: block; width: 14mm; height: 0; border-top: 0.75px solid var(--usher-line); margin: 1mm 0; }
 .usher-card-couple { margin: 0; font-family: 'Great Vibes', cursive; font-size: 17pt; line-height: 1.1; color: #A67B5B; }
 .usher-card-meta { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 9pt; color: #5F554C; }
+.usher-card-qr { margin-top: 2mm; display: flex; flex-direction: column; align-items: center; gap: 1mm; }
+.usher-card-qr svg { width: 17mm; height: 17mm; display: block; }
+.usher-card-qr span { font-size: 6pt; letter-spacing: 0.12em; text-transform: uppercase; color: #6B5D52; }
 .usher-card-table { margin: 1mm 0 0; font-size: 8pt; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: var(--usher-ink); }
+
+/* Off-screen cards for the one-PDF-per-guest export (no cut line). */
+.usher-export { position: fixed; left: -10000px; top: 0; display: flex; flex-direction: column; gap: 10px; }
+.usher-export .usher-card { width: 90mm; height: 86mm; background: #fff; border-color: transparent; }
 
 /* The first cards page follows the list without an empty page when cards print alone. */
 .usher-kit > .usher-cards-page:first-child { break-before: auto; page-break-before: auto; }
