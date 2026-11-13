@@ -330,6 +330,8 @@ Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     Route::group(['prefix' => 'checkin'], function () {
         Route::post('/guests/{guest}/generate-qr', [CheckInController::class, 'generateQR']);
         Route::post('/scan', [CheckInController::class, 'checkIn']);
+        Route::get('/lookup', [CheckInController::class, 'lookup']);
+        Route::delete('/reset', [CheckInController::class, 'resetAll']);
         Route::post('/guests/{guest}', [CheckInController::class, 'checkInGuest']);
         Route::delete('/guests/{guest}', [CheckInController::class, 'undoCheckIn']);
         Route::get('/stats', [CheckInController::class, 'getStats']);
