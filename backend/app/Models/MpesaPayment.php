@@ -22,6 +22,14 @@ class MpesaPayment extends Model
 
     public const STATUS_TIMEOUT = 'timeout';
 
+    /** A gift the guest sent from their own M-Pesa menu and told us about (amount + M-Pesa code). */
+    public const STATUS_REPORTED = 'reported';
+
+    /** How the gift was sent: a prompt to the guest's phone, or Pay Bill from their M-Pesa menu. */
+    public const METHOD_STK = 'stk';
+
+    public const METHOD_PAYBILL = 'paybill';
+
     /** Daraja result codes that mean the guest dismissed or ignored the prompt. */
     public const CANCELLED_CODES = ['1032'];
 
@@ -30,6 +38,7 @@ class MpesaPayment extends Model
     /** Defaults present on a new model in memory, not only in the database. */
     protected $attributes = [
         'status' => self::STATUS_PENDING,
+        'method' => self::METHOD_STK,
         'on_behalf' => false,
     ];
 
@@ -45,6 +54,7 @@ class MpesaPayment extends Model
         'amount',
         'account_reference',
         'status',
+        'method',
         'merchant_request_id',
         'checkout_request_id',
         'result_code',
@@ -118,6 +128,23 @@ class MpesaPayment extends Model
             'giver_name' => $this->giver_name,
             'receipt' => $this->status === self::STATUS_SUCCESS ? $this->mpesa_receipt : null,
             'message' => self::guestMessage($this->status, $this->result_code),
+        ];
+    }
+
+    /**
+     * One gift as its own giver sees it on their invitation (never anyone
+     * else's): amount, how it was sent, the M-Pesa code and when.
+     */
+    public function toGiverArray(): array
+    {
+        return [
+            'id' => $this->public_id,
+            'amount' => $this->amount,
+            'status' => $this->status,
+            'method' => $this->method,
+            'giver_name' => $this->giver_name,
+            'receipt' => $this->mpesa_receipt,
+            'created_at' => $this->created_at,
         ];
     }
 

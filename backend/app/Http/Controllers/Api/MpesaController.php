@@ -208,6 +208,90 @@ class MpesaController extends Controller
         return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Accepted']);
     }
 
+    /**
+     * A gift the guest sent from their own M-Pesa menu (Pay Bill), recorded
+     * from the invitation so the couple can thank them. The M-Pesa code is
+     * unique: the same transaction can't be recorded twice.
+     */
+    public function report(Request $request): JsonResponse
+    {
+        $max = (int) config('mpesa.max_amount', 250000);
+
+        $data = $request->validate([
+            'guest_code' => 'required|string|max:64',
+            'amount' => "required|integer|min:1|max:$max",
+            'receipt' => ['required', 'string', 'max:20'],
+            'giver_name' => 'required|string|max:255',
+            'on_behalf' => 'sometimes|boolean',
+            'message' => 'nullable|string|max:500',
+            'idempotency_key' => 'required|string|max:64',
+        ]);
+
+        $guest = Guest::where('unique_code', $data['guest_code'])->first();
+        if (! $guest) {
+            return $this->notFoundResponse('We could not find that invitation.');
+        }
+
+        $receipt = strtoupper(preg_replace('/\s+/', '', $data['receipt']));
+        if (! preg_match('/^[A-Z0-9]{8,12}$/', $receipt)) {
+            return $this->errorResponse(
+                'Please check the M-Pesa code: it is the 10 letters and numbers at the start of your confirmation SMS, e.g. TKD4ABC12X.',
+                422,
+                ['receipt' => ['Please check the M-Pesa code.']]
+            );
+        }
+
+        $existing = MpesaPayment::where('idempotency_key', $data['idempotency_key'])->first();
+        if ($existing) {
+            return $this->successResponse($existing->toGiverArray(), 'Your gift is recorded. Thank you!');
+        }
+
+        if (MpesaPayment::where('mpesa_receipt', $receipt)->exists()) {
+            return $this->errorResponse('This M-Pesa code has already been recorded. Thank you!', 409);
+        }
+
+        try {
+            $payment = MpesaPayment::create([
+                'idempotency_key' => $data['idempotency_key'],
+                'guest_id' => $guest->id,
+                'giver_name' => trim($data['giver_name']),
+                'on_behalf' => (bool) ($data['on_behalf'] ?? false),
+                'message' => isset($data['message']) ? trim($data['message']) ?: null : null,
+                'phone' => '',
+                'amount' => (int) $data['amount'],
+                'account_reference' => mb_substr((string) Setting::getValue('mpesa_paybill_account', $guest->unique_code), 0, 20),
+                'status' => MpesaPayment::STATUS_REPORTED,
+                'method' => MpesaPayment::METHOD_PAYBILL,
+                'mpesa_receipt' => $receipt,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // A double tap that raced the checks above.
+            return $this->errorResponse('This M-Pesa code has already been recorded. Thank you!', 409);
+        }
+
+        return $this->createdResponse($payment->toGiverArray(), 'Your gift is recorded. Thank you!');
+    }
+
+    /** The gifts sent from one invitation, for that invitation only. */
+    public function mine(Request $request): JsonResponse
+    {
+        $code = trim((string) $request->query('guest_code'));
+        $guest = $code !== '' ? Guest::where('unique_code', $code)->first() : null;
+        if (! $guest) {
+            return $this->successResponse(['gifts' => []]);
+        }
+
+        $gifts = MpesaPayment::where('guest_id', $guest->id)
+            ->whereIn('status', [MpesaPayment::STATUS_SUCCESS, MpesaPayment::STATUS_REPORTED])
+            ->latest('id')
+            ->limit(50)
+            ->get()
+            ->map(fn (MpesaPayment $p) => $p->toGiverArray())
+            ->values();
+
+        return $this->successResponse(['gifts' => $gifts]);
+    }
+
     /** Admin: every M-Pesa gift attempt with its outcome, newest first. */
     public function adminIndex(): JsonResponse
     {
@@ -223,6 +307,7 @@ class MpesaController extends Controller
                 'phone' => $p->phone,
                 'amount' => $p->amount,
                 'status' => $p->status,
+                'method' => $p->method,
                 'receipt' => $p->mpesa_receipt,
                 'result_desc' => $p->result_desc,
                 'message' => $p->message,
@@ -236,6 +321,8 @@ class MpesaController extends Controller
                 'received_total' => (int) MpesaPayment::where('status', MpesaPayment::STATUS_SUCCESS)->sum('amount'),
                 'received_count' => MpesaPayment::where('status', MpesaPayment::STATUS_SUCCESS)->count(),
                 'pending_count' => MpesaPayment::where('status', MpesaPayment::STATUS_PENDING)->count(),
+                'reported_total' => (int) MpesaPayment::where('status', MpesaPayment::STATUS_REPORTED)->sum('amount'),
+                'reported_count' => MpesaPayment::where('status', MpesaPayment::STATUS_REPORTED)->count(),
             ],
             'enabled' => self::isEnabled($this->mpesa),
             'configured' => $this->mpesa->isConfigured(),

@@ -15,6 +15,7 @@ const STATUS_STYLES = {
   cancelled: 'bg-stone-100 text-stone-600',
   timeout: 'bg-stone-100 text-stone-600',
   failed: 'bg-red-50 text-red-700',
+  reported: 'bg-sky-50 text-sky-700',
 };
 
 const STATUS_LABELS = {
@@ -23,6 +24,7 @@ const STATUS_LABELS = {
   cancelled: 'Cancelled',
   timeout: 'No response',
   failed: 'Failed',
+  reported: 'Sent by Pay Bill',
 };
 
 const formatWhen = (value) => (value ? new Date(value).toLocaleString('en-KE', {
@@ -70,7 +72,7 @@ export default function MpesaGiftsPanel() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  const [form, setForm] = useState({ enabled: true, paybill: '', account: '', note: '' });
+  const [form, setForm] = useState({ enabled: true, paybill: '', account: '', payee: '', bank: '', note: '' });
 
   useEffect(() => {
     if (!settings) return;
@@ -78,6 +80,8 @@ export default function MpesaGiftsPanel() {
       enabled: !['false', '0', 'off', 'no'].includes(String(settings.mpesa_enabled ?? 'true').toLowerCase()),
       paybill: settings.mpesa_paybill_number || '',
       account: settings.mpesa_paybill_account || '',
+      payee: settings.mpesa_paybill_name || '',
+      bank: settings.mpesa_paybill_bank || '',
       note: settings.cash_gift_note || '',
     });
   }, [settings]);
@@ -86,6 +90,8 @@ export default function MpesaGiftsPanel() {
     mpesa_enabled: String(form.enabled),
     mpesa_paybill_number: form.paybill.trim(),
     mpesa_paybill_account: form.account.trim(),
+    mpesa_paybill_name: form.payee.trim(),
+    mpesa_paybill_bank: form.bank.trim(),
     cash_gift_note: form.note.trim(),
   }), {
     key: () => 'save',
@@ -100,13 +106,18 @@ export default function MpesaGiftsPanel() {
     <div className="space-y-6">
       <ConnectionBanner data={data} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-2xl border border-stone-100 bg-white p-4">
-          <p className="text-xs uppercase tracking-wider text-stone-500">Received</p>
+          <p className="text-xs uppercase tracking-wider text-stone-500">Sent by Pay Bill</p>
+          <p className="text-2xl font-semibold text-stone-800">{formatKes(summary?.reported_total ?? 0)}</p>
+          <p className="text-xs text-stone-500 mt-0.5">{summary?.reported_count ?? 0} recorded by guests</p>
+        </div>
+        <div className="rounded-2xl border border-stone-100 bg-white p-4">
+          <p className="text-xs uppercase tracking-wider text-stone-500">Received by prompt</p>
           <p className="text-2xl font-semibold text-stone-800">{formatKes(summary?.received_total ?? 0)}</p>
         </div>
         <div className="rounded-2xl border border-stone-100 bg-white p-4">
-          <p className="text-xs uppercase tracking-wider text-stone-500">Gifts</p>
+          <p className="text-xs uppercase tracking-wider text-stone-500">Gifts by prompt</p>
           <p className="text-2xl font-semibold text-stone-800">{summary?.received_count ?? 0}</p>
         </div>
         <div className="rounded-2xl border border-stone-100 bg-white p-4">
@@ -141,6 +152,18 @@ export default function MpesaGiftsPanel() {
             onChange={(e) => setForm((f) => ({ ...f, account: e.target.value }))}
             placeholder="Blank = each guest's invite code"
           />
+          <AdminInput
+            label="Name the money goes to"
+            value={form.payee}
+            onChange={(e) => setForm((f) => ({ ...f, payee: e.target.value }))}
+            placeholder="e.g. Dinah Achieng Tambo"
+          />
+          <AdminInput
+            label="Bank (if the Pay Bill is a bank's)"
+            value={form.bank}
+            onChange={(e) => setForm((f) => ({ ...f, bank: e.target.value }))}
+            placeholder="e.g. Standard Chartered"
+          />
         </div>
         <AdminTextarea
           label="Note on the invitation (optional)"
@@ -151,6 +174,7 @@ export default function MpesaGiftsPanel() {
         />
         <p className="text-xs text-stone-500">
           The Pay Bill details are shown to guests who prefer to pay from their M-Pesa menu, and whenever the prompt is unavailable.
+          Guests who pay by Pay Bill can record their gift (amount and M-Pesa code); it appears below as “Sent by Pay Bill”. Each guest only sees their own.
         </p>
         <Button icon={Save} action={save} args={['save']}>Save</Button>
       </section>

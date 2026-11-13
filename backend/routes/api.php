@@ -152,6 +152,9 @@ Route::middleware('throttle:30,1')->group(function () {
 // WiFi address (limiters are defined in AppServiceProvider).
 Route::prefix('gifts/mpesa')->group(function () {
     Route::post('/', [MpesaController::class, 'initiate'])->middleware('throttle:mpesa-initiate');
+    // Pay Bill gifts the guest sent themselves, and their own gifts (before /{publicId}).
+    Route::post('/report', [MpesaController::class, 'report'])->middleware('throttle:mpesa-report');
+    Route::get('/mine', [MpesaController::class, 'mine'])->middleware('throttle:mpesa-report');
     Route::get('/{publicId}', [MpesaController::class, 'status'])->middleware('throttle:mpesa-status');
 });
 // Safaricom's payment confirmation (secret token in the URL; no auth or throttle).
