@@ -176,7 +176,7 @@ export function ReportGiftSheet({ open, onClose, guest, onRecorded }) {
           <>
             <div>
               <h3 className="font-serif text-2xl text-stone-800">I've sent my gift</h3>
-              <p className="text-stone-500 mt-1">Let the couple know it came from you. Only you and the couple will see this.</p>
+              <p className="text-stone-500 mt-1">Optional: let the couple know the gift came from you. Only you and the couple will see this.</p>
             </div>
 
             <fieldset>

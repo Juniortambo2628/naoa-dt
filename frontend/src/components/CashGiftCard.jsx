@@ -180,9 +180,13 @@ export default function CashGiftCard({ guest, settings }) {
         ) : (
           <>
             <PaybillDetails paybill={paybill} account={account} payee={payee} bank={bank} />
-            <Button variant="secondary" size="lg" fullWidth icon={CheckCircle2} onClick={() => setReportOpen(true)}>
-              I've sent my gift
-            </Button>
+            {/* Optional: only for guests who'd like the couple to know the gift is from them. */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
+              <p className="text-sm text-stone-500">Already sent it? You can let the couple know it's from you. This is optional.</p>
+              <Button variant="primary" size="md" icon={CheckCircle2} onClick={() => setReportOpen(true)} className="shrink-0">
+                I've sent my gift
+              </Button>
+            </div>
           </>
         )}
 
