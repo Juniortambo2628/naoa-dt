@@ -37,17 +37,15 @@ const iconMap = {
  * One section of the side panel. Desktop: an accordion row (click the title
  * to open it). Phones: always open, shown when its tab is selected.
  */
-function PanelSection({ title, icon, meta = null, open, onToggle, showOnPhone, children }) {
+function PanelSection({ title, icon, meta = null, open, onToggle, showOnPhone, pinned = false, children }) {
   const Icon = icon;
+  // A pinned section is always open: no toggle, no chevron.
+  const Head = pinned ? 'div' : 'button';
+  const headProps = pinned ? {} : { type: 'button', onClick: onToggle, 'aria-expanded': open };
   return (
     <section className={`border-b last:border-b-0 border-[#E4D6C2]/70 ${showOnPhone ? '' : 'hidden lg:block'}`}>
       <h3>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          className="w-full flex items-center gap-3 px-5 py-4 text-left"
-        >
+        <Head {...headProps} className="w-full flex items-center gap-3 px-5 py-4 text-left">
           <span className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center" style={{ background: 'rgba(166, 123, 91, 0.1)' }}>
             <Icon className="w-[18px] h-[18px]" style={{ color: '#A67B5B' }} />
           </span>
@@ -57,12 +55,14 @@ function PanelSection({ title, icon, meta = null, open, onToggle, showOnPhone, c
             </span>
             {meta}
           </span>
-          <ChevronDown
-            className={`hidden lg:block w-4 h-4 shrink-0 text-stone-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
-          />
-        </button>
+          {!pinned && (
+            <ChevronDown
+              className={`hidden lg:block w-4 h-4 shrink-0 text-stone-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+            />
+          )}
+        </Head>
       </h3>
-      <div className={`px-5 pb-5 ${open ? '' : 'lg:hidden'}`}>{children}</div>
+      <div className={`px-5 pb-5 ${open || pinned ? '' : 'lg:hidden'}`}>{children}</div>
     </section>
   );
 }
@@ -96,7 +96,7 @@ export default function Programme() {
   const [tab, setTab] = useState('programme');
   const [layout, setLayout] = useState({ navH: 72, headerH: 0, stuck: false });
   // Desktop side panel: one section open at a time, so it never needs to scroll.
-  const [openPanel, setOpenPanel] = useState('updates');
+  const [openPanel, setOpenPanel] = useState(null);
   const sentinelRef = useRef(null);
   const navigate = useNavigate();
   const { navH, headerH, stuck } = layout;
@@ -218,10 +218,11 @@ export default function Programme() {
             // Phones: switch between the timeline, updates and notes
             barClassName="lg:hidden"
             bar={(
+              <div className="lg:hidden mx-auto max-w-sm space-y-2">
                 <div
                   role="tablist"
                   aria-label="Programme sections"
-                  className="lg:hidden mx-auto max-w-sm grid grid-cols-3 gap-1 rounded-full p-1 bg-white/80 border border-[#E4D6C2] shadow-sm"
+                  className="grid grid-cols-3 gap-1 rounded-full p-1 bg-white/80 border border-[#E4D6C2] shadow-sm"
                 >
                   {[
                     { id: 'programme', label: t('programme.tab_timeline', 'Timeline') },
@@ -253,33 +254,31 @@ export default function Programme() {
                     </button>
                   ))}
                 </div>
+                {/* The latest update stays pinned while scrolling; tap for the full list */}
+                {!loading && updates.length > 0 && tab !== 'updates' && (
+                  <button
+                    type="button"
+                    onClick={() => showTab('updates')}
+                    className="w-full flex items-center gap-2.5 rounded-full pl-2 pr-3 py-1.5 text-left shadow-sm"
+                    style={{ background: updates[0].type === 'important' ? '#6F7F62' : '#8B9A7D', color: '#FBF3EA' }}
+                  >
+                    <span className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center bg-white/15">
+                      <Bell className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[13px]">
+                      <span className="font-semibold uppercase tracking-[0.12em] text-[10px] mr-1.5 opacity-80">{t('programme.latest_update', 'Latest')}</span>
+                      {updates[0].message || updates[0].title}
+                    </span>
+                    <ChevronRight className="w-4 h-4 shrink-0 opacity-80" />
+                  </button>
+                )}
+              </div>
             )}
           />
 
           <div className="grid lg:grid-cols-3 gap-8 mt-6 lg:mt-4">
             {/* Timeline - Left Side */}
             <div className={`lg:col-span-2 relative ${tab === 'programme' ? '' : 'hidden lg:block'}`}>
-              {/* Phones: the latest update, one tap from the full list */}
-              {!loading && updates.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => showTab('updates')}
-                  className="lg:hidden w-full mb-6 flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-white/80 border border-[#E4D6C2]"
-                >
-                  <span className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center" style={{ background: 'rgba(166, 123, 91, 0.1)' }}>
-                    <Bell className="w-4 h-4" style={{ color: '#A67B5B' }} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em]" style={{ color: '#8B7B6B' }}>
-                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#8B9A7D' }} />
-                      {t('programme.latest_update', 'Latest update')}
-                    </span>
-                    <span className="block truncate text-sm" style={{ color: '#4A3F35' }}>{updates[0].message || updates[0].title}</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 shrink-0 text-stone-400" />
-                </button>
-              )}
-
               {/* Decorative centered flowers */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none opacity-30">
                 <FlowersCentered size={120} />
@@ -418,8 +417,7 @@ export default function Programme() {
                 <PanelSection
                   title={t('programme.live_updates')}
                   icon={Bell}
-                  open={openPanel === 'updates'}
-                  onToggle={() => setOpenPanel('updates')}
+                  pinned
                   showOnPhone={tab === 'updates'}
                   meta={(
                     <span className="flex items-center gap-1.5 text-xs" style={{ color: '#8B7B6B' }}>
@@ -459,7 +457,7 @@ export default function Programme() {
                   title={t('programme.notes_title')}
                   icon={Info}
                   open={openPanel === 'notes'}
-                  onToggle={() => setOpenPanel('notes')}
+                  onToggle={() => setOpenPanel((p) => (p === 'notes' ? null : 'notes'))}
                   showOnPhone={tab === 'notes'}
                 >
                   {settings?.programme_note ? (
@@ -484,7 +482,7 @@ export default function Programme() {
                     title="The Bridal Party"
                     icon={Users}
                     open={openPanel === 'party'}
-                    onToggle={() => setOpenPanel('party')}
+                    onToggle={() => setOpenPanel((p) => (p === 'party' ? null : 'party'))}
                     showOnPhone={tab === 'notes'}
                   >
                     <p className="text-xs mb-3" style={{ color: '#8B7B6B' }}>
