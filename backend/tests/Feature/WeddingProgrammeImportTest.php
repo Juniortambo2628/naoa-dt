@@ -60,4 +60,21 @@ class WeddingProgrammeImportTest extends TestCase
         $this->migration->up();
         $this->assertSame('Kept', ScheduleItem::first()->title);
     }
+
+    public function test_updated_planner_wording_is_applied_without_overwriting_edits(): void
+    {
+        $sync = require database_path('migrations/2026_11_13_000002_sync_programme_with_updated_planner.php');
+        $sync->up();
+
+        $this->assertStringContainsString('in the boardroom as agreed', Setting::where('key', 'programme_note')->value('value'));
+        $this->assertStringContainsString('will run alongside', Setting::where('key', 'programme_note')->value('value'));
+        $this->assertStringEndsWith("runs concurrently with the couple's photo session.", ScheduleItem::where('title', 'Guest lunch')->value('description'));
+        $this->assertSame(19, ScheduleItem::count());
+
+        // A note the couple rewrote themselves is left alone.
+        Setting::where('key', 'programme_note')->update(['value' => 'Our own note']);
+        $sync->down();
+        $sync->up();
+        $this->assertSame('Our own note', Setting::where('key', 'programme_note')->value('value'));
+    }
 }
