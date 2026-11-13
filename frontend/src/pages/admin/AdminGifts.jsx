@@ -152,7 +152,11 @@ export default function AdminGifts() {
         />
 
         {view === 'mpesa' ? (
-          <MpesaGiftsPanel />
+          // In the `fill` layout only AdminListPanel scrolls, so the M-Pesa view
+          // (payments + Connect M-Pesa form) must sit inside one too.
+          <AdminListPanel plain>
+            <MpesaGiftsPanel />
+          </AdminListPanel>
         ) : (
         <AdminListPanel plain>
           {loading ? (

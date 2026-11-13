@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Smartphone, CheckCircle2, AlertTriangle, FlaskConical, Save } from 'lucide-react';
-import { useMpesaPayments, useSettings, useUpdateSettings } from '../../hooks/useApiHooks';
-import { AdminInput, AdminTextarea } from './AdminInput';
-import ToggleButton from './ToggleButton';
-import Button from '../Button';
+import { Link } from 'react-router-dom';
+import { Smartphone, CheckCircle2, AlertTriangle, FlaskConical, Settings } from 'lucide-react';
+import { useMpesaPayments } from '../../hooks/useApiHooks';
 import EmptyState from './EmptyState';
-import useAdminAction from '../../hooks/useAdminAction';
 import { formatKes } from '../../utils/mpesa';
-import MpesaConnectCard from './MpesaConnectCard';
+
+/** Where the M-Pesa connection and Pay Bill details are set up. */
+const MPESA_SETTINGS_PATH = '/admin/dashboard/settings?section=mpesa';
+
+const SetupLink = ({ children = 'Settings → M-Pesa Gifts' }) => (
+  <Link to={MPESA_SETTINGS_PATH} className="font-medium underline underline-offset-2">{children}</Link>
+);
 
 const STATUS_STYLES = {
   success: 'bg-green-50 text-green-700',
@@ -37,8 +39,8 @@ function ConnectionBanner({ data }) {
       <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
         <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
         <p className="text-sm">
-          M-Pesa prompts are not connected yet: add the Safaricom (Daraja) details in “Connect M-Pesa” below.
-          Until then, guests see the Pay Bill details below, if you fill them in.
+          M-Pesa prompts are not connected yet: add the Safaricom (Daraja) details in <SetupLink />.
+          Until then, guests see the Pay Bill details you fill in there.
         </p>
       </div>
     );
@@ -55,44 +57,19 @@ function ConnectionBanner({ data }) {
     <div className="flex gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800">
       <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
       <p className="text-sm">
-        Live: guests {data.enabled ? 'can send gifts straight from their invitation.' : 'will see the prompt once you switch it on below.'}
+        Live: guests {data.enabled ? 'can send gifts straight from their invitation.' : <>will see the prompt once you switch it on in <SetupLink />.</>}
       </p>
     </div>
   );
 }
 
 /**
- * Admin → Gifts → "M-Pesa gifts": connection status, the switch and Pay Bill
- * details guests see, and every gift attempt with its receipt.
+ * Admin → Gifts → "M-Pesa gifts": connection status, totals and every gift
+ * attempt with its receipt. The connection and the Pay Bill details guests see
+ * are set up in Settings → M-Pesa Gifts.
  */
 export default function MpesaGiftsPanel() {
   const { data, isLoading } = useMpesaPayments();
-  const { data: settings } = useSettings();
-  const updateSettings = useUpdateSettings();
-
-  const [form, setForm] = useState({ enabled: true, paybill: '', account: '', note: '' });
-
-  useEffect(() => {
-    if (!settings) return;
-    setForm({
-      enabled: !['false', '0', 'off', 'no'].includes(String(settings.mpesa_enabled ?? 'true').toLowerCase()),
-      paybill: settings.mpesa_paybill_number || '',
-      account: settings.mpesa_paybill_account || '',
-      note: settings.cash_gift_note || '',
-    });
-  }, [settings]);
-
-  const save = useAdminAction(() => updateSettings.mutateAsync({
-    mpesa_enabled: String(form.enabled),
-    mpesa_paybill_number: form.paybill.trim(),
-    mpesa_paybill_account: form.account.trim(),
-    cash_gift_note: form.note.trim(),
-  }), {
-    key: () => 'save',
-    success: 'Cash gift settings saved',
-    error: 'Could not save the cash gift settings',
-  });
-
   const payments = data?.payments || [];
   const summary = data?.summary;
 
@@ -115,45 +92,12 @@ export default function MpesaGiftsPanel() {
         </div>
       </div>
 
-      <MpesaConnectCard />
-
-      <section className="rounded-2xl border border-stone-100 bg-white p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Smartphone className="w-5 h-5 text-[#A67B5B]" />
-          <h3 className="font-semibold text-stone-800">What guests see</h3>
-        </div>
-        <ToggleButton
-          enabled={form.enabled}
-          onToggle={() => setForm((f) => ({ ...f, enabled: !f.enabled }))}
-          label="Let guests send a gift with an M-Pesa prompt to their phone"
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <AdminInput
-            label="Pay Bill business number"
-            value={form.paybill}
-            onChange={(e) => setForm((f) => ({ ...f, paybill: e.target.value }))}
-            placeholder="e.g. 123456"
-            inputMode="numeric"
-          />
-          <AdminInput
-            label="Account number to show"
-            value={form.account}
-            onChange={(e) => setForm((f) => ({ ...f, account: e.target.value }))}
-            placeholder="Blank = each guest's invite code"
-          />
-        </div>
-        <AdminTextarea
-          label="Note on the invitation (optional)"
-          value={form.note}
-          onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-          rows={2}
-          placeholder="Your presence is our greatest gift. If you would like to give a cash gift…"
-        />
-        <p className="text-xs text-stone-500">
-          The Pay Bill details are shown to guests who prefer to pay from their M-Pesa menu, and whenever the prompt is unavailable.
-        </p>
-        <Button icon={Save} action={save} args={['save']}>Save</Button>
-      </section>
+      <Link
+        to={MPESA_SETTINGS_PATH}
+        className="flex items-center gap-2 text-sm text-[#A67B5B] hover:underline w-fit"
+      >
+        <Settings className="w-4 h-4" /> M-Pesa connection and Pay Bill details
+      </Link>
 
       <section className="rounded-2xl border border-stone-100 bg-white overflow-hidden">
         <h3 className="px-5 py-4 font-semibold text-stone-800 border-b border-stone-100">Gift attempts</h3>
