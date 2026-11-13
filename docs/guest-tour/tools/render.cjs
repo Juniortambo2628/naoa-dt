@@ -42,7 +42,8 @@ const times = (process.argv[3] || '1,3.4,6,8.6,11.6,14,16.2,18.8,21.5,24.2,26.2,
     const fps = 30, N = 30 * fps; fs.mkdirSync('frames', { recursive: true });
     const t0 = Date.now();
     const START = Number(process.env.START || 0);   // resume after an interruption
-    for (let i = START; i < N; i++) {
+    const END = Number(process.env.END || N);         // re-render a range only
+    for (let i = START; i < END; i++) {
       await p.evaluate(t => window.__renderAt(t), i / fps);
       await p.screenshot({ path: `frames/f${String(i).padStart(4, '0')}.jpg`, type: 'jpeg', quality: 93 });
       if (i % 90 === 0) console.log('frame', i, ((Date.now() - t0) / 1000).toFixed(0) + 's');

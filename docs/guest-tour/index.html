@@ -34,6 +34,7 @@ body {
   background: var(--ivory); overflow: hidden; touch-action: pan-y;
   box-shadow: 0 30px 120px rgba(0,0,0,.45);
 }
+#mono2d { position: absolute; width: auto; max-width: none; transform: translate(-50%, -50%); pointer-events: none; filter: drop-shadow(0 1.2cqw 2.4cqw rgba(120,86,52,.18)); }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* Kinetic type */
@@ -91,6 +92,7 @@ body.render .ui, body.render #chapname { display: none !important; }
 
 <div id="stage" aria-label="A 30 second tour of the digital invitation">
   <canvas id="gl"></canvas>
+  <img id="mono2d" src="monogram.svg" alt="" aria-hidden="true">
   <div id="copy"></div>
   <button id="sound" class="ui" type="button" aria-pressed="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path id="snd-wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" opacity=".25"/></svg>
@@ -116,7 +118,6 @@ body.render .ui, body.render #chapname { display: none !important; }
 <script type="module">
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const RENDER = new URLSearchParams(location.search).has('render');
@@ -127,7 +128,7 @@ const BAR = 2.5;
 /* ---------------------------------------------------------------- script */
 // Each chapter is one bar of music. Copy is short enough to read in a glance.
 const SCENES = [
-  { id: 'intro',    name: 'Welcome',      t0: 0,    t1: 2.5,  pos: 'bottom', eyebrow: 'Dinah & Tze Ren', lines: [['serif', 'Your invitation,'], ['script', 'reimagined']] },
+  { id: 'intro',    name: 'Welcome',      t0: 0,    t1: 2.15,  pos: 'bottom', eyebrow: 'Dinah & Tze Ren', lines: [['serif', 'Your Digital Invite'], ['script', 'Guide']] },
   { id: 'open',     name: 'Opening',      t0: 2.5,  t1: 5,    eyebrow: 'Made for you',   lines: [['serif', 'It opens'], ['script', 'just for you']] },
   { id: 'details',  name: 'Details',      t0: 5,    t1: 7.5,  eyebrow: 'All the details', lines: [['serif', 'When, where &'], ['script', 'good to know']] },
   { id: 'rsvp',     name: 'RSVP',         t0: 7.5,  t1: 10,   eyebrow: 'RSVP',           lines: [['serif', 'Reply in'], ['script', 'a few taps']] },
@@ -177,7 +178,7 @@ renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(30, 9 / 16, 0.1, 100);
-camera.position.set(0, 0, 16);
+camera.position.set(0, 0, 16); camera.updateMatrixWorld();
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
@@ -248,24 +249,11 @@ const dustMat = new THREE.ShaderMaterial({
 });
 scene.add(new THREE.Points(dustGeo, dustMat));
 
-// Monogram: the couple's T&D, extruded in gold.
-const mono = new THREE.Group(); scene.add(mono);
-const monoMat = new THREE.MeshPhysicalMaterial({ color: 0xd2b087, metalness: 1, roughness: 0.26, clearcoat: 0.6, clearcoatRoughness: 0.2, transparent: true, envMapIntensity: 1.25 });
-async function buildMonogram() {
-  const txt = await (await fetch('monogram.svg')).text();
-  const data = new SVGLoader().parse(txt);
-  const shapes = [];
-  data.paths.forEach(p => SVGLoader.createShapes(p).forEach(s => shapes.push(s)));
-  // Apply the <g transform> by hand: SVGLoader does, but keep geometry centred.
-  const geo = new THREE.ExtrudeGeometry(shapes, { depth: 60, bevelEnabled: true, bevelThickness: 14, bevelSize: 6, bevelSegments: 3, curveSegments: 10 });
-  geo.computeBoundingBox();
-  const bb = geo.boundingBox, c = new THREE.Vector3(); bb.getCenter(c);
-  geo.translate(-c.x, -c.y, -c.z);
-  const h = bb.max.y - bb.min.y;
-  const m = new THREE.Mesh(geo, monoMat);
-  const s = 3.1 / h; m.scale.set(s, -s, s);   // SVG y points down
-  mono.add(m);
-}
+// Monogram: the couple's T&D, flat and crisp (the same 2D mark the invitation uses),
+// placed where a point in the 3D scene projects so it moves with the camera.
+const mono = new THREE.Object3D();
+const monoEl = document.getElementById('mono2d');
+async function buildMonogram() { if (monoEl.decode) { try { await monoEl.decode(); } catch (e) { /* drawn when loaded */ } } }
 
 // Soft contact shadow
 function radialTex(inner = 'rgba(70,50,35,.34)') {
@@ -580,9 +568,15 @@ function frame(t) {
   });
 
   const M = sample(MONO_KEYS, t);
-  mono.position.set(M[1] + px * 2, M[2], M[3]);
-  mono.rotation.set(py * .8, M[4] + px * 1.5, 0);
-  mono.scale.setScalar(M[5]); monoMat.opacity = M[6]; mono.visible = M[6] > 0.01;
+  mono.position.set(M[1] + px * .6, M[2] + Math.sin(t * 2 * Math.PI / 7.5) * .04, M[3]);
+  const v = mono.position.clone().project(camera);
+  const depth = camera.position.z - mono.position.z;
+  const hFrac = 3.1 * M[5] * (1 + .015 * Math.sin(t * 2 * Math.PI / 5)) / (2 * depth * Math.tan(THREE.MathUtils.degToRad(15)));
+  monoEl.style.visibility = M[6] > 0.01 ? 'visible' : 'hidden';
+  monoEl.style.opacity = M[6].toFixed(3);
+  monoEl.style.left = `${((v.x + 1) / 2 * 100).toFixed(3)}%`;
+  monoEl.style.top = `${((1 - v.y) / 2 * 100).toFixed(3)}%`;
+  monoEl.style.height = `${(hFrac * 100).toFixed(3)}cqh`;
 
   updateCopy(t);
   renderer.render(scene, camera);

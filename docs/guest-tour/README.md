@@ -14,7 +14,7 @@ Each chapter is one bar of music (2.5 s), so every cut lands on a downbeat.
 
 | Time | Chapter | On screen (words) | Phone shows |
 |---|---|---|---|
-| 0:00 | Welcome | *Dinah & Tze Ren* · **Your invitation, reimagined** | Gold T&D monogram |
+| 0:00 | Welcome | *Dinah & Tze Ren* · **Your Digital Invite Guide** | T&D monogram (2D) |
 | 0:02.5 | Opening | *Made for you* · **It opens just for you** | Envelope opens, "Dear Grace Muthoni" card rises |
 | 0:05 | Details | *All the details* · **When, where & good to know** | Scroll through welcome, When / Where, Good to know |
 | 0:07.5 | RSVP | *RSVP* · **Reply in a few taps** | Tap "Joyfully accept", then the song and dietary steps |
