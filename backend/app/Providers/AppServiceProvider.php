@@ -42,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
         ]);
         // Status checks are polled every few seconds while the guest enters
         // their PIN: limit per payment, not per IP.
+        // Reporting a Pay Bill gift / listing your own: per invitation, with a per-IP cap.
+        RateLimiter::for('mpesa-report', fn (Request $request) => [
+            Limit::perMinute(20)->by('mpesa-report:'.($request->input('guest_code') ?? $request->query('guest_code') ?? $request->ip())),
+            Limit::perMinute(600)->by('mpesa-report-ip:'.$request->ip()),
+        ]);
         RateLimiter::for('mpesa-status', fn (Request $request) => [
             Limit::perMinute(40)->by('mpesa-status:'.$request->route('publicId')),
             Limit::perMinute(1200)->by('mpesa-status-ip:'.$request->ip()),

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Gift, Smartphone, CheckCircle2, AlertCircle, Copy, Check, Loader2 } from 'lucide-react';
+import { Gift, Smartphone, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
 import { giftService } from '../services/api';
+import { PaybillDetails, MyGifts, ReportGiftSheet } from './PaybillGift';
+import useMyGifts from '../hooks/useMyGifts';
 import {
   QUICK_AMOUNTS, normalizeKenyanPhone, formatKenyanPhone, formatKes, newIdempotencyKey,
 } from '../utils/mpesa';
@@ -14,54 +16,7 @@ const GIVE_UP_MS = 4 * 60 * 1000;    // stop polling; the server keeps checking
 const MIN_AMOUNT = 10;
 
 const DEFAULT_NOTE = 'Your presence is our greatest gift. If you would like to give a cash gift, you can send it with M-Pesa — a payment request comes straight to your phone.';
-
-/** Paybill details for guests who prefer to pay from the M-Pesa menu themselves. */
-function PaybillDetails({ paybill, account, compact = false }) {
-  const [copied, setCopied] = useState(null);
-  if (!paybill) return null;
-
-  const copy = async (label, value) => {
-    try {
-      await navigator.clipboard.writeText(String(value));
-      setCopied(label);
-      setTimeout(() => setCopied(null), 1500);
-    } catch {
-      /* clipboard unavailable: the number is on screen anyway */
-    }
-  };
-
-  return (
-    <div className={`rounded-xl bg-stone-50 border border-stone-100 ${compact ? 'p-3' : 'p-4'}`}>
-      <p className="text-sm text-stone-600 mb-1">
-        Or pay from your M-Pesa menu: <span className="font-medium">Lipa na M-Pesa → Pay Bill</span>
-      </p>
-      <div className="divide-y divide-stone-200/70">
-        <CopyRow label="Business number" value={paybill} copied={copied === 'Business number'} onCopy={copy} />
-        {account && <CopyRow label="Account number" value={account} copied={copied === 'Account number'} onCopy={copy} />}
-      </div>
-    </div>
-  );
-}
-
-function CopyRow({ label, value, copied, onCopy }) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-2">
-      <div>
-        <p className="text-xs uppercase tracking-wider text-stone-500">{label}</p>
-        <p className="text-lg font-semibold text-stone-800 tracking-wide">{value}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onCopy(label, value)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-600 hover:bg-stone-50"
-        aria-label={`Copy ${label}`}
-      >
-        {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-        {copied ? 'Copied' : 'Copy'}
-      </button>
-    </div>
-  );
-}
+const PAYBILL_NOTE = 'Your presence is our greatest gift. If you would like to give a cash gift, you can send it from your M-Pesa menu with the details below.';
 
 /**
  * "Send a cash gift" card on the digital invitation, with a step-by-step
@@ -74,7 +29,11 @@ export default function CashGiftCard({ guest, settings }) {
   const stkEnabled = Boolean(settings?.mpesa_stk_enabled);
   const paybill = settings?.mpesa_paybill_number || '';
   const account = settings?.mpesa_paybill_account || guest?.unique_code || '';
-  const note = settings?.cash_gift_note || DEFAULT_NOTE;
+  const payee = settings?.mpesa_paybill_name || '';
+  const bank = settings?.mpesa_paybill_bank || '';
+  const note = settings?.cash_gift_note || (stkEnabled ? DEFAULT_NOTE : PAYBILL_NOTE);
+  const [myGifts, setMyGifts] = useMyGifts(guest?.unique_code);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const guestPhone = normalizeKenyanPhone(guest?.phone);
   const location = useLocation();
@@ -219,9 +178,23 @@ export default function CashGiftCard({ guest, settings }) {
             Send a gift with M-Pesa
           </Button>
         ) : (
-          <PaybillDetails paybill={paybill} account={account} />
+          <>
+            <PaybillDetails paybill={paybill} account={account} payee={payee} bank={bank} />
+            <Button variant="secondary" size="lg" fullWidth icon={CheckCircle2} onClick={() => setReportOpen(true)}>
+              I've sent my gift
+            </Button>
+          </>
         )}
+
+        <MyGifts gifts={myGifts} />
       </div>
+
+      <ReportGiftSheet
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        guest={guest}
+        onRecorded={(gift) => setMyGifts((list) => [gift, ...list.filter((g) => g.id !== gift.id)])}
+      />
 
       <Modal open={open} onClose={close} maxWidth="md" label="Send a cash gift">
         <div className="bg-white rounded-2xl p-6 space-y-5 text-left">
@@ -356,7 +329,7 @@ export default function CashGiftCard({ guest, settings }) {
               {paybill && (
                 <details className="text-stone-600">
                   <summary className="cursor-pointer text-sm">Prefer to use Pay Bill yourself?</summary>
-                  <div className="mt-3"><PaybillDetails paybill={paybill} account={account} compact /></div>
+                  <div className="mt-3"><PaybillDetails paybill={paybill} account={account} payee={payee} bank={bank} compact /></div>
                 </details>
               )}
             </>
@@ -382,7 +355,7 @@ export default function CashGiftCard({ guest, settings }) {
                   <p className="font-semibold text-stone-700">Didn't get the request?</p>
                   <p className="text-stone-600 text-sm">Make sure your phone is on and unlocked, then send it again.</p>
                   <Button variant="secondary" fullWidth onClick={tryAgain}>Send the request again</Button>
-                  <PaybillDetails paybill={paybill} account={account} compact />
+                  <PaybillDetails paybill={paybill} account={account} payee={payee} bank={bank} compact />
                 </div>
               )}
             </div>
@@ -408,7 +381,7 @@ export default function CashGiftCard({ guest, settings }) {
               <h3 className="font-serif text-2xl text-stone-800">The gift was not sent</h3>
               <p className="text-lg text-stone-600">{payment?.message || 'The payment did not go through. No money was taken.'}</p>
               <Button variant="secondary" size="lg" fullWidth onClick={tryAgain}>Try again</Button>
-              <div className="text-left"><PaybillDetails paybill={paybill} account={account} compact /></div>
+              <div className="text-left"><PaybillDetails paybill={paybill} account={account} payee={payee} bank={bank} compact /></div>
             </div>
           )}
 

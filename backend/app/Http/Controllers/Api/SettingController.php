@@ -37,6 +37,8 @@ class SettingController extends Controller
         // which live only in the server's .env — see config/mpesa.php).
         'mpesa_paybill_number',
         'mpesa_paybill_account',
+        'mpesa_paybill_name',
+        'mpesa_paybill_bank',
         'cash_gift_note',
         // Programme page extras (Admin → Schedule).
         'programme_note',

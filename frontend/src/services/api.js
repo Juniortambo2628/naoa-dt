@@ -208,6 +208,10 @@ export const giftService = {
   // Poll a cash gift's outcome while the guest enters their PIN
   mpesaStatus: (id) => api.get(`/gifts/mpesa/${id}`),
 
+  // A gift the guest sent by Pay Bill themselves, and their own gifts (only theirs)
+  mpesaReport: (data) => api.post('/gifts/mpesa/report', data),
+  getMyMpesaGifts: (guestCode) => api.get('/gifts/mpesa/mine', { params: { guest_code: guestCode } }),
+
   // Every M-Pesa gift attempt with totals (admin)
   mpesaPayments: () => api.get('/gifts/mpesa-payments'),
   // Owner only: connect M-Pesa (keys are write-only; reads say which are saved).
