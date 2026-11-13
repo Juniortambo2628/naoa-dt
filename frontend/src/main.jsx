@@ -5,7 +5,9 @@ import './i18n'; // Initialize i18n
 import App from './App.jsx'
 import { initInstallPrompt } from './utils/installPrompt'
 import { registerServiceWorker } from './utils/push'
+import { initChunkReload } from './utils/chunkReload'
 
+initChunkReload()
 initInstallPrompt()
 registerServiceWorker()
 
