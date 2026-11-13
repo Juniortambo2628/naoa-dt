@@ -27,7 +27,8 @@ function ResultPanel({ result, onClear }) {
     error: 'bg-red-50 border-red-200 text-red-700',
   }[kind];
   const Icon = kind === 'ok' ? CheckCircle : kind === 'already' ? AlertTriangle : AlertCircle;
-  const notConfirmed = guest && guest.rsvp_status && guest.rsvp_status !== 'confirmed';
+  const declined = guest?.rsvp_status === 'declined';
+  const awaiting = guest && !declined && guest.rsvp_status !== 'confirmed';
 
   return (
     <div role="status" aria-live="polite" className={`mt-4 p-4 rounded-xl border ${tone}`}>
@@ -43,11 +44,8 @@ function ResultPanel({ result, onClear }) {
               </p>
               {guest.guest_of && <p>Guest of {guest.guest_of}</p>}
               {guest.dietary_notes && <p>Note: {guest.dietary_notes}</p>}
-              {notConfirmed && (
-                <p className="font-medium text-amber-700">
-                  RSVP: {guest.rsvp_status === 'declined' ? 'declined' : 'not confirmed'}. Check with the coordinator.
-                </p>
-              )}
+              {awaiting && <p className="text-stone-600">Hadn&apos;t replied to the RSVP. They&apos;re on the list, so welcome them in.</p>}
+              {declined && <p className="font-medium text-amber-700">RSVP: declined. Check with the coordinator before seating them.</p>}
             </div>
           )}
         </div>
@@ -147,7 +145,7 @@ export default function CheckInScanner() {
       hero={(
         <AdminPageHero
           title="Guest Check-In"
-          description={`Checked in: ${stats.checked_in} of ${stats.total_expected} confirmed guests`}
+          description={`Checked in: ${stats.checked_in} of ${stats.total_expected} expected${stats.awaiting_reply ? ` (${stats.confirmed} confirmed, ${stats.awaiting_reply} yet to reply)` : ''}`}
           breadcrumb="Check-In"
           icon={<QrCode className="w-5 h-5 text-[#A67B5B]" />}
         />

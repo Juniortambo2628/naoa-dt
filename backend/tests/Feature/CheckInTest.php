@@ -167,7 +167,7 @@ class CheckInTest extends TestCase
         $response->assertStatus(401);
     }
 
-    public function test_checkin_stats_exclude_non_confirmed_guests(): void
+    public function test_checkin_stats_expect_confirmed_and_awaiting_guests_but_not_declines(): void
     {
         Guest::factory()->confirmed()->count(3)->create();
         Guest::factory()->pending()->count(2)->create();
@@ -178,7 +178,10 @@ class CheckInTest extends TestCase
 
         $response->assertOk();
         $data = $response->json('data');
-        $this->assertEquals(3, $data['total_expected']);
+        $this->assertEquals(5, $data['total_expected']);
+        $this->assertEquals(3, $data['confirmed']);
+        $this->assertEquals(2, $data['awaiting_reply']);
+        $this->assertEquals(5, $data['remaining']);
     }
 
     public function test_scanning_the_invitation_link_checks_the_guest_in(): void
