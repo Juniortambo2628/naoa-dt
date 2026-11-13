@@ -54,6 +54,37 @@ class CheckInController extends Controller
         return $this->markArrived($guest);
     }
 
+    /**
+     * Find who a scanned code belongs to, without checking them in, so the
+     * usher can confirm the guest before marking them arrived.
+     */
+    public function lookup(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code' => 'required|string|max:500',
+        ]);
+
+        $guest = $this->findScannedGuest($request->query('code'));
+
+        if (! $guest) {
+            return $this->notFoundResponse('This code doesn\'t match any guest. Search for them by name instead.');
+        }
+
+        return $this->successResponse(['guest' => $this->summary($guest)], 'Guest found.');
+    }
+
+    /** Clear every check-in (owners only), e.g. after testing the door. */
+    public function resetAll(Request $request): JsonResponse
+    {
+        if (! $request->user()?->isOwner()) {
+            return $this->errorResponse('Only an owner can clear all check-ins.', 403);
+        }
+
+        $cleared = Guest::whereNotNull('checked_in_at')->update(['checked_in_at' => null]);
+
+        return $this->successResponse(['cleared' => $cleared], $cleared === 1 ? '1 check-in cleared.' : "{$cleared} check-ins cleared.");
+    }
+
     /** Check a guest in by hand (found by name at the door). */
     public function checkInGuest(Guest $guest): JsonResponse
     {
@@ -126,14 +157,20 @@ class CheckInController extends Controller
 
     public function getStats(): JsonResponse
     {
-        $total = Guest::confirmed()->count();
+        // Expected at the door: everyone who said yes plus everyone who hasn't
+        // replied yet (they may still turn up). Only declines are left out.
+        $confirmed = Guest::confirmed()->count();
+        $awaiting = Guest::where(fn ($q) => $q->whereNull('rsvp_status')->orWhereNotIn('rsvp_status', ['confirmed', 'declined']))->count();
+        $total = $confirmed + $awaiting;
         $checkedIn = Guest::checkedIn()->count();
 
         return $this->successResponse([
             'total_expected' => $total,
+            'confirmed' => $confirmed,
+            'awaiting_reply' => $awaiting,
             'checked_in' => $checkedIn,
-            'remaining' => $total - $checkedIn,
-            'percentage' => $total > 0 ? round(($checkedIn / $total) * 100) : 0,
+            'remaining' => max(0, $total - $checkedIn),
+            'percentage' => $total > 0 ? min(100, round(($checkedIn / $total) * 100)) : 0,
         ]);
     }
 

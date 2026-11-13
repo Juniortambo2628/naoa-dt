@@ -167,7 +167,7 @@ class CheckInTest extends TestCase
         $response->assertStatus(401);
     }
 
-    public function test_checkin_stats_exclude_non_confirmed_guests(): void
+    public function test_checkin_stats_expect_confirmed_and_awaiting_guests_but_not_declines(): void
     {
         Guest::factory()->confirmed()->count(3)->create();
         Guest::factory()->pending()->count(2)->create();
@@ -178,7 +178,10 @@ class CheckInTest extends TestCase
 
         $response->assertOk();
         $data = $response->json('data');
-        $this->assertEquals(3, $data['total_expected']);
+        $this->assertEquals(5, $data['total_expected']);
+        $this->assertEquals(3, $data['confirmed']);
+        $this->assertEquals(2, $data['awaiting_reply']);
+        $this->assertEquals(5, $data['remaining']);
     }
 
     public function test_scanning_the_invitation_link_checks_the_guest_in(): void
@@ -259,5 +262,60 @@ class CheckInTest extends TestCase
         $this->actingAs($usher, 'sanctum')->deleteJson("/api/guests/{$guest->id}")->assertForbidden();
         $this->actingAs($usher, 'sanctum')->postJson("/api/checkin/guests/{$guest->id}/generate-qr")->assertForbidden();
         $this->assertSame('Original Name', $guest->fresh()->name);
+    }
+
+    public function test_lookup_finds_the_guest_without_checking_them_in(): void
+    {
+        $guest = Guest::factory()->confirmed()->create(['checked_in_at' => null]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/checkin/lookup?code='.urlencode('https://example.com/invitation/'.$guest->unique_code))
+            ->assertOk()
+            ->assertJsonPath('data.guest.id', $guest->id)
+            ->assertJsonPath('data.guest.checked_in_at', null);
+
+        $this->assertNull($guest->fresh()->checked_in_at);
+    }
+
+    public function test_lookup_of_an_unknown_code_is_not_found(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/checkin/lookup?code=NOPE123')
+            ->assertNotFound();
+    }
+
+    public function test_an_usher_can_look_up_a_scanned_code(): void
+    {
+        $usher = User::factory()->create(['role' => User::ROLE_USHER]);
+        $guest = Guest::factory()->create();
+
+        $this->actingAs($usher, 'sanctum')
+            ->getJson('/api/checkin/lookup?code='.$guest->unique_code)
+            ->assertOk();
+    }
+
+    public function test_an_owner_can_clear_all_check_ins(): void
+    {
+        $owner = User::factory()->create(['role' => User::ROLE_OWNER]);
+        Guest::factory()->confirmed()->checkedIn()->count(3)->create();
+
+        $this->actingAs($owner, 'sanctum')
+            ->deleteJson('/api/checkin/reset')
+            ->assertOk()
+            ->assertJsonPath('data.cleared', 3);
+
+        $this->assertSame(0, Guest::whereNotNull('checked_in_at')->count());
+    }
+
+    public function test_only_an_owner_can_clear_all_check_ins(): void
+    {
+        Guest::factory()->checkedIn()->count(2)->create();
+
+        foreach ([User::ROLE_EDITOR, User::ROLE_USHER, User::ROLE_VIEWER] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+            $this->actingAs($user, 'sanctum')->deleteJson('/api/checkin/reset')->assertForbidden();
+        }
+
+        $this->assertSame(2, Guest::whereNotNull('checked_in_at')->count());
     }
 }

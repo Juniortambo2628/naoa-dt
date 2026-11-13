@@ -1,0 +1,13 @@
+/* The camera fills its square; our own frame replaces the library's shading. */
+.checkin-camera video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  display: block;
+}
+.checkin-camera #qr-shaded-region { display: none !important; }
+.checkin-camera canvas { display: none; }
+
+.checkin-scanline { top: 8%; animation: checkin-scan 2.2s ease-in-out infinite alternate; }
+@keyframes checkin-scan { from { top: 8%; } to { top: 92%; } }
+@media (prefers-reduced-motion: reduce) { .checkin-scanline { animation: none; top: 50%; } }

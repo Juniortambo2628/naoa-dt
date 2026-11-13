@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 import {
-  QrCode, UserCheck, Users, AlertCircle, CheckCircle, RefreshCw, Square, Search, Undo2, Armchair, AlertTriangle,
+  QrCode, UserCheck, Users, AlertCircle, CheckCircle, RefreshCw, Search, Undo2, Armchair, AlertTriangle, ScanLine, RotateCcw,
 } from 'lucide-react';
 import { useCheckinStats, useGuests } from '../../hooks/useApiHooks';
 import { checkinService } from '../../services/api';
@@ -12,29 +11,41 @@ import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 import Button from '../../components/Button';
 import useAdminAction from '../../hooks/useAdminAction';
 import { tableLabel } from '../../utils/usherKit';
+import QrCamera from '../../components/admin/QrCamera';
+import { feedback, unlockSound } from '../../utils/haptics';
 
 const INVALIDATE = [['checkinStats'], ['guests']];
-/** How long a result stays up before the camera looks for the next guest. */
+/** How long an error or a welcome stays up before the camera looks again. */
 const NEXT_SCAN_MS = 2500;
+const AFTER_CHECK_IN_MS = 1500;
 
-/** Arrival result: who it is, where they sit, anything the usher should know. */
-function ResultPanel({ result, onClear }) {
+const firstName = (name = '') => name.split(' ')[0] || name;
+const arrivedAt = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+/**
+ * What the scan found. "found": the guest, with a Check in button. "already":
+ * they're in, with Undo. "ok": just checked in. "error": no match.
+ */
+function ResultPanel({ result, checkIn, undo, onNext }) {
   if (!result) return null;
   const { kind, message, guest } = result;
   const tone = {
+    found: 'bg-[#FBF7F1] border-[#C4A385] text-stone-800',
     ok: 'bg-green-50 border-green-200 text-green-800',
     already: 'bg-amber-50 border-amber-200 text-amber-800',
     error: 'bg-red-50 border-red-200 text-red-700',
   }[kind];
-  const Icon = kind === 'ok' ? CheckCircle : kind === 'already' ? AlertTriangle : AlertCircle;
-  const notConfirmed = guest && guest.rsvp_status && guest.rsvp_status !== 'confirmed';
+  const Icon = kind === 'ok' ? CheckCircle : kind === 'found' ? UserCheck : kind === 'already' ? AlertTriangle : AlertCircle;
+  const declined = guest?.rsvp_status === 'declined';
+  const awaiting = guest && !declined && guest.rsvp_status !== 'confirmed';
 
   return (
-    <div role="status" aria-live="polite" className={`mt-4 p-4 rounded-xl border ${tone}`}>
+    <div role="status" aria-live="assertive" className={`mt-4 p-4 rounded-2xl border-2 ${tone}`}>
       <div className="flex items-start gap-3">
         <Icon className="w-8 h-8 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-lg leading-tight">{message}</p>
+          {kind === 'found' && <p className="text-xs uppercase tracking-[0.18em] text-[#8B7B6B]">Guest found</p>}
+          <p className="font-semibold text-xl leading-tight">{message}</p>
           {guest && (
             <div className="mt-2 space-y-1 text-sm text-stone-700">
               <p className="flex items-center gap-1.5 font-medium">
@@ -43,62 +54,89 @@ function ResultPanel({ result, onClear }) {
               </p>
               {guest.guest_of && <p>Guest of {guest.guest_of}</p>}
               {guest.dietary_notes && <p>Note: {guest.dietary_notes}</p>}
-              {notConfirmed && (
-                <p className="font-medium text-amber-700">
-                  RSVP: {guest.rsvp_status === 'declined' ? 'declined' : 'not confirmed'}. Check with the coordinator.
-                </p>
-              )}
+              {awaiting && kind === 'found' && <p className="text-stone-600">Hadn&apos;t replied to the RSVP. They&apos;re on the list, so welcome them in.</p>}
+              {declined && <p className="font-medium text-amber-700">RSVP: declined. Check with the coordinator before seating them.</p>}
+              {kind === 'already' && guest.checked_in_at && <p>Checked in at {arrivedAt(guest.checked_in_at)}.</p>}
             </div>
           )}
         </div>
-        <button type="button" onClick={onClear} className="text-xs underline text-stone-500 shrink-0">Clear</button>
       </div>
+
+      {kind === 'found' && (
+        <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+          <Button variant="secondary" size="lg" icon={UserCheck} action={checkIn} args={[guest]} className="w-full">
+            Check in {firstName(guest.name)}
+          </Button>
+          <Button size="lg" onClick={onNext}>Not now</Button>
+        </div>
+      )}
+      {kind === 'already' && (
+        <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+          <Button variant="secondary" size="lg" icon={ScanLine} onClick={onNext} className="w-full">Scan next guest</Button>
+          <Button size="lg" icon={Undo2} action={undo} args={[guest]}>Undo</Button>
+        </div>
+      )}
+      {kind === 'error' && (
+        <div className="mt-3">
+          <Button size="sm" icon={ScanLine} onClick={onNext}>Scan again</Button>
+        </div>
+      )}
     </div>
   );
 }
 
 /**
  * Check-in at the door. Every guest's QR (on their printed card and their
- * digital invitation) holds their invitation link; scanning it here marks
- * them arrived. Guests without a code are found by name and checked in by hand.
+ * digital invitation) holds their invitation link. Scanning it shows who the
+ * guest is; the usher then taps Check in. Guests without a code are found by
+ * name and checked in by hand.
  */
 export default function CheckInScanner() {
   const { data: statsData, refetch: refetchStats } = useCheckinStats();
   const { data: guestsData = [] } = useGuests();
-  const [scanning, setScanning] = useState(false);
+  const [held, setHeld] = useState(false);
   const [result, setResult] = useState(null);
   const [query, setQuery] = useState('');
-  const scannerRef = useRef(null);
   const busyRef = useRef(false);
+  const timerRef = useRef(null);
 
   const stats = statsData || { total_expected: 0, checked_in: 0, remaining: 0, percentage: 0 };
   const guests = useMemo(() => (Array.isArray(guestsData) ? guestsData : []), [guestsData]);
 
-  const showOutcome = (res) => setResult({ kind: 'ok', message: `Welcome, ${res.data?.guest?.name || 'guest'}!`, guest: res.data?.guest });
+  // Back to scanning: clear the result and let the camera read again.
+  const scanNext = () => {
+    clearTimeout(timerRef.current);
+    busyRef.current = false;
+    setHeld(false);
+    setResult(null);
+  };
+  const scanNextSoon = (ms) => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(scanNext, ms);
+  };
+
   const showFailure = (err) => {
     const data = err?.response?.data || {};
+    const guest = data.errors?.guest;
+    feedback(guest ? 'warning' : 'error');
     setResult({
-      kind: data.errors?.guest ? 'already' : 'error',
-      message: data.message || 'Check-in failed. Try again, or find the guest by name.',
-      guest: data.errors?.guest,
+      kind: guest ? 'already' : 'error',
+      message: guest ? `${guest.name} is already checked in` : (data.message || 'Check-in failed. Try again, or find the guest by name.'),
+      guest,
     });
   };
 
-  const scan = useAdminAction((code) => checkinService.scan({ qr_code: code }), {
-    role: 'checkin',
-    error: false,
-    key: () => 'scan',
-    invalidate: INVALIDATE,
-    onSuccess: showOutcome,
-    onError: showFailure,
-  });
-
-  const checkInByHand = useAdminAction((guest) => checkinService.checkInGuest(guest.id), {
+  const checkIn = useAdminAction((guest) => checkinService.checkInGuest(guest.id), {
     role: 'checkin',
     error: false,
     key: (guest) => guest,
     invalidate: INVALIDATE,
-    onSuccess: showOutcome,
+    onSuccess: (res) => {
+      feedback('success');
+      setResult({ kind: 'ok', message: `Welcome, ${res.data?.guest?.name || 'guest'}!`, guest: res.data?.guest });
+      // A scanned guest: look for the next one shortly.
+      if (busyRef.current) scanNextSoon(AFTER_CHECK_IN_MS);
+    },
     onError: showFailure,
   });
 
@@ -108,42 +146,52 @@ export default function CheckInScanner() {
     confirm: (guest) => ({ title: `Undo ${guest.name}'s check-in?`, confirmLabel: 'Undo check-in' }),
     success: (_res, guest) => `${guest.name} is no longer checked in`,
     invalidate: INVALIDATE,
+    onSuccess: () => { if (busyRef.current) scanNext(); },
   });
 
-  const stopScanning = () => {
-    scannerRef.current?.clear().catch(() => {});
-    scannerRef.current = null;
-    setScanning(false);
-  };
+  const resetAll = useAdminAction(() => checkinService.resetAll(), {
+    role: 'owner',
+    key: () => 'reset',
+    confirm: () => ({
+      title: 'Clear every check-in?',
+      message: 'Everyone goes back to not checked in. Use this after testing, not on the day.',
+      confirmLabel: 'Clear all check-ins',
+      tone: 'danger',
+    }),
+    success: (res) => `${res.data?.cleared ?? 0} check-ins cleared`,
+    invalidate: INVALIDATE,
+    onSuccess: scanNext,
+  });
 
-  const onScanSuccess = async (decodedText) => {
+  // One guest at a time: hold the camera on who was found until the usher acts.
+  const onScan = async (decodedText) => {
     if (busyRef.current) return;
     busyRef.current = true;
-    try { scannerRef.current?.pause(true); } catch { /* not running */ }
-    await scan.run(decodedText);
-    // Keep the camera going: look for the next guest after a moment.
-    setTimeout(() => {
-      busyRef.current = false;
-      try { scannerRef.current?.resume(); } catch { /* stopped meanwhile */ }
-    }, NEXT_SCAN_MS);
+    setHeld(true);
+    try {
+      const res = await checkinService.getGuestByCode(decodedText);
+      const guest = res.data?.guest;
+      if (guest?.checked_in_at) {
+        feedback('warning');
+        setResult({ kind: 'already', message: `${guest.name} is already checked in`, guest });
+      } else {
+        feedback('found');
+        setResult({ kind: 'found', message: guest?.name || 'Guest', guest });
+      }
+    } catch (err) {
+      feedback('error');
+      setResult({ kind: 'error', message: err?.response?.data?.message || 'Couldn\'t read that code. Try again, or find the guest by name.' });
+      scanNextSoon(NEXT_SCAN_MS);
+    }
   };
 
-  const startScanning = () => {
-    setScanning(true);
-    setResult(null);
-  };
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  // Mount the camera once its box is on the page.
+  // iPhones only play sound after a tap, so the first tap anywhere turns it on.
   useEffect(() => {
-    if (!scanning || scannerRef.current) return undefined;
-    const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0, rememberLastUsedCamera: true }, false);
-    scanner.render(onScanSuccess, () => {});
-    scannerRef.current = scanner;
-    return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanning]);
-
-  useEffect(() => () => { scannerRef.current?.clear().catch(() => {}); }, []);
+    document.addEventListener('pointerdown', unlockSound, { once: true });
+    return () => document.removeEventListener('pointerdown', unlockSound);
+  }, []);
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -163,15 +211,13 @@ export default function CheckInScanner() {
   return (
     <AdminPageLayout
       actions={[
-        scanning
-          ? { id: 'stop-scan', label: 'Stop Scanning', icon: Square, variant: 'danger', onClick: stopScanning }
-          : { id: 'start-scan', label: 'Start Scanning', icon: QrCode, variant: 'secondary', onClick: startScanning },
         { id: 'refresh', readOnly: true, label: 'Refresh Stats', icon: RefreshCw, onClick: () => refetchStats() },
+        { id: 'reset', label: 'Clear all check-ins', icon: RotateCcw, variant: 'danger', action: resetAll },
       ]}
       hero={(
         <AdminPageHero
           title="Guest Check-In"
-          description={`Checked in: ${stats.checked_in} of ${stats.total_expected} confirmed guests`}
+          description={`Checked in: ${stats.checked_in} of ${stats.total_expected} expected${stats.awaiting_reply ? ` (${stats.confirmed} confirmed, ${stats.awaiting_reply} yet to reply)` : ''}`}
           breadcrumb="Check-In"
           icon={<QrCode className="w-5 h-5 text-[#A67B5B]" />}
         />
@@ -181,21 +227,11 @@ export default function CheckInScanner() {
       <div className="grid md:grid-cols-2 gap-4">
         <AdminCard>
           <h3 className="text-lg font-medium text-stone-800 mb-1">Scan the guest&apos;s QR</h3>
-          <p className="text-sm text-stone-500 mb-4">From their printed card or their digital invitation (Entry pass). The camera keeps scanning, one guest after another.</p>
+          <p className="text-sm text-stone-500 mb-4">From their printed card or their Entry pass. The camera opens by itself and reads one guest after another.</p>
 
-          {!scanning ? (
-            <div className="text-center py-10">
-              <QrCode className="w-16 h-16 mx-auto mb-4 text-stone-300" />
-              <Button variant="secondary" onClick={startScanning}>Start scanning</Button>
-            </div>
-          ) : (
-            <div>
-              <div id="qr-reader" className="rounded-lg overflow-hidden" />
-              <Button fullWidth className="mt-4" onClick={stopScanning}>Stop scanning</Button>
-            </div>
-          )}
+          <QrCamera onScan={onScan} paused={held} />
 
-          <ResultPanel result={result} onClear={() => setResult(null)} />
+          <ResultPanel result={result} checkIn={checkIn} undo={undo} onNext={scanNext} />
         </AdminCard>
 
         <AdminCard>
@@ -231,7 +267,7 @@ export default function CheckInScanner() {
                   {arrived ? (
                     <Button size="sm" icon={Undo2} action={undo} args={[g]}>Undo</Button>
                   ) : (
-                    <Button size="sm" variant="secondary" icon={UserCheck} action={checkInByHand} args={[g]}>Check in</Button>
+                    <Button size="sm" variant="secondary" icon={UserCheck} action={checkIn} args={[g]}>Check in</Button>
                   )}
                 </li>
               );
