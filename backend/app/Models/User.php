@@ -25,7 +25,10 @@ class User extends Authenticatable
 
     public const ROLE_VIEWER = 'viewer';
 
-    public const ROLES = [self::ROLE_OWNER, self::ROLE_EDITOR, self::ROLE_VIEWER];
+    /** Wedding-day ushers: can look around, and change nothing except check-ins. */
+    public const ROLE_USHER = 'usher';
+
+    public const ROLES = [self::ROLE_OWNER, self::ROLE_EDITOR, self::ROLE_VIEWER, self::ROLE_USHER];
 
     protected $fillable = [
         'name',
@@ -84,6 +87,11 @@ class User extends Authenticatable
     public function isOwner(): bool
     {
         return $this->role === self::ROLE_OWNER;
+    }
+
+    public function isUsher(): bool
+    {
+        return $this->role === self::ROLE_USHER;
     }
 
     public function is2faEnabled(): bool

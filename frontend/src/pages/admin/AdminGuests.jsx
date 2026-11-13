@@ -27,7 +27,7 @@ import useAdminAction from '../../hooks/useAdminAction';
 import useSavedViews from '../../hooks/useSavedViews';
 import {
   STATUS_FILTERS, INVITE_FILTERS, NEEDS_FILTERS, DEFAULT_GUEST_FILTERS, DEFAULT_GUEST_SORT, GUEST_SORTS,
-  filtersFromParams, filtersToParams, matchesGuestFilters, matchesGuestSearch, matchesStatus,
+  filtersFromParams, filtersToParams, matchesGuestFilters, matchesGuestSearch, matchesStatus, ATTENDANCE_FILTERS,
   guestStats, guestGroups, sortGuests, nextSort,
 } from '../../utils/guests';
 
@@ -920,6 +920,14 @@ ${rows.join('\n')}
               value: filters.group,
               onChange: (group) => applyFilters({ group }),
               options: [{ id: 'all', label: 'All groups' }, ...groupNames.map(g => ({ id: g, label: g, count: countWith({ group: g }) }))],
+            },
+            {
+              id: 'attended',
+              label: 'Attendance',
+              defaultValue: DEFAULT_GUEST_FILTERS.attended,
+              value: filters.attended,
+              onChange: (attended) => applyFilters({ attended }),
+              options: ATTENDANCE_FILTERS.map(f => ({ ...f, count: f.id === 'all' ? undefined : countWith({ attended: f.id }) })),
             },
             {
               id: 'needs',

@@ -85,6 +85,7 @@ export default function CheckInScanner() {
   };
 
   const scan = useAdminAction((code) => checkinService.scan({ qr_code: code }), {
+    role: 'checkin',
     error: false,
     key: () => 'scan',
     invalidate: INVALIDATE,
@@ -93,6 +94,7 @@ export default function CheckInScanner() {
   });
 
   const checkInByHand = useAdminAction((guest) => checkinService.checkInGuest(guest.id), {
+    role: 'checkin',
     error: false,
     key: (guest) => guest,
     invalidate: INVALIDATE,
@@ -101,6 +103,7 @@ export default function CheckInScanner() {
   });
 
   const undo = useAdminAction((guest) => checkinService.undo(guest.id), {
+    role: 'checkin',
     key: (guest) => guest,
     confirm: (guest) => ({ title: `Undo ${guest.name}'s check-in?`, confirmLabel: 'Undo check-in' }),
     success: (_res, guest) => `${guest.name} is no longer checked in`,

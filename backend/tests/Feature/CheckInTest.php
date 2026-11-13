@@ -236,4 +236,28 @@ class CheckInTest extends TestCase
             ->assertForbidden();
         $this->assertNull($guest->fresh()->checked_in_at);
     }
+
+    public function test_an_usher_can_check_guests_in_and_nothing_else(): void
+    {
+        $usher = User::factory()->create(['role' => User::ROLE_USHER]);
+        $guest = Guest::factory()->create(['checked_in_at' => null, 'name' => 'Original Name']);
+
+        $this->actingAs($usher, 'sanctum')
+            ->postJson('/api/checkin/scan', ['qr_code' => $guest->unique_code])
+            ->assertOk();
+        $this->assertNotNull($guest->fresh()->checked_in_at);
+
+        $this->actingAs($usher, 'sanctum')->deleteJson("/api/checkin/guests/{$guest->id}")->assertOk();
+        $this->actingAs($usher, 'sanctum')->postJson("/api/checkin/guests/{$guest->id}")->assertOk();
+        $this->actingAs($usher, 'sanctum')->getJson('/api/checkin/stats')->assertOk();
+
+        // Everything else stays read-only for an usher.
+        $this->actingAs($usher, 'sanctum')
+            ->putJson("/api/guests/{$guest->id}", ['name' => 'Changed'])
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Ushers can only check guests in.');
+        $this->actingAs($usher, 'sanctum')->deleteJson("/api/guests/{$guest->id}")->assertForbidden();
+        $this->actingAs($usher, 'sanctum')->postJson("/api/checkin/guests/{$guest->id}/generate-qr")->assertForbidden();
+        $this->assertSame('Original Name', $guest->fresh()->name);
+    }
 }

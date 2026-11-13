@@ -1,5 +1,5 @@
 import { useEffect, useMemo, lazy, Suspense } from 'react';
-import { Link, Routes, Route, useNavigate } from 'react-router-dom';
+import { Link, Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -20,6 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useGuests, useGuestDuplicates, useGiftStats, useSettings, useContent } from '../../hooks/useApiHooks';
 import { guestStats, guestTodos } from '../../utils/guests';
 import { RSVP_STATUSES, rsvpStatus, percent, guestListLink } from '../../utils/rsvp';
+import useRole from '../../hooks/useRole';
 import { getWeddingInfo } from '../../utils/weddingInfo';
 
 // Admin sub-pages are lazy-loaded so each becomes its own chunk, keeping the
@@ -209,8 +210,13 @@ function DashboardOverview() {
 }
 
 // Main Dashboard Layout
+/** Ushers see only the wedding-day pages. */
+const USHER_PATHS = ['/admin/dashboard/checkin', '/admin/dashboard/guests/usher-kit'];
+
 export default function AdminDashboard() {
   const { isAuthenticated, loading } = useAuth();
+  const { isUsher } = useRole();
+  const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -239,6 +245,10 @@ export default function AdminDashboard() {
   }
 
   if (!isAuthenticated) return null;
+
+  if (isUsher && !USHER_PATHS.some((p) => location.pathname.startsWith(p))) {
+    return <Navigate to="/admin/dashboard/checkin" replace />;
+  }
 
   return (
     <AdminShell>

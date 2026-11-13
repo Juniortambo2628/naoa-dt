@@ -32,7 +32,14 @@ export const NEEDS_FILTERS = [
   { id: 'duplicates', label: 'Possible duplicates' },
 ];
 
-export const DEFAULT_GUEST_FILTERS = { status: 'active', group: 'all', invite: 'all', needs: 'none' };
+/** Who came, from the check-ins at the door (for the thank-you messages). */
+export const ATTENDANCE_FILTERS = [
+  { id: 'all', label: 'Anyone' },
+  { id: 'came', label: 'Came (checked in)' },
+  { id: 'no_show', label: "Confirmed, didn't come" },
+];
+
+export const DEFAULT_GUEST_FILTERS = { status: 'active', group: 'all', invite: 'all', needs: 'none', attended: 'all' };
 
 /** Read filters from URL search params, falling back to the defaults. */
 export function filtersFromParams(params) {
@@ -45,6 +52,7 @@ export function filtersFromParams(params) {
     group: params.get('group') || DEFAULT_GUEST_FILTERS.group,
     invite: pick('invite', INVITE_FILTERS),
     needs: pick('needs', NEEDS_FILTERS),
+    attended: pick('attended', ATTENDANCE_FILTERS),
   };
 }
 
@@ -77,11 +85,18 @@ export function matchesStatus(guest, status) {
   return statusOf(guest) === status;
 }
 
+export function matchesAttendance(guest, attended = 'all') {
+  if (attended === 'came') return Boolean(guest.checked_in_at);
+  if (attended === 'no_show') return statusOf(guest) === 'confirmed' && !guest.checked_in_at;
+  return true;
+}
+
 export function matchesGuestFilters(guest, filters, ctx = {}) {
   return matchesStatus(guest, filters.status)
     && (filters.group === 'all' || (guest.group || '') === filters.group)
     && (filters.invite === 'all' || (filters.invite === 'sent') === isInviteSent(guest))
-    && (NEEDS[filters.needs] || NEEDS.none)(guest, ctx);
+    && (NEEDS[filters.needs] || NEEDS.none)(guest, ctx)
+    && matchesAttendance(guest, filters.attended);
 }
 
 /** Free-text search across name, email, group and code; phone by digits. */

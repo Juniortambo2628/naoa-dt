@@ -13,7 +13,7 @@ const guests = [
 describe('guest filters', () => {
   it('round-trips URL params and ignores unknown values', () => {
     const f = filtersFromParams(new URLSearchParams('status=pending&invite=unsent&needs=bogus&group=Family'))
-    expect(f).toEqual({ status: 'pending', group: 'Family', invite: 'unsent', needs: 'none' })
+    expect(f).toEqual({ status: 'pending', group: 'Family', invite: 'unsent', needs: 'none', attended: 'all' })
     expect(filtersToParams(f)).toEqual({ status: 'pending', group: 'Family', invite: 'unsent' })
   })
 
@@ -60,5 +60,17 @@ describe('sorting', () => {
     expect(sortGuests(guests, { key: 'status', dir: 'asc' }).map((g) => g.rsvp_status)).toEqual(['confirmed', 'pending', 'declined'])
     expect(nextSort({ key: 'name', dir: 'asc' }, 'name')).toEqual({ key: 'name', dir: 'desc' })
     expect(nextSort({ key: 'name', dir: 'asc' }, 'latest')).toEqual({ key: 'latest', dir: 'desc' })
+  })
+
+  it('filters by attendance from the check-ins', () => {
+    const list = [
+      { id: 1, rsvp_status: 'confirmed', checked_in_at: '2026-11-14T10:05:00Z' },
+      { id: 2, rsvp_status: 'confirmed', checked_in_at: null },
+      { id: 3, rsvp_status: 'pending', checked_in_at: null },
+    ]
+    const pick = (attended) => list.filter((g) => matchesGuestFilters(g, { ...DEFAULT_GUEST_FILTERS, status: 'all', attended })).map((g) => g.id)
+    expect(pick('came')).toEqual([1])
+    expect(pick('no_show')).toEqual([2])
+    expect(pick('all')).toEqual([1, 2, 3])
   })
 })
