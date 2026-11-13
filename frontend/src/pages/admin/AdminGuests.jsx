@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Users, Plus, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks, Download, UserCheck, Clock, UserX, Send, CopyCheck } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Users, Plus, Trash2, FileImage, FileText, Upload, MessageCircle, ListChecks, Download, UserCheck, Clock, UserX, Send, CopyCheck, ClipboardList } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { guestService, invitationService } from '../../services/api';
 import GuestModal from '../../components/admin/GuestModal';
@@ -52,6 +52,7 @@ function saveIgnoredDuplicates(keys) {
 }
 
 export default function AdminGuests() {
+  const navigate = useNavigate();
   const { data: guestsData, isLoading: guestsLoading, refetch: refetchGuests } = useGuests();
   const { data: settingsData } = useSettings();
   const { data: contentData } = useContent();
@@ -849,6 +850,12 @@ ${rows.join('\n')}
       icon: FileText,
       onClick: () => exportBulk('pdf'),
       disabled: isBulkExporting,
+    },
+    {
+      id: 'usher-kit', readOnly: true,
+      label: 'Usher Kit (print)',
+      icon: ClipboardList,
+      onClick: () => navigate('/admin/dashboard/guests/usher-kit'),
     },
     {
       id: 'whatsapp-checklist',
