@@ -1,6 +1,6 @@
 # Guest tour video
 
-A 30-second, seamlessly looping tour of the guest invitation, made for phones (1080×1920, 9:16).
+A 30-second, seamlessly looping tour of the guest invitation, made for phones (1080×1920, 9:16). The iPhone stays still; only its screen moves.
 
 - `guest-tour.mp4`: the finished video (H.264 + AAC, 30 fps, loops cleanly).
 - `index.html`: the interactive version, built with Three.js. Tap for sound, jump between chapters, drag to spin the phone.
@@ -21,8 +21,8 @@ Each chapter is one bar of music (2.5 s), so every cut lands on a downbeat.
 | 0:10 | Entry pass | *Entry pass* · **Your QR, ready at the door** | Tap Pass in the bottom bar, QR sheet slides up, scan line |
 | 0:12.5 | Programme | *Live programme* · **Follow the day as it happens** | Programme timeline scrolls, a wedding update notification drops in |
 | 0:15 | Moments | *Snap & stories* · **Snap polaroids, share stories** | Snap Studio shutter and flash, Captured Moments tray, a story opens |
-| 0:17.5 | Gifts | *Gifts* · **Send a gift with M-Pesa** | Cash gift sheet, tap KES 2,000 |
-| 0:20 | And more | *Find your way* · **Directions, dress code & so much more** | Three phones: dress code palette, map and weather, where-are-you zones |
+| 0:17.5 | Gifts | *Gifts* · **Send a gift with M-Pesa** | Pay Bill card with numbered steps (placeholder numbers), tap "I've sent my gift", choose KES 2,000, thank you |
+| 0:20 | And more | *Find your way* · **Directions, dress code & so much more** | Map and weather, then the dress code palette, then the where-are-you zones |
 | 0:22.5 | Home screen | *One tap away* · **Add it to your home screen** | Tap "Add to Home Screen", the T&D icon pops onto the home screen |
 | 0:25 | Finale | *Your invitation* · **Everything for the day, in your pocket** | "Hi Grace Muthoni, You're Invited!" |
 | 0:28.2 | Finale | **See you there** · 14 November 2026 | Monogram returns to the opening pose, so the loop restarts invisibly |
@@ -31,7 +31,7 @@ Each chapter is one bar of music (2.5 s), so every cut lands on a downbeat.
 
 The screens come from the real app with demo data: the backend on SQLite (`php artisan migrate --seed`, then `SettingsSeeder`), a guest with code `GRACE26`, a few polaroids from `frontend/public/DnT-photoshoot` and live updates, and the frontend dev server on port 5180.
 
-The screen-capture scripts in `tools/` write to a `cap/` folder next to them. Keep it outside the repo, then convert the PNGs into `screens/` as 585×1266 JPEGs. `cap2.cjs` feeds a photo to the camera as a fake webcam (`cam.y4m`, made with ffmpeg) so Snap Studio shows a live view.
+`tools/capture.cjs` writes every screen into `screens/` (585×1185 JPEGs: an iPhone screen below its status bar, which the tour draws) and `screens/taps.json`, where each tapped button sits. It feeds a photo to the camera as a fake webcam (`cam.y4m`, made with ffmpeg) so Snap Studio shows a live view. For the Gifts scene, set placeholder Pay Bill numbers in the local settings (the video shows 123456 / 0000000000) and clear `mpesa_payments` first, since each M-Pesa code is recorded once.
 
 The music and the video render from `tools/`:
 

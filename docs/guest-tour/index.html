@@ -117,7 +117,6 @@ body.render .ui, body.render #chapname { display: none !important; }
 </script>
 <script type="module">
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const RENDER = new URLSearchParams(location.search).has('render');
@@ -158,8 +157,11 @@ const names = [];
 for (let i = 0; i < 40; i++) names.push(`env_${String(i).padStart(2, '0')}`);
 for (let i = 0; i < 26; i++) names.push(`det_${String(i).padStart(2, '0')}`);
 for (let i = 0; i < 20; i++) names.push(`prog_${String(i).padStart(2, '0')}`);
-names.push('rsvp_a', 'rsvp_b', 'rsvp_c', 'pass_0', 'pass_1', 'gift_1', 'gift_2', 'snap_1', 'storyB_1', 'storyB_3', 'tray',
+names.push('rsvp_a', 'rsvp_b', 'rsvp_c', 'pass_0', 'pass_1', 'gift_0', 'gift_1', 'gift_2', 'gift_3', 'snap_1', 'storyB_1', 'tray',
   'directions', 'dress_code', 'location_1', 'homescreen');
+// Where each tapped control sits on its screen (0..1 of the page area), measured by tools/capture.cjs.
+let TAPS = { pass: [.27, .94], home: [.5, .45], gift_sent: [.5, .73], gift_amount: [.3, .39], snap: [.5, .91], rsvp: [.32, .52], story: [.14, .48] };
+const loadTaps = () => fetch('screens/taps.json').then(r => (r.ok ? r.json() : null)).then(j => { if (j) TAPS = { ...TAPS, ...j }; }).catch(() => {});
 const loadImg = n => new Promise((res) => {
   const im = new Image(); im.decoding = 'async';
   im.onload = () => { SHOTS[n] = im; res(); };
@@ -264,9 +266,13 @@ function radialTex(inner = 'rgba(70,50,35,.34)') {
 const shadowTex = radialTex();
 
 /* ------------------------------------------------------------------ phone */
-const SW = 585, SH = 1266;            // screen texture (1.5x of a 390x844 phone)
-const PW = 2.4, PH = 4.95, PD = 0.3;
-const SCR_W = 2.22, SCR_H = SCR_W * SH / SW;
+// An iPhone: flat titanium band with rounded corners, thin even bezels, a
+// status bar and the Dynamic Island. It stays still; only its screen moves.
+const SW = 585, SH = 1266;            // screen texture: 1.5x a 390 x 844pt iPhone screen
+const STATUS = 81;                    // 54pt status bar, drawn by the tour
+const PAGE_H = SH - STATUS;           // the captured page area (390 x 790pt)
+const SCR_W = 2.24, SCR_H = SCR_W * SH / SW;
+const BEZEL = 0.08, PW = SCR_W + 2 * BEZEL, PH = SCR_H + 2 * BEZEL, PD = 0.28;
 function roundedRectShape(w, h, r) {
   const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
   s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
@@ -275,48 +281,81 @@ function roundedRectShape(w, h, r) {
   s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s;
 }
 function shapeGeo(w, h, r) {
-  const g = new THREE.ShapeGeometry(roundedRectShape(w, h, r), 16);
+  const g = new THREE.ShapeGeometry(roundedRectShape(w, h, r), 24);
   const pos = g.attributes.position, uv = g.attributes.uv;
   for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / w + .5, pos.getY(i) / h + .5);
   return g;
 }
-const frameMat = new THREE.MeshPhysicalMaterial({ color: 0xcdb89c, metalness: 1, roughness: 0.32, clearcoat: 0.4, envMapIntensity: 1.1 });
-const blackMat = new THREE.MeshStandardMaterial({ color: 0x0b0a09, roughness: 0.25, metalness: 0.2 });
-const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x000000, roughness: 0.04, metalness: 0, transparent: true, opacity: 0.05, clearcoat: 1, envMapIntensity: 1.2, depthWrite: false });
+const frameMat = new THREE.MeshPhysicalMaterial({ color: 0xc9b59a, metalness: 1, roughness: 0.38, clearcoat: 0.3, envMapIntensity: 1.1, transparent: true });
+const blackMat = new THREE.MeshStandardMaterial({ color: 0x0a0909, roughness: 0.3, metalness: 0.1, transparent: true });
+const screenMat = new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true });
+const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x000000, roughness: 0.04, metalness: 0, transparent: true, opacity: 0.04, clearcoat: 1, envMapIntensity: 1.2, depthWrite: false });
 
 function makePhone() {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new RoundedBoxGeometry(PW, PH, PD, 6, 0.36), frameMat); g.add(body);
-  const face = new THREE.Mesh(shapeGeo(PW - 0.06, PH - 0.06, 0.34), blackMat); face.position.z = PD / 2 + 0.002; g.add(face);
+  const bodyGeo = new THREE.ExtrudeGeometry(roundedRectShape(PW - 0.04, PH - 0.04, 0.42), { depth: PD - 0.04, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 3, curveSegments: 32 });
+  bodyGeo.translate(0, 0, -(PD - 0.04) / 2);
+  g.add(new THREE.Mesh(bodyGeo, frameMat));
+  const face = new THREE.Mesh(shapeGeo(PW - 0.05, PH - 0.05, 0.41), blackMat); face.position.z = PD / 2 + 0.002; g.add(face);
   const cvs = document.createElement('canvas'); cvs.width = SW; cvs.height = SH;
   const tex = new THREE.CanvasTexture(cvs); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true;
-  const screen = new THREE.Mesh(shapeGeo(SCR_W, SCR_H, 0.27), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
-  screen.position.z = PD / 2 + 0.004; g.add(screen);
-  const glass = new THREE.Mesh(shapeGeo(PW - 0.06, PH - 0.06, 0.34), glassMat); glass.position.z = PD / 2 + 0.008; g.add(glass);
-  // side buttons
-  const btnGeo = new RoundedBoxGeometry(0.05, 0.42, 0.1, 2, 0.02);
-  [[PW / 2 + 0.012, 0.9], [-PW / 2 - 0.012, 1.15], [-PW / 2 - 0.012, 0.55]].forEach(([x, y]) => { const b = new THREE.Mesh(btnGeo, frameMat); b.position.set(x, y, 0); g.add(b); });
+  screenMat.map = tex;
+  const screen = new THREE.Mesh(shapeGeo(SCR_W, SCR_H, 0.34), screenMat); screen.position.z = PD / 2 + 0.004; g.add(screen);
+  const glass = new THREE.Mesh(shapeGeo(PW - 0.05, PH - 0.05, 0.41), glassMat); glass.position.z = PD / 2 + 0.008; g.add(glass);
+  // Side buttons: action button and volume on the left, side button on the right.
+  const btn = (h) => new THREE.Mesh(new THREE.BoxGeometry(0.035, h, 0.11), frameMat);
+  [[-1, 1.42, 0.2], [-1, 0.95, 0.42], [-1, 0.42, 0.42], [1, 0.95, 0.62]].forEach(([side, y, h]) => { const b = btn(h); b.position.set(side * (PW / 2 + 0.012), y, 0); g.add(b); });
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, toneMapped: false }));
   g.userData = { cvs, ctx: cvs.getContext('2d'), tex, shadow: sh };
   return g;
 }
 const phone = makePhone(); scene.add(phone);
-const sideL = makePhone(); scene.add(sideL);
-const sideR = makePhone(); scene.add(sideR);
-[phone, sideL, sideR].forEach(p => { scene.add(p.userData.shadow); p.userData.shadow.rotation.x = -Math.PI / 2.6; });
+scene.add(phone.userData.shadow); phone.userData.shadow.rotation.x = -Math.PI / 2.6;
+function setPhoneOpacity(a) { frameMat.opacity = blackMat.opacity = screenMat.opacity = a; glassMat.opacity = 0.04 * a; phone.visible = a > 0.002; }
 
 /* ------------------------------------------------------- screen drawing */
+// The colour along the top of each screen, so the status bar blends with the page.
+const TOP = {};
+function topColor(name) {
+  if (TOP[name]) return TOP[name];
+  const im = SHOTS[name]; if (!im) return '#FBF8F3';
+  const c = document.createElement('canvas'); c.width = 8; c.height = 1; const g = c.getContext('2d');
+  g.drawImage(im, 0, 0, im.naturalWidth, 6, 0, 0, 8, 1);
+  const d = g.getImageData(0, 0, 8, 1).data; let r = 0, gg = 0, b = 0;
+  for (let i = 0; i < 32; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; }
+  r /= 8; gg /= 8; b /= 8;
+  return (TOP[name] = { css: `rgb(${r | 0},${gg | 0},${b | 0})`, dark: 0.299 * r + 0.587 * gg + 0.114 * b < 128 });
+}
+let statusTop = null;                  // what the status bar sits on (set by the last full-screen draw)
 function cover(ctx, name, dx = 0, dy = 0, alpha = 1, scale = 1) {
   const im = SHOTS[name]; if (!im) return;
   ctx.save(); ctx.globalAlpha = alpha;
   if (scale !== 1) { ctx.translate(SW / 2, SH / 2); ctx.scale(scale, scale); ctx.translate(-SW / 2, -SH / 2); }
-  ctx.drawImage(im, dx, dy, SW, SH); ctx.restore();
+  ctx.drawImage(im, dx, STATUS + dy, SW, PAGE_H); ctx.restore();
+  if (alpha >= .5 && Math.abs(dx) < SW * .5 && Math.abs(dy) < 4) statusTop = topColor(name);
+}
+const px = (ry) => STATUS + ry * PAGE_H;        // page-relative y -> screen pixels
+function statusBar(ctx) {
+  const t = statusTop;
+  if (t) { ctx.fillStyle = t.css; ctx.fillRect(0, 0, SW, STATUS); }
+  const ink = !t || t.dark ? '#ffffff' : '#1c1c1e';
+  ctx.save();
+  ctx.fillStyle = ink; ctx.font = `600 25px -apple-system, 'SF Pro Text', Lato, system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('9:41', 100, 44);
+  // signal, wi-fi, battery
+  for (let i = 0; i < 4; i++) { const h = 7 + i * 4; ctx.fillRect(418 + i * 9, 52 - h, 6, h); }
+  ctx.lineWidth = 3.4; ctx.strokeStyle = ink; ctx.lineCap = 'round';
+  [16, 10.5, 5].forEach((r, i) => { ctx.beginPath(); if (i === 2) { ctx.arc(474, 51, 2.6, 0, Math.PI * 2); ctx.fill(); } else { ctx.arc(474, 53, r, -Math.PI * .78, -Math.PI * .22); ctx.stroke(); } });
+  ctx.lineWidth = 2; ctx.globalAlpha = .45; rr(ctx, 497, 33, 46, 22, 7); ctx.stroke(); ctx.globalAlpha = 1;
+  rr(ctx, 500.5, 36.5, 39, 15, 4.5); ctx.fill(); ctx.globalAlpha = .45; rr(ctx, 545, 40, 3, 8, 1.5); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#000'; rr(ctx, SW / 2 - 94, 17, 188, 55, 27.5); ctx.fill();   // Dynamic Island
 }
 function seq(ctx, prefix, count, u) { const i = Math.round(clamp(u) * (count - 1)); cover(ctx, `${prefix}_${String(i).padStart(2, '0')}`); }
 function tap(ctx, rx, ry, p) {           // p: 0..1 touch indicator
   if (p <= 0 || p >= 1) return;
-  const x = rx * SW, y = ry * SH;
+  const x = rx * SW, y = px(ry);
   const press = Math.sin(Math.PI * clamp(p / .55));
   ctx.save();
   ctx.fillStyle = `rgba(255,255,255,${.55 * press})`; ctx.strokeStyle = `rgba(155,70,33,${.55 * press})`; ctx.lineWidth = 3;
@@ -344,7 +383,7 @@ function monoBadge(ctx, x, y, size, ink = '#B8936C') {
 function banner(ctx, p, title, body) {    // a push notification sliding in from the top of the screen
   if (p <= 0 || p >= 1) return;
   const inP = easeOutBack(seg(p, 0, .22)), outP = ease(seg(p, .82, 1));
-  const y = lerp(-170, 34, inP) - outP * 220;
+  const y = lerp(-170, 92, inP) - outP * 280;
   ctx.save();
   ctx.shadowColor = 'rgba(40,28,20,.25)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
   ctx.fillStyle = 'rgba(250,247,242,.97)'; rr(ctx, 22, y, SW - 44, 132, 30); ctx.fill();
@@ -358,12 +397,13 @@ function banner(ctx, p, title, body) {    // a push notification sliding in from
   ctx.restore();
 }
 function homeScreen(ctx, p) {             // the phone's home screen, with the invite's icon arriving
+  statusTop = null;                     // wallpaper shows through the status bar
   const g = ctx.createLinearGradient(0, 0, SW, SH);
   g.addColorStop(0, '#E9D7BF'); g.addColorStop(.55, '#C9A27E'); g.addColorStop(1, '#8E5A3B');
   ctx.fillStyle = g; ctx.fillRect(0, 0, SW, SH);
   ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.textAlign = 'center';
-  ctx.font = `300 34px Lato, system-ui, sans-serif`; ctx.fillText('Saturday 14 November', SW / 2, 150);
-  ctx.font = `700 132px Lato, system-ui, sans-serif`; ctx.fillText('9:41', SW / 2, 290);
+  ctx.font = `400 30px Lato, system-ui, sans-serif`; ctx.fillText('Saturday', SW / 2, 190);
+  ctx.font = `300 96px Lato, system-ui, sans-serif`; ctx.fillText('14', SW / 2, 290);
   const cols = 4, size = 96, gapX = (SW - cols * size) / (cols + 1), top = 420, gapY = 66;
   for (let i = 0; i < 12; i++) {
     const c = i % cols, r = Math.floor(i / cols), x = gapX + c * (size + gapX), y = top + r * (size + gapY);
@@ -388,29 +428,36 @@ function homeScreen(ctx, p) {             // the phone's home screen, with the i
   for (let i = 0; i < 4; i++) { ctx.fillStyle = 'rgba(255,255,255,.5)'; rr(ctx, 26 + 34 + i * ((SW - 52 - 68 - 4 * 86) / 3 + 86), SH - 143, 86, 86, 22); ctx.fill(); }
 }
 function circleReveal(ctx, rx, ry, p, draw) {
-  ctx.save(); ctx.beginPath(); ctx.arc(rx * SW, ry * SH, Math.max(1, easeOut(p) * Math.hypot(SW, SH)), 0, Math.PI * 2); ctx.clip(); draw(); ctx.restore();
+  ctx.save(); ctx.beginPath(); ctx.arc(rx * SW, px(ry), Math.max(1, easeOut(p) * Math.hypot(SW, SH)), 0, Math.PI * 2); ctx.clip(); draw(); ctx.restore();
 }
 
 // What the main phone shows in each chapter, as a pure function of local progress u (0..1).
+const slideUp = (c, k, name) => {      // a sheet rising over a dimmed page
+  c.fillStyle = `rgba(30,24,20,${.35 * k})`; c.fillRect(0, STATUS, SW, PAGE_H);
+  cover(c, name, 0, (1 - k) * PAGE_H, 1);
+};
+const slideX = (c, k, from, to) => {      // swipe from one screen to the next
+  cover(c, from, -k * SW * .3, 0); c.save(); c.shadowColor = 'rgba(0,0,0,.2)'; c.shadowBlur = 30;
+  c.fillStyle = '#FBF8F3'; c.fillRect((1 - k) * SW, STATUS, SW, PAGE_H); c.restore(); cover(c, to, (1 - k) * SW, 0);
+};
 const SCREENS = {
   intro: (c) => seq(c, 'env', 40, 0),
   open: (c, u) => seq(c, 'env', 40, ease(seg(u, .08, .96))),
   details: (c, u) => seq(c, 'det', 26, ease(seg(u, .1, .95))),
   rsvp: (c, u) => {
     if (u < .42) cover(c, 'rsvp_a'); else if (u < .66) cover(c, 'rsvp_b');
-    else { const k = ease(seg(u, .66, .86)); cover(c, 'rsvp_b', 0, -k * SH * .35, 1 - k); cover(c, 'rsvp_c', 0, (1 - k) * SH * .35, k); }
-    tap(c, .318, .645, seg(u, .28, .58));
+    else { const k = ease(seg(u, .66, .86)); cover(c, 'rsvp_b', 0, -k * PAGE_H * .35, 1 - k); cover(c, 'rsvp_c', 0, (1 - k) * PAGE_H * .35, k); }
+    tap(c, ...TAPS.rsvp, seg(u, .28, .58));
   },
   pass: (c, u) => {
     cover(c, 'pass_0');
-    tap(c, .27, .93, seg(u, .2, .5));
+    tap(c, ...TAPS.pass, seg(u, .2, .5));
     const k = easeOut(seg(u, .34, .56));
     if (k > 0) {
-      c.fillStyle = `rgba(30,24,20,${.35 * k})`; c.fillRect(0, 0, SW, SH);
-      cover(c, 'pass_1', 0, (1 - k) * SH, 1);
+      slideUp(c, k, 'pass_1');
       const s = seg(u, .62, .95);
       if (s > 0 && s < 1) {          // scan line over the QR
-        const y = lerp(.47, .76, ease(s < .5 ? s * 2 : 2 - s * 2)) * SH;
+        const y = px(lerp(.43, .66, ease(s < .5 ? s * 2 : 2 - s * 2)));
         const g = c.createLinearGradient(0, y - 30, 0, y + 30); g.addColorStop(0, 'rgba(155,70,33,0)'); g.addColorStop(.5, 'rgba(155,70,33,.55)'); g.addColorStop(1, 'rgba(155,70,33,0)');
         c.fillStyle = g; c.fillRect(.24 * SW, y - 30, .52 * SW, 60);
       }
@@ -423,31 +470,42 @@ const SCREENS = {
   moments: (c, u) => {
     if (u < .4) {
       cover(c, 'snap_1');
-      tap(c, .5, .89, seg(u, .12, .36));
-      const f = seg(u, .2, .34); if (f > 0 && f < 1) { c.fillStyle = `rgba(255,255,255,${Math.sin(Math.PI * f) * .85})`; c.fillRect(0, 0, SW, SH); }
+      tap(c, ...TAPS.snap, seg(u, .12, .36));
+      const f = seg(u, .2, .34); if (f > 0 && f < 1) { c.fillStyle = `rgba(255,255,255,${Math.sin(Math.PI * f) * .85})`; c.fillRect(0, STATUS, SW, PAGE_H); }
     } else {
       const k = ease(seg(u, .4, .52));
-      if (u < .52) cover(c, 'snap_1', -k * SW * .4, 0, 1 - k);
-      cover(c, 'tray', (1 - k) * SW, 0);
-      tap(c, .144, .917, seg(u, .5, .7));
+      if (k < 1) slideX(c, k, 'snap_1', 'tray'); else cover(c, 'tray');
+      tap(c, ...TAPS.story, seg(u, .5, .7));
       const r = seg(u, .62, .84);
-      if (r > 0) circleReveal(c, .144, .917, r, () => cover(c, 'storyB_1', 0, 0, 1, lerp(1.04, 1, seg(u, .62, 1))));
+      if (r > 0) circleReveal(c, ...TAPS.story, r, () => cover(c, 'storyB_1', 0, 0, 1, lerp(1.04, 1, seg(u, .62, 1))));
     }
   },
   gift: (c, u) => {
-    cover(c, u < .46 ? 'gift_1' : 'gift_2');
-    tap(c, .30, .41, seg(u, .3, .6));
+    cover(c, 'gift_0');
+    tap(c, ...TAPS.gift_sent, seg(u, .1, .34));
+    const k = easeOut(seg(u, .26, .42));
+    if (k > 0) slideUp(c, k, u < .56 ? 'gift_1' : 'gift_2');
+    tap(c, ...TAPS.gift_amount, seg(u, .44, .66));
+    const d = ease(seg(u, .72, .84));
+    if (d > 0) cover(c, 'gift_3', 0, 0, d, lerp(.97, 1, d));
   },
-  more: (c) => cover(c, 'directions'),
+  more: (c, u) => {
+    const a = ease(seg(u, .32, .44)), b = ease(seg(u, .64, .76));
+    if (a <= 0) cover(c, 'directions');
+    else if (a < 1) slideX(c, a, 'directions', 'dress_code');
+    else if (b <= 0) cover(c, 'dress_code');
+    else if (b < 1) slideX(c, b, 'dress_code', 'location_1');
+    else cover(c, 'location_1');
+  },
   home: (c, u) => {
-    if (u < .42) { cover(c, 'homescreen'); tap(c, .5, .453, seg(u, .16, .44)); }
+    if (u < .42) { cover(c, 'homescreen'); tap(c, ...TAPS.home, seg(u, .16, .44)); }
     else {
       const k = ease(seg(u, .42, .56));
       homeScreen(c, seg(u, .45, 1));
-      if (k < 1) cover(c, 'homescreen', 0, 0, 1 - k, 1 - .12 * k);
+      if (k < 1) { const keep = statusTop; cover(c, 'homescreen', 0, 0, 1 - k, 1 - .12 * k); statusTop = k < .5 ? statusTop : keep; }
     }
   },
-  pocket: (c, u) => seq(c, 'det', 26, .42),
+  pocket: (c) => seq(c, 'det', 26, .42),
   outro: (c) => seq(c, 'det', 26, .42),
 };
 
@@ -458,7 +516,7 @@ function drawMain(t) {
   if (!s) s = t >= 27.8 ? SCENES[10] : SCENES[0];            // between finale beats
   if (s.id === 'intro' || s.id === 'outro') s = s.id === 'intro' ? SCENES[1] : SCENES[10];
   const u = clamp((t - s.t0) / (s.t1 - s.t0));
-  ctx.fillStyle = '#FBF8F3'; ctx.fillRect(0, 0, SW, SH);
+  ctx.fillStyle = '#FBF8F3'; ctx.fillRect(0, 0, SW, SH); statusTop = null;
   const idx = SCENES.indexOf(s), prev = SCENES[idx - 1];
   const cut = 0.32;                                              // seconds: slide from the last screen
   const ct = (t - s.t0) / cut;
@@ -469,32 +527,14 @@ function drawMain(t) {
     ctx.fillStyle = '#FBF8F3'; ctx.fillRect(0, 0, SW, SH); ctx.shadowColor = 'transparent'; SCREENS[s.id](ctx, u); ctx.restore();
   } else SCREENS[s.id](ctx, t < s.t0 ? 0 : u);
   sweep(ctx, (t - s.t0) / 0.9);
+  statusBar(ctx);
   phone.userData.tex.needsUpdate = true;
 }
-function drawSides() {
-  const a = sideL.userData, b = sideR.userData;
-  if (!a.done && SHOTS.dress_code && SHOTS.location_1) {
-    a.ctx.drawImage(SHOTS.dress_code, 0, 0, SW, SH); a.tex.needsUpdate = true;
-    b.ctx.drawImage(SHOTS.location_1, 0, 0, SW, SH); b.tex.needsUpdate = true; a.done = true;
-  }
-}
-
 /* ------------------------------------------------------------ choreography */
-// Keyframes [t, x, y, z, rx, ry, rz]; t=0 and t=30 match so the loop is seamless.
-const PHONE_KEYS = [
-  [0, 0, -9.5, 0, .7, 0, 0], [1.55, 0, -9.5, 0, .7, 0, 0],
-  [2.75, 0, -.72, 0, .06, -.34, .04],
-  [5, .04, -.74, 0, .02, .22, -.02], [7.5, -.04, -.74, 0, .04, -.2, .02],
-  [10, .04, -.78, .25, .02, .26, -.03], [12.5, -.04, -.74, 0, .05, -.22, .03],
-  [15, .04, -.74, 0, .02, .2, -.02], [17.5, -.04, -.74, 0, .04, -.24, .02],
-  [20, 0, -.76, 0, .02, .1, -.01], [20.7, 0, -.86, .55, 0, 0, 0], [22.4, 0, -.86, .55, 0, 0, 0],
-  [23.1, 0, -.74, 0, .04, -.22, .02], [25, 0, -.74, 0, .02, .2, -.02],
-  [27.4, 0, -.9, .35, 0, -.06, 0], [28.7, 0, -9.5, 0, -.7, 0, 0], [30, 0, -9.5, 0, .7, 0, 0],
-];
-const SIDE_KEYS = [  // left phone; right mirrors x / ry / rz
-  [0, -.2, -.9, -2.5, 0, .1, 0], [20.05, -.2, -.9, -2.5, 0, .1, 0], [20.75, -1.5, -1.05, -1.1, 0, .5, .06],
-  [22.25, -1.5, -1.05, -1.1, 0, .5, .06], [22.95, -.2, -.9, -2.5, 0, .1, 0], [30, -.2, -.9, -2.5, 0, .1, 0],
-];
+// The phone holds one pose for the whole tour and only fades in and out
+// (t=0 and t=30 match, so the loop is seamless).
+const PHONE_POSE = { x: 0, y: -.94, z: 0, rx: .02, ry: -.12, scale: 1.12 };
+const phoneOpacity = (t) => seg(t, 1.7, 2.6) * (1 - seg(t, 27.3, 28.3));
 const MONO_KEYS = [  // [t, x, y, z, ry, scale, opacity]
   [0, 0, .35, 0, -.28, 1, 1], [1.75, 0, .42, 0, .28, 1, 1], [2.6, 0, 3.4, -7, .6, .7, 0],
   [27.5, 0, 3.4, -7, -1.2, .7, 0], [28.9, 0, .35, 0, -.62, 1, 1], [30, 0, .35, 0, -.28, 1, 1],
@@ -538,37 +578,20 @@ function updateCopy(t) {
 }
 
 /* ------------------------------------------------------------------ frame */
-const pointer = { x: 0, y: 0, tx: 0, ty: 0, spin: 0, vel: 0 };
 function frame(t) {
   t = mod(t, LOOP);
   bgMat.uniforms.uTime.value = t; dustMat.uniforms.uTime.value = t;
   dustMat.uniforms.uBurst.value = Math.max(seg(t, 0, .4) * (1 - seg(t, 2, 2.6)), seg(t, 27.6, 28.8));
-  const px = pointer.x * .12, py = pointer.y * .08;
-
-  const [, x, y, z, rx, ry, rz] = sample(PHONE_KEYS, t);
-  const bob = Math.sin(t * 2 * Math.PI / 5) * .045;
-  // a small flick on every downbeat (scene cut)
-  const sinceCut = mod(t, BAR), flick = Math.exp(-sinceCut * 5) * Math.sin(sinceCut * 14) * .035 * (t > 3 && t < 27 ? 1 : 0);
-  phone.position.set(x, y * 1.06 - .16 + bob, z); phone.scale.setScalar(1.14);
-  phone.rotation.set(rx + py, ry + px + pointer.spin, rz + flick);
-  drawMain(t);
-
-  const L = sample(SIDE_KEYS, t);
-  const sideVis = seg(t, 20.05, 20.5) * (1 - seg(t, 22.5, 22.95));
-  sideL.visible = sideR.visible = sideVis > 0.001;
-  sideL.position.set(L[1], L[2] + bob * .7, L[3]); sideL.scale.setScalar(.98); sideR.scale.setScalar(.98); sideL.rotation.set(L[4] + py, L[5] + px, L[6]);
-  sideR.position.set(-L[1], L[2] + bob * .7, L[3]); sideR.rotation.set(L[4] + py, -L[5] + px, -L[6]);
-  if (sideL.visible) drawSides();
-
-  [phone, sideL, sideR].forEach(p => {
-    const sh = p.userData.shadow; sh.visible = p.visible;
-    const lift = clamp((p.position.y + 3) / 3);
-    sh.position.set(p.position.x, -3.95, p.position.z - .4);
-    sh.scale.set(3.8 * p.scale.x, 1.5 * p.scale.x, 1); sh.material.opacity = lift * (p === phone ? 1 : sideVis);
-  });
+  const op = ease(phoneOpacity(t));
+  setPhoneOpacity(op);
+  phone.position.set(PHONE_POSE.x, PHONE_POSE.y, PHONE_POSE.z); phone.scale.setScalar(PHONE_POSE.scale);
+  phone.rotation.set(PHONE_POSE.rx, PHONE_POSE.ry, 0);
+  if (op > 0) drawMain(t);
+  const sh = phone.userData.shadow;
+  sh.visible = op > 0; sh.position.set(0, -3.95, -.4); sh.scale.set(3.8 * PHONE_POSE.scale, 1.5 * PHONE_POSE.scale, 1); sh.material.opacity = op;
 
   const M = sample(MONO_KEYS, t);
-  mono.position.set(M[1] + px * .6, M[2] + Math.sin(t * 2 * Math.PI / 7.5) * .04, M[3]);
+  mono.position.set(M[1], M[2] + Math.sin(t * 2 * Math.PI / 7.5) * .04, M[3]);
   const v = mono.position.clone().project(camera);
   const depth = camera.position.z - mono.position.z;
   const hFrac = 3.1 * M[5] * (1 + .015 * Math.sin(t * 2 * Math.PI / 5)) / (2 * depth * Math.tan(THREE.MathUtils.degToRad(15)));
@@ -663,28 +686,15 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Pointer: gentle parallax; drag sideways to spin the phone.
-let drag = null;
-stage.addEventListener('pointermove', (e) => {
-  const r = stage.getBoundingClientRect();
-  pointer.tx = ((e.clientX - r.left) / r.width - .5) * 2; pointer.ty = ((e.clientY - r.top) / r.height - .5) * 2;
-  if (drag) { const dx = (e.clientX - drag.x) / r.width; pointer.spin = drag.spin + dx * 4; pointer.vel = dx * 4 - drag.last; drag.last = dx * 4; }
-});
-stage.addEventListener('pointerdown', (e) => { if (e.target.closest('.ui')) return; drag = { x: e.clientX, spin: pointer.spin, last: 0 }; });
-window.addEventListener('pointerup', () => { drag = null; });
-stage.addEventListener('pointerleave', () => { pointer.tx = pointer.ty = 0; });
-
 /* ------------------------------------------------------------------- boot */
 async function boot() {
-  await Promise.all([document.fonts.ready, buildMonogram(), ...names.map(loadImg)]);
+  await Promise.all([document.fonts.ready, buildMonogram(), loadTaps(), ...names.map(loadImg)]);
   try { await Promise.all(['500 40px "Cormorant Garamond"', '40px "Great Vibes"', '700 20px Lato', '400 20px Lato'].map(f => document.fonts.load(f))); } catch (e) { /* fallback fonts */ }
   document.getElementById('loading').style.opacity = '0';
   setTimeout(() => document.getElementById('loading').remove(), 700);
   if (RENDER) { window.__renderAt = (t) => frame(t); window.__ready = true; return; }
   base = performance.now() / 1000;
   const loop = () => {
-    pointer.x += (pointer.tx - pointer.x) * .06; pointer.y += (pointer.ty - pointer.y) * .06;
-    if (!drag) { pointer.spin *= .93; }
     const t = now(); frame(t); updateChapters(t);
     requestAnimationFrame(loop);
   };
