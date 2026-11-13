@@ -8,7 +8,7 @@ import { getWeddingDateText, getWeddingDate, getCoupleNames } from '../utils/wed
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
-import { InfinitySign } from '../components/InfinitySign';
+import { SealStamp, CloudLine } from '../components/HeritageMotifs';
 import { 
   MaleIcon, 
   FemaleIcon, 
@@ -177,6 +177,14 @@ function HeroSection({ content, settings, loading }) {
       {/* Phones: only the top corner, so the pattern never sits behind the notices. */}
       <MainFlowerBottomRight size={350} className="hidden md:block" />
 
+      {/* The bride's Africa map, barely there behind the names */}
+      <img
+        src="/illustrations/africa-map.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(92vw,620px)] h-auto pointer-events-none select-none"
+        style={{ opacity: 0.025 }}
+      />
       
       {/* Hero Content */}
       <motion.div 
@@ -227,24 +235,16 @@ function HeroSection({ content, settings, loading }) {
             </motion.h1>
           </div>
           
-          {/* Infinity Sign */}
+          {/* 囍 seal between the names: a quiet nod to the groom's culture */}
           <motion.div
-            key={`infinity-${animationKey}`}
+            key={`seal-${animationKey}`}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
             transition={{ delay: 1, duration: 0.5 }}
-            className="hidden md:block"
           >
-            <InfinitySign 
-              size={50} 
-              className="md:w-[100px] md:h-[50px]"
-              color="#A67B5B" 
-              strokeWidth={2}
-              delay={1.2}
-              duration={1.5}
-            />
+            <SealStamp size={30} className="md:scale-125" />
           </motion.div>
-          
+
           {/* Tze Ren Group */}
           <div className="flex items-center gap-3">
             <motion.h1
@@ -278,9 +278,10 @@ function HeroSection({ content, settings, loading }) {
           initial={{ scaleX: 0 }}
           animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
           transition={{ delay: 2.8, duration: 1, ease: "easeOut" }}
-          className="w-32 md:w-64 h-px mx-auto mb-8 md:mb-10 origin-center"
-          style={{ background: 'linear-gradient(90deg, transparent, #C4A385, transparent)' }}
-        />
+          className="mx-auto mb-8 md:mb-10 origin-center flex justify-center"
+        >
+          <CloudLine width={256} className="w-48 md:w-64 h-auto" />
+        </motion.div>
         
         {/* Date & Venue */}
         <motion.div

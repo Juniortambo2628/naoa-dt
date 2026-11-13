@@ -1,0 +1,112 @@
+/* Usher Kit: an on-screen preview and the printed copy share these styles.
+   Fine lines, no fills: cheap to print in colour or black and white. */
+
+.usher-kit {
+  --usher-line: #C4A385;
+  --usher-ink: #3F3731;
+  color: var(--usher-ink);
+  font-family: 'Lato', system-ui, sans-serif;
+}
+
+/* ---- Guest list ---- */
+.usher-sheet { background: #fff; padding: 12mm; box-sizing: border-box; }
+.usher-kit-screen .usher-sheet,
+.usher-kit-screen .usher-cards-page {
+  width: 210mm;
+  margin: 0 auto 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+.usher-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  border-bottom: 1px solid var(--usher-line);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+.usher-sheet-head h1 { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 22pt; font-weight: 600; color: var(--usher-ink); }
+.usher-sheet-head p { margin: 2px 0 0; font-size: 10pt; color: #5F554C; }
+.usher-sheet-count { text-align: right; font-size: 10pt !important; }
+.usher-sheet-count span { color: #7A6F65; font-size: 9pt; }
+.usher-table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+.usher-table th {
+  text-align: left;
+  font-size: 8.5pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6B5D52;
+  font-weight: 700;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--usher-line);
+}
+.usher-table td { padding: 5px 6px; border-bottom: 0.5px solid #E4D6C2; vertical-align: top; }
+.usher-table tr { break-inside: avoid; page-break-inside: avoid; }
+.usher-col-tick { width: 8mm; }
+.usher-box { display: inline-block; width: 4mm; height: 4mm; border: 1px solid #8B7B6B; border-radius: 1px; vertical-align: middle; }
+.usher-box.is-in { background: linear-gradient(135deg, transparent 45%, #3F3731 45%, #3F3731 55%, transparent 55%); }
+.usher-guest { font-weight: 700; }
+.usher-sub { display: block; font-size: 8.5pt; color: #7A6F65; }
+.usher-table-no { white-space: nowrap; font-weight: 700; }
+.usher-notes { font-size: 9pt; color: #5F554C; }
+
+/* ---- Guest cards: 8 per A4 page (2 x 4) ---- */
+.usher-cards-page {
+  background: #fff;
+  box-sizing: border-box;
+  padding: 12mm;
+  display: grid;
+  grid-template-columns: repeat(2, 90mm);
+  grid-auto-rows: 65mm;
+  column-gap: 6mm;
+  row-gap: 4mm;
+  justify-content: center;
+  align-content: start;
+  break-before: page;
+  page-break-before: always;
+}
+.usher-card {
+  border: 0.4px dashed #D9CBB8; /* faint cut line */
+  padding: 3mm;
+  box-sizing: border-box;
+}
+.usher-card-inner {
+  height: 100%;
+  box-sizing: border-box;
+  border: 0.75px solid var(--usher-line);
+  outline: 0.4px solid var(--usher-line);
+  outline-offset: -2mm;
+  border-radius: 2mm;
+  padding: 4mm 5mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1.2mm;
+}
+.usher-card-eyebrow { margin: 1mm 0 0; font-size: 6.5pt; letter-spacing: 0.3em; text-transform: uppercase; color: #6B5D52; }
+.usher-card-name { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 16pt; font-weight: 600; line-height: 1.1; color: var(--usher-ink); }
+.usher-card-rule { display: block; width: 14mm; height: 0; border-top: 0.75px solid var(--usher-line); margin: 1mm 0; }
+.usher-card-couple { margin: 0; font-family: 'Great Vibes', cursive; font-size: 17pt; line-height: 1.1; color: #A67B5B; }
+.usher-card-meta { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 9pt; color: #5F554C; }
+.usher-card-table { margin: 1mm 0 0; font-size: 8pt; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: var(--usher-ink); }
+
+/* The first cards page follows the list without an empty page when cards print alone. */
+.usher-kit > .usher-cards-page:first-child { break-before: auto; page-break-before: auto; }
+
+/* ---- Printing: only the kit, on plain A4 ---- */
+.usher-kit-print { display: none; }
+
+@media print {
+  /* The page margin repeats on every page of a long list. */
+  @page { size: A4; margin: 12mm; }
+  body > *:not(.usher-kit-print) { display: none !important; }
+  .usher-kit-print { display: block !important; }
+  .usher-kit-print .usher-sheet,
+  .usher-kit-print .usher-cards-page { width: auto; padding: 0; box-shadow: none; margin: 0; }
+  .usher-kit-print .usher-cards-page { height: 273mm; }
+  .usher-kit-print .usher-table thead { display: table-header-group; }
+  html, body { background: #fff !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

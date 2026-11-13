@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { Monogram, BackdropStrip } from '../HeritageMotifs';
+import { Monogram, SealStamp, CloudLine } from '../HeritageMotifs';
 
 const CARAMEL = '#C4A385';
 
@@ -17,11 +17,12 @@ function InviteCard({ guestName, coupleNames, dateText, venue }) {
 
       {/* What peeks out of the sleeve first */}
       <p className="text-[11px] tracking-[0.3em] uppercase text-stone-500 mt-2">You are invited</p>
+      <p lang="zh-Hans" className="text-[11px] tracking-[0.4em] mt-1" style={{ color: '#A67B5B' }}>敬请光临</p>
       <p className="font-serif text-2xl sm:text-[28px] text-stone-800 mt-2 leading-tight">
         Dear {guestName || 'Guest'},
       </p>
 
-      <div className="w-16 h-px my-5" style={{ background: `linear-gradient(90deg, transparent, ${CARAMEL}, transparent)` }} />
+      <CloudLine width={170} className="my-4" />
 
       <p className="font-serif text-base text-stone-600">together with their families</p>
       <p className="mt-2 text-[40px] sm:text-[46px] leading-tight" style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}>
@@ -36,8 +37,9 @@ function InviteCard({ guestName, coupleNames, dateText, venue }) {
         {venue && <p className="font-serif text-base text-stone-600">{venue}</p>}
       </div>
 
-      <div className="mt-auto pt-4 w-full">
-        <BackdropStrip height={34} />
+      <div className="mt-auto pt-4 flex items-center justify-center gap-3">
+        <Monogram size={34} />
+        <SealStamp size={22} />
       </div>
     </div>
   );
