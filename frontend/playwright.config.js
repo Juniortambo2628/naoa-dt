@@ -5,7 +5,9 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  workers: 1,
+  // Each test mocks its own API, so files run side by side: on CI's 4-core
+  // runner this takes the suite from ~18 minutes to a few.
+  workers: process.env.CI ? 4 : 1,
   reporter: [['html', { open: 'never' }], ['list']],
 
   use: {
@@ -14,6 +16,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     animation: 'disabled',
+    // Optional: point at an installed Chromium (e.g. a sandbox without the
+    // exact browser build this Playwright version expects).
+    ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
     // Start every test with the cookie banner answered and the admin tour
     // finished, so screenshots show the page itself rather than pop-ups.
     storageState: {

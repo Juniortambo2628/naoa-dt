@@ -319,3 +319,49 @@ export const DiamondBand = memo(function DiamondBand({ height = 18, color = HERI
     </svg>
   );
 });
+
+/**
+ * A small 囍 (double happiness) seal: the one Chinese wedding touch, in the
+ * Africa map's terracotta so it reads as part of the palette.
+ */
+export const SealStamp = memo(function SealStamp({ size = 28, className = '' }) {
+  const ring = Math.max(2, Math.round(size / 12));
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-flex items-center justify-center shrink-0 ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.18),
+        background: '#B4532A',
+        color: '#FBF3EA',
+        fontFamily: "'Noto Serif SC', 'Noto Serif CJK SC', 'Songti SC', 'SimSun', serif",
+        fontWeight: 700,
+        fontSize: Math.round(size * 0.62),
+        lineHeight: 1,
+        boxShadow: `inset 0 0 0 ${ring}px #B4532A, inset 0 0 0 ${ring + 1}px rgba(251, 243, 234, 0.6)`,
+        transform: 'rotate(-4deg)',
+      }}
+    >
+      囍
+    </span>
+  );
+});
+
+/** A fine line with an auspicious cloud (祥云) at its centre, in caramel. */
+export const CloudLine = memo(function CloudLine({ width = 240, className = '' }) {
+  return (
+    <svg viewBox="0 0 240 24" width={width} height={width / 10} aria-hidden="true" className={`block shrink-0 ${className}`}>
+      <path d="M0 12 H86 M154 12 H240" stroke={MONOGRAM_COLOR} strokeWidth="1" fill="none" strokeLinecap="round" />
+      <path
+        d="M92 15 C92 8 101 6 104 12 C106 16 102 19 99 17 C96 15 98 11 101 12.5 M104 12 C106 4 116 4 120 10 C124 4 134 4 136 12 M136 12 C139 6 148 8 148 15 C148 19 143 20 141 17 C139 14 142 11 144 13"
+        stroke={MONOGRAM_COLOR}
+        strokeWidth="1.2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+});

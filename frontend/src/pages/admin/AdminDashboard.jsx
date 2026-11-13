@@ -38,6 +38,7 @@ const AdminGifts = lazy(() => import('./AdminGifts'));
 const AdminEmails = lazy(() => import('./AdminEmails'));
 const AdminSettings = lazy(() => import('./AdminSettings'));
 const AdminGuests = lazy(() => import('./AdminGuests'));
+const UsherKit = lazy(() => import('./UsherKit'));
 const AdminFAQ = lazy(() => import('./AdminFAQ'));
 const AdminUsers = lazy(() => import('./AdminUsers'));
 const AdminModules = lazy(() => import('./AdminModules'));
@@ -247,6 +248,7 @@ export default function AdminDashboard() {
           <Route path="analytics" element={<AnalyticsCharts />} />
           <Route path="checkin" element={<CheckInScanner />} />
           <Route path="guests" element={<AdminGuests />} />
+          <Route path="guests/usher-kit" element={<UsherKit />} />
           <Route path="rsvps" element={<AdminRSVPs />} />
           <Route path="seating" element={<SeatingChart />} />
           <Route path="design" element={<InvitationDesigner />} />

@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Calendar, Gift, Image, X, Music, MessageSquare, HelpCircle,
-  MailCheck, Armchair, Palette, FileText, Blocks, Inbox, BellRing,
+  MailCheck, Armchair, Palette, FileText, Blocks, Inbox, BellRing, ClipboardList,
 } from 'lucide-react';
 import { useCollaboration } from '../../context/CollaborationContext';
 import { moduleForPath } from '../../utils/adminModules';
@@ -21,6 +21,7 @@ const navSections = [
       { path: '/admin/dashboard/guests', icon: Users, label: 'Guests', id: 'sidebar-guests' },
       { path: '/admin/dashboard/rsvps', icon: MailCheck, label: 'RSVPs & Messages', id: 'sidebar-rsvps' },
       { path: '/admin/dashboard/seating', icon: Armchair, label: 'Seating Chart', id: 'sidebar-seating' },
+      { path: '/admin/dashboard/guests/usher-kit', icon: ClipboardList, label: 'Usher Kit', id: 'sidebar-usher-kit' },
       { path: '/admin/dashboard/design', icon: Palette, label: 'Design Invitations', id: 'sidebar-design' },
     ],
   },
@@ -51,6 +52,11 @@ export default function Sidebar({ isOpen, onClose }) {
   // "New" badges: changes by others since you last opened a module; avatars:
   // who else is on that page right now.
   const { badges, presence } = useCollaboration();
+  // The most specific item wins (Usher Kit lives under Guests).
+  const activePath = navSections
+    .flatMap((s) => s.items.map((i) => i.path))
+    .filter((p) => location.pathname === p || (p !== '/admin/dashboard' && location.pathname.startsWith(`${p}/`)) )
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <>
@@ -106,8 +112,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 )}
                 <ul className="space-y-0.5">
                   {section.items.map((item) => {
-                    const isActive = location.pathname === item.path ||
-                      (item.path !== '/admin/dashboard' && location.pathname.startsWith(item.path));
+                    const isActive = item.path === activePath;
                     const moduleKey = moduleForPath(item.path)?.key;
                     const newCount = isActive ? 0 : badges[moduleKey] || 0;
                     const here = presence.filter(p => p.current_module === moduleKey);
