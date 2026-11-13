@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 import {
-  QrCode, UserCheck, Users, AlertCircle, CheckCircle, RefreshCw, Square, Search, Undo2, Armchair, AlertTriangle,
+  QrCode, UserCheck, Users, AlertCircle, CheckCircle, RefreshCw, Search, Undo2, Armchair, AlertTriangle,
 } from 'lucide-react';
 import { useCheckinStats, useGuests } from '../../hooks/useApiHooks';
 import { checkinService } from '../../services/api';
@@ -12,6 +11,7 @@ import AdminSummaryCards from '../../components/admin/AdminSummaryCards';
 import Button from '../../components/Button';
 import useAdminAction from '../../hooks/useAdminAction';
 import { tableLabel } from '../../utils/usherKit';
+import QrCamera from '../../components/admin/QrCamera';
 
 const INVALIDATE = [['checkinStats'], ['guests']];
 /** How long a result stays up before the camera looks for the next guest. */
@@ -27,7 +27,8 @@ function ResultPanel({ result, onClear }) {
     error: 'bg-red-50 border-red-200 text-red-700',
   }[kind];
   const Icon = kind === 'ok' ? CheckCircle : kind === 'already' ? AlertTriangle : AlertCircle;
-  const notConfirmed = guest && guest.rsvp_status && guest.rsvp_status !== 'confirmed';
+  const declined = guest?.rsvp_status === 'declined';
+  const awaiting = guest && !declined && guest.rsvp_status !== 'confirmed';
 
   return (
     <div role="status" aria-live="polite" className={`mt-4 p-4 rounded-xl border ${tone}`}>
@@ -43,11 +44,8 @@ function ResultPanel({ result, onClear }) {
               </p>
               {guest.guest_of && <p>Guest of {guest.guest_of}</p>}
               {guest.dietary_notes && <p>Note: {guest.dietary_notes}</p>}
-              {notConfirmed && (
-                <p className="font-medium text-amber-700">
-                  RSVP: {guest.rsvp_status === 'declined' ? 'declined' : 'not confirmed'}. Check with the coordinator.
-                </p>
-              )}
+              {awaiting && <p className="text-stone-600">Hadn&apos;t replied to the RSVP. They&apos;re on the list, so welcome them in.</p>}
+              {declined && <p className="font-medium text-amber-700">RSVP: declined. Check with the coordinator before seating them.</p>}
             </div>
           )}
         </div>
@@ -65,11 +63,11 @@ function ResultPanel({ result, onClear }) {
 export default function CheckInScanner() {
   const { data: statsData, refetch: refetchStats } = useCheckinStats();
   const { data: guestsData = [] } = useGuests();
-  const [scanning, setScanning] = useState(false);
+  const [held, setHeld] = useState(false);
   const [result, setResult] = useState(null);
   const [query, setQuery] = useState('');
-  const scannerRef = useRef(null);
   const busyRef = useRef(false);
+  const timerRef = useRef(null);
 
   const stats = statsData || { total_expected: 0, checked_in: 0, remaining: 0, percentage: 0 };
   const guests = useMemo(() => (Array.isArray(guestsData) ? guestsData : []), [guestsData]);
@@ -110,40 +108,19 @@ export default function CheckInScanner() {
     invalidate: INVALIDATE,
   });
 
-  const stopScanning = () => {
-    scannerRef.current?.clear().catch(() => {});
-    scannerRef.current = null;
-    setScanning(false);
-  };
-
-  const onScanSuccess = async (decodedText) => {
+  // One guest at a time: hold the camera on the result, then look for the next.
+  const onScan = async (decodedText) => {
     if (busyRef.current) return;
     busyRef.current = true;
-    try { scannerRef.current?.pause(true); } catch { /* not running */ }
+    setHeld(true);
     await scan.run(decodedText);
-    // Keep the camera going: look for the next guest after a moment.
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       busyRef.current = false;
-      try { scannerRef.current?.resume(); } catch { /* stopped meanwhile */ }
+      setHeld(false);
     }, NEXT_SCAN_MS);
   };
 
-  const startScanning = () => {
-    setScanning(true);
-    setResult(null);
-  };
-
-  // Mount the camera once its box is on the page.
-  useEffect(() => {
-    if (!scanning || scannerRef.current) return undefined;
-    const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0, rememberLastUsedCamera: true }, false);
-    scanner.render(onScanSuccess, () => {});
-    scannerRef.current = scanner;
-    return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanning]);
-
-  useEffect(() => () => { scannerRef.current?.clear().catch(() => {}); }, []);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -163,15 +140,12 @@ export default function CheckInScanner() {
   return (
     <AdminPageLayout
       actions={[
-        scanning
-          ? { id: 'stop-scan', label: 'Stop Scanning', icon: Square, variant: 'danger', onClick: stopScanning }
-          : { id: 'start-scan', label: 'Start Scanning', icon: QrCode, variant: 'secondary', onClick: startScanning },
         { id: 'refresh', readOnly: true, label: 'Refresh Stats', icon: RefreshCw, onClick: () => refetchStats() },
       ]}
       hero={(
         <AdminPageHero
           title="Guest Check-In"
-          description={`Checked in: ${stats.checked_in} of ${stats.total_expected} confirmed guests`}
+          description={`Checked in: ${stats.checked_in} of ${stats.total_expected} expected${stats.awaiting_reply ? ` (${stats.confirmed} confirmed, ${stats.awaiting_reply} yet to reply)` : ''}`}
           breadcrumb="Check-In"
           icon={<QrCode className="w-5 h-5 text-[#A67B5B]" />}
         />
@@ -181,19 +155,9 @@ export default function CheckInScanner() {
       <div className="grid md:grid-cols-2 gap-4">
         <AdminCard>
           <h3 className="text-lg font-medium text-stone-800 mb-1">Scan the guest&apos;s QR</h3>
-          <p className="text-sm text-stone-500 mb-4">From their printed card or their digital invitation (Entry pass). The camera keeps scanning, one guest after another.</p>
+          <p className="text-sm text-stone-500 mb-4">From their printed card or their Entry pass. The camera opens by itself and reads one guest after another.</p>
 
-          {!scanning ? (
-            <div className="text-center py-10">
-              <QrCode className="w-16 h-16 mx-auto mb-4 text-stone-300" />
-              <Button variant="secondary" onClick={startScanning}>Start scanning</Button>
-            </div>
-          ) : (
-            <div>
-              <div id="qr-reader" className="rounded-lg overflow-hidden" />
-              <Button fullWidth className="mt-4" onClick={stopScanning}>Stop scanning</Button>
-            </div>
-          )}
+          <QrCamera onScan={onScan} paused={held} />
 
           <ResultPanel result={result} onClear={() => setResult(null)} />
         </AdminCard>

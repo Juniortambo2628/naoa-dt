@@ -126,14 +126,20 @@ class CheckInController extends Controller
 
     public function getStats(): JsonResponse
     {
-        $total = Guest::confirmed()->count();
+        // Expected at the door: everyone who said yes plus everyone who hasn't
+        // replied yet (they may still turn up). Only declines are left out.
+        $confirmed = Guest::confirmed()->count();
+        $awaiting = Guest::where(fn ($q) => $q->whereNull('rsvp_status')->orWhereNotIn('rsvp_status', ['confirmed', 'declined']))->count();
+        $total = $confirmed + $awaiting;
         $checkedIn = Guest::checkedIn()->count();
 
         return $this->successResponse([
             'total_expected' => $total,
+            'confirmed' => $confirmed,
+            'awaiting_reply' => $awaiting,
             'checked_in' => $checkedIn,
-            'remaining' => $total - $checkedIn,
-            'percentage' => $total > 0 ? round(($checkedIn / $total) * 100) : 0,
+            'remaining' => max(0, $total - $checkedIn),
+            'percentage' => $total > 0 ? min(100, round(($checkedIn / $total) * 100)) : 0,
         ]);
     }
 
