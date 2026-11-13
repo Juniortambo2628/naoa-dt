@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  Home, MapPin, Plane, Armchair, Camera, CalendarClock, Play, Gift, LayoutGrid, X,
+  Home, MapPin, Plane, Armchair, Camera, CalendarClock, Play, Gift, LayoutGrid, X, QrCode,
 } from 'lucide-react';
 import Modal from './Modal';
 import TabbedTwoColumn from './TabbedTwoColumn';
@@ -10,13 +10,15 @@ import GuestLocationPicker from './GuestLocationPicker';
 import GuestTravelForm from './GuestTravelForm';
 import PublicSeatingChart from './PublicSeatingChart';
 import GuestPolaroidCapture from './GuestPolaroidCapture';
+import EntryPass from './invite/EntryPass';
 
 // Every guest tool. `href` actions navigate; the rest open the shared modal.
 const ACTIONS = [
+  { id: 'pass', label: 'My entry pass', short: 'Pass', icon: QrCode },
   { id: 'location', label: 'Where are you', short: 'Location', icon: MapPin },
   { id: 'travel', label: 'My travel details', short: 'Travel', icon: Plane },
   { id: 'seating', label: 'Seating chart', short: 'Seating', icon: Armchair },
-  { id: 'programme', label: 'Event programme', short: 'Programme', icon: CalendarClock, href: '/programme' },
+  { id: 'programme', label: 'Event programme', short: 'Events', icon: CalendarClock, href: '/programme' },
   { id: 'stories', label: 'Watch stories', short: 'Stories', icon: Play, href: '/programme?stories=1' },
   {
     id: 'gift',
@@ -32,8 +34,8 @@ const ACTIONS = [
 // Actions shown as tabs inside the shared modal (link-only actions excluded).
 const MODAL_ACTIONS = ACTIONS.filter((a) => !a.href);
 
-/** The bar's middle three slots, in order of preference. */
-const BAR_PREFERENCE = ['programme', 'gift', 'polaroid', 'seating'];
+/** The bar's middle four slots, in order of preference. */
+const BAR_PREFERENCE = ['pass', 'programme', 'gift', 'polaroid', 'seating'];
 
 // Frosted "liquid glass" surface (translucent, blurred, with a soft rim light).
 const GLASS =
@@ -66,9 +68,9 @@ function BarButton({ icon, label, active = false, onClick, ariaExpanded }) {
 
 /**
  * Guest tools on the invitation as a floating "liquid glass" bottom bar
- * (Instagram on iOS style): Home, three shortcuts, and More for the rest.
+ * (Instagram on iOS style): Home, four shortcuts (the entry pass first), and More for the rest.
  */
-export default function GuestQuickActions({ guestCode, settings = null }) {
+export default function GuestQuickActions({ guestCode, guest = null, settings = null }) {
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
@@ -83,7 +85,7 @@ export default function GuestQuickActions({ guestCode, settings = null }) {
 
   // Some actions only make sense once set up (e.g. cash gifts).
   const visibleActions = ACTIONS.filter((a) => !a.when || a.when(settings));
-  const barIds = BAR_PREFERENCE.filter((id) => visibleActions.some((a) => a.id === id)).slice(0, 3);
+  const barIds = BAR_PREFERENCE.filter((id) => visibleActions.some((a) => a.id === id)).slice(0, 4);
   const barActions = barIds.map((id) => visibleActions.find((a) => a.id === id));
   const moreActions = visibleActions.filter((a) => !barIds.includes(a.id));
 
@@ -104,6 +106,8 @@ export default function GuestQuickActions({ guestCode, settings = null }) {
 
   const renderModalBody = (item) => {
     switch (item?.id) {
+      case 'pass':
+        return <EntryPass guestCode={guestCode} guest={guest} />;
       case 'location':
         return <GuestLocationPicker guestCode={guestCode} />;
       case 'travel':

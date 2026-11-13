@@ -55,7 +55,7 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
   const fetchedRef = useRef(false);
   const { presence, othersHere, openHistory, setShareOpen, badges } = useCollaboration();
   const hasNews = Object.values(badges).some(Boolean);
-  const { canEdit } = useRole();
+  const { canEdit, isUsher } = useRole();
 
   const fetchNotifications = async () => {
     try {
@@ -140,8 +140,8 @@ export default function Header({ onMenuClick, onRestartTutorial, titleSlotRef, s
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         {!canEdit && (
           <span className="px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 whitespace-nowrap"
-            title="You can look around, but changes won't be saved. Ask an owner for edit access.">
-            View only
+            title={isUsher ? 'You can check guests in. Nothing else can be changed from this account.' : "You can look around, but changes won't be saved. Ask an owner for edit access."}>
+            {isUsher ? 'Usher' : 'View only'}
           </span>
         )}
         {/* Page status (e.g. the designer's save indicator) */}

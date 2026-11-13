@@ -10,7 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Role checks for the admin API.
  *
- *   ->middleware(EnforceRole::class)          viewers may only read
+ *   ->middleware(EnforceRole::class)          viewers may only read; ushers may
+ *                                             only read and check guests in
  *   ->middleware(EnforceRole::class.':owner') owners only
  */
 class EnforceRole
@@ -24,6 +25,12 @@ class EnforceRole
         'api/collaboration/heartbeat',
         'api/2fa/*',
         'api/notifications/mark-read',
+    ];
+
+    /** Check-in writes an usher may make: scan, check in by name, undo. */
+    private const USHER_WRITES = [
+        '#^api/checkin/scan$#',
+        '#^api/checkin/guests/\d+$#',
     ];
 
     public function handle(Request $request, Closure $next, ?string $role = null): Response
@@ -41,7 +48,22 @@ class EnforceRole
             return $this->deny('You have view-only access.');
         }
 
+        if ($user->isUsher() && ! $request->isMethodSafe() && ! $request->is(...self::VIEWER_WRITES) && ! $this->isUsherWrite($request)) {
+            return $this->deny('Ushers can only check guests in.');
+        }
+
         return $next($request);
+    }
+
+    private function isUsherWrite(Request $request): bool
+    {
+        foreach (self::USHER_WRITES as $pattern) {
+            if (preg_match($pattern, $request->path())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function deny(string $message): Response

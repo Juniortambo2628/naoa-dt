@@ -51,11 +51,21 @@ export function usherRows(guests = [], tables = [], { who = 'expected', sort = '
         guestOf: g.parent_guest_id ? (g.parent_guest?.name || nameById.get(g.parent_guest_id) || '') : '',
         notes: g.dietary_notes || '',
         checkedIn: Boolean(g.checked_in_at),
+        code: g.unique_code || '',
       };
     });
 
   return rows.sort(sort === 'table' ? byTable : byName);
 }
+
+/**
+ * A guest's invitation link: what their QR code holds. Scanned by the guest it
+ * opens their invite; scanned at the door it checks them in.
+ */
+export const inviteUrl = (code, origin = typeof window !== 'undefined' ? window.location.origin : '') => (code ? `${origin}/invitation/${code}` : '');
+
+/** "Achieng Otieno", "Table 2" -> "Achieng_Otieno-Table_2.pdf" */
+export const cardFileName = (row) => `${[row.name, row.table].filter(Boolean).join('-')}`.replace(/[^\p{L}\p{N}-]+/gu, '_').replace(/^_+|_+$/g, '') + '.pdf';
 
 /** "5" -> "Table 5"; a name that already says it ("Table 5", "Family table") stays. */
 export const tableLabel = (name = '') => (/table/i.test(name) ? name : `Table ${name}`);

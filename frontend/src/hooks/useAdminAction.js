@@ -43,11 +43,11 @@ const deniedByRole = (err) => err?.response?.status === 403 && err.response.data
  * @param {(err, ...args) => void} [options.onError]
  * @param {(...args) => any} [options.key]  Per-item pending key (default: the first argument)
  * @param {boolean} [options.rethrow]  Re-throw errors to the caller (e.g. to keep a form open)
- * @param {'editor'|'owner'} [options.role='editor']  Who may run it: editors and owners, or owners only
+ * @param {'editor'|'owner'|'checkin'} [options.role='editor']  Who may run it: editors and owners, owners only, or (checkin) anyone but a viewer, ushers included
  */
 export default function useAdminAction(fn, options = {}) {
-  const { canEdit, isOwner } = useRole();
-  const allowed = options.role === 'owner' ? isOwner : canEdit;
+  const { canEdit, isOwner, canCheckIn } = useRole();
+  const allowed = options.role === 'owner' ? isOwner : options.role === 'checkin' ? canCheckIn : canEdit;
   const queryClient = useQueryClient();
   const { refresh: refreshCollaboration } = useCollaboration();
   const [pendingKeys, setPendingKeys] = useState(() => new Set());

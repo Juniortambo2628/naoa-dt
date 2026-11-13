@@ -2,10 +2,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Calendar, Gift, Image, X, Music, MessageSquare, HelpCircle,
-  MailCheck, Armchair, Palette, FileText, Blocks, Inbox, BellRing, ClipboardList,
+  MailCheck, Armchair, Palette, FileText, Blocks, Inbox, BellRing, ClipboardList, QrCode,
 } from 'lucide-react';
 import { useCollaboration } from '../../context/CollaborationContext';
 import { moduleForPath } from '../../utils/adminModules';
+import useRole from '../../hooks/useRole';
 import CollaboratorAvatars from './CollaboratorAvatars';
 
 // Content pages, grouped. Analytics, Check-In, Email Templates and Test Lab
@@ -47,13 +48,26 @@ const navSections = [
   },
 ];
 
+/** Ushers' sidebar: just the wedding-day pages. */
+const usherSections = [
+  {
+    title: 'Wedding day',
+    items: [
+      { path: '/admin/dashboard/checkin', icon: QrCode, label: 'Check-In', id: 'sidebar-checkin' },
+      { path: '/admin/dashboard/guests/usher-kit', icon: ClipboardList, label: 'Usher Kit', id: 'sidebar-usher-kit' },
+    ],
+  },
+];
+
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   // "New" badges: changes by others since you last opened a module; avatars:
   // who else is on that page right now.
   const { badges, presence } = useCollaboration();
+  const { isUsher } = useRole();
+  const sections = isUsher ? usherSections : navSections;
   // The most specific item wins (Usher Kit lives under Guests).
-  const activePath = navSections
+  const activePath = sections
     .flatMap((s) => s.items.map((i) => i.path))
     .filter((p) => location.pathname === p || (p !== '/admin/dashboard' && location.pathname.startsWith(`${p}/`)) )
     .sort((a, b) => b.length - a.length)[0];
@@ -105,7 +119,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
           {/* Navigation */}
           <nav aria-label="Main" className="flex-1 py-2 px-3 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#6B5D4F #4A3F35' }}>
-            {navSections.map((section, sectionIndex) => (
+            {sections.map((section, sectionIndex) => (
               <div key={section.title || sectionIndex} className={sectionIndex > 0 ? 'mt-4' : ''}>
                 {section.title && (
                   <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">{section.title}</p>

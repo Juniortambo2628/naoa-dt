@@ -9,7 +9,7 @@ const CARAMEL = '#C4A385';
 function InviteCard({ guestName, coupleNames, dateText, venue }) {
   return (
     <div
-      className="relative w-full h-full rounded-[18px] bg-[#FFFDF8] px-6 sm:px-8 py-7 text-center flex flex-col items-center"
+      className="relative w-full h-full overflow-hidden rounded-[18px] bg-[#FFFDF8] px-6 sm:px-8 py-6 text-center flex flex-col items-center"
       style={{ boxShadow: '0 24px 60px rgba(74, 63, 53, 0.16), 0 2px 6px rgba(74, 63, 53, 0.06)' }}
     >
       <div className="absolute inset-3 rounded-[12px] border pointer-events-none" style={{ borderColor: 'rgba(196, 163, 133, 0.75)' }} />
@@ -22,24 +22,25 @@ function InviteCard({ guestName, coupleNames, dateText, venue }) {
         Dear {guestName || 'Guest'},
       </p>
 
-      <CloudLine width={170} className="my-4" />
+      <CloudLine width={170} className="my-3" />
 
       <p className="font-serif text-base text-stone-600">together with their families</p>
-      <p className="mt-2 text-[40px] sm:text-[46px] leading-tight" style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}>
+      <p className="mt-1 text-[36px] sm:text-[44px] leading-tight" style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}>
         {coupleNames}
       </p>
       <p className="font-serif text-base text-stone-600 mt-2 max-w-[17rem]">
         request the pleasure of your company at their traditional wedding celebration
       </p>
 
-      <div className="mt-5 space-y-1">
+      <div className="mt-3 space-y-1">
         <p className="font-serif text-xl text-stone-800">{dateText}</p>
         {venue && <p className="font-serif text-base text-stone-600">{venue}</p>}
       </div>
 
-      <div className="mt-auto pt-4 flex items-center justify-center gap-3">
-        <Monogram size={34} />
-        <SealStamp size={22} />
+      {/* At the foot, inside the frame. Very short screens skip it (the T&D already sits above the card). */}
+      <div className="mt-auto pt-2 flex items-center justify-center gap-3 min-h-0 shrink [@media(max-height:620px)]:hidden">
+        <Monogram size={30} />
+        <SealStamp size={20} />
       </div>
     </div>
   );
@@ -147,7 +148,6 @@ export default function CardReveal({ guestName, coupleNames, dateText, venue }) 
   const envelopeY = useTransform(scrollYProgress, [0.55, 0.9], ['0svh', '34svh']);
   const envelopeOpacity = useTransform(scrollYProgress, [0.6, 0.9], [1, 0]);
   const hintOpacity = useTransform(scrollYProgress, [0, 0.16, 0.22], [1, 1, 0]);
-  const moreOpacity = useTransform(scrollYProgress, [0.85, 0.95], [0, 1]);
 
   // Open on the peek (envelope open) rather than the sealed envelope, unless
   // the guest arrived for a specific part of the page or has already scrolled.
@@ -227,13 +227,6 @@ export default function CardReveal({ guestName, coupleNames, dateText, venue }) 
           <ChevronDown className="w-5 h-5 animate-bounce" style={{ color: CARAMEL }} />
         </motion.div>
 
-        <motion.div
-          className="absolute inset-x-0 bottom-24 z-40 flex flex-col items-center gap-0.5 text-center pointer-events-none"
-          style={{ opacity: moreOpacity }}
-        >
-          <p className="font-serif text-base text-stone-600">Keep scrolling for the details</p>
-          <ChevronDown className="w-4 h-4 animate-bounce" style={{ color: CARAMEL }} />
-        </motion.div>
 
         <button
           type="button"
