@@ -254,6 +254,15 @@ export const galleryService = {
   update: (id, data) => api.put(`/gallery/${id}`, data),
   delete: (id) => api.delete(`/gallery/${id}`),
   reorder: (items) => api.post('/gallery/reorder', { items }),
+  getAlbums: () => api.get('/gallery/albums'),
+  createAlbum: (data) => api.post('/gallery/albums', data),
+  updateAlbum: (id, data) => api.put(`/gallery/albums/${id}`, data),
+  deleteAlbum: (id) => api.delete(`/gallery/albums/${id}`),
+  // Bulk import: one photo per call (multipart: image, gallery_album_id, original_name, taken_at)
+  importPhoto: (formData, onProgress) => api.post('/gallery/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: onProgress ? (e) => onProgress(e.total ? Math.round((e.loaded * 100) / e.total) : 0) : undefined,
+  }),
 
   // Public guest photo upload (multipart: image, guest_name, caption?)
   guestUpload: (formData) =>

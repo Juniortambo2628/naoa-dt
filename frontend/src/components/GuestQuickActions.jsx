@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  Home, MapPin, Plane, Armchair, Camera, CalendarClock, Play, Gift, LayoutGrid, X, QrCode,
+  Home, MapPin, Plane, Armchair, Camera, CalendarClock, Play, Gift, LayoutGrid, X, QrCode, Images, MessageSquareHeart,
 } from 'lucide-react';
 import Modal from './Modal';
 import TabbedTwoColumn from './TabbedTwoColumn';
@@ -11,6 +11,7 @@ import GuestTravelForm from './GuestTravelForm';
 import PublicSeatingChart from './PublicSeatingChart';
 import GuestPolaroidCapture from './GuestPolaroidCapture';
 import EntryPass from './invite/EntryPass';
+import { AFTER_WEDDING_HIDDEN_ACTIONS } from '../utils/weddingPhase';
 
 // Every guest tool. `href` actions navigate; the rest open the shared modal.
 const ACTIONS = [
@@ -29,13 +30,15 @@ const ACTIONS = [
     when: (settings) => Boolean(settings?.mpesa_stk_enabled || settings?.mpesa_paybill_number),
   },
   { id: 'polaroid', label: 'Snap a polaroid', short: 'Snap', icon: Camera },
+  // After the wedding: the photos and a message to the couple.
+  { id: 'photos', label: 'Wedding photos', short: 'Photos', icon: Images, href: '/gallery', afterOnly: true },
+  { id: 'guestbook', label: 'Leave a message', short: 'Message', icon: MessageSquareHeart, href: '/guestbook', afterOnly: true },
 ];
 
-// Actions shown as tabs inside the shared modal (link-only actions excluded).
-const MODAL_ACTIONS = ACTIONS.filter((a) => !a.href);
 
 /** The bar's middle four slots, in order of preference. */
 const BAR_PREFERENCE = ['pass', 'programme', 'gift', 'polaroid', 'seating'];
+const AFTER_BAR_PREFERENCE = ['photos', 'gift', 'guestbook', 'stories'];
 
 // Frosted "liquid glass" surface (translucent, blurred, with a soft rim light).
 const GLASS =
@@ -70,7 +73,7 @@ function BarButton({ icon, label, active = false, onClick, ariaExpanded }) {
  * Guest tools on the invitation as a floating "liquid glass" bottom bar
  * (Instagram on iOS style): Home, four shortcuts (the entry pass first), and More for the rest.
  */
-export default function GuestQuickActions({ guestCode, guest = null, settings = null }) {
+export default function GuestQuickActions({ guestCode, guest = null, settings = null, after = false }) {
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
@@ -84,8 +87,10 @@ export default function GuestQuickActions({ guestCode, guest = null, settings = 
   }, []);
 
   // Some actions only make sense once set up (e.g. cash gifts).
-  const visibleActions = ACTIONS.filter((a) => !a.when || a.when(settings));
-  const barIds = BAR_PREFERENCE.filter((id) => visibleActions.some((a) => a.id === id)).slice(0, 4);
+  // After the wedding, what was for getting there (pass, seating, travel...) steps aside.
+  const visibleActions = ACTIONS.filter((a) => (!a.when || a.when(settings))
+    && (after ? !AFTER_WEDDING_HIDDEN_ACTIONS.includes(a.id) : !a.afterOnly));
+  const barIds = (after ? AFTER_BAR_PREFERENCE : BAR_PREFERENCE).filter((id) => visibleActions.some((a) => a.id === id)).slice(0, 4);
   const barActions = barIds.map((id) => visibleActions.find((a) => a.id === id));
   const moreActions = visibleActions.filter((a) => !barIds.includes(a.id));
 
@@ -209,7 +214,7 @@ export default function GuestQuickActions({ guestCode, guest = null, settings = 
       >
         <TabbedTwoColumn
           title="Quick actions"
-          items={MODAL_ACTIONS}
+          items={visibleActions.filter((a) => !a.href)}
           activeId={activeAction}
           onChange={setActiveAction}
           renderContent={renderModalBody}

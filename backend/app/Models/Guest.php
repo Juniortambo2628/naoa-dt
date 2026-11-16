@@ -31,6 +31,7 @@ class Guest extends Model
         'rsvp_status',
         'rsvp_message',
         'dietary_notes',
+        'personal_message',
         'parent_guest_id',
         'save_the_date_method',
         'invitation_via',

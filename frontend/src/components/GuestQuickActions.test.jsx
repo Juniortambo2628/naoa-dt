@@ -37,4 +37,19 @@ describe('GuestQuickActions bottom bar', () => {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
     }
   })
+
+  it('after the wedding shows photos, gift and a message, not the day-of tools', () => {
+    render(
+      <MemoryRouter>
+        <GuestQuickActions guestCode="ABC123" settings={{ mpesa_stk_enabled: true }} after />
+      </MemoryRouter>,
+    )
+    const bar = screen.getByRole('navigation', { name: 'Guest quick actions' })
+    for (const label of ['Photos', 'Gift', 'Message']) {
+      expect(bar).toContainElement(screen.getByRole('button', { name: label }))
+    }
+    for (const label of ['Pass', 'Snap', 'Events', 'Seating']) {
+      expect(screen.queryByRole('button', { name: label })).not.toBeInTheDocument()
+    }
+  })
 })

@@ -14,6 +14,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
     plus_ones_data: [],
     rsvp_message: '',
     dietary_notes: '',
+    personal_message: '',
   });
   const [loading, setLoading] = useState(false);
   const [activeAutocomplete, setActiveAutocomplete] = useState(null); // index of active autocomplete
@@ -38,6 +39,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
         plus_ones_data: plusOnesData,
         rsvp_message: guest.rsvp_message || '',
         dietary_notes: guest.dietary_notes || '',
+        personal_message: guest.personal_message || '',
       });
     } else {
       setFormData({
@@ -50,6 +52,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
         plus_ones_data: [],
         rsvp_message: '',
         dietary_notes: '',
+        personal_message: '',
       });
     }
   }, [guest, isOpen]);
@@ -250,6 +253,20 @@ export default function GuestModal({ isOpen, onClose, onSave, guest, allGuests =
                 placeholder="Allergies, restrictions..."
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="gm-personal-message" className="block text-sm font-medium text-stone-700 mb-1">Personal message</label>
+            <textarea
+              id="gm-personal-message"
+              className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#A67B5B]/20 focus:border-[#A67B5B] text-sm"
+              rows={3}
+              maxLength={2000}
+              value={formData.personal_message}
+              onChange={(e) => setFormData({ ...formData, personal_message: e.target.value })}
+              placeholder="A few words from you two, just for this guest. After the wedding it reads as their thank-you note."
+            />
+            <p className="mt-1 text-xs text-stone-500">Shown on their invitation, signed with your names.</p>
           </div>
 
           {/* Plus Ones Details Section */}

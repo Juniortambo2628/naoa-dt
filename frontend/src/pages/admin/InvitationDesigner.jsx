@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { settingService, contentService } from '../../services/api';
 import { getWeddingInfo } from '../../utils/weddingInfo';
+import { DESIGN_TYPES, themeKeyFor, thankYouStarter } from '../../utils/designTypes';
 import { WEDDING_DEFAULTS } from '../../utils/weddingDefaults';
 import {
     Palette, Sliders, Undo2, Redo2,
@@ -135,7 +136,7 @@ export default function InvitationDesigner() {
         loadedOkRef.current = false; // disarm autosave until this load succeeds
         try {
             const res = await settingService.getAll();
-            const key = designType === 'invitation' ? 'invitation_theme' : 'save_the_date_theme';
+            const key = themeKeyFor(designType);
             
             if (res.data[key]) {
                 let loaded = res.data[key];
@@ -186,6 +187,16 @@ export default function InvitationDesigner() {
 
                 // Initialize history with loaded state
                 setHistory([JSON.parse(JSON.stringify(finalDesign))]);
+                setHistoryIndex(0);
+            } else if (designType === 'thank_you') {
+                // First time: start from the Africa thank-you layout.
+                const info = getWeddingInfo(res.data, {});
+                const [y, m, d] = String(info.wedding_date || '').split('T')[0].split('-');
+                const starter = toDocument(thankYouStarter({ coupleNames: info.couple_names, dateText: y ? `${d} · ${m} · ${y}` : undefined }));
+                setDesign(starter);
+                setCurrentPage(0);
+                setSelectedItemId(null);
+                setHistory([JSON.parse(JSON.stringify(starter))]);
                 setHistoryIndex(0);
             } else {
                 // Reset to default for new design type if no saved data
@@ -249,7 +260,7 @@ export default function InvitationDesigner() {
   const performSilentSave = async (designToSave = design) => {
       setSaveStatus('saving');
       try {
-          const key = designType === 'invitation' ? 'invitation_theme' : 'save_the_date_theme';
+          const key = themeKeyFor(designType);
           await settingService.update({
               [key]: JSON.stringify(designToSave)
           });
@@ -1025,8 +1036,7 @@ export default function InvitationDesigner() {
               className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-transparent text-[#A67B5B] cursor-pointer hover:bg-stone-100 transition-all border-none outline-none appearance-none"
               style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A67B5B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', paddingRight: '20px' }}
             >
-              <option value="invitation">Invitation</option>
-              <option value="save_the_date">Save the Date</option>
+              {DESIGN_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
             </select>
             <Button
               size="icon"

@@ -4,8 +4,7 @@ import {
   FileText, FileImage, X, ChevronUp, ChevronDown, ArrowUp, ArrowDown,
   User, Hash, Table as TableIcon, Trash2, Plus,
   AlignCenter, AlignRight, AlignJustify, ArrowUpToLine, ArrowDownToLine,
-  AlertCircle, Sliders, Palette, Type, LayoutGrid, Shapes, Layers,
-} from 'lucide-react';
+  AlertCircle, Sliders, Palette, Type, LayoutGrid, Shapes, Layers, MessageSquareText } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import WeddingPalettePicker from './WeddingPalettePicker';
 import { Skeleton } from '../Skeleton';
@@ -459,6 +458,9 @@ export default function InvitationSidebar({
                         </Button>
                         <Button size="sm" icon={TableIcon} onClick={() => insertPlaceholder('message', '{{table}}')} title="Insert Table Name">
                           Table
+                        </Button>
+                        <Button size="sm" icon={MessageSquareText} onClick={() => insertPlaceholder('message', '{{message}}')} title="Insert the guest's personal message (Guests → Personal message)">
+                          Note
                         </Button>
                       </div>
                     </div>

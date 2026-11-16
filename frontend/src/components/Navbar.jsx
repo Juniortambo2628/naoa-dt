@@ -9,13 +9,18 @@ import Button from './Button';
 import { useTranslation } from 'react-i18next';
 import { useContent } from '../context/ContentContext';
 import { getSavedGuestCode } from '../utils/guestSession';
+import { isAfterWedding } from '../utils/weddingPhase';
 
 export default function Navbar() {
   const { t } = useTranslation();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { isVisible } = useContent();
+  const { isVisible, settings, contents, loading: contentLoading } = useContent();
+  // After the wedding the header's call to action is the photos, not RSVP.
+  const after = !contentLoading && isAfterWedding(settings, contents);
+  const ctaVisible = after ? isVisible('gallery') : isVisible('rsvp');
+  const ctaPath = after ? '/gallery' : '/rsvp';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -119,9 +124,9 @@ export default function Navbar() {
                 <Button as={Link} to={invitePath} variant="secondary" icon={Mail}>
                     My Invitation
                 </Button>
-            ) : isVisible('rsvp') && (
-                <Button as={Link} to="/rsvp" variant="secondary">
-                    {t('nav.rsvp')}
+            ) : ctaVisible && (
+                <Button as={Link} to={ctaPath} variant="secondary">
+                    {after ? 'Photos' : t('nav.rsvp')}
                 </Button>
             )}
           </div>
@@ -132,9 +137,9 @@ export default function Navbar() {
                 <Button as={Link} to={invitePath} variant="secondary" size="sm" icon={Mail}>
                     My Invite
                 </Button>
-            ) : isVisible('rsvp') && (
-                <Button as={Link} to="/rsvp" variant="secondary" size="sm">
-                    RSVP
+            ) : ctaVisible && (
+                <Button as={Link} to={ctaPath} variant="secondary" size="sm">
+                    {after ? 'Photos' : 'RSVP'}
                 </Button>
             )}
             {isVisible('language_switcher') && <LanguageSwitcher />}
@@ -184,7 +189,7 @@ export default function Navbar() {
                   </Link>
                 </motion.div>
               ))}
-              {(invitePath || isVisible('rsvp')) && (
+              {(invitePath || ctaVisible) && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -192,7 +197,7 @@ export default function Navbar() {
                 >
                   <Button
                     as={Link}
-                    to={invitePath || '/rsvp'}
+                    to={invitePath || ctaPath}
                     icon={invitePath ? Mail : undefined}
                     onClick={() => setIsOpen(false)}
                     variant="secondary"
@@ -200,7 +205,7 @@ export default function Navbar() {
                     size="lg"
                     className="mt-8"
                   >
-                    {invitePath ? 'My Invitation' : 'RSVP Now'}
+                    {invitePath ? 'My Invitation' : after ? 'See the photos' : 'RSVP Now'}
                   </Button>
                 </motion.div>
               )}

@@ -63,6 +63,8 @@ export default function InvitationCanvas({
       sans: "'Montserrat', sans-serif"
   };
 
+  const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
   const resolveText = (text) => {
     if (!text) return { __html: '' };
     if (mode === 'edit') return { __html: text };
@@ -72,7 +74,9 @@ export default function InvitationCanvas({
         const resolved = text
           .replace(/\{\{name\}\}/g, `<strong style="font-weight: 800;">${guest.name || 'Guest'}</strong>`)
           .replace(/\{\{code\}\}/g, guest.unique_code || '')
-          .replace(/\{\{table\}\}/g, guest.table?.name || 'Table');
+          .replace(/\{\{table\}\}/g, guest.table?.name || 'Table')
+          // The couple's note to this guest (Guests → Personal message); written by admins, still escaped.
+          .replace(/\{\{message\}\}/g, escapeHtml(guest.personal_message || '').replace(/\n/g, '<br/>'));
         return { __html: resolved };
     } catch (e) {
         console.error("Text resolution failed", e);

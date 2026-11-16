@@ -2,9 +2,9 @@ import { motion, useInView } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles, Images, MessageSquareHeart } from 'lucide-react';
 import { getAssetUrl, polaroidService, galleryService } from '../services/api';
-import { getWeddingDateText, getWeddingDate, getCoupleNames } from '../utils/weddingInfo';
+import { getWeddingDateText, getWeddingDate, getCoupleNames, getWeddingInfo } from '../utils/weddingInfo';
 // FloralDecorations import removed - using CustomIllustrations instead
 import { CalligraphicText, AnimatedWords, HandwrittenUnderline } from '../components/CalligraphicText';
 import { ParallaxImage, FloatingElement, RevealOnScroll } from '../components/StickyCards';
@@ -26,6 +26,11 @@ import Button from '../components/Button';
 import GuestNotices from '../components/GuestNotices';
 import { visibleGuestNotices } from '../utils/guestNotices';
 import { useContent } from '../context/ContentContext';
+import AfricaThankYou from '../components/AfricaThankYou';
+import HeroSlideshow from '../components/HeroSlideshow';
+import { useGallery, useGalleryAlbums } from '../hooks/useApiHooks';
+import { gallerySections, slideshowPhotos, thumbOf } from '../utils/galleryAlbums';
+import { isAfterWedding, thankYouMessage } from '../utils/weddingPhase';
 
 // Polaroid Floating Image Component
 function PolaroidFloatingImage({ src, size = 160, duration = 10, delay = 0, rotate = 0, note = '', customSize, offsetX, offsetY, customRotation }) {
@@ -773,13 +778,19 @@ function GallerySection({ content, loading: cmsLoading }) {
   const { t, i18n } = useTranslation();
   const getTxt = (field, fallback) => getContent(content, 'gallery', field, i18n, fallback, t);
   const [images, setImages] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchGallery = async () => {
     try {
-      const res = await galleryService.getAll();
+      const [res, albumRes] = await Promise.all([
+        galleryService.getAll(),
+        galleryService.getAlbums().catch(() => ({ data: [] })),
+      ]);
       const visibleImages = (res.data || []).filter(img => img.is_visible !== false);
-      setImages(visibleImages);
+      setTotal(visibleImages.length);
+      // A handful on the home page (the slideshow picks); the rest live on /gallery.
+      setImages(slideshowPhotos(visibleImages, Array.isArray(albumRes.data) ? albumRes.data : [], 6));
     } catch (err) {
       console.error("Home gallery fetch failed", err);
     }
@@ -841,7 +852,7 @@ function GallerySection({ content, loading: cmsLoading }) {
                 whileHover={{ scale: 1.02 }}
               >
                 <ParallaxImage
-                  src={getAssetUrl(image.image_url || image.src)}
+                  src={getAssetUrl(thumbOf(image) || image.src)}
                   alt=""
                   className="w-full h-full"
                   speed={0.3}
@@ -858,6 +869,13 @@ function GallerySection({ content, loading: cmsLoading }) {
               </motion.div>
             ))}
           </motion.div>
+          {total > images.length && (
+            <div className="mt-10 text-center">
+              <Link to="/gallery">
+                <Button variant="secondary" size="lg" icon={Images}>See all {total} photos</Button>
+              </Link>
+            </div>
+          )}
         </motion.div>
       </div>
     </section>
@@ -920,9 +938,105 @@ function CTASection({ content, loading: cmsLoading }) {
   );
 }
 
+const shortDate = (iso) => {
+  const [y, m, d] = String(iso || '').split('T')[0].split('-');
+  return y && m && d ? `${d} · ${m} · ${y}` : '';
+};
+
+/**
+ * After the wedding: the photos fill the hero, slowly changing, with the
+ * bride's Africa thank-you card and the way into the gallery.
+ */
+function ThankYouHero({ content, settings }) {
+  const { i18n } = useTranslation();
+  const { brideName, groomName } = getCoupleNames(settings, content, i18n.language);
+  const { data: items = [] } = useGallery();
+  const { data: albums = [] } = useGalleryAlbums();
+  const photos = slideshowPhotos(Array.isArray(items) ? items : [], albums, 8);
+  const sections = gallerySections((Array.isArray(items) ? items : []).filter((i) => i.is_visible !== false), albums).filter((s) => s.album);
+  const info = getWeddingInfo(settings, content);
+  const dateText = getWeddingDateText(content, i18n.language, settings);
+  const hasPhotos = photos.length > 0;
+
+  const inner = (
+    <div className="min-h-[100svh] pt-32 md:pt-28 pb-16 md:pb-20 flex">
+      <div className="container-wedding w-full flex flex-col md:flex-row md:items-end md:justify-between gap-8 md:gap-12">
+      <motion.div
+        className="order-1 md:order-2 mx-auto md:mx-0 w-[min(72vw,320px)] md:w-[380px] lg:w-[440px] shrink-0 self-center"
+        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 1, ease: 'easeOut' }}
+      >
+        <AfricaThankYou dateText={shortDate(info.wedding_date)} message={thankYouMessage(settings)} headingLevel="h1" />
+      </motion.div>
+
+      <motion.div
+        className={`order-2 md:order-1 text-center md:text-left ${hasPhotos ? 'text-white' : 'text-[#4A3F35]'}`}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.3 }}
+      >
+        <p className={`text-xs md:text-sm uppercase tracking-[0.3em] ${hasPhotos ? 'text-white/80!' : 'text-[#8B7B6B]!'}`}>Just married</p>
+        <p className={`mt-2 leading-none ${hasPhotos ? 'text-white!' : 'text-[#A67B5B]!'}`} style={{ fontFamily: "'Great Vibes', cursive", fontSize: 'clamp(2.75rem, 7vw, 5.5rem)' }}>
+          {brideName} &amp; {groomName}
+        </p>
+        <p className={`mt-3 text-base md:text-lg ${hasPhotos ? 'text-white/85!' : 'text-[#6B5D52]!'}`} style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+          {dateText}{info.venue_name ? ` · ${info.venue_name}` : ''}
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center md:justify-start gap-3">
+          <Link to="/gallery">
+            <Button variant="secondary" size="lg" icon={Images}>See the photos</Button>
+          </Link>
+          <Link to="/guestbook">
+            <Button size="lg" icon={MessageSquareHeart} className={hasPhotos ? 'bg-white/15! text-white! border-white/40! backdrop-blur-md' : ''}>Leave us a message</Button>
+          </Link>
+        </div>
+        {sections.length > 0 && (
+          <div className="mt-5 flex flex-wrap justify-center md:justify-start gap-2">
+            {sections.map((section) => (
+              <Link
+                key={section.id}
+                to={`/gallery#${section.id}`}
+                className={`rounded-full px-3 py-1.5 text-sm backdrop-blur-md ${hasPhotos ? 'bg-black/30 text-white hover:bg-black/45' : 'bg-white/80 text-stone-700 border border-[#E4D6C2]'}`}
+              >
+                {section.title} · {section.items.length} photos
+              </Link>
+            ))}
+          </div>
+        )}
+      </motion.div>
+      </div>
+    </div>
+  );
+
+  return (
+    <section className="relative" style={{ zIndex: 50 }} aria-label="Thank you">
+      {hasPhotos ? (
+        <HeroSlideshow photos={photos} className="min-h-[100svh]">{inner}</HeroSlideshow>
+      ) : (
+        <div className="relative min-h-[100svh]" style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #F3EBDF 100%)' }}>{inner}</div>
+      )}
+    </section>
+  );
+}
+
 // Main Home Page
 export default function Home() {
   const { contents: content, settings, isVisible, loading: contentLoading } = useContent();
+  // Once the wedding is over: thank you, and the photos (no countdown, details or RSVP).
+  const after = !contentLoading && isAfterWedding(settings, content);
+
+  if (after) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <main>
+          <ThankYouHero content={content} settings={settings} />
+          {isVisible('gallery') && <GallerySection content={content} loading={contentLoading} />}
+          {isVisible('our_story') && <StorySection content={content} settings={settings} loading={contentLoading} />}
+        </main>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

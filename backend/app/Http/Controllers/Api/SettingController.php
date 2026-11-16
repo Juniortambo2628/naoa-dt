@@ -43,6 +43,10 @@ class SettingController extends Controller
         // Programme page extras (Admin → Schedule).
         'programme_note',
         'bridal_party',
+        // After the wedding: when the site switches to thank-you mode, and the couple's words.
+        'wedding_phase',
+        'thank_you_message',
+        'thank_you_theme',
     ];
 
     public function index()

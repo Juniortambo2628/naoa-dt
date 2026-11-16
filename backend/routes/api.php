@@ -116,6 +116,7 @@ Route::middleware('throttle:30,1')->group(function () {
     // Public Gallery Routes
     Route::group(['prefix' => 'gallery'], function () {
         Route::get('/', [GalleryController::class, 'index']);
+        Route::get('/albums', [GalleryController::class, 'albums']);
         Route::post('/guest-upload', [GalleryController::class, 'guestUpload']);
     });
 
@@ -276,6 +277,10 @@ Route::middleware(['auth:sanctum', EnforceRole::class])->group(function () {
     Route::group(['prefix' => 'gallery'], function () {
         Route::post('/', [GalleryController::class, 'store']);
         Route::post('/reorder', [GalleryController::class, 'reorder']);
+        Route::post('/import', [GalleryController::class, 'import']);
+        Route::post('/albums', [GalleryController::class, 'storeAlbum']);
+        Route::put('/albums/{album}', [GalleryController::class, 'updateAlbum']);
+        Route::delete('/albums/{album}', [GalleryController::class, 'destroyAlbum']);
         Route::put('/{galleryItem}', [GalleryController::class, 'update']);
         Route::delete('/{galleryItem}', [GalleryController::class, 'destroy']);
     });

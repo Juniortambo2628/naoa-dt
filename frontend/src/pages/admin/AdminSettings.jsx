@@ -18,6 +18,7 @@ import Spinner from '../../components/admin/Spinner';
 import Button from '../../components/Button';
 import LocationPicker from '../../components/LocationPicker';
 import { INVITATION_SECTIONS, resolveInvitationSections } from '../../utils/invitationSections';
+import { WEDDING_PHASES, DEFAULT_THANK_YOU } from '../../utils/weddingPhase';
 import { DEFAULT_GUEST_NOTICES, resolveGuestNotices } from '../../utils/guestNotices';
 import { DEFAULT_WHATSAPP_TEMPLATE, WHATSAPP_PLACEHOLDERS, renderWhatsAppMessage } from '../../utils/whatsappMessage';
 import { confirmAction, notifyError, notifySuccess } from '../../utils/feedback';
@@ -67,6 +68,13 @@ const settingSections = [
     keys: ['invitation_sections'],
   },
   {
+    id: 'after-wedding',
+    label: 'After the Wedding',
+    icon: Heart,
+    description: 'When the site switches to saying thank you, and what it says.',
+    keys: ['wedding_phase', 'thank_you_message'],
+  },
+  {
     id: 'guest-notices',
     label: 'Guest Notices',
     icon: Megaphone,
@@ -114,6 +122,8 @@ export default function AdminSettings() {
     whatsapp_message_template: DEFAULT_WHATSAPP_TEMPLATE,
     invitation_sections: resolveInvitationSections(),
     guest_notices: DEFAULT_GUEST_NOTICES.map(n => ({ ...n })),
+    wedding_phase: 'auto',
+    thank_you_message: '',
   });
 
   const { data: settingsData, isLoading } = useSettings();
@@ -166,6 +176,8 @@ export default function AdminSettings() {
           whatsapp_message_template: settingsData.whatsapp_message_template || DEFAULT_WHATSAPP_TEMPLATE,
           invitation_sections: resolveInvitationSections(settingsData.invitation_sections),
           guest_notices: resolveGuestNotices(settingsData.guest_notices),
+          wedding_phase: settingsData.wedding_phase || 'auto',
+          thank_you_message: settingsData.thank_you_message || '',
         };
         setSettings(loaded);
         markSaved(loaded);
@@ -478,6 +490,43 @@ export default function AdminSettings() {
                     hint={section.hint}
                   />
                 ))}
+              </div>
+            </SettingsCard>
+            )}
+
+            {/* After the wedding: thank-you mode */}
+            {activeSection.id === 'after-wedding' && (
+            <SettingsCard icon={Heart} title="After the Wedding" description="The home page and every guest's invitation say thank you: the photos lead, with the Africa thank-you card. RSVP, directions, weather, the entry pass, seating and polaroids are put away; gifts stay.">
+              <div className="space-y-5">
+                <fieldset>
+                  <legend className="block text-sm font-medium text-stone-700 mb-2">Switch to thank-you mode</legend>
+                  <div className="space-y-2">
+                    {WEDDING_PHASES.map(option => (
+                      <label key={option.value} className="flex items-center gap-2 text-sm text-stone-700">
+                        <input
+                          type="radio"
+                          name="wedding_phase"
+                          value={option.value}
+                          checked={settings.wedding_phase === option.value}
+                          onChange={() => setSettings(s => ({ ...s, wedding_phase: option.value }))}
+                        />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <div>
+                  <label htmlFor="thank-you-message" className="block text-sm font-medium text-stone-700 mb-1">Thank-you words</label>
+                  <textarea
+                    id="thank-you-message"
+                    rows={3}
+                    className="input-field w-full"
+                    placeholder={DEFAULT_THANK_YOU}
+                    value={settings.thank_you_message}
+                    onChange={(e) => setSettings(s => ({ ...s, thank_you_message: e.target.value }))}
+                  />
+                  <p className="mt-1 text-xs text-stone-500">Shown on the Africa card and at the top of each invitation. Leave empty to use the line above. For a note to one guest, use Guests → Personal message.</p>
+                </div>
               </div>
             </SettingsCard>
             )}
