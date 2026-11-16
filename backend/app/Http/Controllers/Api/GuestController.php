@@ -44,6 +44,7 @@ class GuestController extends Controller
             'rsvp_status' => 'sometimes|string|in:pending,confirmed,declined',
             'rsvp_message' => 'nullable|string|max:1000',
             'dietary_notes' => 'nullable|string|max:1000',
+            'personal_message' => 'nullable|string|max:2000',
             'plus_ones_data' => 'nullable|array',
             'plus_ones_data.*.id' => 'nullable|integer',
             'plus_ones_data.*.name' => 'required_with:plus_ones_data|string|max:255',
@@ -258,7 +259,7 @@ class GuestController extends Controller
             ->count());
 
         $guest = Guest::create($request->only([
-            'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
+            'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via', 'personal_message',
         ]));
 
         // Create pending invitation for primary guest
@@ -305,7 +306,7 @@ class GuestController extends Controller
 
         $guest->update($request->only([
             'name', 'email', 'phone', 'group', 'plus_ones_allowed', 'invitation_via',
-            'rsvp_status', 'rsvp_message', 'dietary_notes',
+            'rsvp_status', 'rsvp_message', 'dietary_notes', 'personal_message',
         ]));
 
         // Sync plus ones if provided

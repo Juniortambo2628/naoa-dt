@@ -27,6 +27,8 @@ export default function InvitationDownloadButton({
   size = 'lg',
   fullWidth = false,
   className = '',
+  label = 'Download Invitation (PDF)',
+  fileLabel = 'Invitation',
 }) {
   const [active, setActive] = useState(false); // exporter mounted
   const [busy, setBusy] = useState(false);
@@ -46,7 +48,7 @@ export default function InvitationDownloadButton({
       const blob = await exporterRef.current.generatePdf();
       if (!blob) throw new Error('PDF generation returned nothing');
       const couple = safeName(weddingSettings?.couple_names);
-      saveAs(blob, `${couple ? `${couple} - ` : ''}Invitation - ${safeName(guest?.name) || 'Guest'}.pdf`);
+      saveAs(blob, `${couple ? `${couple} - ` : ''}${fileLabel} - ${safeName(guest?.name) || 'Guest'}.pdf`);
     } catch (err) {
       console.error('Invitation download failed', err);
       toast.error("Sorry, we couldn't prepare your invitation. Please try again.");
@@ -66,7 +68,7 @@ export default function InvitationDownloadButton({
         onClick={download}
         className={className}
       >
-        {busy ? 'Preparing your invitation…' : 'Download Invitation (PDF)'}
+        {busy ? 'Preparing your card…' : label}
       </Button>
 
       {active && (

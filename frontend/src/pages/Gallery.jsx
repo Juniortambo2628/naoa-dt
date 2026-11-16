@@ -2,8 +2,8 @@ import Overlay from '../components/Overlay';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Check, Smartphone } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Check, Smartphone, Download } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { galleryService, getAssetUrl } from '../services/api';
 import api from '../services/api';
 import { 
@@ -17,25 +17,7 @@ import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
 import CameraCapture from '../components/CameraCapture';
 import StickyPageHeader from '../components/StickyPageHeader';
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
-  },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
+import { gallerySections, thumbOf } from '../utils/galleryAlbums';
 
 const getContent = (content, section, field, i18n, fallback) => {
   const sectionData = content?.[section]?.content;
@@ -55,6 +37,7 @@ const getContent = (content, section, field, i18n, fallback) => {
 export default function Gallery() {
   const { t, i18n } = useTranslation();
   const [images, setImages] = useState([]);
+  const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
   
@@ -74,11 +57,23 @@ export default function Gallery() {
   const [slideshowActive, setSlideshowActive] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const slideshowInterval = useRef(null);
+  // The gallery in story order: the Ayie, then the wedding, then more, then guests' photos.
+  const sections = gallerySections(images, albums);
+  const ordered = sections.flatMap((section) => section.items);
+  const selectedIndex = selectedImage ? ordered.findIndex((img) => img.id === selectedImage.id) : -1;
+  const step = (delta) => {
+    if (selectedIndex < 0 || !ordered.length) return;
+    setSelectedImage(ordered[(selectedIndex + delta + ordered.length) % ordered.length]);
+  };
 
   const fetchGallery = async () => {
     try {
-      const response = await galleryService.getAll();
+      const [response, albumRes] = await Promise.all([
+        galleryService.getAll(),
+        galleryService.getAlbums().catch(() => ({ data: [] })),
+      ]);
       setImages(response.data?.filter(img => img.is_visible) || []);
+      setAlbums(Array.isArray(albumRes?.data) ? albumRes.data : []);
     } catch (err) {
       console.error('Failed to load gallery', err);
     }
@@ -86,11 +81,23 @@ export default function Gallery() {
   };
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // From the invitation: "Share your photos" opens the upload straight away.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('share')) setShowUploadModal(true);
+  }, [location.search]);
+
+  // "#album-2" links land on that album once the photos are in.
+  useEffect(() => {
+    if (loading || !location.hash) return;
+    document.getElementById(location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [loading, location.hash]);
 
   useEffect(() => {
     fetchGallery();
-    // Auto-refresh every 30 seconds for live updates
-    const interval = setInterval(fetchGallery, 30000);
+    // Pick up new photos every couple of minutes
+    const interval = setInterval(fetchGallery, 120000);
     return () => clearInterval(interval);
   }, []);
 
@@ -106,7 +113,7 @@ export default function Gallery() {
     setSlideshowActive(true);
     setCurrentSlide(0);
     slideshowInterval.current = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % images.length);
+      setCurrentSlide(prev => (prev + 1) % ordered.length);
     }, 5000); // 5 seconds per slide
   };
 
@@ -118,12 +125,23 @@ export default function Gallery() {
   };
 
   const nextSlide = () => {
-    setCurrentSlide(prev => (prev + 1) % images.length);
+    setCurrentSlide(prev => (prev + 1) % ordered.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide(prev => (prev - 1 + images.length) % images.length);
+    setCurrentSlide(prev => (prev - 1 + ordered.length) % ordered.length);
   };
+
+  // Arrow keys move through the photos in the viewer.
+  useEffect(() => {
+    if (!selectedImage) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight') step(1);
+      if (e.key === 'ArrowLeft') step(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   useEffect(() => {
     return () => {
@@ -244,34 +262,58 @@ export default function Gallery() {
               <p style={{ color: '#6B5D52' }}>{t('gallery.empty') || 'No photos yet. Be the first to share!'}</p>
             </div>
           ) : (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-            >
-              {images.map((image, index) => (
-                <motion.div
-                  key={image.id || index}
-                  variants={fadeInUp}
-                  className="relative aspect-square overflow-hidden rounded-2xl cursor-pointer group"
-                  onClick={() => setSelectedImage(image)}
-                >
-                    <img
-                    src={getAssetUrl(image.image_url)}
-                    alt="Gallery image"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    style={{ objectPosition: image.object_position || 'center' }}
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      {/* Captions removed as per request */}
+            <div className="space-y-16">
+              {/* Jump between albums */}
+              {sections.length > 1 && (
+                <nav aria-label="Albums" className="flex flex-wrap justify-center gap-2 -mt-4">
+                  {sections.map((section) => (
+                    <a
+                      key={section.id}
+                      href={`#${section.id}`}
+                      className="rounded-full border border-[#E4D6C2] bg-white/80 px-4 py-2 text-sm text-stone-700 hover:bg-white"
+                    >
+                      {section.title} <span className="text-stone-400">· {section.items.length}</span>
+                    </a>
+                  ))}
+                </nav>
+              )}
+
+              {sections.map((section) => (
+                <section key={section.id} id={section.id} className="scroll-mt-40" aria-labelledby={`${section.id}-title`}>
+                  {(sections.length > 1 || section.album) && (
+                    <div className="text-center mb-6">
+                      <h2 id={`${section.id}-title`} className="font-serif text-3xl md:text-4xl" style={{ color: '#4A3F35' }}>{section.title}</h2>
+                      {section.subtitle && <p className="mt-1 text-sm uppercase tracking-[0.2em]" style={{ color: '#8B7B6B' }}>{section.subtitle}</p>}
                     </div>
+                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
+                    {section.items.map((image) => (
+                      <button
+                        type="button"
+                        key={image.id}
+                        className="relative aspect-square overflow-hidden rounded-xl md:rounded-2xl group bg-[#EFE6D8]"
+                        onClick={() => setSelectedImage(image)}
+                        aria-label={`Open photo${image.uploaded_by ? ` shared by ${image.uploaded_by}` : ''}`}
+                      >
+                        <img
+                          src={getAssetUrl(thumbOf(image))}
+                          alt=""
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          style={{ objectPosition: image.object_position || 'center' }}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        {image.is_guest_upload && image.uploaded_by && (
+                          <span className="absolute bottom-2 left-2 right-2 truncate rounded-full bg-black/45 px-2 py-0.5 text-left text-[11px] text-white backdrop-blur-sm">
+                            {image.uploaded_by}
+                          </span>
+                        )}
+                      </button>
+                    ))}
                   </div>
-                </motion.div>
+                </section>
               ))}
-            </motion.div>
+            </div>
           )}
         </div>
       </main>
@@ -287,20 +329,54 @@ export default function Gallery() {
             >
               <X className="w-8 h-8" />
             </button>
+            {ordered.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous photo"
+                  className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-3 text-white hover:bg-white/10 rounded-full z-10"
+                  onClick={(e) => { e.stopPropagation(); step(-1); }}
+                >
+                  <ChevronLeft className="w-8 h-8" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next photo"
+                  className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-3 text-white hover:bg-white/10 rounded-full z-10"
+                  onClick={(e) => { e.stopPropagation(); step(1); }}
+                >
+                  <ChevronRight className="w-8 h-8" />
+                </button>
+              </>
+            )}
             <img
               src={getAssetUrl(selectedImage.image_url)}
-              alt="Gallery image"
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              alt="Gallery photo"
+              className="max-w-full max-h-[82vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => { e.currentTarget.dataset.x = e.touches[0].clientX; }}
+              onTouchEnd={(e) => {
+                const dx = e.changedTouches[0].clientX - Number(e.currentTarget.dataset.x || 0);
+                if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+              }}
             />
-            {/* Captions removed as per request */}
+            <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-3 text-white" onClick={(e) => e.stopPropagation()}>
+              <span className="text-sm opacity-70">{selectedIndex + 1} / {ordered.length}</span>
+              <a
+                href={getAssetUrl(selectedImage.image_url)}
+                download={selectedImage.original_name || 'Dinah-Tze-Ren-wedding.jpg'}
+                className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm hover:bg-white/25"
+              >
+                <Download className="w-4 h-4" /> Save photo
+              </a>
+            </div>
           </Overlay>
         )}
       </AnimatePresence>
 
       {/* Slideshow Modal */}
       <AnimatePresence>
-        {slideshowActive && images.length > 0 && (
+        {slideshowActive && ordered.length > 0 && (
           <Overlay onClose={stopSlideshow} backdropClassName="bg-black" className="flex items-center justify-center" closeOnBackdrop={false}>
             <button
               aria-label="Close slideshow"
@@ -333,7 +409,7 @@ export default function Gallery() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.5 }}
-                src={getAssetUrl(images[currentSlide]?.image_url)}
+                src={getAssetUrl(ordered[currentSlide]?.image_url)}
                 alt="Slideshow"
                 className="max-w-full max-h-full object-contain"
               />
@@ -342,7 +418,7 @@ export default function Gallery() {
             {/* Slide info */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-center">
               <p className="text-sm opacity-50 mt-4">
-                {currentSlide + 1} / {images.length}
+                {currentSlide + 1} / {ordered.length}
               </p>
             </div>
           </Overlay>

@@ -107,6 +107,17 @@ export const useUpdateSettings = () => {
 };
 
 // --- Gallery ---
+export const useGalleryAlbums = () => {
+  return useQuery({
+    queryKey: ['galleryAlbums'],
+    queryFn: async () => {
+      const { data } = await galleryService.getAlbums();
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: 60 * 1000,
+  });
+};
+
 export const useGallery = () => {
   return useQuery({
     queryKey: ['gallery'],

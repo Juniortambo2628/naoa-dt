@@ -1,7 +1,7 @@
 import Overlay from '../../components/Overlay';
 import { useState, useEffect } from 'react';
 import { galleryService, getAssetUrl } from '../../services/api';
-import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical, Check, Upload, X } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon, UserCheck, ArrowUpDown, GripVertical, Check, Upload, X, Star, FolderUp, Library, FolderInput } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import ImageUpload from '../../components/admin/ImageUpload';
 import AdminPageHero from '../../components/admin/AdminPageHero';
@@ -11,7 +11,10 @@ import EmptyState from '../../components/admin/EmptyState';
 import DeleteButton from '../../components/admin/DeleteButton';
 import Button from '../../components/Button';
 import SegmentedControl from '../../components/SegmentedControl';
-import { useGallery } from '../../hooks/useApiHooks';
+import { useGallery, useGalleryAlbums } from '../../hooks/useApiHooks';
+import GalleryImport from '../../components/admin/GalleryImport';
+import GalleryAlbumsDialog from '../../components/admin/GalleryAlbumsDialog';
+import { byTakenAt, chronologicalAlbums, thumbOf } from '../../utils/galleryAlbums';
 import { useSearch } from '../../context/SearchContext';
 import useAdminAction, { useBulkAdminAction } from '../../hooks/useAdminAction';
 
@@ -20,12 +23,25 @@ const POSITION_OPTIONS = ['top', 'left', 'center', 'right', 'bottom'].map((pos) 
   label: pos.charAt(0).toUpperCase() + pos.slice(1),
 }));
 
-const VIEWS = [
-  { id: 'all', label: 'All photos', icon: ImageIcon, match: () => true },
-  { id: 'visible', label: 'On the website', icon: Eye, match: (item) => item.is_visible },
-  { id: 'hidden', label: 'Hidden', icon: EyeOff, match: (item) => !item.is_visible },
-  { id: 'guests', label: 'From guests', icon: UserCheck, match: (item) => !!item.is_guest_upload },
-];
+/** Side panel views: every album (in date order) plus the usual filters. */
+function buildViews(albums) {
+  const albumIds = new Set(albums.map((a) => a.id));
+  return [
+    { id: 'all', label: 'All photos', icon: ImageIcon, match: () => true },
+    ...chronologicalAlbums(albums).map((album) => ({
+      id: `album-${album.id}`,
+      label: album.title,
+      icon: Library,
+      match: (item) => item.gallery_album_id === album.id,
+      albumId: album.id,
+    })),
+    { id: 'no-album', label: 'Not in an album', icon: FolderInput, match: (item) => !item.is_guest_upload && !albumIds.has(item.gallery_album_id) },
+    { id: 'featured', label: 'Home page slideshow', icon: Star, match: (item) => !!item.is_featured },
+    { id: 'visible', label: 'On the website', icon: Eye, match: (item) => item.is_visible },
+    { id: 'hidden', label: 'Hidden', icon: EyeOff, match: (item) => !item.is_visible },
+    { id: 'guests', label: 'From guests', icon: UserCheck, match: (item) => !!item.is_guest_upload },
+  ];
+}
 
 export default function GalleryManager() {
   const { data: fetchedItems, isLoading: loading, refetch: fetchGallery } = useGallery();
@@ -37,6 +53,11 @@ export default function GalleryManager() {
   const { searchQuery } = useSearch();
   const [viewMode, setViewMode] = useState('grid');
   const [view, setView] = useState('all');
+  const { data: albums = [] } = useGalleryAlbums();
+  const VIEWS = buildViews(albums);
+  const activeView = VIEWS.find(v => v.id === view) || VIEWS[0];
+  const [importOpen, setImportOpen] = useState(false);
+  const [albumsOpen, setAlbumsOpen] = useState(false);
 
   useEffect(() => {
     if (fetchedItems) setItems(fetchedItems);
@@ -57,8 +78,16 @@ export default function GalleryManager() {
   });
   const toggleVisibility = visibility.run;
 
+  const feature = useAdminAction((item) => galleryService.update(item.id, { is_featured: !item.is_featured }), {
+    key: (item) => item.id,
+    error: 'Failed to update the slideshow',
+    onSuccess: refresh,
+  });
+
   const updatePhoto = useAdminAction(() => galleryService.update(editingItem.id, {
     object_position: editingItem.object_position || 'center',
+    is_featured: !!editingItem.is_featured,
+    gallery_album_id: editingItem.gallery_album_id || null,
   }), {
     key: () => 'edit',
     error: 'Failed to update photo',
@@ -94,6 +123,12 @@ export default function GalleryManager() {
   });
   const bulkShow = useBulkAdminAction((id) => galleryService.update(id, { is_visible: true }), { onSuccess: afterBulk });
   const bulkHide = useBulkAdminAction((id) => galleryService.update(id, { is_visible: false }), { onSuccess: afterBulk });
+  const bulkFeature = useBulkAdminAction((id) => galleryService.update(id, { is_featured: true }), { onSuccess: afterBulk, success: (n) => `${n} photos added to the home page slideshow` });
+  const bulkUnfeature = useBulkAdminAction((id) => galleryService.update(id, { is_featured: false }), { onSuccess: afterBulk });
+  const bulkMove = useAdminAction(
+    async (ids, albumId) => { await Promise.all(ids.map((id) => galleryService.update(id, { gallery_album_id: albumId }))); return ids.length; },
+    { key: () => 'move', success: (n) => `${n} photos moved`, invalidate: [['galleryAlbums']], onSuccess: afterBulk },
+  );
 
   const reorder = useAdminAction(
     () => galleryService.reorder(items.map((item, index) => ({ id: item.id, order: index }))),
@@ -108,9 +143,10 @@ export default function GalleryManager() {
   // Search by caption or uploader; reordering always works on the full set.
   const searchLower = (searchQuery || '').trim().toLowerCase();
   const filteredItems = items
-    .filter(item => isReordering || (VIEWS.find(v => v.id === view)?.match(item) && (!searchLower
-      || [item.caption, item.uploaded_by].some(v => v && String(v).toLowerCase().includes(searchLower)))))
-    .sort((a, b) => b.id - a.id);
+    .filter(item => isReordering || (activeView.match(item) && (!searchLower
+      || [item.caption, item.uploaded_by, item.original_name].some(v => v && String(v).toLowerCase().includes(searchLower)))))
+    // An album reads in the order the photos were taken; everything else newest first.
+    .sort(activeView.albumId && !isReordering ? byTakenAt : (a, b) => b.id - a.id);
 
   // The upload panel only takes space when it's needed: on request, for an
   // empty gallery, while uploading, or when files are dragged onto the page.
@@ -124,10 +160,24 @@ export default function GalleryManager() {
 
   const toolbarActions = [
     {
-      id: 'upload',
-      label: 'Upload Photos',
-      icon: Upload,
+      id: 'import',
+      label: 'Import photos',
+      icon: FolderUp,
       variant: 'secondary',
+      onClick: () => setImportOpen(true),
+      hidden: isReordering,
+    },
+    {
+      id: 'albums',
+      label: 'Albums',
+      icon: Library,
+      onClick: () => setAlbumsOpen(true),
+      hidden: isReordering,
+    },
+    {
+      id: 'upload',
+      label: 'Upload a few',
+      icon: Upload,
       onClick: () => setUploaderOpen(open => !open),
       hidden: isReordering,
     },
@@ -154,7 +204,7 @@ export default function GalleryManager() {
         hero={
           <AdminPageHero
             title="Gallery Management"
-            description={`${items.length} photos in gallery`}
+            description={`${items.length} photos in gallery${albums.length ? ` · ${albums.length} albums` : ''}`}
             breadcrumb="Gallery"
             icon={<ImageIcon className="w-5 h-5 text-[#A67B5B]" />}
           />
@@ -240,6 +290,24 @@ export default function GalleryManager() {
                   />
                 </div>
 
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-stone-700 mb-2" htmlFor="photo-album">Album</label>
+                  <select
+                    id="photo-album"
+                    value={editingItem.gallery_album_id || ''}
+                    onChange={(e) => setEditingItem({ ...editingItem, gallery_album_id: e.target.value ? Number(e.target.value) : null })}
+                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">Not in an album</option>
+                    {chronologicalAlbums(albums).map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
+                  </select>
+                </div>
+
+                <label className="mb-5 flex items-center gap-2 text-sm text-stone-700">
+                  <input type="checkbox" checked={!!editingItem.is_featured} onChange={(e) => setEditingItem({ ...editingItem, is_featured: e.target.checked })} />
+                  Show in the home page slideshow
+                </label>
+
                 <div className="flex justify-end gap-2">
                   <Button onClick={() => setEditingItem(null)}>Cancel</Button>
                   <Button edit type="submit" variant="secondary">Save Changes</Button>
@@ -260,6 +328,7 @@ export default function GalleryManager() {
             onEdit={setEditingItem}
             onDelete={handleDelete}
             onToggleVisibility={toggleVisibility}
+            onToggleFeatured={feature.run}
           />
         ) : (
           <GalleryList
@@ -273,12 +342,24 @@ export default function GalleryManager() {
           />
         )}
 
+        <GalleryImport
+          isOpen={importOpen}
+          onClose={() => setImportOpen(false)}
+          albums={chronologicalAlbums(albums)}
+          defaultAlbumId={activeView.albumId}
+          onImported={refresh}
+        />
+        <GalleryAlbumsDialog isOpen={albumsOpen} onClose={() => setAlbumsOpen(false)} albums={albums} />
+
         <AdminBulkActions
           selectedCount={selectedIds.length}
           onClearSelection={() => setSelectedIds([])}
           actions={[
             { id: 'show', label: 'Show', icon: Eye, variant: 'secondary', action: bulkShow, args: [selectedIds] },
             { id: 'hide', label: 'Hide', icon: EyeOff, variant: 'primary', action: bulkHide, args: [selectedIds] },
+            { id: 'feature', label: 'Add to slideshow', icon: Star, variant: 'secondary', action: bulkFeature, args: [selectedIds] },
+            { id: 'unfeature', label: 'Remove from slideshow', icon: Star, action: bulkUnfeature, args: [selectedIds] },
+            ...chronologicalAlbums(albums).map((a) => ({ id: `move-${a.id}`, label: `Move to ${a.title}`, icon: FolderInput, action: bulkMove, args: [selectedIds, a.id] })),
             { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
           ]}
         />
@@ -287,7 +368,7 @@ export default function GalleryManager() {
   );
 }
 
-function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReorder, onToggleSelection, onEdit, onDelete, onToggleVisibility }) {
+function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReorder, onToggleSelection, onEdit, onDelete, onToggleVisibility, onToggleFeatured }) {
   const renderItem = (item) => (
     <div
       key={item.id}
@@ -300,7 +381,19 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
       <div className={`absolute top-3 left-3 z-20 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-[#A67B5B] border-[#A67B5B]' : 'bg-white/40 border-white/60 opacity-0 group-hover:opacity-100'}`}>
         {selectedIds.includes(item.id) && <Check className="w-3.5 h-3.5 text-white" />}
       </div>
-      <img src={getAssetUrl(item.image_url)} alt="Gallery Image" className={`w-full h-full object-cover transition-opacity ${item.is_visible ? 'opacity-100' : 'opacity-50 grayscale'}`} />
+      <img src={getAssetUrl(thumbOf(item))} alt={item.original_name || 'Gallery photo'} loading="lazy" className={`w-full h-full object-cover transition-opacity ${item.is_visible ? 'opacity-100' : 'opacity-50 grayscale'}`} />
+      {onToggleFeatured && !isReordering && (
+        <button
+          type="button"
+          onClick={() => onToggleFeatured(item)}
+          aria-pressed={!!item.is_featured}
+          aria-label={item.is_featured ? 'Remove from the home page slideshow' : 'Add to the home page slideshow'}
+          title={item.is_featured ? 'In the home page slideshow' : 'Add to the home page slideshow'}
+          className={`absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity ${item.is_featured ? 'bg-amber-400 text-white opacity-100' : 'bg-black/40 text-white opacity-0 group-hover:opacity-100'}`}
+        >
+          <Star className={`w-4 h-4 ${item.is_featured ? 'fill-current' : ''}`} />
+        </button>
+      )}
 
       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
         <div className="mb-2">
@@ -345,7 +438,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
     <Reorder.Group axis="y" values={items} onReorder={onReorder} className="grid grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4 gap-4">
       {items.map(item => (
         <Reorder.Item key={item.id} value={item} className="relative aspect-square bg-stone-100 rounded-xl overflow-hidden shadow-sm cursor-grab active:cursor-grabbing">
-          <img src={getAssetUrl(item.image_url)} alt="Gallery Image" className="w-full h-full object-cover" />
+          <img src={getAssetUrl(thumbOf(item))} alt="Gallery Image" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             <GripVertical className="w-8 h-8 text-white" />
           </div>
@@ -423,7 +516,7 @@ function GalleryList({ items, uploadingFiles, selectedIds, onToggleSelection, on
               </div>
 
               <div className="flex items-center gap-4">
-                <img src={getAssetUrl(item.image_url)} alt="Gallery" className="w-16 h-16 rounded-lg object-cover" />
+                <img src={getAssetUrl(thumbOf(item))} alt="Gallery" className="w-16 h-16 rounded-lg object-cover" />
                 <div>
                   <p className="text-sm font-medium text-stone-800">Uploaded by: {item.uploaded_by || 'Anonymous'}</p>
                   <div className="flex items-center gap-2 mt-1">

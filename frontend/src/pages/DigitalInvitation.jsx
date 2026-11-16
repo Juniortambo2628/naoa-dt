@@ -23,6 +23,16 @@ import AddToHomeScreenButton from '../components/AddToHomeScreenButton';
 import GuestPushCard from '../components/GuestPushCard';
 import { saveGuestCode } from '../utils/guestSession';
 import { resolveInvitationSections } from '../utils/invitationSections';
+import { isAfterWedding, sectionsForPhase, thankYouMessage } from '../utils/weddingPhase';
+import AfricaThankYou from '../components/AfricaThankYou';
+import InvitePhotos from '../components/invite/InvitePhotos';
+import PersonalNote from '../components/invite/PersonalNote';
+
+const parseTheme = (raw) => {
+    if (!raw) return null;
+    if (typeof raw === 'object') return raw;
+    try { return JSON.parse(raw); } catch { return null; }
+};
 
 export default function DigitalInvitation() {
     const { code } = useParams();
@@ -43,7 +53,10 @@ export default function DigitalInvitation() {
     };
 
     // Which parts of the page the admin has switched on (Settings → Guest Invitation Page).
-    const show = resolveInvitationSections(settings?.invitation_sections);
+    // After the wedding: say thank you, lead with the photos, and drop what's
+    // done with (RSVP, directions, weather, entry pass...). Gifts stay.
+    const after = isAfterWedding(settings, content);
+    const show = sectionsForPhase(resolveInvitationSections(settings?.invitation_sections), after);
     const detailCount = [show.when, show.where].filter(Boolean).length;
     const infoCount = [show.map, show.weather].filter(Boolean).length;
     const showRsvpButton = show.rsvp && guest?.rsvp_status === 'pending';
@@ -51,6 +64,9 @@ export default function DigitalInvitation() {
     // Every page of the invitation, flattened for rendering (backward compatible
     // with legacy single-page themes).
     const invitationPages = normalizePages(design);
+    // The thank-you card from the designer (after the wedding), if one was made.
+    const thankYouDesign = parseTheme(settings?.thank_you_theme);
+    const thankYouPages = thankYouDesign ? normalizePages(thankYouDesign) : [];
 
     // Centralized wedding details (Settings-first, Content Manager fallback).
     const weddingInfo = getWeddingInfo(settings, content);
@@ -63,6 +79,8 @@ export default function DigitalInvitation() {
     const eventTime = content?.event_details?.content?.time || '2:00 PM';
 
     const weddingDateText = getWeddingDateText(content, 'en', settings);
+    const [dy, dm, dd] = String(weddingDate || '').split('T')[0].split('-');
+    const shortDate = dy && dm && dd ? `${dd} · ${dm} · ${dy}` : '';
     const coupleNames = weddingInfo.couple_names;
     const cardSettings = { wedding_date: weddingDate, couple_names: coupleNames, venue_name: venueName, venue_address: venueAddress, venue_lat: venueLat, venue_lng: venueLng };
 
@@ -182,6 +200,39 @@ export default function DigitalInvitation() {
 
             <div className="relative max-w-screen-xl mx-auto px-4 pt-12 pb-32 md:pt-20 md:pb-36 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-center">
                 
+                {/* After the wedding: the bride's Africa thank-you card takes the card's place */}
+                {after && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    className={`${thankYouPages.length ? 'w-full max-w-[460px]' : 'w-[min(78vw,340px)] lg:w-full lg:max-w-[460px]'} lg:sticky lg:top-24 shrink-0 flex flex-col items-center gap-4`}
+                >
+                    {/* The thank-you card designed in the Invitation Designer, else the Africa visual */}
+                    {thankYouPages.length ? thankYouPages.map((pageDesign, idx) => (
+                        <div
+                            key={pageDesign.id || idx}
+                            className="w-full relative shadow-2xl rounded-lg overflow-hidden border border-stone-200"
+                            style={{ aspectRatio: pageDesign.orientation === 'landscape' ? '625/500' : '500/625', backgroundColor: pageDesign.backgroundColor || '#ffffff' }}
+                        >
+                            <InvitationCanvas design={pageDesign} mode="view" guest={guest} weddingSettings={cardSettings} />
+                        </div>
+                    )) : (
+                        <AfricaThankYou dateText={shortDate} message={thankYouMessage(settings)} />
+                    )}
+                    {thankYouPages.length > 0 && (
+                        <InvitationDownloadButton
+                            design={thankYouDesign}
+                            guest={guest}
+                            weddingSettings={cardSettings}
+                            label="Save your thank-you card (PDF)"
+                            fileLabel="Thank you"
+                            fullWidth
+                        />
+                    )}
+                </motion.div>
+                )}
+
                 {/* Left Side: The Interactive Card */}
                 {show.card && (
                 <motion.div 
@@ -219,10 +270,10 @@ export default function DigitalInvitation() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                    className={`w-full space-y-10 ${show.card ? 'max-w-lg' : 'max-w-2xl'}`}
+                    className={`w-full space-y-10 ${show.card || after ? 'max-w-lg' : 'max-w-2xl'}`}
                 >
-                    <div className={`text-center space-y-4 ${show.card ? 'lg:text-left' : ''}`}>
-                        <div className={`flex justify-center ${show.card ? 'lg:justify-start' : ''}`}>
+                    <div className={`text-center space-y-4 ${show.card || after ? 'lg:text-left' : ''}`}>
+                        <div className={`flex justify-center ${show.card || after ? 'lg:justify-start' : ''}`}>
                             <Monogram
                                 size={56}
                                 title={coupleNames}
@@ -230,16 +281,24 @@ export default function DigitalInvitation() {
                         </div>
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#9A7148]/10 text-[#9A7148] rounded-full text-xs font-bold uppercase tracking-wider mb-2">
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            Official Invitation
+                            {after ? 'With gratitude' : 'Official Invitation'}
                         </div>
                         <h1 className="text-4xl md:text-5xl font-serif text-stone-800 leading-tight">
                             Hi {guest.name}, <br />
-                            <span className="text-palette-cinnamon">You're Invited!</span>
+                            <span className="text-palette-cinnamon">{after ? 'Thank you!' : "You're Invited!"}</span>
                         </h1>
-                        {show.welcome && <p className={`text-lg text-stone-500 leading-relaxed max-w-md mx-auto ${show.card ? 'lg:mx-0' : ''}`}>
-                            We are so happy to share our special day with you. Please see the details below and kindly let us know if you can join us.
+                        {show.welcome && <p className={`text-lg text-stone-500 leading-relaxed max-w-md mx-auto ${show.card || after ? 'lg:mx-0' : ''}`}>
+                            {after
+                                ? `Thank you for celebrating with us${guest.checked_in_at ? '' : ', near or far'}. ${thankYouMessage(settings)}`
+                                : 'We are so happy to share our special day with you. Please see the details below and kindly let us know if you can join us.'}
                         </p>}
                     </div>
+
+                    {/* A note written for this guest (Guests → Personal message) */}
+                    <PersonalNote message={guest.personal_message} coupleNames={coupleNames} after={after} />
+
+                    {/* The photos: first thing after the wedding */}
+                    {after && <InvitePhotos after />}
 
                     {detailCount > 0 && (
                     <div className={`grid grid-cols-1 gap-4 ${detailCount === 2 ? 'md:grid-cols-2' : ''}`}>
@@ -265,9 +324,11 @@ export default function DigitalInvitation() {
                     )}
 
                     {/* Guest notices: plus-ones, kids, gifts, dress code */}
+                    {!after && (
                     <div id="good-to-know" className="scroll-mt-24">
                         <GuestNotices notices={settings?.guest_notices} />
                     </div>
+                    )}
 
                     {/* Cash gift by M-Pesa prompt (or Pay Bill details) */}
                     {show.cashGift && <CashGiftCard guest={guest} settings={settings} />}
@@ -343,6 +404,8 @@ export default function DigitalInvitation() {
                     </div>
                     )}
 
+                    {!after && <InvitePhotos />}
+
                     {/* Emergency Numbers */}
                     {show.emergency && <div id="emergency" className="scroll-mt-24"><EmergencyNumbers compact={true} /></div>}
 
@@ -364,7 +427,7 @@ export default function DigitalInvitation() {
             </footer>
 
             {/* Floating quick actions: Where are you · My travel details · Seating chart */}
-            {show.quickActions && <GuestQuickActions guestCode={code} guest={guest} settings={settings} />}
+            {show.quickActions && <GuestQuickActions guestCode={code} guest={guest} settings={settings} after={after} />}
         </div>
     );
 }

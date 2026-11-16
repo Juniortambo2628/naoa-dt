@@ -371,4 +371,17 @@ class GuestTest extends TestCase
         $this->assertNull($guests[$main->id]['parent_guest_id']);
         $this->assertSame($main->id, $guests[$plusOne->id]['parent_guest_id']);
     }
+
+    public function test_a_personal_message_written_in_admin_shows_on_the_guests_invitation(): void
+    {
+        $guest = Guest::factory()->create(['unique_code' => 'NOTE1234', 'name' => 'Achieng']);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/guests/{$guest->id}", ['name' => 'Achieng', 'personal_message' => "Thank you for the drums!\nWe felt the joy."])
+            ->assertOk();
+
+        $this->getJson('/api/guests/code/NOTE1234')
+            ->assertOk()
+            ->assertJsonPath('data.personal_message', "Thank you for the drums!\nWe felt the joy.");
+    }
 }
