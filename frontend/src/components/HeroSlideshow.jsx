@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAssetUrl } from '../services/api';
 
 /**
  * Full-bleed background slideshow of wedding photos: each one fades in with
  * a slow drift, then the next. Content goes on top as children; a warm
- * gradient keeps it readable on any photo.
+ * gradient keeps it readable on any photo. A few photos get dots; a long
+ * run (the couple's favourites can be a hundred) gets a counter and arrows.
  */
+const MAX_DOTS = 12;
+
 export default function HeroSlideshow({ photos = [], interval = 6000, className = '', children }) {
   const [index, setIndex] = useState(0);
   const reduce = useReducedMotion();
@@ -26,6 +30,7 @@ export default function HeroSlideshow({ photos = [], interval = 6000, className 
   }, [index, count, photos]);
 
   const photo = photos[index % Math.max(count, 1)];
+  const step = (by) => setIndex((i) => (i + by + count) % count);
 
   return (
     <div className={`relative overflow-hidden bg-[#2E2722] ${className}`}>
@@ -47,7 +52,18 @@ export default function HeroSlideshow({ photos = [], interval = 6000, className 
       </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-t from-[#1F1A16]/85 via-[#1F1A16]/35 to-[#1F1A16]/30" aria-hidden="true" />
       <div className="relative h-full">{children}</div>
-      {count > 1 && (
+      {count > MAX_DOTS && (
+        <div className="absolute bottom-3 right-3 md:right-8 z-10 flex items-center gap-1 rounded-full bg-black/35 backdrop-blur-sm px-1 py-0.5 text-white">
+          <button type="button" aria-label="Previous photo" onClick={() => step(-1)} className="p-1.5 rounded-full hover:bg-white/15">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-xs tabular-nums min-w-[4.5rem] text-center" aria-live="off">{(index % count) + 1} / {count}</span>
+          <button type="button" aria-label="Next photo" onClick={() => step(1)} className="p-1.5 rounded-full hover:bg-white/15">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      {count > 1 && count <= MAX_DOTS && (
         <div className="absolute bottom-4 right-4 md:right-8 flex gap-1.5 z-10">
           {photos.map((p, i) => (
             <button

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { gallerySections, slideshowPhotos, byTakenAt, chronologicalAlbums } from './galleryAlbums';
+import { gallerySections, slideshowPhotos, randomFavourites, byTakenAt, chronologicalAlbums } from './galleryAlbums';
 
 const albums = [
   { id: 2, title: 'The Wedding', event_date: '2026-11-14' },
@@ -60,5 +60,19 @@ describe('gallery albums', () => {
     expect(sections.find((s) => s.title === 'Ayie').items.map((i) => i.id)).toEqual([2, 1]);
     expect(sections.find((s) => s.id === 'guests').items.map((i) => i.id)).toEqual([3]);
     expect(slideshowPhotos(items, albums).map((p) => p.id)).toEqual([2]);
+  });
+
+  it('plays every favourite, however many, in a random order', () => {
+    const items = Array.from({ length: 120 }, (_, i) => ({ id: i + 1, gallery_album_id: 2, is_featured: i < 100 }));
+    const all = randomFavourites(items, albums);
+    expect(all).toHaveLength(100);
+    expect(new Set(all.map((p) => p.id)).size).toBe(100);
+    expect(all.every((p) => p.is_featured)).toBe(true);
+    // A different order from the album order (fixed sequence for the test).
+    let seed = 1;
+    const random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const picked = randomFavourites(items, albums, 6, random);
+    expect(picked).toHaveLength(6);
+    expect(picked.map((p) => p.id)).not.toEqual([1, 2, 3, 4, 5, 6]);
   });
 });

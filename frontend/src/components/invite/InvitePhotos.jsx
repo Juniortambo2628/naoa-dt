@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Images, Upload } from 'lucide-react';
 import { useGallery, useGalleryAlbums } from '../../hooks/useApiHooks';
 import { getAssetUrl } from '../../services/api';
-import { gallerySections, slideshowPhotos, thumbOf } from '../../utils/galleryAlbums';
+import { gallerySections, randomFavourites, thumbOf } from '../../utils/galleryAlbums';
 import Button from '../Button';
 
 /**
@@ -12,8 +13,9 @@ import Button from '../Button';
 export default function InvitePhotos({ after = false }) {
   const { data: items = [] } = useGallery();
   const { data: albums = [] } = useGalleryAlbums();
-  const visible = (Array.isArray(items) ? items : []).filter((i) => i.is_visible !== false);
-  const picks = slideshowPhotos(visible, albums, 6);
+  const visible = useMemo(() => (Array.isArray(items) ? items : []).filter((i) => i.is_visible !== false), [items]);
+  // A different six of the favourites each visit.
+  const picks = useMemo(() => randomFavourites(visible, albums, 6), [visible, albums]);
   const sections = gallerySections(visible, albums).filter((s) => s.album || s.id === 'guests');
 
   if (!picks.length && !after) return null;
