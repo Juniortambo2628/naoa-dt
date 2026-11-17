@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const BUILD = path.join(__dirname, '..');                       // docs/guest-tour
+// docs/guest-tour by default; TOUR=thank-you-tour renders docs/thank-you-tour.
+const BUILD = path.join(__dirname, '..', '..', process.env.TOUR || 'guest-tour');
 const FONTS = path.join(__dirname, '../../../frontend/public/fonts');
 const THREE_DIR = path.dirname(path.dirname(require.resolve('three')));  // npm i three@0.160.0 in this folder
 const mode = process.argv[2] || 'preview';

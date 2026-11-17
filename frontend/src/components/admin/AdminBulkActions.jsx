@@ -18,8 +18,10 @@ import { useVisibleActions } from '../../hooks/useRole';
  *     variant?: 'primary' | 'secondary' | 'danger',
  *     disabled?: boolean,
  *   }
+ * @param {ReactNode} [children] - extra controls shown before the buttons (e.g. a picker)
+ * @param {string} [className] - extra classes, e.g. to keep the bar in view while scrolling
  */
-export default function AdminBulkActions({ selectedCount = 0, onClearSelection, actions: allActions = [] }) {
+export default function AdminBulkActions({ selectedCount = 0, onClearSelection, actions: allActions = [], children, className = '' }) {
   // Viewers keep only `readOnly` actions (e.g. export).
   const actions = useVisibleActions(allActions);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,7 +37,7 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
-  if (selectedCount === 0 || actions.length === 0) return null;
+  if (selectedCount === 0 || (actions.length === 0 && !children)) return null;
 
   const primaryActions = actions.slice(0, 3);
   const overflowActions = actions.slice(3);
@@ -46,7 +48,7 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="mb-6 p-3 rounded-xl bg-[#A67B5B]/5 border border-[#A67B5B]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+      className={`mb-6 p-3 rounded-xl bg-[#A67B5B]/5 border border-[#A67B5B]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${className}`}
     >
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-[#A67B5B]/10 flex items-center justify-center">
@@ -63,6 +65,7 @@ export default function AdminBulkActions({ selectedCount = 0, onClearSelection, 
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
+        {children}
         {primaryActions.map((action) => (
           <Button
             key={action.id}
