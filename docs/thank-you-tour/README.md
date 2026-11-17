@@ -40,7 +40,7 @@ cd docs/guest-tour/tools
 node capture-thankyou.cjs   # writes ../../thank-you-tour/screens and taps.json; uploads two photos locally
 ```
 
-`BASE=http://localhost:5173` points it at another dev server, and `SHARE_PHOTOS=a.jpg,b.jpg` picks the two photos the share step uploads. The guestbook and home page screens show no photos, so they can be kept from an earlier capture.
+`BASE=http://localhost:5173` points it at another dev server, and `SHARE_PHOTOS=a.jpg,b.jpg` picks the two photos the share step uploads. The guestbook screens show no photos, so they can be kept from an earlier capture. The home page screens are taken last; if the 30-a-minute limit on public requests empties its slideshow, wait a minute and take them again.
 
 ```bash
 TOUR=thank-you-tour node render.cjs full
