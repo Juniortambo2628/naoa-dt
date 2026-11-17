@@ -196,26 +196,45 @@ class GalleryController extends Controller
      */
     public function guestUpload(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'image' => ImageOptimizer::RULE,
             'guest_name' => 'required|string|max:100',
             'caption' => 'nullable|string|max:255',
+            // Guests can add to an album (the Ayie, the wedding...) or leave it out.
+            'gallery_album_id' => 'nullable|integer|exists:gallery_albums,id',
+            'taken_at' => 'nullable|date',
         ]);
 
         // Store directly under public/ (same as MediaController) so the file is
         // served without relying on the storage symlink or APP_URL host.
-        $file = ImageOptimizer::optimize($request->file('image'));
-        $filename = time().'_'.Str::random(10).'.'.($file->guessExtension() ?: 'jpg');
-        $file->move(public_path('uploads/guest-uploads'), $filename);
-        $url = '/uploads/guest-uploads/'.$filename;
+        $upload = $request->file('image');
+        $dir = public_path('uploads/guest-uploads');
+        if (! is_dir($dir.'/thumbs')) {
+            mkdir($dir.'/thumbs', 0755, true);
+        }
+        $base = time().'_'.Str::random(10);
 
-        // Create gallery item
+        $file = ImageOptimizer::optimize($upload);
+        $filename = $base.'.'.($file->guessExtension() ?: 'jpg');
+        $file->move($dir, $filename);
+
+        $thumb = ImageOptimizer::optimize($upload, 640, 76);
+        $thumbName = $base.'.'.($thumb->guessExtension() ?: 'jpg');
+        $thumb->move($dir.'/thumbs', $thumbName);
+
+        [$width, $height] = @getimagesize($dir.'/'.$filename) ?: [null, null];
+
         $item = GalleryItem::create([
-            'image_url' => $url,
-            'caption' => $request->caption,
-            'uploaded_by' => $request->guest_name,
+            'image_url' => '/uploads/guest-uploads/'.$filename,
+            'thumb_url' => '/uploads/guest-uploads/thumbs/'.$thumbName,
+            'caption' => $data['caption'] ?? null,
+            'uploaded_by' => $data['guest_name'],
             'is_guest_upload' => true,
             'is_visible' => true,
+            'gallery_album_id' => $data['gallery_album_id'] ?? null,
+            'taken_at' => $data['taken_at'] ?? null,
+            'width' => $width,
+            'height' => $height,
             'order' => 999, // Guest uploads at end
         ]);
 

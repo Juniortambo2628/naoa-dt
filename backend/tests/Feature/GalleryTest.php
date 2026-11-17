@@ -307,4 +307,32 @@ class GalleryTest extends TestCase
         $this->assertTrue($photo->fresh()->is_featured);
         $this->assertSame($album->id, $photo->fresh()->gallery_album_id);
     }
+
+    public function test_a_guest_can_add_their_photo_to_an_album(): void
+    {
+        $album = GalleryAlbum::where('title', 'The Wedding')->first();
+
+        $response = $this->post('/api/gallery/guest-upload', [
+            'image' => UploadedFile::fake()->image('me.jpg', 1200, 900),
+            'guest_name' => 'Achieng',
+            'gallery_album_id' => $album->id,
+            'taken_at' => '2026-11-14 16:20:00',
+        ], ['Accept' => 'application/json']);
+
+        $response->assertCreated();
+        $item = GalleryItem::where('uploaded_by', 'Achieng')->firstOrFail();
+        $this->assertTrue($item->is_guest_upload);
+        $this->assertSame($album->id, $item->gallery_album_id);
+        $this->assertStringStartsWith('/uploads/guest-uploads/thumbs/', $item->thumb_url);
+        $this->cleanUp($item);
+    }
+
+    public function test_a_guest_cannot_pick_an_album_that_does_not_exist(): void
+    {
+        $this->post('/api/gallery/guest-upload', [
+            'image' => UploadedFile::fake()->image('me.jpg'),
+            'guest_name' => 'Achieng',
+            'gallery_album_id' => 9999,
+        ], ['Accept' => 'application/json'])->assertStatus(422)->assertJsonValidationErrors('gallery_album_id');
+    }
 }

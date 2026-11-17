@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, User, Camera, Play, Pause, ChevronLeft, ChevronRight, Check, Smartphone, Download } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { galleryService, getAssetUrl } from '../services/api';
-import api from '../services/api';
 import { 
   MainFlowerTopLeft, 
   MainFlowerBottomRight, 
@@ -15,7 +14,7 @@ import Button from '../components/Button';
 import { Skeleton, CardSkeleton } from '../components/Skeleton';
 import { useContent } from '../context/ContentContext';
 import { Navigate } from 'react-router-dom';
-import CameraCapture from '../components/CameraCapture';
+import GuestPhotoShare from '../components/GuestPhotoShare';
 import StickyPageHeader from '../components/StickyPageHeader';
 import { gallerySections, thumbOf } from '../utils/galleryAlbums';
 import { isAfterWedding } from '../utils/weddingPhase';
@@ -44,14 +43,10 @@ export default function Gallery() {
   
   // Upload modal state
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploadPreview, setUploadPreview] = useState(null);
-  const [guestName, setGuestName] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [shareAlbumId, setShareAlbumId] = useState('');
+  const openShare = (albumId = '') => { setShareAlbumId(albumId); setShowUploadModal(true); };
   
   // Camera capture state
-  const [showCamera, setShowCamera] = useState(false);
   const { contents: content, settings, loading: contentLoading, isVisible } = useContent();
   // After the wedding the page is the wedding photos, whatever it was called before.
   const after = !contentLoading && isAfterWedding(settings, content);
@@ -154,30 +149,6 @@ export default function Gallery() {
     };
   }, []);
 
-  // File upload handling
-  const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Camera capture handling
-  const handleCameraCapture = (file) => {
-    setUploadFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setUploadPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-    setShowCamera(false);
-  };
-
   if (contentLoading) {
     return <Loader />;
   }
@@ -185,36 +156,6 @@ export default function Gallery() {
   if (!isVisible('gallery')) {
     return null; // The useEffect will handle redirect
   }
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!uploadFile || !guestName.trim()) return;
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('image', uploadFile);
-      formData.append('guest_name', guestName);
-      formData.append('caption', ''); // Captions removed from UI but kept in API for compatibility
-
-      await api.post('/gallery/guest-upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      setUploadSuccess(true);
-      fetchGallery();
-      setTimeout(() => {
-        setShowUploadModal(false);
-        setUploadFile(null);
-        setUploadPreview(null);
-        setGuestName('');
-        setUploadSuccess(false);
-      }, 2000);
-    } catch (err) {
-      console.error('Upload failed', err);
-    }
-    setUploading(false);
-  };
 
   return (
     <motion.div
@@ -239,8 +180,8 @@ export default function Gallery() {
               : getContent(content, 'gallery', 'subtitle', i18n, 'Cherished moments from our journey together')}
           />
           <div className="flex flex-wrap items-center justify-center gap-4 mt-2 mb-12">
-            <Button variant="secondary" size="lg" icon={Upload} onClick={() => setShowUploadModal(true)}>
-              {t('gallery.upload') || 'Share a Photo'}
+            <Button variant="secondary" size="lg" icon={Upload} onClick={() => openShare()}>
+              Share your photos
             </Button>
             {images.length > 0 && (
               <Button
@@ -291,6 +232,11 @@ export default function Gallery() {
                     <div className="text-center mb-6">
                       <h2 id={`${section.id}-title`} className="font-serif text-3xl md:text-4xl" style={{ color: '#4A3F35' }}>{section.title}</h2>
                       {section.subtitle && <p className="mt-1 text-sm uppercase tracking-[0.2em]" style={{ color: '#8B7B6B' }}>{section.subtitle}</p>}
+                      {section.album && (
+                        <button type="button" onClick={() => openShare(section.album.id)} className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#A67B5B] hover:underline">
+                          <Upload className="w-3.5 h-3.5" /> Add your photos from this day
+                        </button>
+                      )}
                     </div>
                   )}
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
@@ -432,161 +378,13 @@ export default function Gallery() {
         )}
       </AnimatePresence>
 
-      {/* Upload Modal */}
-      <AnimatePresence>
-        {showUploadModal && (
-          <Overlay onClose={() => setShowUploadModal(false)}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 
-                  className="text-2xl"
-                  style={{ fontFamily: "'Great Vibes', cursive", color: '#A67B5B' }}
-                >
-                  {t('gallery.share_photo') || 'Share a Photo'}
-                </h2>
-                <button
-                  aria-label="Close"
-                  onClick={() => setShowUploadModal(false)}
-                  className="p-2 hover:bg-stone-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {uploadSuccess ? (
-                <div className="text-center py-10">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center"
-                  >
-                    <Check className="w-8 h-8 text-green-600" />
-                  </motion.div>
-                  <p className="text-lg font-medium" style={{ color: '#4A3F35' }}>
-                    {t('gallery.upload_success') || 'Photo shared successfully!'}
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleUpload} className="space-y-5">
-                  {/* Image Preview/Upload */}
-                  <div>
-                    {uploadPreview ? (
-                      <div className="relative">
-                        <img
-                          src={uploadPreview}
-                          alt="Preview"
-                          className="w-full aspect-video object-cover rounded-xl"
-                        />
-                        <button
-                          type="button"
-                          aria-label="Remove photo"
-                          onClick={() => {
-                            setUploadFile(null);
-                            setUploadPreview(null);
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {/* Camera capture button */}
-                        <button
-                          type="button"
-                          onClick={() => setShowCamera(true)}
-                          className="w-full flex items-center justify-center gap-3 border-2 border-dashed border-stone-300 rounded-xl p-6 text-center cursor-pointer hover:border-[#A67B5B] hover:bg-stone-50 transition-colors"
-                        >
-                          <Smartphone className="w-8 h-8" style={{ color: '#A67B5B' }} />
-                          <div className="text-left">
-                            <p className="font-medium" style={{ color: '#6B5D52' }}>
-                              {t('gallery.take_photo') || 'Take a Photo'}
-                            </p>
-                            <p className="text-xs text-stone-500">
-                              {t('gallery.use_camera') || 'Use your device camera'}
-                            </p>
-                          </div>
-                        </button>
-                        
-                        {/* Divider */}
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 border-t border-stone-200" />
-                          <span className="text-xs text-stone-400">{t('gallery.or') || 'or'}</span>
-                          <div className="flex-1 border-t border-stone-200" />
-                        </div>
-                        
-                        {/* File upload button */}
-                        <label className="block border-2 border-dashed border-stone-300 rounded-xl p-6 text-center cursor-pointer hover:border-[#A67B5B] hover:bg-stone-50 transition-colors">
-                          <Camera className="w-8 h-8 mx-auto mb-2 opacity-50" style={{ color: '#A67B5B' }} />
-                          <p className="font-medium" style={{ color: '#6B5D52' }}>
-                            {t('gallery.choose_from_gallery') || 'Choose from Gallery'}
-                          </p>
-                          <p className="text-xs text-stone-500">
-                            {t('gallery.select_existing') || 'Select an existing photo'}
-                          </p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="gallery-name" className="input-label flex items-center gap-2">
-                      <User className="w-4 h-4" style={{ color: '#A67B5B' }} />
-                      {t('gallery.your_name') || 'Your Name'}
-                    </label>
-                    <input
-                      id="gallery-name"
-                      type="text"
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      className="input-field"
-                      placeholder={t('gallery.name_placeholder') || 'Enter your name'}
-                      required
-                    />
-                  </div>
-
-
-
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    size="lg"
-                    fullWidth
-                    icon={Upload}
-                    loading={uploading}
-                    disabled={!uploadFile || !guestName.trim()}
-                  >
-                    {t('gallery.upload_button') || 'Share Photo'}
-                  </Button>
-                </form>
-              )}
-            </motion.div>
-          </Overlay>
-        )}
-      </AnimatePresence>
-
-      {/* Camera Capture Modal */}
-      <AnimatePresence>
-        {showCamera && (
-          <CameraCapture
-            onCapture={handleCameraCapture}
-            onClose={() => setShowCamera(false)}
-            aspectRatio="4:3"
-          />
-        )}
-      </AnimatePresence>
+      <GuestPhotoShare
+        open={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        albums={albums}
+        defaultAlbumId={shareAlbumId}
+        onShared={fetchGallery}
+      />
 
     </motion.div>
   );

@@ -49,4 +49,16 @@ describe('gallery albums', () => {
     ];
     expect(slideshowPhotos(items, albums).map((p) => p.id)).toEqual([3]);
   });
+
+  it("puts a guest's photo in the album they chose, after the photographer's", () => {
+    const items = [
+      { id: 1, gallery_album_id: 1, is_guest_upload: true, uploaded_by: 'Achieng' },
+      { id: 2, gallery_album_id: 1, taken_at: '2026-11-12 10:00:00' },
+      { id: 3, is_guest_upload: true },
+    ];
+    const sections = gallerySections(items, albums);
+    expect(sections.find((s) => s.title === 'Ayie').items.map((i) => i.id)).toEqual([2, 1]);
+    expect(sections.find((s) => s.id === 'guests').items.map((i) => i.id)).toEqual([3]);
+    expect(slideshowPhotos(items, albums).map((p) => p.id)).toEqual([2]);
+  });
 });

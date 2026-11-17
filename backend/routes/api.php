@@ -111,13 +111,15 @@ Route::prefix('test')->group(function () {
     Route::post('/flight-notification', [TestController::class, 'sendTestFlightNotification']);
 });
 
+// Guests sharing photos: several at a time, so a limiter of its own.
+Route::post('/gallery/guest-upload', [GalleryController::class, 'guestUpload'])->middleware('throttle:guest-photos');
+
 // Public Transactional Routes (Throttled)
 Route::middleware('throttle:30,1')->group(function () {
     // Public Gallery Routes
     Route::group(['prefix' => 'gallery'], function () {
         Route::get('/', [GalleryController::class, 'index']);
         Route::get('/albums', [GalleryController::class, 'albums']);
-        Route::post('/guest-upload', [GalleryController::class, 'guestUpload']);
     });
 
     // Public Gift Routes
