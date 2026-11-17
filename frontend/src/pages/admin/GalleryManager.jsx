@@ -134,8 +134,17 @@ export default function GalleryManager() {
   const bulkFeature = useBulkAdminAction((id) => galleryService.update(id, { is_featured: true }), { onSuccess: afterBulk, success: (n) => `${n} photos added to the home page slideshow` });
   const bulkUnfeature = useBulkAdminAction((id) => galleryService.update(id, { is_featured: false }), { onSuccess: afterBulk });
   const bulkMove = useAdminAction(
-    async (ids, albumId) => { await Promise.all(ids.map((id) => galleryService.update(id, { gallery_album_id: albumId }))); return ids.length; },
-    { key: () => 'move', success: (n) => `${n} photos moved`, invalidate: [['galleryAlbums']], onSuccess: afterBulk },
+    async (ids, albumId) => {
+      await Promise.all(ids.map((id) => galleryService.update(id, { gallery_album_id: albumId || null })));
+      const album = albums.find((a) => String(a.id) === String(albumId));
+      return { n: ids.length, to: album ? album.title : 'no album' };
+    },
+    {
+      key: () => 'move',
+      success: ({ n, to }) => `${n} ${n === 1 ? 'photo' : 'photos'} moved to ${to}`,
+      invalidate: [['galleryAlbums']],
+      onSuccess: afterBulk,
+    },
   );
 
   const reorder = useAdminAction(
@@ -166,6 +175,8 @@ export default function GalleryManager() {
     return () => window.removeEventListener('dragenter', onDragEnter);
   }, []);
 
+  const allShownSelected = filteredItems.length > 0 && filteredItems.every((i) => selectedIds.includes(i.id));
+
   const toolbarActions = [
     {
       id: 'import',
@@ -191,10 +202,11 @@ export default function GalleryManager() {
     },
     {
       id: 'select-all',
-      label: selectedIds.length === items.length ? 'Deselect All' : 'Select All',
-      icon: selectedIds.length === items.length ? Check : Plus,
-      onClick: () => setSelectedIds(selectedIds.length === items.length ? [] : items.map(i => i.id)),
-      hidden: items.length === 0,
+      // Selects what's on screen: the open album, or every photo under All.
+      label: allShownSelected ? 'Deselect All' : 'Select All',
+      icon: allShownSelected ? Check : Plus,
+      onClick: () => setSelectedIds(allShownSelected ? [] : filteredItems.map(i => i.id)),
+      hidden: filteredItems.length === 0 || isReordering,
     },
     {
       id: 'reorder',
@@ -364,17 +376,52 @@ export default function GalleryManager() {
         <AdminBulkActions
           selectedCount={selectedIds.length}
           onClearSelection={() => setSelectedIds([])}
+          // Stays at the bottom of the screen while you scroll and pick photos.
+          className="sticky bottom-4 z-30 mt-6 bg-[#FBF7F2]! shadow-lg"
           actions={[
             { id: 'show', label: 'Show', icon: Eye, variant: 'secondary', action: bulkShow, args: [selectedIds] },
             { id: 'hide', label: 'Hide', icon: EyeOff, variant: 'primary', action: bulkHide, args: [selectedIds] },
             { id: 'feature', label: 'Add to slideshow', icon: Star, variant: 'secondary', action: bulkFeature, args: [selectedIds] },
             { id: 'unfeature', label: 'Remove from slideshow', icon: Star, action: bulkUnfeature, args: [selectedIds] },
-            ...chronologicalAlbums(albums).map((a) => ({ id: `move-${a.id}`, label: `Move to ${a.title}`, icon: FolderInput, action: bulkMove, args: [selectedIds, a.id] })),
             { id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger', action: bulkDelete, args: [selectedIds] },
           ]}
-        />
+        >
+          {bulkMove.allowed && albums.length > 0 && (
+            <MoveToAlbum albums={chronologicalAlbums(albums)} count={selectedIds.length} pending={bulkMove.pending} onMove={(albumId) => bulkMove.run(selectedIds, albumId)} />
+          )}
+        </AdminBulkActions>
       </AdminPageLayout>
     </>
+  );
+}
+
+/** Pick an album and move every selected photo into it. */
+function MoveToAlbum({ albums, count, pending, onMove }) {
+  const [target, setTarget] = useState('');
+  return (
+    <div className="flex items-center gap-2">
+      <label htmlFor="bulk-move-album" className="sr-only">Move the selected photos to</label>
+      <select
+        id="bulk-move-album"
+        value={target}
+        onChange={(e) => setTarget(e.target.value)}
+        disabled={pending}
+        className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700"
+      >
+        <option value="">Move to album…</option>
+        {albums.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
+        <option value="none">Not in an album</option>
+      </select>
+      <Button
+        variant="secondary"
+        icon={FolderInput}
+        disabled={!target || pending}
+        loading={pending}
+        onClick={() => { onMove(target === 'none' ? null : Number(target)); setTarget(''); }}
+      >
+        Move {count}
+      </Button>
+    </div>
   );
 }
 
