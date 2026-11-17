@@ -27,7 +27,7 @@ A 30-second, seamlessly looping tour of what guests can do after the wedding, ma
 
 Set up the app as for the invitation tour, then put the site in its after-the-wedding mode:
 - any date after the wedding, or Settings › After the Wedding › Now;
-- photos in the Ayie and The Wedding albums;
+- photos in the Ayie and The Wedding albums (the video uses the couple's own photos: ten from the Ayie and six from the wedding day, with the same photos as stories on the programme page);
 - Gallery and Guestbook switched on in Modules;
 - a personal message on the demo guest (GRACE26);
 - placeholder Pay Bill numbers in the local settings.
@@ -39,6 +39,8 @@ cd docs/guest-tour/tools
 ```bash
 node capture-thankyou.cjs   # writes ../../thank-you-tour/screens and taps.json; uploads two photos locally
 ```
+
+`BASE=http://localhost:5173` points it at another dev server, and `SHARE_PHOTOS=a.jpg,b.jpg` picks the two photos the share step uploads. The guestbook and home page screens show no photos, so they can be kept from an earlier capture.
 
 ```bash
 TOUR=thank-you-tour node render.cjs full

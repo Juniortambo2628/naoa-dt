@@ -10,9 +10,11 @@ const { chromium, devices } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const B = 'http://localhost:5180';
+const B = process.env.BASE || 'http://localhost:5180';
 const OUT = path.join(__dirname, '..', '..', 'thank-you-tour', 'screens');
+// The two photos the share step uploads; SHARE_PHOTOS=a.jpg,b.jpg to use others.
 const PHOTOS = path.join(__dirname, '..', '..', '..', 'frontend', 'public', 'DnT-photoshoot');
+const SHARE = process.env.SHARE_PHOTOS ? process.env.SHARE_PHOTOS.split(',') : [path.join(PHOTOS, '5-bnw.jpeg'), path.join(PHOTOS, '6.jpeg')];
 const VIEW = { width: 390, height: 790 };
 const taps = {};
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -86,7 +88,7 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   await tapAt('add_here', addHere);
   await addHere.click(); await p.waitForTimeout(1000);
   await shot(p, 'share_1');
-  await p.locator('input[type="file"][multiple]').setInputFiles([path.join(PHOTOS, '5-bnw.jpeg'), path.join(PHOTOS, '6.jpeg')]);
+  await p.locator('input[type="file"][multiple]').setInputFiles(SHARE);
   await p.waitForTimeout(1500);
   const nameInput = p.getByPlaceholder(/So the couple know/i);
   if (await nameInput.count()) await nameInput.fill('Grace Muthoni');
