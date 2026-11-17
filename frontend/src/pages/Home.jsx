@@ -774,9 +774,11 @@ function EventDetails({ content, loading: cmsLoading }) {
 }
 
 // Gallery with Parallax Effect
-function GallerySection({ content, loading: cmsLoading }) {
+function GallerySection({ content, loading: cmsLoading, after = false }) {
   const { t, i18n } = useTranslation();
-  const getTxt = (field, fallback) => getContent(content, 'gallery', field, i18n, fallback, t);
+  const getTxt = (field, fallback) => (after && field === 'title'
+    ? getContent(content, 'gallery', 'title_after', i18n, 'Our Wedding Photos', t)
+    : getContent(content, 'gallery', field, i18n, fallback, t));
   const [images, setImages] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -1031,7 +1033,7 @@ export default function Home() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
         <main>
           <ThankYouHero content={content} settings={settings} />
-          {isVisible('gallery') && <GallerySection content={content} loading={contentLoading} />}
+          {isVisible('gallery') && <GallerySection content={content} loading={contentLoading} after />}
           {isVisible('our_story') && <StorySection content={content} settings={settings} loading={contentLoading} />}
         </main>
       </motion.div>

@@ -91,7 +91,10 @@ const SECTIONS = [
         key: 'gallery',
         label: 'Gallery',
         fields: [
-            { key: 'title', label: 'Section Title', type: 'text' }
+            { key: 'title', label: 'Section Title', type: 'text' },
+            { key: 'subtitle', label: 'Subtitle (Gallery page)', type: 'text' },
+            { key: 'title_after', label: 'Title after the wedding (empty: "Our Wedding Photos")', type: 'text' },
+            { key: 'subtitle_after', label: 'Subtitle after the wedding (empty: "From the Ayie to the wedding day")', type: 'text' }
         ]
     },
     {

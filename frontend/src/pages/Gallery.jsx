@@ -18,6 +18,7 @@ import { Navigate } from 'react-router-dom';
 import CameraCapture from '../components/CameraCapture';
 import StickyPageHeader from '../components/StickyPageHeader';
 import { gallerySections, thumbOf } from '../utils/galleryAlbums';
+import { isAfterWedding } from '../utils/weddingPhase';
 
 const getContent = (content, section, field, i18n, fallback) => {
   const sectionData = content?.[section]?.content;
@@ -51,7 +52,9 @@ export default function Gallery() {
   
   // Camera capture state
   const [showCamera, setShowCamera] = useState(false);
-  const { contents: content, loading: contentLoading, isVisible } = useContent();
+  const { contents: content, settings, loading: contentLoading, isVisible } = useContent();
+  // After the wedding the page is the wedding photos, whatever it was called before.
+  const after = !contentLoading && isAfterWedding(settings, content);
   
   // Slideshow state
   const [slideshowActive, setSlideshowActive] = useState(false);
@@ -228,8 +231,12 @@ export default function Gallery() {
         
         <div className="container-wedding relative z-10">
           <StickyPageHeader
-            title={getContent(content, 'gallery', 'title', i18n, 'Our Gallery')}
-            subtitle={getContent(content, 'gallery', 'subtitle', i18n, 'Cherished moments from our journey together')}
+            title={after
+              ? getContent(content, 'gallery', 'title_after', i18n, 'Our Wedding Photos')
+              : getContent(content, 'gallery', 'title', i18n, 'Our Gallery')}
+            subtitle={after
+              ? getContent(content, 'gallery', 'subtitle_after', i18n, 'From the Ayie to the wedding day')
+              : getContent(content, 'gallery', 'subtitle', i18n, 'Cherished moments from our journey together')}
           />
           <div className="flex flex-wrap items-center justify-center gap-4 mt-2 mb-12">
             <Button variant="secondary" size="lg" icon={Upload} onClick={() => setShowUploadModal(true)}>
