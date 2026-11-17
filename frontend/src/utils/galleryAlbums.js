@@ -75,5 +75,24 @@ export function slideshowPhotos(items = [], albums = [], max = 8) {
   return Array.from({ length: max }, (_, k) => pool[Math.floor(k * step)]);
 }
 
+/** A copy of the list in random order (Fisher–Yates). */
+export function shuffled(list = [], random = Math.random) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * Every slideshow photo, in a fresh random order: the couple's favourites
+ * are all equally important, so each visit starts somewhere different and
+ * every one of them gets its turn. Pass `count` for a handful (a collage).
+ */
+export function randomFavourites(items = [], albums = [], count = Infinity, random = Math.random) {
+  return shuffled(slideshowPhotos(items, albums, Infinity), random).slice(0, count);
+}
+
 /** Best image for a grid tile: the thumbnail when there is one. */
 export const thumbOf = (item) => item?.thumb_url || item?.image_url;

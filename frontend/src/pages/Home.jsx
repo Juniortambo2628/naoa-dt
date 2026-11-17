@@ -1,5 +1,5 @@
 import { motion, useInView } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Heart, Gift, Clock, Users, ChevronDown, Sparkles, Images, MessageSquareHeart } from 'lucide-react';
@@ -29,7 +29,7 @@ import { useContent } from '../context/ContentContext';
 import AfricaThankYou from '../components/AfricaThankYou';
 import HeroSlideshow from '../components/HeroSlideshow';
 import { useGallery, useGalleryAlbums } from '../hooks/useApiHooks';
-import { gallerySections, slideshowPhotos, thumbOf } from '../utils/galleryAlbums';
+import { gallerySections, randomFavourites, thumbOf } from '../utils/galleryAlbums';
 import { isAfterWedding, thankYouMessage } from '../utils/weddingPhase';
 
 // Polaroid Floating Image Component
@@ -791,8 +791,8 @@ function GallerySection({ content, loading: cmsLoading, after = false }) {
       ]);
       const visibleImages = (res.data || []).filter(img => img.is_visible !== false);
       setTotal(visibleImages.length);
-      // A handful on the home page (the slideshow picks); the rest live on /gallery.
-      setImages(slideshowPhotos(visibleImages, Array.isArray(albumRes.data) ? albumRes.data : [], 6));
+      // A handful on the home page, a different few of the favourites each visit; the rest live on /gallery.
+      setImages(randomFavourites(visibleImages, Array.isArray(albumRes.data) ? albumRes.data : [], 6));
     } catch (err) {
       console.error("Home gallery fetch failed", err);
     }
@@ -954,7 +954,8 @@ function ThankYouHero({ content, settings }) {
   const { brideName, groomName } = getCoupleNames(settings, content, i18n.language);
   const { data: items = [] } = useGallery();
   const { data: albums = [] } = useGalleryAlbums();
-  const photos = slideshowPhotos(Array.isArray(items) ? items : [], albums, 8);
+  // Every favourite, shuffled once per visit.
+  const photos = useMemo(() => randomFavourites(Array.isArray(items) ? items : [], albums), [items, albums]);
   const sections = gallerySections((Array.isArray(items) ? items : []).filter((i) => i.is_visible !== false), albums).filter((s) => s.album);
   const info = getWeddingInfo(settings, content);
   const dateText = getWeddingDateText(content, i18n.language, settings);
