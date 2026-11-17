@@ -29,7 +29,9 @@ Each chapter is one bar of music (2.5 s), so every cut lands on a downbeat.
 
 ## Regenerating
 
-The screens come from the real app with demo data: the backend on SQLite (`php artisan migrate --seed`, then `SettingsSeeder`), a guest with code `GRACE26`, a few polaroids from `frontend/public/DnT-photoshoot` and live updates, and the frontend dev server on port 5180.
+The screens come from the real app with demo data: the backend on SQLite (`php artisan migrate --seed`, then `SettingsSeeder`), a guest with code `GRACE26`, a few polaroids and live updates, and the frontend dev server on port 5180.
+
+The Moments scene (`snap_1`, `tray`, `storyB_1`) uses the couple's own photos from the Ayie and the wedding: they were posted as demo stories (Grace Muthoni, Kevin Wafula, Amina Odhiambo, the couple, dated 14 November) and one of them is the Snap Studio camera feed (`cam.y4m`). With `wedding_phase` set to `before` locally, so the invite still shows Snap and the pass.
 
 `tools/capture.cjs` writes every screen into `screens/` (585×1185 JPEGs: an iPhone screen below its status bar, which the tour draws) and `screens/taps.json`, where each tapped button sits. It feeds a photo to the camera as a fake webcam (`cam.y4m`, made with ffmpeg) so Snap Studio shows a live view. For the Gifts scene, set placeholder Pay Bill numbers in the local settings (the video shows 123456 / 0000000000) and clear `mpesa_payments` first, since each M-Pesa code is recorded once.
 

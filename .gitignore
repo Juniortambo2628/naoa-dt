@@ -52,3 +52,7 @@ tmp_replace.js
 frontend/playwright.local.config.mjs
 frontend/tests/visual/test-results/
 frontend/playwright-report/
+
+# Guest tour render output
+docs/guest-tour/tools/frames/
+docs/guest-tour/tools/prev/
