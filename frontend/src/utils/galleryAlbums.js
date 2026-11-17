@@ -24,9 +24,10 @@ export function chronologicalAlbums(albums = []) {
 }
 
 /**
- * The gallery as sections, in story order: each album in date order, then
- * photos that aren't in an album ("More moments"), then guests' own photos.
- * Empty sections are left out.
+ * The gallery as sections, in story order: each album in date order (guests'
+ * photos added to an album sit in it, after the photographer's), then photos
+ * that aren't in an album ("More moments"), then guests' photos without an
+ * album. Empty sections are left out.
  */
 export function gallerySections(items = [], albums = []) {
   const albumIds = new Set(albums.map((a) => a.id));
@@ -35,7 +36,10 @@ export function gallerySections(items = [], albums = []) {
     album,
     title: album.title,
     subtitle: album.subtitle || '',
-    items: items.filter((i) => !i.is_guest_upload && i.gallery_album_id === album.id).sort(byTakenAt),
+    items: [
+      ...items.filter((i) => !i.is_guest_upload && i.gallery_album_id === album.id).sort(byTakenAt),
+      ...items.filter((i) => i.is_guest_upload && i.gallery_album_id === album.id).sort(byTakenAt),
+    ],
   }));
   sections.push({
     id: 'more',
@@ -49,7 +53,7 @@ export function gallerySections(items = [], albums = []) {
     album: null,
     title: 'From our guests',
     subtitle: 'Photos shared by family and friends',
-    items: items.filter((i) => i.is_guest_upload).sort((a, b) => b.id - a.id),
+    items: items.filter((i) => i.is_guest_upload && !albumIds.has(i.gallery_album_id)).sort((a, b) => b.id - a.id),
   });
   return sections.filter((s) => s.items.length > 0);
 }
@@ -60,8 +64,8 @@ export function gallerySections(items = [], albums = []) {
  */
 export function slideshowPhotos(items = [], albums = [], max = 8) {
   const ordered = gallerySections(items.filter((i) => i.is_visible !== false), albums)
-    .filter((s) => s.id !== 'guests')
-    .flatMap((s) => s.items);
+    .flatMap((s) => s.items)
+    .filter((i) => !i.is_guest_upload);
   const featured = ordered.filter((i) => i.is_featured);
   if (featured.length) return featured.slice(0, max);
   const wide = ordered.filter((i) => !i.width || !i.height || i.width >= i.height);

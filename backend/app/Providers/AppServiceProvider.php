@@ -47,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('mpesa-report:'.($request->input('guest_code') ?? $request->query('guest_code') ?? $request->ip())),
             Limit::perMinute(600)->by('mpesa-report-ip:'.$request->ip()),
         ]);
+        // Guests sharing their photos: a phone's worth at a time (the venue
+        // shares one WiFi IP, so the per-IP cap is generous).
+        RateLimiter::for('guest-photos', fn (Request $request) => [
+            Limit::perMinute(40)->by('guest-photos:'.$request->ip().'|'.$request->input('guest_name')),
+            Limit::perMinute(300)->by('guest-photos-ip:'.$request->ip()),
+        ]);
         RateLimiter::for('mpesa-status', fn (Request $request) => [
             Limit::perMinute(40)->by('mpesa-status:'.$request->route('publicId')),
             Limit::perMinute(1200)->by('mpesa-status-ip:'.$request->ip()),

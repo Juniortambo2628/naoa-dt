@@ -78,6 +78,14 @@ export default function GalleryManager() {
   });
   const toggleVisibility = visibility.run;
 
+  // One photo in the wrong album: move it straight from its tile.
+  const moveOne = useAdminAction((item, albumId) => galleryService.update(item.id, { gallery_album_id: albumId || null }), {
+    key: (item) => `move-${item.id}`,
+    success: (_res, item, albumId) => `Moved to ${albums.find((a) => a.id === albumId)?.title || 'no album'}`,
+    invalidate: [['galleryAlbums']],
+    onSuccess: refresh,
+  });
+
   const feature = useAdminAction((item) => galleryService.update(item.id, { is_featured: !item.is_featured }), {
     key: (item) => item.id,
     error: 'Failed to update the slideshow',
@@ -329,6 +337,8 @@ export default function GalleryManager() {
             onDelete={handleDelete}
             onToggleVisibility={toggleVisibility}
             onToggleFeatured={feature.run}
+            albums={chronologicalAlbums(albums)}
+            onMove={moveOne.run}
           />
         ) : (
           <GalleryList
@@ -368,7 +378,7 @@ export default function GalleryManager() {
   );
 }
 
-function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReorder, onToggleSelection, onEdit, onDelete, onToggleVisibility, onToggleFeatured }) {
+function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReorder, onToggleSelection, onEdit, onDelete, onToggleVisibility, onToggleFeatured, albums = [], onMove }) {
   const renderItem = (item) => (
     <div
       key={item.id}
@@ -389,7 +399,7 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
           aria-pressed={!!item.is_featured}
           aria-label={item.is_featured ? 'Remove from the home page slideshow' : 'Add to the home page slideshow'}
           title={item.is_featured ? 'In the home page slideshow' : 'Add to the home page slideshow'}
-          className={`absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity ${item.is_featured ? 'bg-amber-400 text-white opacity-100' : 'bg-black/40 text-white opacity-0 group-hover:opacity-100'}`}
+          className={`absolute top-2 left-10 z-20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity ${item.is_featured ? 'bg-amber-400 text-white opacity-100' : 'bg-black/40 text-white opacity-0 group-hover:opacity-100'}`}
         >
           <Star className={`w-4 h-4 ${item.is_featured ? 'fill-current' : ''}`} />
         </button>
@@ -403,6 +413,20 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
             </span>
           )}
           <p className="text-white text-sm font-medium truncate">Uploaded by: {item.uploaded_by || 'Anonymous'}</p>
+          {onMove && albums.length > 0 && (
+            <label className="mt-1.5 flex items-center gap-1.5 text-xs text-white/90" onClick={(e) => e.stopPropagation()}>
+              <span className="shrink-0">Album</span>
+              <select
+                aria-label="Move to album"
+                value={item.gallery_album_id || ''}
+                onChange={(e) => onMove(item, e.target.value ? Number(e.target.value) : null)}
+                className="min-w-0 flex-1 rounded-md bg-white/90 text-stone-800 text-xs px-1.5 py-1"
+              >
+                <option value="">Not in an album</option>
+                {albums.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
+              </select>
+            </label>
+          )}
         </div>
         <div className="flex gap-2">
           <Button edit size="sm" icon={ImageIcon} className="flex-1" onClick={() => onEdit(item)}>
@@ -423,6 +447,11 @@ function GalleryGrid({ items, uploadingFiles, selectedIds, isReordering, onReord
         {!item.is_visible && (
           <div className="px-2 py-1 bg-black/60 text-white text-xs rounded-full backdrop-blur-sm">
             Hidden
+          </div>
+        )}
+        {item.gallery_album_id && albums.length > 0 && (
+          <div className="px-2 py-1 bg-black/55 text-white text-xs rounded-full backdrop-blur-sm">
+            {albums.find((a) => a.id === item.gallery_album_id)?.title}
           </div>
         )}
         {item.is_guest_upload && (
